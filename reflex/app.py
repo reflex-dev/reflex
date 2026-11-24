@@ -2743,6 +2743,8 @@ class EventNamespace(AsyncNamespace):
 
         self._sessions: dict[str, SessionToken] = {}
         self._session_refresh_at: dict[str, float] = {}
+        # Sockets that connected with a valid session cookie.
+        self._cookie_sids: set[str] = set()
 
         # Start time and count of the current process-wide client_error window.
         self._client_error_window_start = 0.0
@@ -2832,6 +2834,8 @@ class EventNamespace(AsyncNamespace):
             issue_session = session is None
             if session is None:
                 session = manager.create()
+            else:
+                self._cookie_sids.add(sid)
             self._sessions[sid] = session
             self._session_refresh_at[sid] = session.issued_at + manager.refresh_interval
             if not token or (mode == "enforce" and not session.authorizes(token)):
@@ -2873,6 +2877,7 @@ class EventNamespace(AsyncNamespace):
                 self._static_router_data.pop(sid, None)
                 self._sessions.pop(sid, None)
                 self._session_refresh_at.pop(sid, None)
+                self._cookie_sids.discard(sid)
                 if (linked_token := self.sid_to_token.get(sid)) is not None:
                     await self._token_manager.disconnect_token(linked_token, sid)
                 raise
@@ -2881,12 +2886,18 @@ class EventNamespace(AsyncNamespace):
         """Renew credentials for the session already authenticated by this socket.
 
         Connection authority survives cookie expiry, including suspended browser
-        timers. The credential is delivered only to the requesting connection.
+        timers. The credential is delivered only to the requesting connection,
+        and only when the browser has no valid copy: a socket that connected
+        with a cookie renews that HttpOnly cookie over HTTP, so page scripts
+        cannot read the credential from the socket.
 
         Args:
             sid: The Socket.IO session id requesting renewal.
         """
         if (session := self._sessions.get(sid)) is None:
+            return
+        if sid in self._cookie_sids and time.time() < session.expires_at:
+            await self.emit("session_token", None, to=sid)
             return
         manager = self.app._session_token_manager
         renewed = manager.refresh(session)
@@ -2950,6 +2961,7 @@ class EventNamespace(AsyncNamespace):
         self._static_router_data.pop(sid, None)
         self._sessions.pop(sid, None)
         self._session_refresh_at.pop(sid, None)
+        self._cookie_sids.discard(sid)
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:

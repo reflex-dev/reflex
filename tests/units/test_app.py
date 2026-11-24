@@ -6082,6 +6082,115 @@ async def test_socket_renews_expired_cookie_without_changing_state_owner(
     emitted.assert_not_called()
 
 
+@pytest.mark.parametrize("cookie", [True, False])
+async def test_session_refresh_sends_credential_only_without_a_valid_cookie(
+    event_namespace_with_processor_mock: EventNamespace,
+    cookie: bool,
+):
+    """A socket that connected with a valid cookie renews it over HTTP.
+
+    The browser holds that credential in an HttpOnly cookie, so the socket does
+    not send it to page scripts. A socket that connected without a cookie gets
+    the credential in-band, because the browser has no other copy.
+
+    Args:
+        event_namespace_with_processor_mock: The namespace fixture.
+        cookie: Whether the socket connected with a valid session cookie.
+    """
+    namespace = event_namespace_with_processor_mock
+    manager = namespace.app._session_token_manager
+    environ = _connect_environ("")
+    session = manager.create() if cookie else None
+    environ["asgi.scope"]["reflex.session"] = session
+    await namespace.on_connect("sid", environ)
+    emitted = cast(AsyncMock, namespace.emit)
+    emitted.reset_mock()
+
+    await namespace.on_session_refresh("sid")
+
+    emitted.assert_awaited_once()
+    event, credential = emitted.call_args.args
+    assert event == "session_token"
+    if cookie:
+        assert credential is None
+        assert namespace._sessions["sid"] is session
+    else:
+        renewed = manager.decode(credential)
+        assert renewed is not None
+        assert renewed.id == namespace._sessions["sid"].id
+    task = namespace.on_disconnect("sid")
+    if task is not None:
+        await task
+    assert "sid" not in namespace._cookie_sids
+
+
+@pytest.mark.parametrize("mode", ["warn", "enforce"])
+async def test_shared_state_link_to_client_token_needs_its_session(
+    monkeypatch: pytest.MonkeyPatch,
+    clean_registration_context: RegistrationContext,
+    mode: str,
+):
+    """A shared state link cannot reach the state of another session's client.
+
+    A link to a client token reads and writes that client's instance of the
+    shared state, so enforcement applies the session check to the link.
+
+    Args:
+        monkeypatch: Environment fixture; restores root metadata.
+        clean_registration_context: Isolate the temporary shared state class.
+        mode: The session token mode.
+    """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", mode)
+    links = State.get_fields()["_reflex_internal_links"]
+    monkeypatch.setattr(links, "default", links.default)
+    monkeypatch.setattr(links, "default_factory", links.default_factory)
+    monkeypatch.setattr(
+        State, "_always_dirty_substates", State._always_dirty_substates.copy()
+    )
+
+    class DraftState(rx.SharedState):
+        draft: str = ""
+
+    app = App(_state=State)
+    state_manager = app._state_manager = StateManagerMemory()
+    app._event_processor = Mock(
+        _root_context=EventContext(
+            token="",
+            session_token=SessionToken.SYSTEM,
+            state_manager=state_manager,
+            enqueue_impl=AsyncMock(),
+        )
+    )
+    app._event_namespace = AsyncMock()
+    manager = SessionTokenManager("link", secrets=(b"s" * 32,))
+    victim_session, attacker_session = manager.create(), manager.create()
+    victim = manager.create_client_token(victim_session)
+    attacker = manager.create_client_token(attacker_session)
+    second_tab = manager.create_client_token(attacker_session)
+
+    async def link(target: str) -> None:
+        """Link the attacker's shared state to a target, as its own session.
+
+        Args:
+            target: The token to link to.
+        """
+        async with app.modify_state(
+            BaseStateToken(ident=attacker, cls=DraftState),
+            session_token=attacker_session,
+        ) as root_state:
+            await (await root_state.get_state(DraftState))._link_to(target)
+
+    await link("room")
+    await link(second_tab)
+    if mode == "enforce":
+        with pytest.raises(exceptions.SessionAuthorizationError) as error:
+            await link(victim)
+        assert str(error.value) == "The session does not authorize this client token."
+    else:
+        await link(victim)
+    await asyncio.gather(*UPDATE_OTHER_CLIENT_TASKS)
+
+
 def _dropped_result_warning(label: str) -> str:
     """The full warning for a frontend event whose return value is dropped.
 

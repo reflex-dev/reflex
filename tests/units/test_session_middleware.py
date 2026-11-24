@@ -122,7 +122,7 @@ def test_bootstrap_session(manager: SessionTokenManager):
 
 
 def test_bootstrap_preserves_owned_client_token(manager: SessionTokenManager):
-    """Renewal preserves session identity and only echoes tokens it owns.
+    """Renewal preserves the session identity and the client token it owns.
 
     Args:
         manager: The session manager.
@@ -138,12 +138,36 @@ def test_bootstrap_preserves_owned_client_token(manager: SessionTokenManager):
         assert second_session is not None
         assert second_session.id == first_session.id
 
-        foreign_token = manager.create_client_token(manager.create())
-        third = client.post(
+
+@pytest.mark.parametrize("mode", ["off", "warn", "enforce"])
+def test_bootstrap_replaces_unowned_client_token_only_when_enforced(
+    manager: SessionTokenManager, monkeypatch: pytest.MonkeyPatch, mode: str
+):
+    """Only enforcement replaces a client token that the session does not own.
+
+    The compatibility modes keep the token, as the socket connection does. A
+    browser that does not store the cookie gets a new session for each
+    connection, so a replaced token would reset its state each time.
+
+    Args:
+        manager: The session manager.
+        monkeypatch: Environment fixture.
+        mode: The session token mode.
+    """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", mode)
+    foreign_token = manager.create_client_token(manager.create())
+    with TestClient(_app(manager), base_url="https://api.test") as client:
+        response = client.post(
             "/_reflex/session", headers={"Reflex-Client-Token": foreign_token}
         )
-        assert third.json()["client_token"] != foreign_token
-        assert first_session.authorizes(third.json()["client_token"])
+    session = manager.decode(response.cookies[f"__Host-{manager.cookie_name}"])
+    assert session is not None
+    token = response.json()["client_token"]
+    if mode == "enforce":
+        assert token != foreign_token
+        assert session.authorizes(token)
+    else:
+        assert token == foreign_token
 
 
 def test_exchange_websocket_session(manager: SessionTokenManager):
@@ -191,6 +215,39 @@ def test_exchange_rejects_untrusted_origin(
     assert "set-cookie" not in response.headers
 
 
+@pytest.mark.parametrize(
+    ("origin", "status"),
+    [
+        ("https://api.test:3000", 200),
+        ("http://api.test:3000", 200),
+        ("https://other.test:3000", 403),
+        ("https://sub.api.test", 403),
+    ],
+)
+def test_exchange_trusts_origins_on_the_backend_host(
+    manager: SessionTokenManager, origin: str, status: int
+):
+    """A frontend on the host that serves the backend can exchange credentials.
+
+    The frontend replaces a loopback API host with the host of its own page, so
+    the configured URLs do not list that origin. Cookies are not scoped by
+    port, so another port on that host gains nothing from the exchange.
+
+    Args:
+        manager: The session manager.
+        origin: The request Origin.
+        status: The expected response status.
+    """
+    app = _app(manager, allowed_origins=())
+    with TestClient(app, base_url="https://api.test") as client:
+        response = client.post(
+            "/_reflex/session",
+            json={"session_token": manager.encode(manager.create())},
+            headers={"Origin": origin},
+        )
+    assert response.status_code == status
+
+
 def test_exchange_cookie_has_precedence(manager: SessionTokenManager):
     """A body credential cannot replace an existing authenticated session.
 
@@ -233,6 +290,21 @@ def test_exchange_rejects_malformed_body(manager: SessionTokenManager, body: byt
         )
     assert response.status_code == 400
     assert "set-cookie" not in response.headers
+
+
+def test_exchange_rejects_deeply_nested_body(manager: SessionTokenManager):
+    """A body nested past the recursion limit is a malformed request.
+
+    Args:
+        manager: The session manager.
+    """
+    with TestClient(_app(manager), base_url="https://api.test") as client:
+        response = client.post(
+            "/_reflex/session",
+            content=b"[" * 200_000,
+            headers={"Content-Type": "application/json"},
+        )
+    assert response.status_code == 400
 
 
 @pytest.mark.parametrize("navigate", [False, True])
@@ -365,10 +437,12 @@ def test_session_cookie_stripping(manager: SessionTokenManager, duplicate: bool)
     }
 
 
-def test_http_refresh_keeps_session_identity(
+def test_only_the_session_endpoint_refreshes_the_cookie(
     manager: SessionTokenManager, mocker: MockerFixture
 ):
-    """Expired refresh intervals renew credentials without losing client bindings.
+    """The credential is renewed on the no-store endpoint, never on other responses.
+
+    A shared cache can store an ordinary response, and with it a cookie.
 
     Args:
         manager: The session manager.
@@ -382,15 +456,18 @@ def test_http_refresh_keeps_session_identity(
     now.return_value = 1060
     with TestClient(_app(manager), base_url="https://api.test") as client:
         response = client.get("/", headers={"cookie": f"{cookie_name}={cookie}"})
-        refreshed = manager.decode(response.cookies[cookie_name])
+        assert response.json()["session"] == session.id
+        assert "set-cookie" not in response.headers
+        bootstrap = client.post(
+            "/_reflex/session", json={}, headers={"cookie": f"{cookie_name}={cookie}"}
+        )
+        assert bootstrap.headers["cache-control"] == "no-store"
+        assert len(bootstrap.headers.get_list("set-cookie")) == 1
+        refreshed = manager.decode(bootstrap.cookies[cookie_name])
         assert refreshed is not None
         assert refreshed.id == session.id
         assert refreshed.expires_at == 1160
         assert refreshed.authorizes(token)
-        bootstrap = client.post(
-            "/_reflex/session", json={}, headers={"cookie": f"{cookie_name}={cookie}"}
-        )
-        assert len(bootstrap.headers.get_list("set-cookie")) == 1
 
 
 @pytest.mark.parametrize(

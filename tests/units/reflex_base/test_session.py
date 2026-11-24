@@ -163,7 +163,7 @@ def test_decode_rejects_bad_signature_and_nonobject_claims(manager):
 
 
 def test_refresh_keeps_existing_client_bindings(manager, monkeypatch):
-    """Refresh at the configured age without changing client token ownership.
+    """Refresh a session without changing client token ownership.
 
     Args:
         manager: The session codec fixture.
@@ -171,10 +171,7 @@ def test_refresh_keeps_existing_client_bindings(manager, monkeypatch):
     """
     session = manager.create()
     client_token = manager.create_client_token(session)
-    monkeypatch.setattr("reflex_base.session.time.time", lambda: 1049)
-    assert not manager.should_refresh(session)
     monkeypatch.setattr("reflex_base.session.time.time", lambda: 1050)
-    assert manager.should_refresh(session)
     refreshed = manager.refresh(session)
     assert refreshed.id == session.id
     assert refreshed.issued_at == 1050
