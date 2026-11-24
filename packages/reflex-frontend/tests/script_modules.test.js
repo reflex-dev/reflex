@@ -212,6 +212,49 @@ test("copies a file that Vite loads as its text or URL without reading it", asyn
   expect(imports).toEqual({ "party.js": [], "worker.js": ["worker-pkg"] });
 });
 
+test("copies a file a script names by URL, and reads a worker's imports", async () => {
+  // Vite bundles a worker started from `new URL(path, import.meta.url)` and
+  // copies any other file named so, as it does a `?url` import. A URL relative
+  // to anything else, or to no file, is not the module's.
+  const directory = writeFiles({
+    "party.js": [
+      "import './first.js';",
+      'new Worker(new URL("./worker.js", import.meta.url), { type: "module" });',
+      "new SharedWorker(new URL(`./shared.js`, import.meta.url));",
+      'const logo = new URL("./logo.png?v=2", import.meta.url);',
+      'const script = new URL("./script.js", import.meta.url);',
+      'const page = new URL("./page.js", location.href);',
+      'const remote = new URL("https://example.com/x.js", import.meta.url);',
+      'const missing = new URL("./missing.png", import.meta.url);',
+      "export function go() {}",
+    ].join("\n"),
+    "first.js": "",
+    "worker.js": 'import "./helper.js";\nimport "worker-pkg";\n',
+    "helper.js": "",
+    "shared.js": "",
+    "logo.png": "",
+    "script.js": 'import "script-pkg";\n',
+    "page.js": "",
+  });
+  const { modules, imports } = await readModules(directory, ["party.js"]);
+  expect(modules["party.js"].files).toEqual([
+    "party.js",
+    "first.js",
+    "worker.js",
+    "shared.js",
+    "logo.png",
+    "script.js",
+    "helper.js",
+  ]);
+  expect(imports).toEqual({
+    "party.js": [],
+    "first.js": [],
+    "worker.js": ["worker-pkg"],
+    "shared.js": [],
+    "helper.js": [],
+  });
+});
+
 test("reports the position of a file's first syntax error", async () => {
   // Written here: the repository's formatter cannot read a fixture that does
   // not parse.

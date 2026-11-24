@@ -123,12 +123,57 @@ const resolveImport = (directory, specifier) => {
 };
 
 /**
- * Find the specifiers of the modules a script loads at runtime: static
- * imports and re-exports that are not type-only, and dynamic imports of a
- * string.
+ * @param {any} node An expression.
+ * @returns {string | undefined} Its value, if it is a string written out.
+ */
+const stringValue = (node) => {
+  if (node?.type === "Literal" && typeof node.value === "string") {
+    return node.value;
+  }
+  if (node?.type === "TemplateLiteral" && !node.expressions.length) {
+    return node.quasis[0].value.cooked;
+  }
+};
+
+/**
+ * Find the path of a `new URL(path, import.meta.url)`, which Vite resolves
+ * from the module.
+ * @param {any} node An expression.
+ * @returns {string | undefined} The path, if it is such a URL.
+ */
+const moduleUrl = (node) => {
+  if (
+    node?.type !== "NewExpression" ||
+    node.callee.type !== "Identifier" ||
+    node.callee.name !== "URL"
+  ) {
+    return;
+  }
+  const [path, base] = node.arguments;
+  if (
+    base?.type === "MemberExpression" &&
+    !base.computed &&
+    base.property.name === "url" &&
+    base.object.type === "MetaProperty" &&
+    base.object.meta.name === "import"
+  ) {
+    return stringValue(path);
+  }
+};
+
+const WORKERS = new Set(["Worker", "SharedWorker"]);
+
+/**
+ * Find the specifiers of the modules a script loads at runtime, and the paths
+ * it names by URL. The modules are those of static imports and re-exports that
+ * are not type-only, and of dynamic imports of a string. A path named by
+ * `new URL(path, import.meta.url)` is bundled when it starts a worker, and
+ * otherwise loaded as it is.
  * @param {any} program The script's AST.
  * @param {any} module The script's imports and exports, as the parser lists them.
- * @returns {string[]} The specifiers, without duplicates.
+ * @returns {{specifiers: string[], urls: Map<string, boolean>}} The
+ * specifiers, without duplicates, and each path named by URL, with whether it
+ * starts a worker.
  */
 const readImports = (program, module) => {
   const specifiers = new Set();
@@ -142,19 +187,23 @@ const readImports = (program, module) => {
       if (moduleRequest && !isType) specifiers.add(moduleRequest.value);
     }
   }
+  const urls = new Map();
   new Visitor({
     ImportExpression({ source }) {
-      if (source.type === "Literal" && typeof source.value === "string") {
-        specifiers.add(source.value);
-      } else if (
-        source.type === "TemplateLiteral" &&
-        !source.expressions.length
-      ) {
-        specifiers.add(source.quasis[0].value.cooked);
+      const specifier = stringValue(source);
+      if (specifier !== undefined) specifiers.add(specifier);
+    },
+    NewExpression(node) {
+      const { callee } = node;
+      if (callee.type === "Identifier" && WORKERS.has(callee.name)) {
+        const path = moduleUrl(node.arguments[0]);
+        if (path !== undefined) urls.set(path, true);
       }
+      const path = moduleUrl(node);
+      if (path !== undefined && !urls.has(path)) urls.set(path, false);
     },
   }).visit(program);
-  return [...specifiers];
+  return { specifiers: [...specifiers], urls };
 };
 
 /**
@@ -233,16 +282,26 @@ const readExports = (program, module) => {
 const readScript = (file) => {
   const source = readFileSync(file, "utf-8");
   const { program, module, errors } = parseSync(file, source);
-  const specifiers = readImports(program, module);
+  const { specifiers, urls } = readImports(program, module);
   const script = {
-    references: specifiers
-      .filter((specifier) => specifier.startsWith("."))
-      .flatMap((specifier) => {
-        const reference = resolveImport(dirname(file), specifier);
-        return reference
-          ? [{ file: reference, read: !loadedAsIs(specifier) }]
-          : [];
-      }),
+    references: [
+      ...specifiers
+        .filter((specifier) => specifier.startsWith("."))
+        .flatMap((specifier) => {
+          const reference = resolveImport(dirname(file), specifier);
+          return reference
+            ? [{ file: reference, read: !loadedAsIs(specifier) }]
+            : [];
+        }),
+      // A URL names its file exactly, without the extensions an import may omit.
+      ...[...urls]
+        .filter(([path]) => path.startsWith("."))
+        .map(([path, worker]) => ({
+          file: resolve(dirname(file), stripQuery(path)),
+          read: worker,
+        }))
+        .filter(({ file }) => isFile(file)),
+    ],
     imports: specifiers.filter((specifier) => !specifier.startsWith(".")),
     exports: readExports(program, module),
     error: undefined,
