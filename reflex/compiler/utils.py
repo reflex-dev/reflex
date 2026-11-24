@@ -6,6 +6,7 @@ import asyncio
 import concurrent.futures
 import contextlib
 import copy
+import hashlib
 import json
 import operator
 import os
@@ -734,26 +735,34 @@ def _write_stub(module: Path, code: str) -> bool:
 
 
 class _StubRecord(TypedDict):
-    """What the type stub of a module was made from."""
+    """What the type stub of a module was made from, and what was written."""
 
     # The digest of the module's files, the files its types were read from and
     # the code that makes stubs.
     digest: str
     # The files its types were read from.
     files: list[str]
+    # The digest of the stub's text, so that a stub changed since, as by
+    # restoring a committed one, is made again.
+    stub: str
 
 
-def _stub_record(exports: _ScriptExports, files: list[str]) -> _StubRecord:
-    """Record what the type stub of a module is made from.
+def _stub_record(exports: _ScriptExports, files: list[str], stub: str) -> _StubRecord:
+    """Record what the type stub of a module is made from, and the stub.
 
     Args:
         exports: What was read of the module.
         files: The files its types were read from.
+        stub: The stub's text.
 
     Returns:
         The record.
     """
-    return {"digest": _module_digest([*exports["files"], *files]), "files": files}
+    return {
+        "digest": _module_digest([*exports["files"], *files]),
+        "files": files,
+        "stub": hashlib.sha256(stub.encode()).hexdigest()[:16],
+    }
 
 
 def write_script_stubs(modules: Mapping[Path, _ScriptExports]) -> None:
@@ -762,8 +771,10 @@ def write_script_stubs(modules: Mapping[Path, _ScriptExports]) -> None:
     A stub declares the functions the module exports, typed from its
     TypeScript annotations or JSDoc. ``.web/script_stubs.json`` records what
     each stub was made from: the digest of the module's files, the files its
-    types were read from and the code that makes stubs. typescript only reads
-    the types of a module whose stub is missing or whose digest changed, and
+    types were read from and the code that makes stubs, and the digest of the
+    stub written. typescript only reads the types of a module whose stub is
+    missing, changed since, as by restoring a committed one, or whose digest
+    changed, and
     the stub is only rewritten when its text changes, so a committed stub
     changes with its declarations alone. When the types cannot be read, the
     stub takes any arguments, and when it cannot be written, which is warned
@@ -794,16 +805,23 @@ def write_script_stubs(modules: Mapping[Path, _ScriptExports]) -> None:
     record = {str(path): old.get(str(path)) for path in modules}
 
     def current(path: Path) -> bool:
-        """Whether a module's stub was made from the module as it is now.
+        """Whether a module's stub was made from the module as it is now, and is unchanged.
 
         Args:
             path: The module.
 
         Returns:
-            Whether its record has the digest of what it is made from now.
+            Whether its record has the digests of what it is made from now and
+            of the stub's text.
         """
-        made = record[str(path)]
-        return made is not None and made == _stub_record(modules[path], made["files"])
+        if (made := record[str(path)]) is None:
+            return False
+        try:
+            # Read as text, so line endings written on Windows compare the same.
+            stub = path.with_suffix(".pyi").read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            return False
+        return made == _stub_record(modules[path], made["files"], stub)
 
     stale = [
         path
@@ -823,8 +841,8 @@ def write_script_stubs(modules: Mapping[Path, _ScriptExports]) -> None:
             made = None
             stub = _render_stub(path, functions, {})
         else:
-            made = _stub_record(modules[path], signatures["files"][real[path]])
             stub = _render_stub(path, functions, signatures["modules"][real[path]])
+            made = _stub_record(modules[path], signatures["files"][real[path]], stub)
         record[str(path)] = made if _write_stub(path, stub) else None
     write_file(record_file, json.dumps(record), atomic=True)
 
