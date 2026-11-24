@@ -352,6 +352,10 @@ def test_invalid_secret_never_discloses_its_value(monkeypatch, value):
     with pytest.raises(ValueError) as error:
         _load_secrets()
     assert str(error.value) == "REFLEX_SECRET_KEY keys must each be at least 32 bytes"
+    # `reflex run` calls this before the backend starts, so it fails at startup.
+    with pytest.raises(ValueError) as startup_error:
+        ensure_secret_key()
+    assert str(startup_error.value) == str(error.value)
 
 
 @pytest.mark.parametrize(
