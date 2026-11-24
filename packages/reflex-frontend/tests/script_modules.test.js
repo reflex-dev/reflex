@@ -118,7 +118,6 @@ test("lists each module's files, its exports, and what each script imports", asy
       "counter.tsx": [],
     },
     errors: [],
-    loops: [],
   });
 });
 
@@ -140,8 +139,8 @@ const writeFiles = (contents) => {
 };
 
 test("lists a linked file where its import names it, and its imports from there", async () => {
-  // The compiler copies each file at its path, so the copy of a link must be
-  // where the import looks for it, and the files that copy imports beside it.
+  // Vite does not follow links (`resolve.preserveSymlinks`), so it reads a
+  // link where the import names it, and finds the files it imports beside it.
   const directory = writeFiles({
     "party.js":
       'import { shout } from "./linked.js";\nexport function go() {}\n',
@@ -161,32 +160,7 @@ test("lists a linked file where its import names it, and its imports from there"
   expect(imports).toEqual({ "party.js": [], "linked.js": [], "near.js": [] });
 });
 
-test("reports a file that reaches itself again through a directory link", async () => {
-  // `lib/up` links to the directory that holds `lib`, so `party.js` is
-  // `lib/up/party.js`, which imports `lib/up/lib/up/party.js`, and so on:
-  // copies without links cannot hold them all.
-  const directory = writeFiles({
-    "party.js": 'import "./helper.js";\nexport function go() {}\n',
-    "helper.js": 'import "./lib/up/party.js";\nimport "./lib/up/near.js";\n',
-    "near.js": 'import "./lib/up/far.js";\n',
-    "far.js": "",
-  });
-  mkdirSync(join(directory, "lib"));
-  symlinkSync("..", join(directory, "lib", "up"));
-  const { modules, loops } = await readModules(directory, ["party.js"]);
-  // A link to an ancestor is followed while it does not repeat a file.
-  expect(modules["party.js"].files).toEqual([
-    "party.js",
-    "helper.js",
-    "lib/up/near.js",
-    "lib/up/lib/up/far.js",
-  ]);
-  expect(loops).toEqual([
-    { importer: "helper.js", file: "lib/up/party.js", link: "lib/up" },
-  ]);
-});
-
-test("copies a file that Vite loads as its text or URL without reading it", async () => {
+test("lists a file that Vite loads as its text or URL without reading it", async () => {
   // `?raw` loads the text and `?url` the URL of a script, so their imports
   // never run. A stylesheet or a worker loaded by URL is still bundled.
   const directory = writeFiles({
@@ -220,10 +194,10 @@ test("copies a file that Vite loads as its text or URL without reading it", asyn
   });
 });
 
-test("copies a file a script names by URL, and reads a worker's imports", async () => {
+test("lists a file a script names by URL, and reads a worker's imports", async () => {
   // Vite bundles a worker started from `new URL(path, import.meta.url)` and
-  // copies any other file named so, as it does a `?url` import. A URL relative
-  // to anything else, or to no file, is not the module's.
+  // loads any other file named so as it is, as it does a `?url` import. A URL
+  // relative to anything else, or to no file, is not the module's.
   const directory = writeFiles({
     "party.js": [
       "import './first.js';",

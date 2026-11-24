@@ -221,27 +221,15 @@ def test_run_uvicorn_backend_sets_reload_env_var_and_clears_marker(
 
     seen: dict[str, str | None] = {}
 
-    def fake_run(reloader):
-        """Record the reload variable the reloader runs with, and close its sockets.
-
-        Args:
-            reloader: The reloader.
-        """
-        for sock in reloader.sockets:
-            sock.close()
+    def fake_run(*_args, **_kwargs):
         seen["value"] = os.environ.get(DEV_BACKEND_RELOAD_ENV_NAME)
         assert not marker.exists()
 
-    watchfilesreload = pytest.importorskip("uvicorn.supervisors.watchfilesreload")
-    mocker.patch.object(
-        watchfilesreload.WatchFilesReload,
-        "run",
-        autospec=True,
-        side_effect=fake_run,
-    )
+    uvicorn = pytest.importorskip("uvicorn")
+    mocker.patch.object(uvicorn, "run", side_effect=fake_run)
 
     exec_utils.run_uvicorn_backend(
-        host="127.0.0.1", port=0, loglevel=exec_utils.LogLevel.INFO
+        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
     )
 
     assert seen["value"] == "True"
@@ -286,50 +274,29 @@ def test_run_granian_backend_sets_reload_env_var_and_clears_marker(
     assert seen["value"] == "True"
 
 
-def _script_module_app(tmp_path: Path, mocker: MockerFixture) -> Path:
-    """Lay out an app package with a JSON file a JavaScript module imports.
-
-    Args:
-        tmp_path: The directory that holds the package.
-        mocker: Fixture for pointing the app and its web directory there.
-
-    Returns:
-        The package's directory.
-    """
-    package = tmp_path / "app"
-    package.mkdir()
-    (package / "__init__.py").touch()
-    mocker.patch.object(
-        exec_utils, "get_module_path", return_value=package / "__init__.py"
-    )
-    mocker.patch.object(exec_utils, "get_reload_paths", return_value=[package])
-    mocker.patch.object(exec_utils, "reset_dev_backend_reload_marker")
-    web_dir = tmp_path / ".web"
-    mocker.patch.object(exec_utils, "get_web_dir", return_value=web_dir)
-    # The compile copied the file at its path from the package's directory.
-    copy = web_dir / "utils" / "script_modules" / "app" / "scripts" / "config.json"
-    copy.parent.mkdir(parents=True)
-    copy.write_text("{}")
-    return package
+# The files the compile reads of the app's JavaScript modules, and a data file
+# a module imports, which Vite serves through the link to the app's package.
+_SCRIPT_FILES = ("party.js", "party.ts", "widget.tsx", "theme.css")
+_DATA_FILE = "config.json"
 
 
-def test_run_granian_backend_reloads_for_a_data_file_a_javascript_module_reaches(
-    tmp_path: Path, mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+def test_run_granian_backend_reloads_for_javascript_modules(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
 ):
-    """A JSON file reloads the backend, which copies it again, if a JavaScript module imports it.
+    """Granian reloads for the files the compile reads of JavaScript modules, not for data files.
 
     Args:
-        tmp_path: The directory that holds the app package.
         mocker: Fixture for standing in for Granian.
         monkeypatch: Fixture restoring the reload environment variable.
     """
     watchfiles = pytest.importorskip("watchfiles")
     granian_server = pytest.importorskip("granian.server")
-    package = _script_module_app(tmp_path, mocker)
     monkeypatch.delenv(DEV_BACKEND_RELOAD_ENV_NAME, raising=False)
+    mocker.patch.object(exec_utils, "reset_dev_backend_reload_marker")
     mocker.patch.object(
         exec_utils, "get_app_instance_from_file", return_value="app:app"
     )
+    mocker.patch.object(exec_utils, "get_reload_paths", return_value=[])
     options: dict[str, Any] = {}
 
     class FakeGranian:
@@ -358,66 +325,47 @@ def test_run_granian_backend_reloads_for_a_data_file_a_javascript_module_reaches
         host="127.0.0.1", port=0, loglevel=exec_utils.LogLevel.INFO
     )
 
-    # Granian adds its ignore patterns to those of the filter class.
-    filter_class = options.get("reload_filter") or watchfiles.DefaultFilter
-    watch_filter = filter_class(
+    # Granian adds its ignore patterns to those of watchfiles' default filter.
+    default = watchfiles.DefaultFilter
+    reloads = default(
         ignore_entity_patterns=(
-            *filter_class.ignore_entity_patterns,
-            *options.get("reload_ignore_patterns", ()),
+            *default.ignore_entity_patterns,
+            *options["reload_ignore_patterns"],
         )
     )
-
-    def reloads(path: Path) -> bool:
-        """Whether a change to a file reloads the backend.
-
-        Args:
-            path: The file.
-
-        Returns:
-            Whether Granian's filter passes it.
-        """
-        return watch_filter(watchfiles.Change.modified, str(path))
-
-    assert reloads(package / "scripts" / "config.json")
-    assert reloads(package / "scripts" / "party.ts")
-    assert not reloads(package / "data.json")
-    assert not reloads(package / "notes")
+    for name in ("app.py", *_SCRIPT_FILES):
+        assert reloads(watchfiles.Change.modified, f"/app/scripts/{name}")
+    assert not reloads(watchfiles.Change.modified, f"/app/scripts/{_DATA_FILE}")
 
 
-def test_run_uvicorn_backend_reloads_for_the_files_granian_reloads_for(
+def test_run_uvicorn_backend_reloads_for_javascript_modules(
     tmp_path: Path, mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
 ):
-    """Uvicorn reloads for JavaScript modules and the files they reach, as Granian does.
+    """Uvicorn reloads for the files the compile reads of JavaScript modules, not for data files.
 
     Args:
-        tmp_path: The directory that holds the app package.
-        mocker: Fixture for capturing the reloader instead of running it.
+        tmp_path: The directory the backend watches.
+        mocker: Fixture for capturing the options of Uvicorn.
         monkeypatch: Fixture restoring the reload environment variable.
     """
-    watchfilesreload = pytest.importorskip("uvicorn.supervisors.watchfilesreload")
-    package = _script_module_app(tmp_path, mocker)
+    uvicorn = pytest.importorskip("uvicorn")
+    from uvicorn.supervisors.watchfilesreload import FileFilter
+
     monkeypatch.delenv(DEV_BACKEND_RELOAD_ENV_NAME, raising=False)
+    mocker.patch.object(exec_utils, "reset_dev_backend_reload_marker")
     mocker.patch.object(exec_utils, "get_app_instance", return_value="app:app")
-    reloaders = []
-    mocker.patch.object(
-        watchfilesreload.WatchFilesReload,
-        "run",
-        autospec=True,
-        side_effect=reloaders.append,
-    )
+    mocker.patch.object(exec_utils, "get_reload_paths", return_value=[tmp_path])
+    run = mocker.patch.object(uvicorn, "run")
 
     exec_utils.run_uvicorn_backend(
-        host="127.0.0.1", port=0, loglevel=exec_utils.LogLevel.ERROR
+        host="127.0.0.1", port=0, loglevel=exec_utils.LogLevel.INFO
     )
 
-    (reloader,) = reloaders
-    for sock in reloader.sockets:
-        sock.close()
-    assert reloader.watch_filter(package / "app.py")
-    assert reloader.watch_filter(package / "scripts" / "party.ts")
-    assert reloader.watch_filter(package / "scripts" / "config.json")
-    assert not reloader.watch_filter(package / "data.json")
-    assert not reloader.watch_filter(package / "notes")
+    # Without its logging config, which would reconfigure the test's logging.
+    reloads = FileFilter(uvicorn.Config(**run.call_args.kwargs, log_config=None))
+    for name in ("app.py", *_SCRIPT_FILES):
+        assert reloads(tmp_path / "app" / "scripts" / name)
+    assert not reloads(tmp_path / "app" / "scripts" / _DATA_FILE)
 
 
 @pytest.mark.parametrize(
