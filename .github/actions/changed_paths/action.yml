@@ -48,10 +48,23 @@ runs:
         # Only the two name fields travel: each entry's `patch` can be the
         # file's entire diff. The evaluator is stdlib-only and this job manages
         # no environment, so it runs on the runner's python3 instead of paying
-        # for a uv install.
+        # for a uv install. The API answers with a transient 5xx now and then,
+        # which would fail every gate behind this filter, so retry it.
+        for attempt in 1 2 3; do
+          if files=$(
+            gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/files" \
+              --jq '.[] | {filename, previous_filename} | tojson'
+          ); then
+            break
+          fi
+          if [ "$attempt" = 3 ]; then
+            exit 1
+          fi
+          # 10 seconds before the second try, 20 before the third.
+          sleep $((attempt * 10))
+        done
         changed=$(
-          gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/files" \
-            --jq '.[] | {filename, previous_filename} | tojson' |
+          printf '%s\n' "$files" |
             python3 "$GITHUB_WORKSPACE/scripts/changed_paths.py"
         )
         echo "changed=$changed"

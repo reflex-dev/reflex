@@ -1,0 +1,1 @@
+`ClientStateVar.global_value` and `global_set` now work in `rx.call_script` code, and `push` accepts a Var that reads another client state var's `global_value`; both raised `ReferenceError` in the browser before.

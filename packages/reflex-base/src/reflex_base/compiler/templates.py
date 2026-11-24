@@ -18,6 +18,56 @@ if TYPE_CHECKING:
     from reflex_base.components.component import Component
 
 
+_STATE_HOOK = re.compile(
+    r'const (\w+) = useStateContext\(("[^"]*")(?:, (\[[^\]]*\]))?\)'
+)
+
+
+def _merge_state_hooks(
+    hooks: dict[str, VarData | None],
+) -> dict[str, VarData | None]:
+    """Merge the field subscriptions to one state into a single hook.
+
+    A hook without a field list reads the whole substate, so it wins over the
+    field lists for the same state.
+
+    Args:
+        hooks: The hooks of one component.
+
+    Returns:
+        The hooks with one ``useStateContext`` call per state.
+    """
+    merged: dict[str, VarData | None] = {}
+    # Per state variable: its first hook, the quoted state name, and the union
+    # of the field lists (None once a hook reads the whole substate).
+    states: dict[str, tuple[str, str, dict[str, None] | None]] = {}
+    for hook, data in hooks.items():
+        match = _STATE_HOOK.fullmatch(hook) if "useStateContext(" in hook else None
+        if match is None:
+            merged[hook] = data
+            continue
+        var_name, state_name, field_list = match.groups()
+        fields = None if field_list is None else dict.fromkeys(json.loads(field_list))
+        if (first := states.get(var_name)) is None:
+            states[var_name] = (hook, state_name, fields)
+            merged[hook] = data
+        elif first[2] is not None:
+            states[var_name] = (
+                first[0],
+                state_name,
+                None if fields is None else first[2] | fields,
+            )
+    if len(merged) == len(hooks):
+        return hooks
+    first_hooks = {}
+    for var_name, (first, state_name, fields) in states.items():
+        args = (
+            state_name if fields is None else f"{state_name}, {json.dumps([*fields])}"
+        )
+        first_hooks[first] = f"const {var_name} = useStateContext({args})"
+    return {first_hooks.get(hook, hook): data for hook, data in merged.items()}
+
+
 class _RenderUtils:
     @staticmethod
     def render(component: Mapping[str, Any] | str) -> str:
@@ -1232,7 +1282,8 @@ def _render_hooks(hooks: dict[str, VarData | None]) -> str:
     """Render hooks in the order they were declared and merged.
 
     Every hook's dependencies are declared before it, so declaration order is
-    the dependency order.
+    the dependency order. The field subscriptions to one state merge into the
+    first of them, which comes before every hook that reads that state.
 
     Args:
         hooks: Dictionary of hooks to render.
@@ -1244,4 +1295,4 @@ def _render_hooks(hooks: dict[str, VarData | None]) -> str:
     from reflex_base.client_state import _check_declarations
 
     _check_declarations(hooks)
-    return "\n".join(hooks)
+    return "\n".join(_merge_state_hooks(hooks))
