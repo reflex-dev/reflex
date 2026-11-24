@@ -9,11 +9,13 @@ import pytest
 from reflex_base.compiler.templates import _merge_state_hooks
 from reflex_base.constants import Templates
 from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.event import EventChain
 from reflex_base.utils.format import format_state_name
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.sequence import ArrayVar
-from reflex_components_dataeditor.dataeditor import DataEditor
+from reflex_components_dataeditor.dataeditor import DataEditor, GridSelection
 
+import reflex as rx
 from reflex.state import BaseState
 
 _TEMPLATE_PATH = Templates.Dirs.WEB_TEMPLATE / "utils/helpers/dataeditor.js"
@@ -448,3 +450,94 @@ console.log(JSON.stringify([
         _text_cell("bob@example.com"),
         {"kind": "loading"},
     ]
+
+
+def _on_delete_chain(handler: Any) -> EventChain | Var:
+    """Bind a delete handler to the on_delete trigger as a prebuilt chain.
+
+    Args:
+        handler: The event handler.
+
+    Returns:
+        The event chain.
+    """
+    return EventChain.create(
+        handler, args_spec=DataEditor.get_event_triggers()["on_delete"], key="on_delete"
+    )
+
+
+@pytest.mark.parametrize(
+    ("make_on_delete", "calls"),
+    [
+        pytest.param(lambda handler: handler, 1, id="handler"),
+        pytest.param(lambda handler: [handler, handler], 2, id="list"),
+        pytest.param(_on_delete_chain, 1, id="EventChain"),
+        pytest.param(
+            lambda handler: LiteralVar.create(_on_delete_chain(handler)),
+            1,
+            id="LiteralEventChainVar",
+        ),
+        pytest.param(
+            lambda handler: Var(_js_expr="onDeleteCallback", _var_type=EventChain),
+            1,
+            id="EventChain-var",
+        ),
+    ],
+)
+def test_dataeditor_on_delete_lets_the_grid_delete(make_on_delete, calls: int):
+    """The onDelete callback queues the event and returns true for Glide.
+
+    Glide reads the return value of onDelete synchronously and treats any value
+    other than a boolean or undefined, such as the promise that addEvents
+    returns, as the selection to delete.
+
+    Args:
+        make_on_delete: Builds the on_delete value from the delete handler.
+        calls: How many times the handler is queued.
+    """
+
+    class DeleteState(BaseState):
+        @rx.event
+        def delete(self, selection: GridSelection):
+            pass
+
+    editor = _create(
+        columns=["Name"],
+        data=[["Alice"]],
+        on_delete=make_on_delete(DeleteState.delete),
+    )
+    name = f"{DeleteState.get_full_name()}.delete"
+    selection = {
+        "current": {
+            "cell": [0, 1],
+            "range": {"x": 0, "y": 1, "width": 1, "height": 1},
+            "rangeStack": [],
+        },
+        "columns": {"items": []},
+        "rows": {"items": []},
+    }
+    test_script = f"""
+const queued = [];
+const ReflexEvent = (name, payload) => ({{ name, payload }});
+const addEvents = (events, args) => {{
+  queued.push({{ events, args }});
+  return Promise.resolve();
+}};
+// The JS callback that the EventChain-typed Var names.
+const onDeleteCallback = (selection) =>
+  addEvents([ReflexEvent("{name}", {{ selection }})], [selection], {{}});
+const onDelete = {_prop(editor, "onDelete")};
+const selection = {json.dumps(selection)};
+console.log(JSON.stringify({{ result: onDelete(selection), queued }}));
+"""
+
+    assert _run_node(test_script) == {
+        "result": True,
+        "queued": [
+            {
+                "events": [{"name": name, "payload": {"selection": selection}}],
+                "args": [selection],
+            }
+        ]
+        * calls,
+    }
