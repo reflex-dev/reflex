@@ -581,26 +581,57 @@ def ensure_locked(
     return None
 
 
-async def _await_browser_call(
-    ctx: EventContext, event: Event, timeout: float | Unset | None
-) -> Any:
-    """Run a script in the client's browser and wait for its result.
+def _client_context(spec: EventSpec) -> EventContext:
+    """Get the active EventContext of a client, to await an event spec in.
 
     Args:
-        ctx: The active EventContext of the client.
-        event: The ``_call_script`` or ``_call_function`` event.
-        timeout: Seconds to wait for the result, None for no limit, or Unset
-            for ``rx.Config.browser_call_timeout``.
+        spec: The awaited event spec.
+
+    Returns:
+        The active EventContext.
+
+    Raises:
+        EventHandlerTypeError: If there is no active EventContext for a
+            client (outside an event handler and ``app.modify_state``).
+    """
+    try:
+        ctx = EventContext.get()
+    except LookupError:
+        ctx = None
+    # The event processor's root context, which every request to the app
+    # carries, belongs to no client: running there would share one state
+    # between every caller.
+    if ctx is None or not ctx.token:
+        msg = (
+            f"Event handler `{format_event_handler(spec.handler)}` can only be "
+            "awaited from an event handler or inside `app.modify_state`; use it "
+            "as an event trigger or yield it instead."
+        )
+        raise EventHandlerTypeError(msg)
+    return ctx
+
+
+async def _await_browser_call(spec: _BrowserCallSpec) -> Any:
+    """Run a script in the client's browser and wait for its result.
+
+    This is what awaiting ``rx.call_script``, ``rx.call_function`` or
+    ``rx.run_script`` does.
+
+    Args:
+        spec: The spec of the ``_call_script`` or ``_call_function`` event.
 
     Returns:
         The script's result.
 
     Raises:
-        EventHandlerTypeError: If the state lock is held, which would hold up
-            every other event of the client until the browser answers, or the
-            event also has a result callback.
+        EventHandlerTypeError: If there is no active EventContext for a
+            client, the state lock is held, which would hold up every other
+            event of the client until the browser answers, or the event also
+            has a result callback.
         BrowserDisconnectedError: If no frontend is attached to the app.
     """
+    ctx = _client_context(spec)
+    event = spec._to_event(ctx.router_data)
     if ctx.locked_root is not None:
         msg = (
             f"`{event.name}` cannot be awaited while the state lock is held, as "
@@ -624,6 +655,7 @@ async def _await_browser_call(
             "page may be connected."
         )
         raise BrowserDisconnectedError(msg)
+    timeout = spec.timeout
     if isinstance(timeout, Unset):
         timeout = get_config().browser_call_timeout
     return await ctx.call_frontend_impl(ClientToken(ctx.token), event, timeout)
@@ -637,43 +669,25 @@ async def execute_event_inline(spec: EventSpec) -> Any:
     self`` in a background handler, ``app.modify_state``), the handler runs
     inline on the locked state tree under the caller's context: its yields
     emit deltas and the events it yields chain under the caller's event. With
-    no lock held, the event is enqueued and its future awaited. A script the
-    spec runs in the browser (``rx.call_script``, ``rx.call_function``,
-    ``rx.run_script``) is sent to it, and its result awaited.
+    no lock held, the event is enqueued and its future awaited.
 
     Args:
         spec: The event spec to execute.
 
     Returns:
-        The handler's return value, or the script's result.
+        The handler's return value.
 
     Raises:
         EventHandlerTypeError: If there is no active EventContext for a
             client (outside an event handler and ``app.modify_state``), the
-            spec is another frontend-only event or an upload event, or a
-            background handler is awaited while the state lock is held (which
-            would deadlock).
+            spec is a frontend-only or upload event, or a background handler
+            is awaited while the state lock is held (which would deadlock).
     """
     from reflex_base.registry import RegistrationContext
 
-    try:
-        ctx = EventContext.get()
-    except LookupError:
-        ctx = None
-    # The event processor's root context, which every request to the app
-    # carries, belongs to no client: running there would share one state
-    # between every caller.
-    if ctx is None or not ctx.token:
-        msg = (
-            f"Event handler `{format_event_handler(spec.handler)}` can only be "
-            "awaited from an event handler or inside `app.modify_state`; use it "
-            "as an event trigger or yield it instead."
-        )
-        raise EventHandlerTypeError(msg)
+    ctx = _client_context(spec)
     event = spec._to_event(ctx.router_data)
     name = event.name
-    if isinstance(spec, _BrowserCallSpec):
-        return await _await_browser_call(ctx, event, spec.timeout)
     if spec.client_handler_name:
         msg = f"Upload event `{name}` cannot be awaited; use it as an event trigger."
         raise EventHandlerTypeError(msg)

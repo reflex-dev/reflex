@@ -2111,6 +2111,16 @@ class _BrowserCallSpec(EventSpec):
             self, args=args, event_actions=self.event_actions.copy()
         )
 
+    def __await__(self) -> Generator[Any, None, Any]:
+        """Run the script in the client's browser and wait for its result.
+
+        Returns:
+            The awaitable's iterator; awaiting it yields the script's result.
+        """
+        from reflex_base.event.processor.base_state_processor import _await_browser_call
+
+        return _await_browser_call(self).__await__()
+
 
 @lru_cache
 def _script_signature(fn: Callable) -> inspect.Signature:
