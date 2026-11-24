@@ -70,9 +70,7 @@ def ClientStateApp():
 
         @rx.event
         def script_set_shared(self):
-            return rx.call_script(
-                shared.global_set.to(FunctionVar).call("from-script-global-set")
-            )
+            return rx.call_script(shared.global_set.call("from-script-global-set"))
 
         @rx.event
         def script_read_shared(self):
