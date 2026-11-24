@@ -15,6 +15,7 @@ try:
         I18nConfig,
         I18nPlugin,
         PathPrefixRouting,
+        configured_locales,
         currency,
         fallback_chain,
         format_currency,
@@ -75,10 +76,12 @@ N_ = gettext_noop
 # shadow the stdlib names.
 __all__ = [
     "LOCALE_COOKIE_NAME",
+    "N_",
     "I18nConfig",
     "I18nPlugin",
     "I18nState",
     "PathPrefixRouting",
+    "configured_locales",
     "currency",
     "fallback_chain",
     "format_currency",

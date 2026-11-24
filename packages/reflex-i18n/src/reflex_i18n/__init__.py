@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 from .config import (
     LOCALE_COOKIE_NAME,
     I18nConfig,
+    configured_locales,
     normalize_locale,
     source_locale,
     validate_locale,
@@ -68,10 +69,12 @@ N_ = gettext_noop
 # depends on whether an I18nPlugin is configured by the time it is built.
 __all__ = [
     "LOCALE_COOKIE_NAME",
+    "N_",
     "I18nConfig",
     "I18nPlugin",
     "I18nState",
     "PathPrefixRouting",
+    "configured_locales",
     "currency",
     "fallback_chain",
     "format_currency",

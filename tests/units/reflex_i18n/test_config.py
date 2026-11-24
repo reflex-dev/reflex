@@ -5,6 +5,8 @@ from pathlib import Path
 import pytest
 from reflex_i18n import I18nConfig
 from reflex_i18n.config import (
+    active_i18n_config,
+    configured_locales,
     get_active_catalog_dirs,
     get_active_i18n_config,
     normalize_locale,
@@ -80,11 +82,27 @@ def test_config_rejects_duplicate_locales(locales: tuple[str, ...]):
 def test_config_takes_a_path_catalog_dir(tmp_path: Path):
     config = I18nConfig(locales=["en"], catalog_dir=tmp_path / "catalogs")
     assert config.catalog_dir == str(tmp_path / "catalogs")
-    set_active_i18n_config(config)
-    try:
+    with active_i18n_config(config):
         assert get_active_catalog_dirs() == ((tmp_path / "catalogs").resolve(),)
-    finally:
-        set_active_i18n_config(None)
+
+
+def test_configured_locales():
+    assert configured_locales() == ("en",)
+    with active_i18n_config(I18nConfig(locales=["de", "pt-BR"], default_locale="de")):
+        assert configured_locales() == ("de", "pt-BR")
+    assert configured_locales() == ("en",)
+
+
+def test_active_i18n_config_restores_the_previous_one():
+    outer = I18nConfig(locales=["en"])
+    inner = I18nConfig(locales=["de"], default_locale="de")
+    with active_i18n_config(outer):
+        with pytest.raises(RuntimeError), active_i18n_config(inner) as activated:
+            assert activated is inner
+            assert source_locale() == "de"
+            raise RuntimeError
+        assert get_active_i18n_config() is outer
+    assert get_active_i18n_config() is None
 
 
 def test_active_config_roundtrip():

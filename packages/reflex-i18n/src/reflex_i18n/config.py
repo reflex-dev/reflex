@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import importlib.util
 import os
 import re
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from pathlib import Path
 
 # Cookie persisting the user's chosen locale; read by both the client
@@ -200,6 +201,24 @@ def get_active_i18n_config() -> I18nConfig | None:
     return _active_config
 
 
+@contextlib.contextmanager
+def active_i18n_config(config: I18nConfig | None) -> Iterator[I18nConfig | None]:
+    """Activate an i18n configuration for a block, e.g. in a test.
+
+    Args:
+        config: The configuration to activate, or None for an app without i18n.
+
+    Yields:
+        The activated configuration.
+    """
+    previous = _active_config
+    set_active_i18n_config(config)
+    try:
+        yield config
+    finally:
+        set_active_i18n_config(previous)
+
+
 def _subtag_case(subtag: str) -> str:
     """The conventional case of a non-initial subtag (RFC 5646 section 2.1.1).
 
@@ -272,6 +291,18 @@ def source_locale() -> str:
     if _active_config is None:
         return UNCONFIGURED_LOCALE
     return _active_config.default_locale
+
+
+def configured_locales() -> tuple[str, ...]:
+    """The locales the app is offered in.
+
+    Returns:
+        The configured locales in their configured order, or only the source
+        locale without an I18nPlugin.
+    """
+    if _active_config is None:
+        return (UNCONFIGURED_LOCALE,)
+    return _active_config.locales
 
 
 def check_configured_locale(locale: str) -> None:
