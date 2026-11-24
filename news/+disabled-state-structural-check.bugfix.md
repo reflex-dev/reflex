@@ -1,0 +1,1 @@
+Apps with `rx.App(enable_state=False)` now check for `rx.State` dependencies structurally across pages, app wraps, memos, and hydrate fallbacks, rejecting state reads inside memoized components while allowing literal text that resembles state hook calls.

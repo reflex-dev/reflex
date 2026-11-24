@@ -2409,6 +2409,13 @@ def test_custom_code_may_declare_refs(auto_memoize: bool):
         assert not _IMPORTS_REFS.search(code), code
 
 
+_DISABLED_STATE_ERROR_MSG = (
+    "Cannot access rx.State in frontend components when state is "
+    "disabled (`enable_state=False`). Remove `enable_state=False` from "
+    "`rx.App` or remove the rx.State references."
+)
+
+
 @pytest.mark.parametrize("auto_memoize", [True, False])
 @pytest.mark.usefixtures("clean_registration_context")
 def test_enable_state_false_rejects_state_reads_in_pages_and_auto_memos(
@@ -2439,8 +2446,9 @@ def test_enable_state_false_rejects_state_reads_in_pages_and_auto_memos(
     app = rx.App(enable_state=False)
     app.add_page(lambda: rx.text(DynState.label), route="/")
 
-    with pytest.raises(ReflexRuntimeError, match=r"enable_state=False"):
+    with pytest.raises(ReflexRuntimeError) as exc_info:
         compiler.compile_app(app, dry_run=True, use_rich=False)
+    assert str(exc_info.value) == _DISABLED_STATE_ERROR_MSG
 
 
 @pytest.mark.usefixtures("clean_registration_context")
@@ -2471,8 +2479,9 @@ def test_enable_state_false_rejects_non_memoized_never_component(
     app = rx.App(enable_state=False)
     app.add_page(lambda: NeverMemoBox.create(label=DynState.label), route="/")
 
-    with pytest.raises(ReflexRuntimeError, match=r"enable_state=False"):
+    with pytest.raises(ReflexRuntimeError) as exc_info:
         compiler.compile_app(app, dry_run=True, use_rich=False)
+    assert str(exc_info.value) == _DISABLED_STATE_ERROR_MSG
 
 
 @pytest.mark.parametrize("state_in_body", [True, False])
@@ -2514,8 +2523,9 @@ def test_enable_state_false_rejects_explicit_memo_state_reads(
 
         app.add_page(lambda: prop_memo(label=DynState.label), route="/")
 
-    with pytest.raises(ReflexRuntimeError, match=r"enable_state=False"):
+    with pytest.raises(ReflexRuntimeError) as exc_info:
         compiler.compile_app(app, dry_run=True, use_rich=False)
+    assert str(exc_info.value) == _DISABLED_STATE_ERROR_MSG
 
 
 @pytest.mark.parametrize(
@@ -2552,8 +2562,9 @@ def test_enable_state_false_rejects_prop_embedded_stateful_components(
     app = rx.App(enable_state=False)
     app.add_page(lambda: SlotHost.create(header=rx.text(DynState.label)), route="/")
 
-    with pytest.raises(ReflexRuntimeError, match=r"enable_state=False"):
+    with pytest.raises(ReflexRuntimeError) as exc_info:
         compiler.compile_app(app, dry_run=True, use_rich=False)
+    assert str(exc_info.value) == _DISABLED_STATE_ERROR_MSG
 
 
 @pytest.mark.parametrize("memoized_wrap", [True, False])
@@ -2595,8 +2606,9 @@ def test_enable_state_false_rejects_stateful_app_wraps(
     )
     app.add_page(lambda: rx.text("static"), route="/")
 
-    with pytest.raises(ReflexRuntimeError, match=r"enable_state=False"):
+    with pytest.raises(ReflexRuntimeError) as exc_info:
         compiler.compile_app(app, dry_run=True, use_rich=False)
+    assert str(exc_info.value) == _DISABLED_STATE_ERROR_MSG
 
 
 @pytest.mark.usefixtures("clean_registration_context")
@@ -2625,8 +2637,9 @@ def test_enable_state_false_rejects_stateful_hydrate_fallback(
     )
     app.add_page(lambda: rx.text("static"), route="/")
 
-    with pytest.raises(ReflexRuntimeError, match=r"enable_state=False"):
+    with pytest.raises(ReflexRuntimeError) as exc_info:
         compiler.compile_app(app, dry_run=True, use_rich=False)
+    assert str(exc_info.value) == _DISABLED_STATE_ERROR_MSG
 
 
 @pytest.mark.parametrize(
