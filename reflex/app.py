@@ -2903,14 +2903,15 @@ class EventNamespace(AsyncNamespace):
         """
         if (socket_session := self._sessions.get(sid)) is None:
             return
-        if (
-            socket_session.from_cookie
-            and time.time() < socket_session.session.expires_at
-        ):
+        manager = self.app._session_token_manager
+        session = socket_session.session
+        if time.time() >= session.created_at + manager.max_age:
+            # The session ended: the next connection gets a new session.
+            return
+        if socket_session.from_cookie and time.time() < session.expires_at:
             await self.emit("session_token", None, to=sid)
             return
-        manager = self.app._session_token_manager
-        renewed = socket_session.session = manager.refresh(socket_session.session)
+        renewed = socket_session.session = manager.refresh(session)
         socket_session.refresh_at = renewed.issued_at + manager.refresh_interval
         await self.emit("session_token", manager.encode(renewed, exchange=True), to=sid)
 

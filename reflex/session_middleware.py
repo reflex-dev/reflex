@@ -115,7 +115,8 @@ def _session_cookie(
     attributes = "SameSite=None; Secure; Partitioned" if secure else "SameSite=Lax"
     return (
         f"{_cookie_name(manager, secure)}={manager.encode(session)}; "
-        f"Path=/; Max-Age={manager.ttl}; HttpOnly; {attributes}"
+        f"Path=/; Max-Age={session.expires_at - session.issued_at}; HttpOnly; "
+        f"{attributes}"
     ).encode("ascii")
 
 
@@ -323,7 +324,7 @@ async def session_endpoint(
     response = JSONResponse(
         {
             "token_type": "cookie",
-            "expires_in": manager.ttl,
+            "expires_in": session.expires_at - session.issued_at,
             "refresh_in": manager.refresh_interval,
             "client_token": client_token,
         },
