@@ -9,8 +9,9 @@ packages' JavaScript files are never imported.
 import of a submodule that is no Python module, which can happen while
 ``reflex`` itself loads, so it stays cheap: ``os.path`` instead of
 ``pathlib``, a loader that implements the import protocol without the
-``importlib.abc`` base class, and no ``typing``. The config loads once a JavaScript file is found, and the
-event system with the first JavaScript module imported.
+``importlib.abc`` base class, and no ``typing``. The config loads once a
+JavaScript file is found, and the event system with the first JavaScript
+module imported.
 """
 
 from __future__ import annotations
