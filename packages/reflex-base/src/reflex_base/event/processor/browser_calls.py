@@ -131,8 +131,9 @@ class BrowserCalls:
 
         Args:
             rid: The request id of the call.
-            outcome: ``{"json": <the result as JSON>}``, or ``{"error": {"name",
-                "message", "stack", "kind"}}`` when the script failed.
+            outcome: ``{"json": <the result as UTF-8 JSON bytes>}``, or
+                ``{"error": {"name", "message", "stack", "kind"}}`` when the
+                script failed.
         """
         future = self._futures.get(rid)
         if future is None or future.done():

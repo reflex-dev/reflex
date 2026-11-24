@@ -3178,8 +3178,9 @@ class EventNamespace(AsyncNamespace):
 
         Args:
             sid: The Socket.IO session id.
-            data: ``{"rid": <request id>, "json": <the result as JSON>}``, or
-                ``{"rid": <request id>, "error": {...}}`` when the script failed.
+            data: ``{"rid": <request id>, "json": <the result as UTF-8 JSON
+                bytes>}``, or ``{"rid": <request id>, "error": {...}}`` when
+                the script failed.
         """
         if not isinstance(data, dict) or not isinstance(rid := data.get(RID_KEY), str):
             logger.debug(f"Ignoring malformed result payload from SID {sid}.")

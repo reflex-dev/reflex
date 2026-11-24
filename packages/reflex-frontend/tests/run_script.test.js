@@ -130,25 +130,34 @@ describe("_call_script", () => {
 });
 
 describe("awaited script results", () => {
-  const awaited = (event) => {
-    const socket = { emit: vi.fn() };
-    return {
+  // A connected socket whose server limits a frame to maxPayload.
+  const connectedSocket = (
+    maxPayload = 1_000_000,
+    transport = "websocket",
+  ) => ({
+    emit: vi.fn(),
+    connected: true,
+    io: { engine: { _maxPayload: maxPayload, transport: { name: transport } } },
+  });
+  const awaited = (event, socket = connectedSocket()) => ({
+    socket,
+    applied: applyEvent(
+      { ...event, payload: { ...event.payload, rid: "r1" } },
       socket,
-      applied: applyEvent(
-        { ...event, payload: { ...event.payload, rid: "r1" } },
-        socket,
-        null,
-        null,
-      ),
-      // The outcome the backend receives, once the script has settled.
-      outcome: async () => {
-        await vi.waitFor(() => expect(socket.emit).toHaveBeenCalledTimes(1));
-        const [name, outcome] = socket.emit.mock.calls[0];
-        expect(name).toBe("result");
-        return outcome;
-      },
-    };
-  };
+      null,
+      null,
+    ),
+    // The outcome the backend receives, once the script has settled, with
+    // its JSON bytes as text.
+    outcome: async () => {
+      await vi.waitFor(() => expect(socket.emit).toHaveBeenCalledTimes(1));
+      const [name, outcome] = socket.emit.mock.calls[0];
+      expect(name).toBe("result");
+      return ArrayBuffer.isView(outcome.json)
+        ? { ...outcome, json: new TextDecoder().decode(outcome.json) }
+        : outcome;
+    },
+  });
   const script = (code) => ({
     name: "_call_script",
     payload: { javascript_code: code, callback: null },
@@ -165,6 +174,63 @@ describe("awaited script results", () => {
       rid: "r1",
       json: '{"a":[1,2],"b":"x","c":null}',
     });
+  });
+
+  test("sends the JSON as UTF-8 bytes, so its quotes are not escaped again", async () => {
+    const { socket, outcome } = awaited(script('["ab", "\\u00e9"]'));
+    await outcome();
+    const [, sent] = socket.emit.mock.calls[0];
+    // TextEncoder's Uint8Array comes from another realm than the test's.
+    expect(Object.prototype.toString.call(sent.json)).toBe(
+      "[object Uint8Array]",
+    );
+    expect([...sent.json]).toEqual([
+      ...new TextEncoder().encode('["ab","\u00e9"]'),
+    ]);
+  });
+
+  test.each([
+    // A websocket carries the bytes in one binary frame.
+    ["websocket", 12, '"1234567890"', null],
+    ["websocket", 11, '"1234567890"', 11],
+    // Polling carries them base64-encoded behind a one-character marker.
+    ["polling", 17, '"1234567890"', null],
+    ["polling", 16, '"1234567890"', 9],
+  ])("over %s with a %d frame limit, rejects a result larger than a message can carry", async (transport, maxPayload, json, maxBytes) => {
+    const { outcome } = awaited(
+      script(json),
+      connectedSocket(maxPayload, transport),
+    );
+    const expected =
+      maxBytes === null
+        ? { rid: "r1", json }
+        : {
+            rid: "r1",
+            error: {
+              name: "RangeError",
+              message: `The script returned 12 bytes of JSON, more than the ${maxBytes} a message to the backend can carry; return less data, or raise REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE on the backend.`,
+              stack: "<stack>",
+              kind: "serialization",
+            },
+          };
+    const sent = await outcome();
+    expect(maxBytes === null ? sent : withoutStack(sent)).toEqual(expected);
+  });
+
+  test("measures a result settled while disconnected against the limit of the next connection", async () => {
+    const socket = connectedSocket(-1);
+    socket.connected = false;
+    const handlers = {};
+    socket.once = vi.fn((name, handler) => {
+      handlers[name] = handler;
+    });
+    const { outcome } = awaited(script('"1234567890"'), socket);
+    await vi.waitFor(() => expect(handlers.connect).toBeDefined());
+    expect(socket.emit).not.toHaveBeenCalled();
+    socket.io.engine._maxPayload = 11;
+    socket.connected = true;
+    handlers.connect();
+    expect(withoutStack(await outcome()).error.name).toBe("RangeError");
   });
 
   test("sends data shaped like a DOM node as JSON", async () => {

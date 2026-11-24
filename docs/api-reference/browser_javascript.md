@@ -209,6 +209,9 @@ Each error below gives its exact message, with the values of an example call, an
     instead.``
   - ``TypeError: The script returned a function, which JSON cannot carry; return plain data (objects, arrays, strings,
     numbers, booleans or null) instead.`` (also for a symbol)
+  - ``RangeError: The script returned 1200000 bytes of JSON, more than the 1000000 a message to the backend can carry;
+    return less data, or raise REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE on the backend.`` (with the `polling` transport, a
+    message carries about three quarters of the limit, as base64)
   - ``The script returned a value nested too deeply for Python's JSON parser. Return a value with fewer levels of
     nested objects and arrays.``
   - ``The browser sent a result the backend cannot read (...). The page runs a frontend built for another version of

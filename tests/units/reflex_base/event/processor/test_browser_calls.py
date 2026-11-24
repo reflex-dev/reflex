@@ -135,7 +135,7 @@ async def test_call_sends_the_event_with_a_request_id_and_returns_the_result():
             ),
         )
     ]
-    calls.resolve(rid, {"rid": rid, "json": '{"a": [1, null]}'})
+    calls.resolve(rid, {"rid": rid, "json": b'{"a": [1, null]}'})
     assert await task == {"a": [1, None]}
     _assert_forgotten(calls)
 

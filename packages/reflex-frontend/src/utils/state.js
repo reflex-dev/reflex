@@ -685,12 +685,14 @@ const isNodeOrWindow = (item) => {
 };
 
 /**
- * Serialize a script's result as JSON for the backend that awaits it.
+ * Serialize a script's result as UTF-8 JSON for the backend that awaits it.
  *
  * ``undefined`` is sent as ``null``. A DOM node or a window would arrive as
  * an empty object, so it is rejected instead, like a value JSON cannot carry.
+ * The bytes travel as a binary attachment of the message, so the JSON is not
+ * escaped again inside it.
  * @param value The script's result.
- * @returns The result as JSON.
+ * @returns The result as UTF-8 JSON.
  */
 const serializeScriptResult = (value) => {
   const json = JSON.stringify(value ?? null, (_key, item) => {
@@ -706,7 +708,31 @@ const serializeScriptResult = (value) => {
       `The script returned a ${typeof value}, which JSON cannot carry; return plain data (objects, arrays, strings, numbers, booleans or null) instead.`,
     );
   }
-  return json;
+  return new TextEncoder().encode(json);
+};
+
+/**
+ * Check that a result's JSON fits in one message to the backend.
+ *
+ * The server drops a transport whose frame exceeds the limit its handshake
+ * announced, and the result would be lost. A websocket carries the bytes in
+ * one binary frame; polling carries them base64-encoded behind a
+ * one-character marker.
+ * @param json The result as UTF-8 JSON.
+ * @param socket The connected socket that sends it.
+ */
+const checkResultSize = (json, socket) => {
+  // socket.io-client is pinned; test_hydration_storage.py covers these internals.
+  const { engine } = socket.io;
+  const maxBytes =
+    engine.transport.name === "websocket"
+      ? engine._maxPayload
+      : 3 * Math.floor((engine._maxPayload - 1) / 4);
+  if (json.byteLength > maxBytes) {
+    throw new RangeError(
+      `The script returned ${json.byteLength} bytes of JSON, more than the ${maxBytes} a message to the backend can carry; return less data, or raise REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE on the backend.`,
+    );
+  }
 };
 
 /**
@@ -723,7 +749,13 @@ const sendScriptResult = async (socket, rid, run) => {
   try {
     const value = await run();
     try {
-      outcome = { rid, json: serializeScriptResult(value) };
+      const json = serializeScriptResult(value);
+      if (!socket.connected) {
+        // The limit is the next connection's, known once it connects.
+        await new Promise((resolve) => socket.once("connect", resolve));
+      }
+      checkResultSize(json, socket);
+      outcome = { rid, json };
     } catch (e) {
       outcome = {
         rid,
