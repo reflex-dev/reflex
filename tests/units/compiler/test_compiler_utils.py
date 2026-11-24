@@ -911,6 +911,8 @@ def test_compile_script_modules(
         monkeypatch: pytest monkeypatch fixture.
     """
     package, report, runs = script_app
+    # The directory the link points to; the modules' files are never read.
+    package.mkdir()
     web_dir = utils.get_web_dir()
     party = package / "scripts" / "party.js"
     helpers = package / "scripts" / "helpers.js"
@@ -942,7 +944,8 @@ def test_compile_script_modules(
     outputs, package_imports = utils.compile_script_modules(_app_modules())
 
     assert runs == [[widget, party, typed]]
-    assert (web_dir / "utils" / "script_modules" / "app").readlink() == package
+    # A symbolic link, or a junction on Windows.
+    assert (web_dir / "utils" / "script_modules" / "app").resolve() == package
 
     def stub(name: str, function: str) -> str:
         """Render the stub of a module that exports one function.
