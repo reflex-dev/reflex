@@ -996,13 +996,16 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         ):
             # The default dedupe key is the feature name plus the class source
             # location, which would name only the first method of a class.
-            # Dedupe per wrapped function instead: each method is named once,
-            # and classes built again from the same definition (ComponentState
-            # instances, states defined in a function) stay quiet.
+            # Dedupe per wrapped function and attribute name instead: every
+            # name a handler is assigned to is reported once, and classes built
+            # again from the same definition (ComponentState instances, states
+            # defined in a function) stay quiet. A partial or callable instance
+            # has no __qualname__.
             if dedupe_once((
                 _WRAPPED_HANDLER_DEPRECATION,
                 inner.fn.__module__,
-                inner.fn.__qualname__,
+                getattr(inner.fn, "__qualname__", None),
+                name,
             )):
                 console.deprecate(
                     feature_name=_WRAPPED_HANDLER_DEPRECATION,
