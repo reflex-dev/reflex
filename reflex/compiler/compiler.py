@@ -1312,7 +1312,7 @@ def _install_frontend_packages(
     outputs, script_imports, copies, modules = utils.compile_script_modules(
         script_modules
     )
-    utils.copy_files(copies)
+    utils.copy_files(copies, get_web_dir() / constants.Dirs.SCRIPT_MODULES_PATH)
     app._get_frontend_packages(utils.merge_imports(imports, script_imports))
     # Stubs are for type checkers during development: a production build leaves
     # the source tree alone. After the install: reading types needs typescript.
