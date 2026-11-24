@@ -212,8 +212,8 @@ def event_log(state_manager_redis: StateManagerRedis) -> list[dict[str, Any]]:
 def event_log_on_update(state_manager_redis: StateManagerRedis) -> asyncio.Event:
     """Get the event for new event records being added to the redis event log.
 
-    Test is responsible for calling `.clear` before an operation when it needs
-    to detect a new event added afterward.
+    Wait for the events an operation causes with ``_wait_for_keyspace_events``:
+    the next event to arrive may not be the one a test expects.
 
     Args:
         state_manager_redis: The StateManagerRedis.
@@ -222,6 +222,58 @@ def event_log_on_update(state_manager_redis: StateManagerRedis) -> asyncio.Event
         The event that is set when new events are added to the redis event log.
     """
     return state_manager_redis.redis._internals["event_log_on_update"]  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def _count_keyspace_events(
+    event_log: list[dict[str, Any]], key_suffix: bytes, operation: bytes
+) -> int:
+    """Count the logged keyspace events of an operation on matching keys.
+
+    Args:
+        event_log: The redis event log.
+        key_suffix: The end of the keys to count events of.
+        operation: The operation, such as ``b"set"`` or ``b"del"``.
+
+    Returns:
+        The number of matching events.
+    """
+    return sum(
+        1
+        for ev in event_log
+        if ev["channel"].endswith(key_suffix) and ev["data"] == operation
+    )
+
+
+async def _wait_for_keyspace_events(
+    event_log: list[dict[str, Any]],
+    event_log_on_update: asyncio.Event,
+    key_suffix: bytes,
+    operation: bytes,
+    count: int,
+) -> int:
+    """Wait until the event log holds a number of events of an operation.
+
+    A real redis delivers keyspace events on a connection of their own, so the
+    next logged event may be any of those an operation causes, not the one a
+    test expects.
+
+    Args:
+        event_log: The redis event log.
+        event_log_on_update: The event set when the event log grows.
+        key_suffix: The end of the keys to count events of.
+        operation: The operation, such as ``b"set"`` or ``b"del"``.
+        count: The number of events to wait for.
+
+    Returns:
+        The number of matching events, which may exceed count.
+    """
+    async with asyncio.timeout(5):
+        while (
+            logged := _count_keyspace_events(event_log, key_suffix, operation)
+        ) < count:
+            event_log_on_update.clear()
+            await event_log_on_update.wait()
+    return logged
 
 
 @pytest.mark.asyncio
@@ -517,8 +569,6 @@ async def test_modify_oplock(
     state_manager_2._debug_enabled = True
     state_manager_2._oplock_enabled = True
 
-    event_log_on_update.clear()
-
     # Initial modify should set count to 1
     async with state_manager_redis.modify_state(
         BaseStateToken(ident=token, cls=root_state),
@@ -535,12 +585,9 @@ async def test_modify_oplock(
     assert state_lock_1 is not None
     assert not state_lock_1.locked()
 
-    await event_log_on_update.wait()
-    lock_events_before = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(b"lock") and ev["data"] == b"set"
-    ])
+    lock_events_before = await _wait_for_keyspace_events(
+        event_log, event_log_on_update, b"lock", b"set", 1
+    )
     assert lock_events_before == 1
 
     # The second modify should NOT trigger another redis lock
@@ -550,16 +597,11 @@ async def test_modify_oplock(
         new_state.count = 2
         assert state_lock_1.locked()
 
-    lock_events_after = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(b"lock") and ev["data"] == b"set"
-    ])
+    lock_events_after = _count_keyspace_events(event_log, b"lock", b"set")
 
     assert lock_events_before == lock_events_after
 
     # Contend the lock from another state manager
-    event_log_on_update.clear()
     async with state_manager_2.modify_state(
         BaseStateToken(ident=token, cls=root_state),
     ) as new_state:
@@ -581,51 +623,37 @@ async def test_modify_oplock(
     assert token not in state_manager_redis._cached_states
 
     # There should have been another redis lock taken.
-    await event_log_on_update.wait()
-    lock_events_after_2 = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(b"lock") and ev["data"] == b"set"
-    ])
+    lock_events_after_2 = await _wait_for_keyspace_events(
+        event_log, event_log_on_update, b"lock", b"set", lock_events_after + 1
+    )
     assert lock_events_after_2 == lock_events_after + 1
 
     # And there should have been a lock release.
-    unlock_events = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(b"lock") and ev["data"] == b"del"
-    ])
+    unlock_events = await _wait_for_keyspace_events(
+        event_log, event_log_on_update, b"lock", b"del", 1
+    )
     assert unlock_events == 1
 
     # And a single token set.
-    token_set_events = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(root_state.get_full_name().encode())
-        and ev["data"] == b"set"
-    ])
+    state_key_suffix = root_state.get_full_name().encode()
+    token_set_events = await _wait_for_keyspace_events(
+        event_log, event_log_on_update, state_key_suffix, b"set", 1
+    )
     assert token_set_events == 1
 
     # Now close the contender to release its lease.
-    event_log_on_update.clear()
     await state_manager_2.close()
-    await event_log_on_update.wait()
 
     # Both locks should have been released.
-    unlock_events = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(b"lock") and ev["data"] == b"del"
-    ])
+    unlock_events = await _wait_for_keyspace_events(
+        event_log, event_log_on_update, b"lock", b"del", 2
+    )
     assert unlock_events == 2
 
     # And both tokens should have been set.
-    token_set_events = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(root_state.get_full_name().encode())
-        and ev["data"] == b"set"
-    ])
+    token_set_events = await _wait_for_keyspace_events(
+        event_log, event_log_on_update, state_key_suffix, b"set", 2
+    )
     assert token_set_events == 2
 
 
@@ -1164,7 +1192,6 @@ async def test_oplock_hold_oplock_after_cancel(
         await lease_task
 
     # Modify the state again, this should get a new lock and lease
-    event_log_on_update.clear()
     async with state_manager_redis.modify_state(
         BaseStateToken(ident=token, cls=root_state),
     ) as new_state:
@@ -1172,12 +1199,9 @@ async def test_oplock_hold_oplock_after_cancel(
         new_state.count += 1
 
     # There should have been two redis lock acquisitions.
-    await event_log_on_update.wait()
-    lock_events = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(b"lock") and ev["data"] == b"set"
-    ])
+    lock_events = await _wait_for_keyspace_events(
+        event_log, event_log_on_update, b"lock", b"set", 2
+    )
     assert lock_events == 2
 
     await state_manager_redis.close()
@@ -1805,6 +1829,263 @@ async def test_oplock_remote_waiter_outlasting_a_lock_expiration_blocks_the_next
 
 
 @pytest.mark.asyncio
+async def test_oplock_contenders_are_the_other_instances_with_a_waiter(
+    state_manager_redis: StateManagerRedis,
+    other_state_manager: Callable[[], Awaitable[StateManagerRedis]],
+    root_state: type[RedisTestState],
+):
+    """An instance stays a contender until its last waiter leaves, and never counts itself.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        other_state_manager: Creates the managers of other app instances.
+        root_state: The root state class.
+    """
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    lock_key = state_manager_redis._lock_key(token)
+    state_manager_redis._oplock_enabled = True
+    remote = await other_state_manager()
+    remote._oplock_enabled = True
+
+    async with (
+        contextlib.AsyncExitStack() as first,
+        contextlib.AsyncExitStack() as second,
+    ):
+        for waiter in (first, second):
+            await waiter.enter_async_context(remote._lock_waiter(lock_key))
+            await waiter.enter_async_context(
+                remote._request_lock_release(lock_key, uuid.uuid4().hex.encode())
+            )
+        assert await state_manager_redis._n_lock_contenders(lock_key) == 1
+        # Its own waiters share its lease, so they do not keep it from leasing.
+        assert await remote._n_lock_contenders(lock_key) == 0
+
+        await first.aclose()
+        assert await state_manager_redis._n_lock_contenders(lock_key) == 1
+
+    assert await state_manager_redis._n_lock_contenders(lock_key) == 0
+
+
+@pytest.mark.asyncio
+async def test_oplock_waiter_reregistering_while_the_other_waiter_leaves_deregisters(
+    state_manager_redis: StateManagerRedis,
+    other_state_manager: Callable[[], Awaitable[StateManagerRedis]],
+    root_state: type[RedisTestState],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A waiter that re-registered for a waiter that left meanwhile deregisters its instance.
+
+    The waiter that left counted the re-registering one as still there, so it
+    left the instance registered for that one to deregister.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        other_state_manager: Creates the managers of other app instances.
+        root_state: The root state class.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    lock_key = state_manager_redis._lock_key(token)
+    remote = await other_state_manager()
+    remote._oplock_enabled = True
+
+    async with (
+        contextlib.AsyncExitStack() as first,
+        contextlib.AsyncExitStack() as second,
+    ):
+        await first.enter_async_context(remote._lock_waiter(lock_key))
+        await first.enter_async_context(
+            remote._request_lock_release(lock_key, uuid.uuid4().hex.encode())
+        )
+
+        # The first waiter's registration for the second one pauses.
+        register = remote._register_lock_contender
+        reregistering = asyncio.Event()
+        resume = asyncio.Event()
+
+        async def pause_reregistration(key: bytes) -> None:
+            monkeypatch.setattr(remote, "_register_lock_contender", register)
+            await register(key)
+            reregistering.set()
+            await resume.wait()
+
+        # The second waiter queues while the first one deregisters the instance.
+        srem = remote.redis.srem
+
+        async def queue_during_srem(*args: Any) -> Any:
+            monkeypatch.setattr(remote.redis, "srem", srem)
+            await second.enter_async_context(remote._lock_waiter(lock_key))
+            await second.enter_async_context(
+                remote._request_lock_release(lock_key, uuid.uuid4().hex.encode())
+            )
+            monkeypatch.setattr(
+                remote, "_register_lock_contender", pause_reregistration
+            )
+            return await srem(*args)
+
+        monkeypatch.setattr(remote.redis, "srem", queue_during_srem)
+
+        leaving = asyncio.create_task(first.aclose())
+        try:
+            await asyncio.wait_for(reregistering.wait(), timeout=5)
+            await second.aclose()
+        finally:
+            resume.set()
+            await asyncio.wait_for(leaving, timeout=5)
+
+    assert remote._n_lock_waiters(lock_key) == 0
+    assert await state_manager_redis._n_lock_contenders(lock_key) == 0
+
+
+@pytest.mark.asyncio
+async def test_oplock_waiter_cancelled_while_registering_deregisters(
+    state_manager_redis: StateManagerRedis,
+    other_state_manager: Callable[[], Awaitable[StateManagerRedis]],
+    root_state: type[RedisTestState],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A waiter cancelled during its registration deregisters its instance as the last waiter.
+
+    The registered waiter that left before counted the registering one as still
+    there, so it left the instance registered for that one to deregister.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        other_state_manager: Creates the managers of other app instances.
+        root_state: The root state class.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    lock_key = state_manager_redis._lock_key(token)
+    remote = await other_state_manager()
+    remote._oplock_enabled = True
+
+    async with contextlib.AsyncExitStack() as first:
+        await first.enter_async_context(remote._lock_waiter(lock_key))
+        await first.enter_async_context(
+            remote._request_lock_release(lock_key, uuid.uuid4().hex.encode())
+        )
+
+        # The second waiter's registration reaches redis, but never returns.
+        register = remote._register_lock_contender
+        registering = asyncio.Event()
+
+        async def hang_registration(key: bytes) -> None:
+            monkeypatch.setattr(remote, "_register_lock_contender", register)
+            await register(key)
+            registering.set()
+            await asyncio.Event().wait()
+
+        monkeypatch.setattr(remote, "_register_lock_contender", hang_registration)
+
+        async def second_waiter():
+            async with (
+                remote._lock_waiter(lock_key),
+                remote._request_lock_release(lock_key, uuid.uuid4().hex.encode()),
+            ):
+                pytest.fail("The registration was meant to hang.")
+
+        second = asyncio.create_task(second_waiter())
+        try:
+            await asyncio.wait_for(registering.wait(), timeout=5)
+            await first.aclose()
+        finally:
+            second.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await second
+
+    assert remote._n_lock_waiters(lock_key) == 0
+    assert await state_manager_redis._n_lock_contenders(lock_key) == 0
+
+
+@pytest.mark.asyncio
+async def test_oplock_waiter_leaving_keeps_the_next_lease_from_passing_over_its_instance(
+    state_manager_redis: StateManagerRedis,
+    other_state_manager: Callable[[], Awaitable[StateManagerRedis]],
+    root_state: type[RedisTestState],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A cancelled waiter leaves the other waiters of its instance registered as contenders.
+
+    Otherwise the next holder on another instance leases the lock ahead of the
+    remaining waiter, which only shows up again at its next re-check of the lock.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        other_state_manager: Creates the managers of other app instances.
+        root_state: The root state class.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    lock_key = state_manager_redis._lock_key(token)
+    remote = await other_state_manager()
+    # Long enough that a lease or a re-check of the lock is unmistakable.
+    for manager in (state_manager_redis, remote):
+        manager._oplock_enabled = True
+        manager.lock_expiration = 20_000
+        manager.oplock_hold_time_ms = 15_000
+    await _subscribed(state_manager_redis)
+    recheck_interval = remote.lock_expiration / 10_000
+
+    # The remote waiters lose every race for the lock until the local instance took it back.
+    may_take_lock = asyncio.Event()
+    try_get_lock = remote._try_get_lock
+
+    async def lose_until_allowed(key: bytes, lock_id: bytes) -> bool | None:
+        if not may_take_lock.is_set():
+            return None
+        return await try_get_lock(key, lock_id)
+
+    monkeypatch.setattr(remote, "_try_get_lock", lose_until_allowed)
+
+    holder_started = asyncio.Event()
+    release_holder = asyncio.Event()
+
+    async def holder():
+        async with state_manager_redis.modify_state(token) as state:
+            assert isinstance(state, root_state)
+            state.count += 1
+            holder_started.set()
+            await release_holder.wait()
+
+    async def next_local_modify():
+        async with state_manager_redis.modify_state(token) as state:
+            assert isinstance(state, root_state)
+            state.count += 1
+            may_take_lock.set()
+
+    async def remote_modify():
+        async with remote.modify_state(token) as state:
+            assert isinstance(state, root_state)
+            state.count += 1
+
+    holding = asyncio.create_task(holder())
+    await holder_started.wait()
+    leaving = asyncio.create_task(remote_modify())
+    staying = asyncio.create_task(remote_modify())
+    while remote._n_lock_waiters(lock_key) < 2:  # noqa: ASYNC110
+        await asyncio.sleep(0)
+    # Both waiters have registered and broken the holder's lease.
+    await asyncio.sleep(0.1)
+    leaving.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await leaving
+
+    next_local = asyncio.create_task(next_local_modify())
+    release_holder.set()
+    await holding
+    await next_local
+    # Without the remaining remote waiter as a contender, the local instance
+    # leases the lock again and the waiter sits it out until its re-check.
+    await asyncio.wait_for(staying, timeout=recheck_interval / 2)
+
+    await remote.close()
+    final_state = await state_manager_redis.get_state(token)
+    assert isinstance(final_state, root_state)
+    assert final_state.count == 3
+
+
+@pytest.mark.asyncio
 async def test_oplock_waiter_woken_when_the_cached_holder_raises(
     state_manager_redis: StateManagerRedis,
     root_state: type[RedisTestState],
@@ -1829,7 +2110,7 @@ async def test_oplock_waiter_woken_when_the_cached_holder_raises(
     waiter_queued = asyncio.Event()
 
     async def lease_despite_the_waiter(lock_key: bytes) -> int:
-        # Another local waiter's SREM can empty the shared waiters set, so the
+        # Waiters of the holder's own instance are no contenders, so the
         # holder leases although this one is still queued.
         if not holder_locked.is_set():
             holder_locked.set()

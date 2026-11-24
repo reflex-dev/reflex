@@ -11,10 +11,10 @@ This is cross-filtering through Python state. XY also supports browser-side axis
 
 ## Install and configure XY
 
-Start with a blank project using the [installation guide](/docs/getting-started/installation/). This example uses Python 3.11 or newer and the XY 0.0.7 Reflex integration:
+Start with a blank project using the [installation guide](/docs/getting-started/installation/). This example uses Python 3.11 or newer and the XY 0.0.8 Reflex integration:
 
 ```bash
-uv add "xy[reflex]==0.0.7"
+uv add "xy[reflex]==0.0.8"
 ```
 
 Register the XY plugin in `rxconfig.py`. Keep your app's existing name and other plugins:

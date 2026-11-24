@@ -273,8 +273,10 @@ def trace_fields() -> dict[str, str] | None:
     """W3C ids of the current span, for correlating a log record with its trace.
 
     Returns:
-        ``trace_id`` (32 hex digits) and ``span_id`` (16 hex digits) of the
-        current span, or None when tracing is off or no valid span is current.
+        ``trace_id`` (32 hex digits), ``span_id`` (16 hex digits) and
+        ``trace_flags`` (the W3C flags byte as 2 hex digits, whose lowest bit is
+        set when the span is sampled) of the current span, or None when tracing
+        is off or no valid span is current.
     """
     if not enabled:
         return None
@@ -284,6 +286,7 @@ def trace_fields() -> dict[str, str] | None:
     return {
         "trace_id": trace.format_trace_id(span_context.trace_id),
         "span_id": trace.format_span_id(span_context.span_id),
+        "trace_flags": f"{span_context.trace_flags:02x}",
     }
 
 

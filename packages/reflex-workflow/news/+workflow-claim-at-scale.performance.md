@@ -1,1 +1,0 @@
-Claiming from a limited table and asking when work is next due now read indexes rather than scanning the table. On a 700k-row table with 500 groups a claim took 11.7s and is now 5ms, and the idle question 18ms and is now 1ms. Workflow tables gain an `ix_<table>_lease` index, so autogenerate a migration after upgrading.
