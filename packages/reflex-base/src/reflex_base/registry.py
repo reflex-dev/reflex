@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import dataclasses
 import logging
+import weakref
 from collections.abc import Callable, Iterable
 from typing import (
     TYPE_CHECKING,
@@ -140,8 +141,12 @@ class DefaultNameResolver:
 
 
 # The resolver the names cached on the state classes, which every context
-# shares, were last rebuilt under.
+# shares, were last rebuilt under, and the one each class's Vars were. An
+# install rebuilds only its own context's classes.
 _names_built_under: NameResolver | None = None
+_vars_built_under: weakref.WeakKeyDictionary[type[BaseState], NameResolver] = (
+    weakref.WeakKeyDictionary()
+)
 
 
 def _same_names(a: NameResolver | None, b: NameResolver) -> bool:
@@ -400,6 +405,8 @@ class RegistrationContext(BaseContext):
         """
         self.base_states[state_cls.get_full_name()] = state_cls
         self._states_by_default_name[state_cls._get_default_full_name()] = state_cls
+        # A new state built its Vars under this context's names just now.
+        _vars_built_under.setdefault(state_cls, self.name_resolver)
         for event_handler in state_cls.event_handlers.values():
             self._register_event_handler(event_handler, states=(state_cls,))
         if (parent_state := state_cls.get_parent_state()) is not None:
@@ -584,10 +591,14 @@ class RegistrationContext(BaseContext):
 
         previous = self.name_resolver
         object.__setattr__(self, "name_resolver", resolver)
+        states = list(self.base_states.values())
         # The names are cached on classes every context shares, so the last
-        # install anywhere must give them alike too.
-        if _same_names(previous, resolver) and _same_names(
-            _names_built_under, resolver
+        # install anywhere, and the one each class was rebuilt under, must give
+        # them alike too.
+        if (
+            _same_names(previous, resolver)
+            and _same_names(_names_built_under, resolver)
+            and all(_same_names(_vars_built_under.get(cls), resolver) for cls in states)
         ):
             _names_built_under = resolver
             return
@@ -601,12 +612,12 @@ class RegistrationContext(BaseContext):
         format_state_local.cache_clear()
         format_var_key.cache_clear()
         for cls in sorted(
-            self.base_states.values(),
-            key=lambda state_cls: state_cls._get_default_full_name().count("."),
+            states, key=lambda state_cls: state_cls._get_default_full_name().count(".")
         ):
             cls._rebuild_vars()
         self.refresh_keys()
         _names_built_under = resolver
+        _vars_built_under.update(dict.fromkeys(states, resolver))
 
     def refresh_keys(self) -> None:
         """Re-key the name-keyed dicts using current ``get_full_name`` values.

@@ -590,6 +590,21 @@ def test_reinstalling_a_resolver_undoes_the_names_a_fork_installed():
         assert State.get_name() == RegistrationContext.default_state_name(State)
 
 
+def test_reinstalling_undoes_a_fork_s_names_after_an_install_elsewhere():
+    """An install in a context without a state does not mark that state rebuilt."""
+    with temporary_resolver(DefaultNameResolver()) as ctx:
+        default_expr = str(State.base_vars["is_hydrated"])
+        with ctx.fork() as fork:
+            fork.set_name_resolver(
+                minify_resolver(make_config(include_state_root=True), states=True)
+            )
+            assert str(State.base_vars["is_hydrated"]) == "$rx_a.is_hydrated_rx_state_"
+        with RegistrationContext() as unrelated:
+            unrelated.set_name_resolver(DefaultNameResolver())
+        ctx.set_name_resolver(ctx.name_resolver)
+        assert str(State.base_vars["is_hydrated"]) == default_expr
+
+
 def test_chain_of_resolvers():
     """Resolvers compose with a tiny user-written chain wrapper."""
 
