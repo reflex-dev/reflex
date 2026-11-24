@@ -80,7 +80,7 @@ class Foreach(Component):
         # noqa: DAR401 with_traceback
         # noqa: DAR402 UntypedVarError
         """
-        from reflex_base.vars import ArrayVar, ObjectVar, StringVar
+        from reflex_base.vars import ArrayVar, ObjectVar, SetVar, StringVar
 
         from reflex.state import ComponentState
 
@@ -110,6 +110,9 @@ class Foreach(Component):
 
         if isinstance(iterable, StringVar):
             iterable = _string_chars_operation(iterable)
+
+        if isinstance(iterable, SetVar):
+            iterable = iterable.to_array()
 
         if not isinstance(iterable, ArrayVar):
             msg = (

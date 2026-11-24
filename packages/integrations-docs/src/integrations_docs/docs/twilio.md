@@ -18,16 +18,16 @@ With Twilio, your app can:
 ## Step 1: Obtain Twilio Credentials
 
 1. Go to your [Twilio Console](https://www.twilio.com/console).  
-2. Copy your **Account SID** and **Auth Token** from the dashboard.  
+2. Copy your **Account SID** and **Auth Token** from the **Account Info** panel on the dashboard (click **Show** to reveal the Auth Token).  
 
-   * **Example Account SID:** `ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`  
-   * **Example Auth Token:** `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
+   * **Example Account SID:** `ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`  
+   * **Example Auth Token:** `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
 
 ## Step 2: Configure the Integration in Your App
 
-1. Go to **Integrations → Add Twilio** in your app settings.  
-2. Paste your **Account SID** and **Auth Token** in the input fields.  
-3. Click **Connect** to validate and save your integration.
+1. In Reflex Build, open the **Integrations** tab and select the **Twilio** card.
+2. Click **Add connection** and paste your Account SID into **TWILIO_ACCOUNT_SID** and your Auth Token into **TWILIO_AUTH_TOKEN**.
+3. Click **Connect** to save the connection.
 
 Once connected, your app can send messages or make calls through Twilio directly in workflows and components.
 

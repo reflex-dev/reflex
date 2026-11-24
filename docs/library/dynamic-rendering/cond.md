@@ -28,8 +28,8 @@ def cond_example():
         rx.button("Toggle", on_click=CondState.change),
         rx.cond(
             CondState.show,
-            rx.text("Text 1", color="blue"),
-            rx.text("Text 2", color="red"),
+            rx.text("Text 1", color="var(--blue-11)"),
+            rx.text("Text 2", color="var(--red-11)"),
         ),
     )
 ```
@@ -51,9 +51,12 @@ def cond_optional_example():
         rx.button("Toggle", on_click=CondOptionalState.toggle_optional),
         rx.cond(
             CondOptionalState.show_optional,
-            rx.text("This text appears when condition is True", color="green"),
+            rx.text(
+                "This text appears when condition is True",
+                color="var(--green-11)",
+            ),
         ),
-        rx.text("This text is always visible", color="gray"),
+        rx.text("This text is always visible", color="var(--gray-11)"),
     )
 ```
 
@@ -69,10 +72,14 @@ You can use the logical operator `~` to negate a condition.
 rx.vstack(
     rx.button("Toggle", on_click=CondState.change),
     rx.cond(
-        CondState.show, rx.text("Text 1", color="blue"), rx.text("Text 2", color="red")
+        CondState.show,
+        rx.text("Text 1", color="var(--blue-11)"),
+        rx.text("Text 2", color="var(--red-11)"),
     ),
     rx.cond(
-        ~CondState.show, rx.text("Text 1", color="blue"), rx.text("Text 2", color="red")
+        ~CondState.show,
+        rx.text("Text 1", color="var(--blue-11)"),
+        rx.text("Text 2", color="var(--red-11)"),
     ),
 )
 ```
@@ -103,8 +110,8 @@ def cond_complex_example():
         rx.text(f"Age: {CondComplexState.age}"),
         rx.cond(
             (CondComplexState.age >= 18) & (CondComplexState.age <= 65),
-            rx.text("You can work!", color="green"),
-            rx.text("You cannot work!", color="red"),
+            rx.text("You can work!", color="var(--green-11)"),
+            rx.text("You cannot work!", color="var(--red-11)"),
         ),
     )
 ```
@@ -145,11 +152,11 @@ def cond_nested_example():
         rx.button("Toggle", on_click=NestedState.change),
         rx.cond(
             NestedState.num > 0,
-            rx.text(f"{NestedState.num} is Positive!", color="orange"),
+            rx.text(f"{NestedState.num} is Positive!", color="var(--orange-11)"),
             rx.cond(
                 NestedState.num == 0,
-                rx.text(f"{NestedState.num} is Zero!", color="blue"),
-                rx.text(f"{NestedState.num} is Negative!", color="red"),
+                rx.text(f"{NestedState.num} is Zero!", color="var(--blue-11)"),
+                rx.text(f"{NestedState.num} is Negative!", color="var(--red-11)"),
             ),
         ),
     )

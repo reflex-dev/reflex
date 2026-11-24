@@ -15,6 +15,7 @@ def UnicodeStringApp():
     class UnicodeState(rx.State):
         value: str = "a\U0001f600b"
         repeat_count: int = 2
+        separator: str = ""
         plain: str = "hello"
         missing: str | None = None
 
@@ -41,6 +42,21 @@ def UnicodeStringApp():
             rx.box(
                 rx.foreach(UnicodeState.value, lambda char: rx.text(char)),
                 id="foreach",
+            ),
+            rx.text(
+                UnicodeState.value.split().length(),  # pyright: ignore[reportAttributeAccessIssue]
+                id="split-length",
+            ),
+            rx.box(
+                rx.foreach(UnicodeState.value.split(), lambda char: rx.text(char)),
+                id="split-foreach",
+            ),
+            rx.box(
+                rx.foreach(
+                    UnicodeState.value.split(UnicodeState.separator),
+                    lambda char: rx.text(char),
+                ),
+                id="split-runtime-separator",
             ),
             rx.text(UnicodeState.value[1], id="character"),
             rx.text(UnicodeState.value[1:], id="slice"),
@@ -100,6 +116,13 @@ def test_unicode_string_operations_preserve_code_points(
     foreach_items = page.locator("#foreach > *")
     expect(foreach_items).to_have_count(3)
     assert foreach_items.all_text_contents() == ["a", "\U0001f600", "b"]
+    expect(page.locator("#split-length")).to_have_text("3")
+    split_items = page.locator("#split-foreach > *")
+    expect(split_items).to_have_count(3)
+    assert split_items.all_text_contents() == ["a", "\U0001f600", "b"]
+    runtime_split_items = page.locator("#split-runtime-separator > *")
+    expect(runtime_split_items).to_have_count(3)
+    assert runtime_split_items.all_text_contents() == ["a", "\U0001f600", "b"]
     expect(page.locator("#character")).to_have_text("\U0001f600")
     expect(page.locator("#slice")).to_have_text("\U0001f600b")
     expect(page.locator("#plain-length")).to_have_text("5")

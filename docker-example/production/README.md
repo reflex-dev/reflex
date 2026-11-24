@@ -49,5 +49,9 @@ terminate TLS.
 
 It is also useful for deploying to simple app platforms, such as Render or Heroku.
 
+The load balancer must pass the original `Host` header through, as the backend
+only accepts websocket connections from the origin it names. If it rewrites
+`Host`, run the container with `-e REFLEX_DEPLOY_URL=https://your.domain`.
+
 If the app defines additional backend API routes, add them to the
 `@backend_routes` matcher in the `Caddyfile` so they are forwarded to the backend.

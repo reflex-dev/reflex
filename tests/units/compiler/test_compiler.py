@@ -2,17 +2,24 @@ import dataclasses
 import importlib.util
 import json
 import os
+import re
+import shutil
 import sys
 from pathlib import Path, PureWindowsPath
 
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.components.component import BaseComponent, Component
 from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
+from reflex_base.components.memo import MEMOS
 from reflex_base.constants.base import LiteralColorMode
 from reflex_base.constants.compiler import PageNames
 from reflex_base.environment import environment
+from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
+from reflex_base.plugins.sitemap import SitemapPlugin
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils.console import PoorProgress
 from reflex_base.utils.exceptions import (
     DynamicRouteArgShadowsStateVarError,
     PageValueError,
@@ -28,8 +35,108 @@ from reflex_components_core.el.elements.other import Html
 
 import reflex as rx
 from reflex.compiler import compiler, utils
+from reflex.compiler.plugins import default_page_plugins
 from reflex.state import BaseState
 from reflex.utils import prerequisites
+
+
+@pytest.mark.parametrize("with_plugin", [False, True])
+@pytest.mark.usefixtures("clean_registration_context")
+def test_compile_progress_ends_at_its_total(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    with_plugin: bool,
+):
+    """The compile progress bar ends exactly at its total.
+
+    Args:
+        tmp_path: The temporary application directory.
+        monkeypatch: Fixture for selecting the application directory.
+        mocker: Fixture for avoiding frontend dependency installation.
+        with_plugin: Whether a plugin adds its own files to save.
+    """
+    progress_bars: list[PoorProgress] = []
+
+    class RecordingProgress(PoorProgress):
+        """A plain progress bar that keeps every instance for inspection."""
+
+        def __init__(self):
+            """Initialize the progress bar and record it."""
+            super().__init__()
+            progress_bars.append(self)
+
+    monkeypatch.setattr(compiler.console, "PoorProgress", RecordingProgress)
+    monkeypatch.chdir(tmp_path)
+    config = rx.Config(
+        app_name="progress_test", plugins=[SitemapPlugin()] if with_plugin else []
+    )
+    mocker.patch("reflex_base.config._get_config", return_value=config)
+    app = rx.App(enable_state=False)
+    app.add_page(lambda: rx.el.div("hello"), route="index")
+    mocker.patch.object(app, "_get_frontend_packages")
+
+    compiler.compile_app(app, use_rich=False)
+
+    assert len(progress_bars) == 1
+    (task,) = progress_bars[0].tasks.values()
+    assert task["current"] == task["total"]
+
+
+@pytest.mark.parametrize("remove_assets_directory", [False, True])
+@pytest.mark.usefixtures("clean_registration_context")
+def test_compile_removes_deleted_app_assets(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    remove_assets_directory: bool,
+):
+    """Repeated compiles remove deleted app assets while preserving public files.
+
+    Args:
+        tmp_path: The temporary application directory.
+        monkeypatch: Fixture for selecting the application directory.
+        mocker: Fixture for avoiding frontend dependency installation.
+        remove_assets_directory: Whether to remove the entire source directory.
+    """
+    monkeypatch.chdir(tmp_path)
+    config = rx.Config(app_name="asset_test", plugins=[])
+    mocker.patch("reflex_base.config._get_config", return_value=config)
+    app = rx.App(enable_state=False)
+    app.add_page(lambda: rx.el.div("hello"), route="index")
+    mocker.patch.object(app, "_get_frontend_packages")
+    assets = tmp_path / "assets"
+    (assets / "nested").mkdir(parents=True)
+    (assets / "obsolete.txt").write_text("obsolete")
+    (assets / "nested" / "obsolete.txt").write_text("nested obsolete")
+    compiler.compile_app(app, use_rich=False)
+
+    public = prerequisites.get_web_dir() / "public"
+    assert (public / "obsolete.txt").read_text() == "obsolete"
+    assert (public / "nested" / "obsolete.txt").read_text() == "nested obsolete"
+    (public / "plugin.txt").write_text("generated")
+    (public / "nested" / "plugin.txt").write_text("nested generated")
+    if remove_assets_directory:
+        shutil.rmtree(assets)
+    else:
+        (assets / "obsolete.txt").unlink()
+        shutil.rmtree(assets / "nested")
+        (assets / "current.txt").write_text("current")
+
+    manifest = public.parent / utils._ASSET_MANIFEST_FILENAME
+    previous_manifest = manifest.read_bytes()
+    compiler.compile_app(app, dry_run=True, use_rich=False)
+    assert (public / "obsolete.txt").read_text() == "obsolete"
+    assert manifest.read_bytes() == previous_manifest
+
+    compiler.compile_app(app, use_rich=False)
+
+    assert not (public / "obsolete.txt").exists()
+    assert not (public / "nested" / "obsolete.txt").exists()
+    assert (public / "plugin.txt").read_text() == "generated"
+    assert (public / "nested" / "plugin.txt").read_text() == "nested generated"
+    if not remove_assets_directory:
+        assert (public / "current.txt").read_text() == "current"
 
 
 @pytest.mark.parametrize("content", ["", '["index",'])
@@ -654,10 +761,12 @@ def test_compile_app_root_can_defer_optional_window_libraries(mocker):
     )
     with RegistrationContext():
         bundle_library("@radix-ui/themes@3.3.0")
+        bundle_library("constructor")
         _, code = compiler.compile_app_root(rx.el.div("hello"))
 
     assert 'import * as radix_ui_themes from "@radix-ui/themes"' not in code
     assert '() => import("@radix-ui/themes")' in code
+    assert '"constructor": () => import("constructor")' in code
     assert 'import * as React from "react"' in code
     assert 'import * as utils_context from "$/utils/context"' in code
     assert "window.__reflex_load" in code
@@ -1065,6 +1174,271 @@ def test_backend_compile_restores_registry_before_initial_state_serialization(
     assert restore.call_args_list == [mocker.call()]
     assert compile_initial_state.call_args_list == [mocker.call(BackendState)]
     assert calls == ["restore", "initial_state"]
+
+
+@pytest.mark.parametrize("with_stateful_marker", [False, True])
+@pytest.mark.parametrize("with_saved_registry", [False, True])
+@pytest.mark.parametrize("explicit_radix_plugin", [False, True])
+@pytest.mark.usefixtures("clean_registration_context")
+def test_backend_compile_derives_bundled_libraries_without_registry(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    explicit_radix_plugin: bool,
+    with_saved_registry: bool,
+    with_stateful_marker: bool,
+):
+    """Without a saved registry, backend startup derives the frontend's libraries.
+
+    Args:
+        tmp_path: A temporary project directory without a frontend build.
+        monkeypatch: Fixture for redirecting frontend and backend artifact paths.
+        mocker: Fixture for selecting the backend-only compile path.
+        explicit_radix_plugin: Whether rxconfig configures the Radix plugin.
+        with_saved_registry: Whether a previous frontend compile left a registry.
+        with_stateful_marker: Whether a previous start left a stateful-page marker.
+    """
+    monkeypatch.chdir(tmp_path)
+
+    class BackendLibrariesState(rx.State):
+        """State used to exercise backend bundled-library derivation."""
+
+    def radix_page() -> Component:
+        """Render a stateless page that only implicit Radix detection sees.
+
+        Returns:
+            A Radix Themes component.
+        """
+        return rx.text("radix")
+
+    app = rx.App(_state=BackendLibrariesState)
+    app.add_page(radix_page, route="/radix")
+    mocker.patch.object(app, "_apply_decorated_pages")
+    mocker.patch.object(app, "_should_compile", return_value=False)
+    mocker.patch.object(app, "_add_optional_endpoints")
+    plugins: list[rx.plugins.Plugin] = (
+        [rx.plugins.RadixThemesPlugin()] if explicit_radix_plugin else []
+    )
+    mocker.patch.object(
+        compiler,
+        "get_config",
+        return_value=rx.Config(app_name="testing", plugins=plugins),
+    )
+
+    web_dir = tmp_path / "web"
+    registry_path = web_dir / constants.Dirs.BUNDLED_LIBRARIES
+    if with_saved_registry:
+        registry_path.parent.mkdir(parents=True)
+        registry_path.write_text(json.dumps(["page-library"]), encoding="utf-8")
+    monkeypatch.setattr(utils, "get_web_dir", lambda: web_dir)
+
+    backend_dir = tmp_path / "backend"
+    backend_dir.mkdir()
+    monkeypatch.setattr(prerequisites, "get_backend_dir", lambda: backend_dir)
+    if with_stateful_marker:
+        (backend_dir / constants.Dirs.STATEFUL_PAGES).write_text("[]", encoding="utf-8")
+
+    serialized_libraries: list[list[str]] = []
+
+    def record_libraries(state: type[BaseState]) -> None:
+        """Record the libraries registered when the initial state is serialized.
+
+        Args:
+            state: The state class being serialized.
+        """
+        assert state is BackendLibrariesState
+        serialized_libraries.append(list(RegistrationContext.get().bundled_libraries))
+
+    mocker.patch.object(utils, "_compile_initial_state", side_effect=record_libraries)
+
+    assert compiler.compile_app(app, use_rich=False) is False
+
+    [libraries] = serialized_libraries
+    if with_saved_registry:
+        # The registry of a frontend compile is the frontend's exact library set.
+        assert "page-library" in libraries
+        assert json.loads(registry_path.read_text()) == ["page-library"]
+    else:
+        assert "@radix-ui/themes" in libraries
+        # The derived set is saved so later starts restore it.
+        assert json.loads(registry_path.read_text()) == libraries
+
+
+def _compile_backend_only_app(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    plugins: list[rx.plugins.Plugin],
+) -> list[str]:
+    """Run a backend-only compile with no registry over two Radix pages.
+
+    Args:
+        tmp_path: A temporary project directory without a frontend build.
+        monkeypatch: Fixture for redirecting frontend and backend artifact paths.
+        mocker: Fixture for selecting the backend-only compile path.
+        plugins: The plugins configured in rxconfig.
+
+    Returns:
+        The routes of the app, in evaluation order.
+    """
+    monkeypatch.chdir(tmp_path)
+
+    class BackendWalkState(rx.State):
+        """State used to exercise backend page walks."""
+
+    def radix_page() -> Component:
+        """Render a page with a Radix Themes component.
+
+        Returns:
+            A Radix Themes component.
+        """
+        return rx.text("radix")
+
+    app = rx.App(_state=BackendWalkState)
+    app.add_page(radix_page, route="/radix")
+    app.add_page(radix_page, route="/radix-2")
+    mocker.patch.object(app, "_apply_decorated_pages")
+    mocker.patch.object(app, "_should_compile", return_value=False)
+    mocker.patch.object(app, "_add_optional_endpoints")
+    mocker.patch.object(
+        compiler,
+        "get_config",
+        return_value=rx.Config(app_name="testing", plugins=plugins),
+    )
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path / "web")
+    monkeypatch.setattr(prerequisites, "get_backend_dir", lambda: tmp_path / "backend")
+    mocker.patch.object(utils, "_compile_initial_state")
+
+    assert compiler.compile_app(app, use_rich=False) is False
+    return list(app._unevaluated_pages)
+
+
+@pytest.mark.parametrize(
+    ("explicit_radix_plugin", "expected_walks"),
+    [(True, 0), (False, 1)],
+)
+@pytest.mark.usefixtures("clean_registration_context")
+def test_backend_compile_stops_walking_pages_once_no_hook_can_bundle(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    explicit_radix_plugin: bool,
+    expected_walks: int,
+):
+    """Skip page traversal once an enabled Radix plugin is the only component hook.
+
+    Args:
+        tmp_path: A temporary project directory without a frontend build.
+        monkeypatch: Fixture for redirecting frontend and backend artifact paths.
+        mocker: Fixture for selecting the backend-only compile path.
+        explicit_radix_plugin: Whether rxconfig configures the Radix plugin.
+        expected_walks: The number of page trees traversed.
+    """
+    compile_component = mocker.spy(CompilerHooks, "compile_component")
+    plugins: list[rx.plugins.Plugin] = (
+        [rx.plugins.RadixThemesPlugin()] if explicit_radix_plugin else []
+    )
+
+    _compile_backend_only_app(tmp_path, monkeypatch, mocker, plugins)
+
+    assert compile_component.call_count == expected_walks
+    assert "@radix-ui/themes" in RegistrationContext.get().bundled_libraries
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_backend_compile_runs_radix_plugin_subclass_hooks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """Keep an enabled Radix plugin subclass and its own hooks in the backend walk.
+
+    Args:
+        tmp_path: A temporary project directory without a frontend build.
+        monkeypatch: Fixture for redirecting frontend and backend artifact paths.
+        mocker: Fixture for selecting the backend-only compile path.
+    """
+    compiled_routes: list[str] = []
+
+    class RecordingRadixPlugin(rx.plugins.RadixThemesPlugin):
+        """A Radix plugin subclass with its own page hook."""
+
+        def compile_page(self, page_ctx: PageContext, /, **kwargs) -> None:
+            """Record the compiled route.
+
+            Args:
+                page_ctx: The page being compiled.
+                kwargs: The compile hook context.
+            """
+            super().compile_page(page_ctx, **kwargs)
+            compiled_routes.append(page_ctx.route)
+
+    routes = _compile_backend_only_app(
+        tmp_path, monkeypatch, mocker, [RecordingRadixPlugin()]
+    )
+
+    assert compiled_routes == routes
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_backend_compile_gives_page_hooks_the_compile_view(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """Page hooks see the replaced root and every page, as in a frontend compile.
+
+    Args:
+        tmp_path: A temporary project directory without a frontend build.
+        monkeypatch: Fixture for redirecting frontend and backend artifact paths.
+        mocker: Fixture for selecting the backend-only compile path.
+    """
+    replacements: dict[str, Component] = {}
+    page_roots: dict[str, BaseComponent] = {}
+    page_routes: dict[str, list[str]] = {}
+
+    class RootReplacingPlugin(rx.plugins.Plugin):
+        """Replace each page root and record what the page hook sees."""
+
+        def enter_component(
+            self,
+            comp: BaseComponent,
+            /,
+            *,
+            page_context: PageContext,
+            compile_context: CompileContext,
+            in_prop_tree: bool = False,
+        ) -> Component | None:
+            """Wrap the page root once.
+
+            Args:
+                comp: The component being compiled.
+                page_context: The page being compiled.
+                compile_context: The compile run.
+                in_prop_tree: Whether the component is in a prop subtree.
+
+            Returns:
+                The replacement root, or None for other components.
+            """
+            if page_context.route in replacements:
+                return None
+            replacements[page_context.route] = rx.box(comp)
+            return replacements[page_context.route]
+
+        def compile_page(self, page_ctx: PageContext, /, **kwargs) -> None:
+            """Record the page root and the pages of the compile run.
+
+            Args:
+                page_ctx: The page being compiled.
+                kwargs: The compile hook context.
+            """
+            page_roots[page_ctx.route] = page_ctx.root_component
+            page_routes[page_ctx.route] = [
+                page.route for page in kwargs["compile_context"].pages
+            ]
+
+    routes = _compile_backend_only_app(
+        tmp_path, monkeypatch, mocker, [RootReplacingPlugin()]
+    )
+
+    assert page_roots == replacements
+    assert page_routes == dict.fromkeys(routes, routes)
 
 
 @pytest.mark.usefixtures("clean_registration_context")
@@ -1960,3 +2334,71 @@ def test_compile_app_resolves_show_built_with_reflex(
     assert get_user_tier.called is (
         compile_context == constants.CompileContext.DEPLOY and configured is None
     )
+
+
+class _RefsDecl(rx.Fragment):
+    """A wrapped component whose custom code declares its own ``refs``."""
+
+    def add_custom_code(self) -> list[str]:
+        """Declare a module-level ``refs`` binding.
+
+        Returns:
+            The declaration.
+        """
+        return ["const refs = {};"]
+
+
+_IMPORTS_REFS = re.compile(
+    r'^import\s*\{[^}]*\brefs\b[^}]*\}\s*from\s*"\$/utils/state"', re.MULTILINE
+)
+
+
+@pytest.mark.parametrize("auto_memoize", [True, False])
+def test_custom_code_may_declare_refs(auto_memoize: bool):
+    """Custom code may declare its own module-level ``refs``.
+
+    No page or memo module imports ``refs`` unless a var asks for it, so a
+    module never binds the name twice. Code that reads ``refs[...]`` without
+    the import resolves the ``globalThis.refs`` that state.js publishes.
+
+    Args:
+        auto_memoize: Whether stateful components are auto-memoized.
+    """
+
+    @rx.memo
+    def refs_decl_memo() -> rx.Component:
+        return _RefsDecl.create()
+
+    def page() -> Component:
+        return rx.el.div(
+            rx.el.input(id="target"),
+            rx.el.button(on_click=rx.console_log("clicked")),
+            _RefsDecl.create(),
+            refs_decl_memo(),
+        )
+
+    page_ctx = PageContext(name="page", route="/page", root_component=page())
+    hooks = CompilerHooks(plugins=default_page_plugins(auto_memoize=auto_memoize))
+    compile_ctx = CompileContext(pages=[], hooks=hooks)
+    with compile_ctx, page_ctx:
+        page_ctx.root_component = hooks.compile_component(
+            page_ctx.root_component,
+            page_context=page_ctx,
+            compile_context=compile_ctx,
+        )
+        hooks.compile_page(page_ctx, compile_context=compile_ctx)
+        _, page_code = compiler.compile_page_from_context(page_ctx)
+        memo_files, _ = compiler.compile_memo_components((
+            *compile_ctx.auto_memo_components.values(),
+            next(d for d in MEMOS.values() if d.python_name == "refs_decl_memo"),
+        ))
+
+    modules = [
+        page_code,
+        compiler._compile_page(page(), "/page"),
+        *(code for _, code in memo_files),
+    ]
+    assert "const refs = {};" in page_code
+    assert any("const refs = {};" in code for _, code in memo_files)
+    for code in modules:
+        assert not _IMPORTS_REFS.search(code), code

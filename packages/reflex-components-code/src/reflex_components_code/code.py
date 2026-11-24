@@ -265,6 +265,7 @@ LiteralCodeLanguage = Literal[
     "t4-vb",
     "tap",
     "tcl",
+    "text",
     "textile",
     "toml",
     "tremor",

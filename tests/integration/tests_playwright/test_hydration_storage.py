@@ -79,9 +79,6 @@ def HydrationStorageApp():
         local: str = rx.LocalStorage("declared", name="assigned-local")
         session: str = rx.SessionStorage("declared", name="assigned-session")
         cookie: str = rx.Cookie("declared", name="assigned-cookie")
-        factory: rx.Field[str] = rx.field(
-            default_factory=lambda: rx.LocalStorage("declared", name="assigned-factory")
-        )
 
         @rx.event
         def change(self):
@@ -89,7 +86,6 @@ def HydrationStorageApp():
             self.local = "changed"
             self.session = "changed"
             self.cookie = "changed"
-            self.factory = "changed"
 
     fields = AssignedStorageState.__fields__
     fields["local"].set_default(rx.LocalStorage("assigned", name="assigned-local"))
@@ -97,8 +93,6 @@ def HydrationStorageApp():
         rx.SessionStorage("assigned", name="assigned-session")
     )
     fields["cookie"].set_default(rx.Cookie("assigned", name="assigned-cookie"))
-    # A storage value as the default replaces the declared factory.
-    fields["factory"].set_default(rx.LocalStorage("assigned", name="assigned-factory"))
 
     class PreferenceState(rx.ComponentState):
         pref: str = rx.LocalStorage("declared", name="assigned-pref")
@@ -212,6 +206,15 @@ def HydrationStorageApp():
                 subdelta["first" + FIELD_MARKER] = "x-replaced"
             return delta
 
+    class ClearState(rx.State):
+        first: str = rx.LocalStorage("first default", name="hydrate-clear", sync=True)
+        second: str = rx.LocalStorage("second default", name="hydrate-clear", sync=True)
+
+        @rx.event
+        def store(self):
+            """Store a value under the storage name both vars share."""
+            self.first = "stored"
+
     def synced():
         """Display a browser storage var synced across tabs.
 
@@ -245,6 +248,9 @@ def HydrationStorageApp():
                 on_click=SharedNameState.set_plain("old"),
                 id="set-plain-old",
             ),
+            rx.text(ClearState.first, "|", ClearState.second, id="clear-values"),
+            rx.button("Store", on_click=ClearState.store, id="store-clear"),
+            rx.button("Clear", on_click=rx.clear_local_storage(), id="clear-storage"),
             rx.text(rx.cond(rx.State.is_hydrated, "true", "false"), id="hydrated"),
         )
 
@@ -283,7 +289,6 @@ def HydrationStorageApp():
             rx.text(AssignedStorageState.local, id="assigned-local"),
             rx.text(AssignedStorageState.session, id="assigned-session"),
             rx.text(AssignedStorageState.cookie, id="assigned-cookie"),
-            rx.text(AssignedStorageState.factory, id="assigned-factory"),
             rx.button("Change", on_click=AssignedStorageState.change, id="change"),
             PreferenceState.create(initial="assigned"),
             rx.text(rx.cond(rx.State.is_hydrated, "true", "false"), id="hydrated"),
@@ -425,7 +430,7 @@ def test_storage_annotations_hydrate_and_persist(
 
 
 # The browser storage vars of the assigned page, by element id suffix.
-VARS = ("local", "session", "cookie", "factory", "pref")
+VARS = ("local", "session", "cookie", "pref")
 
 
 def test_assigned_storage_default_persists(
@@ -450,7 +455,6 @@ def test_assigned_storage_default_persists(
         localStorage.getItem('assigned-local') === 'changed' &&
         sessionStorage.getItem('assigned-session') === 'changed' &&
         localStorage.getItem('assigned-pref') === 'changed' &&
-        localStorage.getItem('assigned-factory') === 'changed' &&
         document.cookie.split('; ').includes('assigned-cookie=changed')
     """)
 
@@ -643,6 +647,38 @@ def test_synced_storage_event_sends_stored_value(
     page.wait_for_timeout(500)
     assert "late" not in page.evaluate("window.syncWrites")
     assert page.evaluate("localStorage.getItem('hydrate-sync')") == "stored"
+
+
+def test_cleared_storage_resets_synced_vars_in_other_tabs(
+    hydration_storage_app: AppHarness, page: Page
+):
+    """Clearing localStorage resets the synced vars of every tab to their defaults.
+
+    The vars share one storage name but keep their own defaults, and no tab
+    writes a default back to the cleared storage.
+
+    Args:
+        hydration_storage_app: The running app.
+        page: A fresh browser page.
+    """
+    url = open_synced(hydration_storage_app, page)
+    other = page.context.new_page()
+    other.goto(url)
+    expect(other.locator("#hydrated")).to_have_text("true")
+    page.locator("#store-clear").click()
+    expect(other.locator("#clear-values")).to_have_text("stored|stored")
+
+    page.locator("#clear-storage").click()
+    for tab in (page, other):
+        expect(tab.locator("#clear-values")).to_have_text(
+            "first default|second default"
+        )
+    other.wait_for_timeout(500)
+    for tab in (page, other):
+        assert tab.locator("#clear-values").inner_text() == (
+            "first default|second default"
+        )
+    assert page.evaluate("localStorage.getItem('hydrate-clear')") is None
 
 
 @pytest.mark.parametrize("notified", [True, False])

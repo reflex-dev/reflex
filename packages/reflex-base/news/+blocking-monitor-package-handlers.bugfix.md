@@ -1,0 +1,1 @@
+The development event-loop blocking monitor reports an event handler from an installed package once per process instead of on every event. The warning names the package and shows the stack from the handler on, without the frames that dispatch it.

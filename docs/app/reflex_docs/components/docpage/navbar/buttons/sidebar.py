@@ -4,13 +4,22 @@ import reflex as rx
 import reflex_components_internal as ui
 from reflex_site_shared.views.sidebar import docs_sidebar_drawer
 
+from reflex_docs import sections
 
-def navbar_sidebar_button() -> rx.Component:
+
+def navbar_sidebar_button(active_tab: rx.Var[str] | str = "") -> rx.Component:
     """Render a native disclosure with the same destinations as desktop docs.
+
+    Args:
+        active_tab: The navbar tab of the current page (see ``reflex_docs.sections``),
+            or an empty string when no section is current.
 
     Returns:
         A keyboard-accessible docs navigation menu.
     """
+    # The pages package imports this module, so its routes load at call time.
+    from reflex_docs.pages.docs import cloud, getting_started
+
     return rx.el.details(
         rx.el.summary(
             ui.icon("Menu01Icon", class_name="size-5 group-open/docs-menu:hidden"),
@@ -18,7 +27,7 @@ def navbar_sidebar_button() -> rx.Component:
                 "Cancel01Icon", class_name="hidden size-5 group-open/docs-menu:block"
             ),
             aria_label="Toggle navigation menu",
-            class_name="docs-navbar-menu-trigger flex size-9 cursor-pointer list-none items-center justify-center rounded-full text-foreground hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden",
+            class_name="docs-navbar-menu-trigger flex size-9 cursor-pointer list-none items-center justify-center rounded-[8px] text-foreground hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden",
         ),
         rx.el.div(
             *[
@@ -30,15 +39,23 @@ def navbar_sidebar_button() -> rx.Component:
                         class_name="size-4 shrink-0",
                     ),
                     href=href,
-                    class_name="docs-navbar-mobile-link flex w-full items-center justify-between gap-3 border-b border-border px-4 py-4 text-base font-normal text-foreground transition-colors duration-150 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring motion-reduce:transition-none last:border-b-0",
+                    aria_current=rx.cond(active_tab == tab, "page", None),
+                    class_name=ui.cn(
+                        "docs-navbar-mobile-link flex w-full items-center justify-between gap-3 border-b border-border px-4 py-4 text-base font-normal text-foreground transition-colors duration-150 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring motion-reduce:transition-none last:border-b-0",
+                        rx.cond(active_tab == tab, "bg-accent", ""),
+                    ),
                 )
-                for label, href in (
-                    ("Overview", "/docs/"),
-                    ("Build with AI", "/docs/ai/"),
-                    ("Framework", "/docs/getting-started/introduction/"),
-                    ("Cloud", "/docs/hosting/deploy-quick-start/"),
-                    ("XY", "/docs/xy/"),
-                    ("Book a Demo", "https://reflex.dev/demo/"),
+                for label, href, tab in (
+                    ("Overview", "/docs/", sections.OVERVIEW),
+                    ("Build with AI", "/docs/ai/", sections.AI),
+                    (
+                        "Framework",
+                        f"/docs{getting_started.introduction.path}",
+                        sections.FRAMEWORK,
+                    ),
+                    ("Cloud", f"/docs{cloud.overview.path}", sections.CLOUD),
+                    ("XY", "/docs/xy/", sections.XY),
+                    ("Book a Demo", "https://reflex.dev/demo/", None),
                 )
             ],
             aria_label="Documentation navigation",
