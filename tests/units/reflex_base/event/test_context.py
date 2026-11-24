@@ -163,7 +163,7 @@ def test_missing_session_modes(
         mode: The rollout mode.
     """
     monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", mode)
-    with mock.patch("reflex_base.event.context.console.deprecate") as warning:
+    with mock.patch("reflex_base.session.console.deprecate") as warning:
         if mode == "enforce":
             with pytest.raises(SessionAuthorizationError):
                 dataclasses.replace(

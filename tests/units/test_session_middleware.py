@@ -178,7 +178,7 @@ def test_exchange_websocket_session(manager: SessionTokenManager):
     """
     session = manager.create()
     token = manager.create_client_token(session)
-    credential = manager.encode(session)
+    credential = manager.encode(session, exchange=True)
     with TestClient(_app(manager), base_url="https://api.test") as client:
         response = client.post(
             "/_reflex/session",
@@ -208,7 +208,7 @@ def test_exchange_rejects_untrusted_origin(
     with TestClient(_app(manager), base_url="https://api.test") as client:
         response = client.post(
             "/_reflex/session",
-            json={"session_token": manager.encode(manager.create())},
+            json={"session_token": manager.encode(manager.create(), exchange=True)},
             headers={"Origin": origin} if origin else {},
         )
     assert response.status_code == 403
@@ -242,10 +242,39 @@ def test_exchange_trusts_origins_on_the_backend_host(
     with TestClient(app, base_url="https://api.test") as client:
         response = client.post(
             "/_reflex/session",
-            json={"session_token": manager.encode(manager.create())},
+            json={"session_token": manager.encode(manager.create(), exchange=True)},
             headers={"Origin": origin},
         )
     assert response.status_code == status
+
+
+def test_exchange_rejects_cookie_credential_and_cookie_rejects_exchange(
+    manager: SessionTokenManager,
+):
+    """A credential works only for the purpose that it was encoded for.
+
+    The socket sends a short-lived exchange credential to page scripts. It is
+    not a session cookie, and a session cookie value is not exchangeable.
+
+    Args:
+        manager: The session manager.
+    """
+    session = manager.create()
+    cookie_name = f"__Host-{manager.cookie_name}"
+    with TestClient(_app(manager), base_url="https://api.test") as client:
+        cookie_as_exchange = client.post(
+            "/_reflex/session",
+            json={"session_token": manager.encode(session)},
+            headers={"Origin": "https://api.test"},
+        )
+        exchange_as_cookie = client.get(
+            "/",
+            headers={
+                "cookie": f"{cookie_name}={manager.encode(session, exchange=True)}"
+            },
+        )
+    assert cookie_as_exchange.status_code == 401
+    assert exchange_as_cookie.json()["session"] is None
 
 
 def test_exchange_cookie_has_precedence(manager: SessionTokenManager):
@@ -259,7 +288,7 @@ def test_exchange_cookie_has_precedence(manager: SessionTokenManager):
     with TestClient(_app(manager), base_url="https://api.test") as client:
         response = client.post(
             "/_reflex/session",
-            json={"session_token": manager.encode(manager.create())},
+            json={"session_token": manager.encode(manager.create(), exchange=True)},
             headers={
                 "Cookie": f"{cookie_name}={manager.encode(session)}",
                 "Origin": "https://evil.test",
@@ -321,7 +350,7 @@ def test_exchange_rejects_invalid_credential_or_navigation(
         response = client.post(
             "/_reflex/session",
             json={
-                "session_token": manager.encode(manager.create())
+                "session_token": manager.encode(manager.create(), exchange=True)
                 if navigate
                 else "invalid"
             },

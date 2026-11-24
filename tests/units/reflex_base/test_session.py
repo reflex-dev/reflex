@@ -459,3 +459,44 @@ def test_session_rollout_mode(monkeypatch, mode):
     monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "invalid")
     with pytest.raises(EnvironmentVarValueError):
         environment.REFLEX_SESSION_TOKEN_MODE.get()
+
+
+def test_exchange_credential_is_short_lived_and_single_purpose(manager, monkeypatch):
+    """An exchange credential expires after a minute and is not a cookie value.
+
+    Args:
+        manager: The session codec fixture.
+        monkeypatch: The clock override fixture.
+    """
+    session = manager.create()
+    credential = manager.encode(session, exchange=True)
+    assert manager.decode(credential) is None
+    exchanged = manager.decode(credential, exchange=True)
+    assert exchanged is not None
+    assert exchanged.id == session.id
+    assert manager.decode(manager.encode(session), exchange=True) is None
+    monkeypatch.setattr("reflex_base.session.time.time", lambda: 1060)
+    assert manager.decode(credential, exchange=True) is None
+    assert manager.decode(manager.encode(session)) is not None
+
+
+@pytest.mark.parametrize("mode", ["off", "warn", "enforce"])
+def test_client_token_for_replaces_unowned_tokens_only_when_enforced(
+    manager, monkeypatch, mode
+):
+    """One rule decides the token of a tab for the socket and the endpoint.
+
+    Args:
+        manager: The session codec fixture.
+        monkeypatch: The environment override fixture.
+        mode: The session token mode.
+    """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", mode)
+    session = manager.create()
+    owned = manager.create_client_token(session)
+    foreign = manager.create_client_token(manager.create())
+    assert manager.client_token_for(session, owned) == owned
+    assert session.authorizes(manager.client_token_for(session, ""))
+    kept = manager.client_token_for(session, foreign)
+    assert (kept == foreign) is (mode != "enforce")
+    assert session.authorizes(kept) is (mode == "enforce")
