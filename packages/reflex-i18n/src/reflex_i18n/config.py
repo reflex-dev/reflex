@@ -170,10 +170,6 @@ def set_active_i18n_config(config: I18nConfig | None) -> None:
     Args:
         config: The configuration to activate, or None to deactivate.
     """
-    # Inline to avoid a circular import; runtime imports from this module.
-    from .runtime import clear_translations_cache
-
-    global _active_config, _active_catalog_dirs
     catalog_dirs = (
         (
             (Path.cwd() / config.catalog_dir).resolve(),
@@ -185,6 +181,20 @@ def set_active_i18n_config(config: I18nConfig | None) -> None:
         if config is not None
         else ()
     )
+    _activate(config, catalog_dirs)
+
+
+def _activate(config: I18nConfig | None, catalog_dirs: tuple[Path, ...]) -> None:
+    """Make a configuration and its resolved catalog directories the active ones.
+
+    Args:
+        config: The configuration, or None.
+        catalog_dirs: Its absolute catalog directories.
+    """
+    # Inline to avoid a circular import; runtime imports from this module.
+    from .runtime import clear_translations_cache
+
+    global _active_config, _active_catalog_dirs
     _active_config = config
     _active_catalog_dirs = catalog_dirs
     # Drop translators built from the previous catalog dir (or from catalogs
@@ -211,12 +221,14 @@ def active_i18n_config(config: I18nConfig | None) -> Iterator[I18nConfig | None]
     Yields:
         The activated configuration.
     """
-    previous = _active_config
+    # The directories the previous configuration was resolved to, as the working
+    # directory may have changed since.
+    previous = (_active_config, _active_catalog_dirs)
     set_active_i18n_config(config)
     try:
         yield config
     finally:
-        set_active_i18n_config(previous)
+        _activate(*previous)
 
 
 def _subtag_case(subtag: str) -> str:

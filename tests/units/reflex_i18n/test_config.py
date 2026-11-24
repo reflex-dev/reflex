@@ -105,6 +105,19 @@ def test_active_i18n_config_restores_the_previous_one():
     assert get_active_i18n_config() is None
 
 
+def test_active_i18n_config_restores_the_previous_catalog_dirs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.chdir(tmp_path)
+    with active_i18n_config(I18nConfig(locales=["en"])):
+        outer_dirs = get_active_catalog_dirs()
+        monkeypatch.chdir(tmp_path.parent)
+        with active_i18n_config(I18nConfig(locales=["de"], default_locale="de")):
+            pass
+        assert get_active_catalog_dirs() == outer_dirs
+        assert outer_dirs == ((tmp_path / "locales").resolve(),)
+
+
 def test_active_config_roundtrip():
     config = I18nConfig(locales=["en"])
     set_active_i18n_config(config)
