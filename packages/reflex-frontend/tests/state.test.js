@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import {
   applyDelta,
+  applyEvent,
   applyEventActions,
   encodeFormDataArgs,
   generateUUID,
@@ -574,5 +575,33 @@ describe("events", () => {
     expect(target).not.toHaveBeenCalled();
     vi.advanceTimersByTime(1);
     expect(target.mock.calls).toEqual([["second"]]);
+  });
+
+  test("_download saves a data: url through a blob: url only when it has a comma before the fragment", async () => {
+    const clicked = [];
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(function () {
+        clicked.push([this.href, this.download]);
+      });
+    const createObjectURL = URL.createObjectURL;
+    URL.createObjectURL = () => "blob:test";
+    try {
+      for (const url of ["data:text/plain#a,b", "data:text/plain,ok#a,b"]) {
+        await applyEvent(
+          { name: "_download", payload: { url, filename: "" } },
+          null,
+          null,
+          null,
+        );
+      }
+    } finally {
+      click.mockRestore();
+      URL.createObjectURL = createObjectURL;
+    }
+    expect(clicked).toEqual([
+      ["data:text/plain#a,b", ""],
+      ["blob:test", "download"],
+    ]);
   });
 });

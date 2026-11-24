@@ -759,8 +759,8 @@ export const applyEvent = async (event, socket, navigate, params) => {
     a.download = event.payload.filename;
     // iOS WebKit ignores the download attribute of data: urls and only shows
     // the file, so save inline data through a blob: url instead. A data: url
-    // without a comma is invalid and stays as it is.
-    if (/^data:[^,]*,/.test(a.href)) {
+    // without a comma before its fragment is invalid and stays as it is.
+    if (/^data:[^,#]*,/.test(a.href)) {
       a.href = URL.createObjectURL(dataUrlToBlob(a.href));
       // A blob: url names the file after its uuid, so use the name that
       // Chromium gives a data: url.
