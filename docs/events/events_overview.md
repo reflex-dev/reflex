@@ -13,7 +13,7 @@ Events are composed of two parts: Event Triggers and Event Handlers.
 
 ## Example
 
-Lets take a look at an example below. Try mousing over the heading to change the word.
+Let's take a look at an example below. Try mousing over the heading to change the word.
 
 ```python demo exec
 class WordCycleState(rx.State):
@@ -45,6 +45,8 @@ In this example, the heading component has the **event trigger**, `on_mouse_over
 Whenever the user hovers over the heading, the `next_word` **event handler** will be called to cycle the word. Once the handler returns, the UI will be updated to reflect the new state.
 
 Adding the `@rx.event` decorator above the event handler is strongly recommended. This decorator enables proper static type checking, which ensures event handlers receive the correct number and types of arguments.
+
+## Explicit Event Handlers
 
 By default, every public method of a state (one whose name does not start with `_`) is treated as an event handler, whether or not it is decorated. To make `@rx.event` mandatory and keep undecorated public methods as plain Python helpers, enable `state_explicit_event_handlers` in `rxconfig.py`:
 

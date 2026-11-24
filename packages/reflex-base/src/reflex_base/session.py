@@ -80,8 +80,14 @@ def ensure_secret_key() -> str:
 
     Returns:
         The comma-separated secret key ring.
+
+    Raises:
+        ValueError: If a configured key is shorter than 32 bytes.
     """
     if (configured := environment.REFLEX_SECRET_KEY.get()) is not None:
+        if any(len(key.strip().encode()) < 32 for key in configured.split(",")):
+            msg = "REFLEX_SECRET_KEY keys must each be at least 32 bytes"
+            raise ValueError(msg)
         return configured
     key = secrets.token_hex(32)
     environment.REFLEX_SECRET_KEY.set(key)
@@ -111,11 +117,10 @@ def _load_secrets() -> tuple[bytes, ...]:
     Raises:
         ValueError: If a configured key is shorter than 32 bytes.
     """
-    keys = tuple(key.strip().encode() for key in ensure_secret_key().split(","))
-    if any(len(key) < 32 for key in keys):
-        msg = "REFLEX_SECRET_KEY keys must each be at least 32 bytes"
-        raise ValueError(msg)
-    return tuple(hmac.digest(key, _SESSION_KEY_PURPOSE, "sha256") for key in keys)
+    return tuple(
+        hmac.digest(key.strip().encode(), _SESSION_KEY_PURPOSE, "sha256")
+        for key in ensure_secret_key().split(",")
+    )
 
 
 @dataclass(frozen=True)

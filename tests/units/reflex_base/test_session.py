@@ -307,9 +307,12 @@ def test_unknown_signing_key_warns_once(manager, caplog):
     credential = other.encode(other.create())
     for _ in range(2):
         assert manager.decode(credential) is None
-    assert caplog.text.count("Backend instances may be") == 1
-    assert credential not in caplog.text
-    assert OTHER_SECRET.decode() not in caplog.text
+    assert caplog.messages == [
+        (
+            "Unrecognized session signing key. Backend instances may be using "
+            "different REFLEX_SECRET_KEY values."
+        )
+    ]
 
 
 def _session_key(secret: bytes) -> bytes:
@@ -346,14 +349,37 @@ def test_invalid_secret_never_discloses_its_value(monkeypatch, value):
         value: The invalid signing key configuration.
     """
     monkeypatch.setenv("REFLEX_SECRET_KEY", value)
-    with pytest.raises(ValueError, match="at least 32 bytes") as error:
+    with pytest.raises(ValueError) as error:
         _load_secrets()
-    assert value not in str(error.value)
+    assert str(error.value) == "REFLEX_SECRET_KEY keys must each be at least 32 bytes"
+    # `reflex run` calls this before the backend starts, so it fails at startup.
+    with pytest.raises(ValueError) as startup_error:
+        ensure_secret_key()
+    assert str(startup_error.value) == str(error.value)
 
 
 @pytest.mark.parametrize(
     ("env_mode", "message"),
-    [("dev", "reset when `reflex run` restarts"), ("prod", "EVERY RESTART")],
+    [
+        (
+            "dev",
+            (
+                "REFLEX_SECRET_KEY is not set; browser sessions reset when "
+                "`reflex run` restarts."
+            ),
+        ),
+        (
+            "prod",
+            (
+                "REFLEX_SECRET_KEY is not set. Reflex generated a temporary key.\n"
+                "ALL BROWSER SESSIONS RESET ON EVERY RESTART, and servers that do "
+                "not share this key reject each other's sessions.\n"
+                "Set REFLEX_SECRET_KEY to a random value of at least 32 bytes, for "
+                "example the output of: "
+                'python -c "import secrets; print(secrets.token_hex(32))"'
+            ),
+        ),
+    ],
 )
 def test_missing_secret_key_is_generated_once_and_exported(
     tmp_path, monkeypatch, caplog, env_mode, message
@@ -365,7 +391,7 @@ def test_missing_secret_key_is_generated_once_and_exported(
         monkeypatch: The environment override fixture.
         caplog: The captured log records.
         env_mode: The Reflex environment mode.
-        message: Text the warning for that mode must contain.
+        message: The warning for that mode.
     """
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("REFLEX_SECRET_KEY", "unset")
@@ -378,9 +404,7 @@ def test_missing_secret_key_is_generated_once_and_exported(
     assert len(key.encode()) >= 32
     assert ensure_secret_key() == key
     assert _load_secrets() == (_session_key(key.encode()),)
-    assert caplog.text.count("REFLEX_SECRET_KEY is not set") == 1
-    assert message in caplog.text
-    assert key not in caplog.text
+    assert caplog.messages == [message]
     assert not list(tmp_path.iterdir())
 
 
@@ -395,8 +419,12 @@ def test_invalid_lifetimes(ttl, refresh_interval):
         ttl: The requested session lifetime.
         refresh_interval: The requested refresh interval.
     """
-    with pytest.raises(ValueError, match="Session TTL"):
+    with pytest.raises(ValueError) as error:
         SessionTokenManager("app", ttl=ttl, refresh_interval=refresh_interval)
+    assert (
+        str(error.value)
+        == "Session TTL must be positive and refresh interval between zero and TTL"
+    )
 
 
 def test_config_defaults_and_secret_is_not_config(monkeypatch):
@@ -406,6 +434,8 @@ def test_config_defaults_and_secret_is_not_config(monkeypatch):
         monkeypatch: The environment override fixture.
     """
     monkeypatch.setenv("REFLEX_SECRET_KEY", SECRET.decode())
+    monkeypatch.delenv("REFLEX_SESSION_TOKEN_TTL", raising=False)
+    monkeypatch.delenv("REFLEX_SESSION_TOKEN_REFRESH_INTERVAL", raising=False)
     config = Config(app_name="test")
     assert config.session_token_ttl == 604800
     assert config.session_token_refresh_interval is None

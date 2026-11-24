@@ -2233,6 +2233,56 @@ class _TagsRecord:
     name: str
 
 
+@dataclasses.dataclass(frozen=True)
+class _Point:
+    x: int
+    y: int
+
+
+@pytest.mark.parametrize(
+    ("value", "hint", "expected"),
+    [
+        (["c", "d", "c"], set[str], {"c", "d"}),
+        (["c", "d"], frozenset[str], frozenset({"c", "d"})),
+        (["c", "d"], frozenset, frozenset({"c", "d"})),
+        (["c", "d"], set[str] | None, {"c", "d"}),
+        (None, set[str] | None, None),
+        ([[1, 2], [1, 2], [3, 4]], set[tuple[int, int]], {(1, 2), (3, 4)}),
+        ([{"x": 1, "y": 2}], frozenset[_Point], frozenset({_Point(1, 2)})),
+        ([["a"], ["b", "a"]], set[frozenset[str]], {frozenset("a"), frozenset("ab")}),
+        ([1, 2], tuple[int, int], (1, 2)),
+        ([1, 2, 3], tuple[int, ...], (1, 2, 3)),
+        ([1, 2, 3], tuple[int], (1, 2, 3)),
+        ([1, "a", "b"], tuple[int, *tuple[str, ...]], (1, "a", "b")),
+        ([[1, 2]], set[Any], [[1, 2]]),
+        ([[1, 2]], set, [[1, 2]]),
+        (["c", "d"], list[str], ["c", "d"]),
+    ],
+)
+def test_transform_event_arg_collections(value: Any, hint: Any, expected: Any):
+    """A JSON array becomes the set, frozenset or tuple its annotation names.
+
+    Unhashable elements are converted by the element annotation; when that
+    still leaves them unhashable, the array arrives unchanged.
+
+    Args:
+        value: The received argument.
+        hint: The handler's annotation for the argument.
+        expected: The transformed argument.
+    """
+    result = _transform_event_arg(value, hint)
+    assert result == expected
+    assert type(result) is type(expected)
+
+
+def test_transform_event_payload_unhashable_set_keeps_other_args():
+    """An array that cannot become a set leaves the other arguments coerced."""
+    payload = _transform_event_payload(
+        {"tags": [[1, 2]], "names": ["a"]}, {"tags": set, "names": frozenset[str]}
+    )
+    assert payload == {"tags": [[1, 2]], "names": frozenset({"a"})}
+
+
 def test_transform_event_payload_decodes_unannotated_form_data():
     """Form data reaches an unannotated handler arg as a dict."""
     payload = _transform_event_payload(
@@ -5583,6 +5633,134 @@ async def test_handler_cancelled_inside_the_locked_block_cancels_its_inline_runs
         BaseStateToken(ident=token, cls=State)
     )
     assert (await state.get_state(CancelInsideState)).log == ["ping"]
+
+
+@pytest.mark.parametrize(
+    ("catches", "expected_results", "expected_reported"),
+    [
+        (True, ["ValueError('boom')"], []),
+        (False, [], ["ValueError('boom')"]),
+    ],
+)
+async def test_exception_of_handler_awaited_from_background_is_the_callers(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    catches: bool,
+    expected_results: list[str],
+    expected_reported: list[str],
+):
+    """An awaited handler's exception reaches the backend handler only if uncaught.
+
+    The background task awaits with no lock held, so the handler is enqueued.
+    Its exception is raised from the await like the inline call's: caught, it
+    is not reported; uncaught, the background task's failure reports it once.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+        catches: Whether the background task catches the exception.
+        expected_results: The exceptions the background task caught.
+        expected_reported: The exceptions the backend exception handler got.
+    """
+    results: list[str] = []
+    reported: list[str] = []
+
+    class BgBoomState(State):
+        total: int = 0
+
+        @event
+        def boom(self):
+            self.total += 1000
+            msg = "boom"
+            raise ValueError(msg)
+
+        @event(background=True)
+        async def run(self, catches: bool):
+            try:
+                await BgBoomState.boom()
+            except ValueError as ex:
+                if not catches:
+                    raise
+                results.append(repr(ex))
+
+    real_base_state_processor.backend_exception_handler = lambda ex: reported.append(
+        repr(ex)
+    )
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(BgBoomState.run(catches))[0]
+        )
+        with contextlib.suppress(ValueError):
+            await future.wait_all()
+
+    assert results == expected_results
+    assert reported == expected_reported
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(BgBoomState)).total == 1000
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+async def test_superseding_handler_awaited_from_background_returns_finished_result(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A background task gets the result of a superseding handler run that finished.
+
+    The second task waits for the state lock the first search holds, and
+    supersedes it as soon as that search has returned. With the in-memory
+    manager that is before the first search's future was resolved.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    results: list[str] = []
+    started = asyncio.Event()
+    release = asyncio.Event()
+
+    class BgSearchState(State):
+        query: str = ""
+
+        @event(supersedes=True)
+        async def search(self, q: str) -> str:
+            if q == "first":
+                started.set()
+                await release.wait()
+            self.query = q
+            return q.upper()
+
+        @event(background=True)
+        async def run(self, q: str):
+            try:
+                result = await BgSearchState.search(q)
+            except asyncio.CancelledError:
+                result = "cancelled"
+            results.append(f"{q} -> {result}")
+
+    async with real_base_state_processor as processor:
+        first = await processor.enqueue(
+            token, Event.from_event_type(BgSearchState.run("first"))[0]
+        )
+        await asyncio.wait_for(started.wait(), timeout=5)
+        second = await processor.enqueue(
+            token, Event.from_event_type(BgSearchState.run("second"))[0]
+        )
+        # Let the second task start and queue for the lock the search holds.
+        await asyncio.sleep(0.1)
+        release.set()
+        await asyncio.wait_for(
+            asyncio.gather(first.wait_all(), second.wait_all()), timeout=5
+        )
+
+    assert results == ["first -> FIRST", "second -> SECOND"]
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(BgSearchState)).query == "second"
 
 
 async def test_returned_undecorated_state_method_raises_type_error(

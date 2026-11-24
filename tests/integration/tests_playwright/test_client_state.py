@@ -18,7 +18,7 @@ from reflex.testing import AppHarness
 def ClientStateApp():
     """App exercising ``rx.client_state`` runtime behavior."""
     from reflex_base.constants.compiler import MemoizationDisposition, MemoizationMode
-    from reflex_base.vars.function import ArgsFunctionOperationBuilder, FunctionVar
+    from reflex_base.vars.function import ArgsFunctionOperationBuilder
     from reflex_components_core.el.elements.inline import Span
 
     import reflex as rx
@@ -33,6 +33,8 @@ def ClientStateApp():
     suffixed = rx.client_state("", name="suffixed")
     # Never rendered: only backend handlers touch it.
     hidden = rx.client_state("", name="hidden")
+    # Pushed from the backend with a value read from `shared` on the client.
+    echoed = rx.client_state("", name="echoed")
     # Unnamed, used by a memo and by the page after it: the page owns it.
     lifted = rx.client_state(0)
     # Unnamed, used at page level on two pages.
@@ -65,6 +67,22 @@ def ClientStateApp():
         @rx.event
         def got_value(self, value: str):
             self.retrieved = value
+
+        @rx.event
+        def script_set_shared(self):
+            return rx.call_script(
+                shared.global_set.to(FunctionVar).call("from-script-global-set")
+            )
+
+        @rx.event
+        def script_read_shared(self):
+            return rx.call_script(
+                shared.global_value, callback=ClientStateAppState.got_value
+            )
+
+        @rx.event
+        def push_echo(self):
+            return echoed.push(shared.global_value.to(str) + "!")
 
     @rx.memo
     def local_input(label: rx.Var[str]) -> rx.Component:
@@ -134,14 +152,11 @@ def ClientStateApp():
                 on_click=rx.call_function(
                     ArgsFunctionOperationBuilder.create(
                         args_names=(),
-                        return_expr=shared.global_set.to(FunctionVar).call(
-                            "from-plain-js"
-                        ),
+                        return_expr=shared.global_set.call("from-plain-js"),
                     )
                 ),
             ),
-            # rx.call_script evals inside the Reflex runtime module, where the
-            # page's imports are not in scope, so reach the store via refs.
+            # Hand-written script code can reach the store through refs too.
             rx.button(
                 "global-set-script",
                 id="global-set-script",
@@ -149,6 +164,21 @@ def ClientStateApp():
                     'refs["__client_state"].set("shared", "from-call-script")'
                 ),
             ),
+            # rx.call_script code runs in the Reflex runtime module, not the page.
+            rx.button(
+                "script-set-shared",
+                id="script-set-shared",
+                on_click=ClientStateAppState.script_set_shared,
+            ),
+            rx.button(
+                "script-read-shared",
+                id="script-read-shared",
+                on_click=ClientStateAppState.script_read_shared,
+            ),
+            rx.button(
+                "push-echo", id="push-echo", on_click=ClientStateAppState.push_echo
+            ),
+            rx.text(echoed.value, id="echoed-value"),
             local_input(label="one"),
             local_input(label="two"),
             # The cards render before the page-level reader of the same var.
@@ -275,15 +305,36 @@ def test_global_set_from_plain_javascript(page: Page) -> None:
 
 
 def test_store_is_reachable_through_refs(page: Page) -> None:
-    """``refs["__client_state"]`` is the documented entry point for eval'd code.
+    """``refs["__client_state"]`` reaches the store from hand-written script code.
 
-    ``rx.call_script`` runs inside the Reflex runtime module, so a page-level
-    import of ``setClientState`` is not in scope there; the single ``refs`` key
-    is what makes the store reachable (and introspectable from devtools).
+    The single ``refs`` key also makes the store introspectable from devtools.
     """
     page.locator("#global-set-script").click()
     expect(page.locator("#shared-a")).to_have_text("from-call-script")
     expect(page.locator("#shared-b")).to_have_text("from-call-script")
+
+
+def test_global_accessors_in_call_script(page: Page) -> None:
+    """``global_set`` and ``global_value`` work in ``rx.call_script`` code.
+
+    Script code runs in the Reflex runtime module, not the page, so the
+    functions both compile to have to be in scope there.
+    """
+    page.locator("#script-set-shared").click()
+    expect(page.locator("#shared-a")).to_have_text("from-script-global-set")
+    expect(page.locator("#shared-b")).to_have_text("from-script-global-set")
+
+    page.locator("#script-read-shared").click()
+    expect(page.locator("#retrieved")).to_have_text("from-script-global-set")
+
+
+def test_push_a_value_read_from_another_var(page: Page) -> None:
+    """A Var passed to ``push`` can read another var through ``global_value``."""
+    page.locator("#shared-input").fill("typed")
+    expect(page.locator("#shared-a")).to_have_text("typed")
+
+    page.locator("#push-echo").click()
+    expect(page.locator("#echoed-value")).to_have_text("typed!")
 
 
 def test_local_vars_are_isolated_between_instances(page: Page) -> None:

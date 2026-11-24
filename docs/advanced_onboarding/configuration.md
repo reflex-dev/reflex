@@ -27,7 +27,15 @@ See the [config reference](/docs/api-reference/config/) for all the parameters a
 
 ## Event Loop Blocking Detection
 
-In development, Reflex warns when an event handler blocks the asyncio event loop near or beyond `event_loop_blocking_threshold` seconds (default `0.2`). The warning appears as soon as the threshold is reached, so a handler that never returns is reported too. It names the handler and the innermost line of your app's code in the blocking stack, then shows the full stack. A blocking task that processes no event, such as a task your app starts, is reported by its task name. When the loop responds again, a second line reports the total duration, which includes the state updates after the handler, such as computed vars. It recommends moving blocking I/O to a thread pool or using a non-blocking async API. Background events still run on the event loop and do not make synchronous blocking code non-blocking. Detection is always off in production. Set the threshold to `0` to turn it off in development:
+In development, Reflex warns when an event handler blocks the asyncio event loop near or beyond `event_loop_blocking_threshold` seconds (default `0.2`). The warning appears as soon as the threshold is reached, so a handler that never returns is reported too. It names the handler and the innermost line of your app's code in the blocking stack, then shows the stack as it was when the threshold was reached, which is one sample and not necessarily the slowest part. It recommends moving blocking I/O to a thread pool or using a non-blocking async API. When the loop responds again, a second line reports the total duration, which includes the state updates after the handler, such as computed vars.
+
+Some blocking is reported differently:
+
+- **First import of a module.** The warning names the module that the import statement imports and the line of your app that imports it, and leaves Python's import machinery out of the stack. It suggests importing the module at the top of a module, or loading it in a thread first from an async handler.
+- **Task with no event.** A task that processes no event, such as a task your app starts, is reported by its task name.
+- **Handler from an installed package.** A handler from an installed package, with none of your app's code in the blocking stack, is reported once per process. The warning names the package and shows the stack from the handler on.
+
+Background events still run on the event loop and do not make synchronous blocking code non-blocking. Detection is always off in production. Set the threshold to `0` to turn it off in development:
 
 ```python
 config = rx.Config(
@@ -143,7 +151,7 @@ config = rx.Config(
 )
 ```
 
-For example, `trusted_proxy_hops=1` uses the rightmost `X-Forwarded-For` entry; `2` uses the second entry from the right. The same entry of `X-Forwarded-Host` and `X-Forwarded-Proto` is used when the backend checks the origin of a WebSocket connection (see [CORS](#cors)). Proxies usually set these two headers instead of appending to them, so when one has fewer entries than `trusted_proxy_hops`, its leftmost entry is used. The default is `0`. Do not enable forwarded-header trust if untrusted clients can connect directly to the backend or bypass the trusted proxy chain. The setting can also be provided as `REFLEX_TRUSTED_PROXY_HOPS`.
+For example, `trusted_proxy_hops=1` uses the rightmost `X-Forwarded-For` entry; `2` uses the second entry from the right. The entry is normalized to an IP address after dropping any port and IPv6 brackets, and an IPv4-mapped IPv6 address such as `::ffff:203.0.113.7` becomes its IPv4 address; if it is not a valid address, it is ignored and the connection's peer address is used. The same entry of `X-Forwarded-Host` and `X-Forwarded-Proto` is used when the backend checks the origin of a WebSocket connection (see [CORS](#cors)). Proxies usually set these two headers instead of appending to them, so when one has fewer entries than `trusted_proxy_hops`, its leftmost entry is used. The default is `0`. Do not enable forwarded-header trust if untrusted clients can connect directly to the backend or bypass the trusted proxy chain. The setting can also be provided as `REFLEX_TRUSTED_PROXY_HOPS`.
 
 ## Plugins
 
