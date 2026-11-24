@@ -97,6 +97,7 @@ const PUBLIC_API = {
     "pySetIsDisjoint",
     "pySetIsSubset",
     "pySetKey",
+    "pySetMatch",
     "pySetSymmetricDifference",
     "pySetUnion",
   ],
