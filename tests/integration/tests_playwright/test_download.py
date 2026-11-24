@@ -57,6 +57,11 @@ def DownloadApp():
                 id="download-text-url",
             ),
             rx.button("bytes", on_click=State.download_bytes, id="download-bytes"),
+            rx.button(
+                "no filename",
+                on_click=rx.download(data="no filename"),
+                id="download-no-filename",
+            ),
         )
 
     app = rx.App(  # noqa: F841
@@ -95,6 +100,7 @@ def download_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
         ("download-base64-url", "base64.txt", b"hi"),
         ("download-text-url", "text.txt", b"a b\xff"),
         ("download-bytes", "backend.csv", b"backend,bytes\n"),
+        ("download-no-filename", "download.txt", b"no filename"),
     ],
 )
 def test_download_data_through_blob_url(
