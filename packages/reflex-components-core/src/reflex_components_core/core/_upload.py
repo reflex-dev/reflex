@@ -18,8 +18,8 @@ from pathlib import Path, PureWindowsPath
 from typing import TYPE_CHECKING, Any, BinaryIO, Self, cast
 
 from python_multipart.multipart import MultipartParser, parse_options_header
-from reflex_base.event.context import EventContext
 from reflex_base.registry import RegistrationContext
+from reflex_base.session import authorize
 from reflex_base.utils import exceptions
 from reflex_base.utils.format import json_dumps
 from reflex_base.utils.streaming_response import DisconnectAwareStreamingResponse
@@ -908,11 +908,7 @@ def upload(app: App):
 
         token, handler_name = _require_upload_headers(request)
         try:
-            dataclasses.replace(
-                EventContext.get(),
-                token=token,
-                session_token=request.scope.get("reflex.session"),
-            )
+            authorize(request.scope.get("reflex.session"), token)
         except exceptions.SessionAuthorizationError as error:
             raise HTTPException(status_code=403, detail=str(error)) from error
         registered_event_handler = RegistrationContext.get().event_handlers.get(

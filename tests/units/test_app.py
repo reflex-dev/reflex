@@ -79,6 +79,7 @@ from reflex.app import (
     _RootMiddleware,
     _sio_dumps,
     _sio_loads,
+    _SocketSession,
     default_overlay_component,
 )
 from reflex.compiler.compiler import (
@@ -5717,7 +5718,7 @@ async def test_on_event_uses_connect_time_router_data(
     enqueue_mock.assert_called_once()
     assert (
         enqueue_mock.call_args.kwargs["session_token"]
-        is event_namespace._sessions["sid1"]
+        is event_namespace._sessions["sid1"].session
     )
     enqueued_token, event = enqueue_mock.call_args[0]
     assert enqueued_token == token
@@ -5906,7 +5907,10 @@ async def test_connect_session_authorization(
         """
         context = EventContext.get()
         assert context.token == token.ident
-        assert context.session_token is namespace._sessions.get("sid")
+        socket_session = namespace._sessions.get("sid")
+        assert context.session_token is (
+            socket_session.session if socket_session is not None else None
+        )
         if mode == "enforce":
             assert context.session_token is not None
             assert context.session_token.authorizes(token.ident)
@@ -5942,11 +5946,11 @@ async def test_connect_session_authorization(
     assert ("new_token" in emitted) is replacement_expected
     assert ("session_token" in emitted) is (mode != "off" and cookie != "valid")
     if mode != "off":
-        session = namespace._sessions["sid"]
+        session = namespace._sessions["sid"].session
         if cookie == "valid":
             assert session.id == browser_session.id
         if "session_token" in emitted:
-            issued = manager.decode(emitted["session_token"])
+            issued = manager.decode(emitted["session_token"], exchange=True)
             assert issued is not None
             assert issued.id == session.id
     else:
@@ -5972,7 +5976,7 @@ async def test_link_rejects_foreign_client_before_state_access(
     monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "enforce")
     namespace = event_namespace_with_processor_mock
     manager = namespace.app._session_token_manager
-    namespace._sessions["sid"] = manager.create()
+    namespace._sessions["sid"] = _SocketSession(manager.create(), 0, False)
     foreign_token = manager.create_client_token(manager.create())
     link = mocker.patch.object(
         namespace._token_manager, "link_token_to_sid", new_callable=AsyncMock
@@ -6049,7 +6053,6 @@ async def test_session_refresh_notice_is_throttled(
     if task is not None:
         await task
     assert "sid" not in namespace._sessions
-    assert "sid" not in namespace._session_refresh_at
 
 
 async def test_socket_renews_expired_cookie_without_changing_state_owner(
@@ -6069,11 +6072,16 @@ async def test_socket_renews_expired_cookie_without_changing_state_owner(
     await namespace.on_session_refresh("sid")
     emitted = cast(AsyncMock, namespace.emit)
     credential = emitted.call_args.args[1]
-    renewed = manager.decode(credential)
+    # The socket credential is for one exchange and is not valid as a cookie.
+    assert manager.decode(credential) is None
+    renewed = manager.decode(credential, exchange=True)
     assert renewed is not None
     assert renewed.id == session.id
     assert renewed.authorizes(token)
-    assert namespace._sessions["sid"] == renewed
+    # The stored session has the full lifetime; the credential has one minute.
+    stored = namespace._sessions["sid"].session
+    assert stored.id == renewed.id
+    assert stored.expires_at > renewed.expires_at
     emitted.reset_mock()
     task = namespace.on_disconnect("sid")
     if task is not None:
@@ -6113,15 +6121,15 @@ async def test_session_refresh_sends_credential_only_without_a_valid_cookie(
     assert event == "session_token"
     if cookie:
         assert credential is None
-        assert namespace._sessions["sid"] is session
+        assert namespace._sessions["sid"].session is session
     else:
-        renewed = manager.decode(credential)
+        renewed = manager.decode(credential, exchange=True)
         assert renewed is not None
-        assert renewed.id == namespace._sessions["sid"].id
+        assert renewed.id == namespace._sessions["sid"].session.id
     task = namespace.on_disconnect("sid")
     if task is not None:
         await task
-    assert "sid" not in namespace._cookie_sids
+    assert "sid" not in namespace._sessions
 
 
 @pytest.mark.parametrize("mode", ["warn", "enforce"])
@@ -6590,7 +6598,6 @@ async def test_on_connect_unlinks_token_when_boot_event_fails(
     # The connection-scoped router data cached for the refused sid goes too.
     assert "new_sid" not in event_namespace._static_router_data
     assert "new_sid" not in event_namespace._sessions
-    assert "new_sid" not in event_namespace._session_refresh_at
 
 
 def test_call_app_wraps_with_otel_asgi_middleware():
