@@ -44,7 +44,6 @@ from reflex_base.js.stubs import (
     _module_digest,
     _read_header,
     _render_stub,
-    _stub_header,
 )
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
@@ -708,12 +707,17 @@ def _remove_orphan_stubs(modules: Iterable[str]) -> None:
             )
 
 
-def _write_stub(module: Path, code: str) -> None:
+def _write_stub(module: Path, code: str) -> bool:
     """Write the type stub of a module, or warn that it cannot be written.
+
+    A stub that already has that code is left as it is.
 
     Args:
         module: The module.
         code: Its stub.
+
+    Returns:
+        Whether the stub has that code now.
     """
     stub = module.with_suffix(".pyi")
     try:
@@ -725,59 +729,88 @@ def _write_stub(module: Path, code: str) -> None:
             f"written; the app still runs. Make {module.parent} writable, and the "
             "next compile writes it."
         )
+        return False
+    return True
+
+
+class _StubRecord(TypedDict):
+    """What the type stub of a module was made from."""
+
+    # The digest of the module's files, the files its types were read from and
+    # the code that makes stubs.
+    digest: str
+    # The files its types were read from.
+    files: list[str]
+
+
+def _stub_record(exports: _ScriptExports, files: list[str]) -> _StubRecord:
+    """Record what the type stub of a module is made from.
+
+    Args:
+        exports: What was read of the module.
+        files: The files its types were read from.
+
+    Returns:
+        The record.
+    """
+    return {"digest": _module_digest([*exports["files"], *files]), "files": files}
 
 
 def write_script_stubs(modules: Mapping[Path, _ScriptExports]) -> None:
     """Write a type stub next to each JavaScript module the app imports.
 
     A stub declares the functions the module exports, typed from its
-    TypeScript annotations or JSDoc. Its header records the digest of the
-    files it is made from: the module's files and those TypeScript read its
-    types from last time, which ``.web/script_stubs.json`` keeps. While that
-    is current the stub is kept, so typescript only runs when a file changed;
-    when the types cannot be read, the stub takes any arguments and is retried
-    on the next compile. A stub without Reflex's header, as one written by
-    hand, is left alone, and a stub Reflex wrote for a module the app no longer
-    imports is removed. A stub that cannot be written or removed is warned
-    about. Each file is replaced whole: a compile killed while writing one
-    leaves the old file, whose header the next compile finds stale.
+    TypeScript annotations or JSDoc. ``.web/script_stubs.json`` records what
+    each stub was made from: the digest of the module's files, the files its
+    types were read from and the code that makes stubs. typescript only reads
+    the types of a module whose stub is missing or whose digest changed, and
+    the stub is only rewritten when its text changes, so a committed stub
+    changes with its declarations alone. When the types cannot be read, the
+    stub takes any arguments, and when it cannot be written, which is warned
+    about, the file is left as it is; either way the next compile reads the
+    types again. A stub without Reflex's header, as one written by hand, is
+    left alone, and a stub Reflex wrote for a module the app no longer imports
+    is removed, or warned about if it cannot be. Each file is replaced whole:
+    a compile killed while writing one leaves the old file and the old
+    record, so the next compile reads the types again.
 
     Args:
         modules: What was read of each module, by the file Python imports, from
             ``compile_script_modules``.
     """
-    record = get_web_dir() / constants.Dirs.SCRIPT_STUBS
+    record_file = get_web_dir() / constants.Dirs.SCRIPT_STUBS
     try:
-        text = record.read_text(encoding="utf-8")
+        text = record_file.read_text(encoding="utf-8")
     except FileNotFoundError:
         if not modules:
             return
         text = "{}"
-    # A record of another shape, as another version can leave, reads as empty:
-    # each stub is then checked against the module's own files.
-    type_files = _parse_json(text, dict[str, list[str]]) or {}
-    _remove_orphan_stubs(type_files.keys() - map(str, modules))
-    type_files = {str(path): type_files.get(str(path), []) for path in modules}
+    # A record of another shape, as another version can leave, reads as empty,
+    # as a fresh clone's missing one does: the types are read again, and each
+    # stub that comes out the same is left as it is.
+    old = _parse_json(text, dict[str, _StubRecord | None]) or {}
+    _remove_orphan_stubs(old.keys() - map(str, modules))
+    # None for a module whose types the next compile reads again.
+    record = {str(path): old.get(str(path)) for path in modules}
 
-    def digest(path: Path) -> str:
-        """Hash what a module's stub is made from.
+    def current(path: Path) -> bool:
+        """Whether a module's stub was made from the module as it is now.
 
         Args:
             path: The module.
 
         Returns:
-            The digest of its files and the files its types were read from.
+            Whether its record has the digest of what it is made from now.
         """
-        files = [*modules[path]["files"], *type_files[str(path)]]
-        return _module_digest(Path(files[0]), files)
+        made = record[str(path)]
+        return made is not None and made == _stub_record(modules[path], made["files"])
 
     stale = [
         path
         for path in modules
-        if (header := _read_header(path.with_suffix(".pyi")))
-        != _stub_header(path, digest(path))
+        if (header := _read_header(path.with_suffix(".pyi"))) is None
         # A stub without Reflex's header is the developer's own.
-        and (header is None or _is_generated(header))
+        or (_is_generated(header) and not current(path))
     ]
     # Each module's types are read from its real path, the first of its files.
     real = {path: modules[path]["files"][0] for path in stale}
@@ -787,15 +820,13 @@ def write_script_stubs(modules: Mapping[Path, _ScriptExports]) -> None:
     for path in stale:
         functions = modules[path]["functions"]
         if signatures is None:
-            # Never current, so the next compile reads the types again.
-            stub = _render_stub(path, "untyped", functions, {})
+            made = None
+            stub = _render_stub(path, functions, {})
         else:
-            type_files[str(path)] = signatures["files"][real[path]]
-            stub = _render_stub(
-                path, digest(path), functions, signatures["modules"][real[path]]
-            )
-        _write_stub(path, stub)
-    write_file(record, json.dumps(type_files), atomic=True)
+            made = _stub_record(modules[path], signatures["files"][real[path]])
+            stub = _render_stub(path, functions, signatures["modules"][real[path]])
+        record[str(path)] = made if _write_stub(path, stub) else None
+    write_file(record_file, json.dumps(record), atomic=True)
 
 
 def _restore_bundled_libraries() -> bool:

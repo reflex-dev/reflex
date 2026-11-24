@@ -46,9 +46,9 @@ class Dirs(SimpleNamespace):
     SCRIPTS_PATH = UTILS + "/scripts"
     # The directory those modules are copied to.
     SCRIPT_MODULES_PATH = UTILS + "/script_modules"
-    # The files the types of each of those modules were read from for its type
-    # stub in development, so the next compile knows when the stub is current,
-    # and which stubs belong to modules the app no longer imports.
+    # What the type stub of each of those modules was made from in development,
+    # so the next compile reads a module's types again only when that changed,
+    # and knows which stubs belong to modules the app no longer imports.
     SCRIPT_STUBS = "script_stubs.json"
     # The name of the output directory.
     BUILD_DIR = "build"

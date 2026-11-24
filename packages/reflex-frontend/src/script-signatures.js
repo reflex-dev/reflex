@@ -264,9 +264,9 @@ const packageJson = (file) => {
 /**
  * List the files a module's types are read from: the module and the local
  * files it reaches, each once, and the package.json of each installed package
- * they read. Per module, so that a change to one module's files leaves the
- * others' stubs current. Reflex's own files, which `$/` imports, are not
- * followed: they change with Reflex, whose version the stub's digest holds.
+ * they read. Per module, so that a change to one module's files reads only its
+ * types again. Reflex's own files, which `$/` imports, are not followed: they
+ * change with Reflex, whose version the compiler hashes with these files.
  * @param {string} file The module.
  * @returns {string[]} The files, the module first. A referenced file that does
  * not exist is listed, so that adding it changes them.
