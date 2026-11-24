@@ -6,10 +6,20 @@ from typing import Any, cast
 
 import pytest
 from reflex_base.config import Config, get_config, reload_config
-from reflex_base.registry import RegisteredEventHandler, RegistrationContext
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.registry import (
+    DefaultNameResolver,
+    NameResolver,
+    RegisteredEventHandler,
+    RegistrationContext,
+)
+from reflex_base.utils import format
 from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 
+from reflex.state import BaseState, State
 from reflex.testing import chdir
+from tests.units.minify_helpers import make_config, minify_resolver
+from tests.units.name_resolvers import stub_resolver, temporary_resolver
 
 
 def test_ensure_context_creates_if_missing():
@@ -59,7 +69,6 @@ def test_register_base_state(clean_registration_context: RegistrationContext):
     Args:
         clean_registration_context: A fresh, empty registration context.
     """
-    from reflex.state import BaseState
 
     class AutoRegistered(BaseState):
         x: int = 0
@@ -73,7 +82,6 @@ def test_duplicate_substate_raises(clean_registration_context: RegistrationConte
     Args:
         clean_registration_context: A fresh, empty registration context.
     """
-    from reflex.state import BaseState
 
     class DupParent(BaseState):
         pass
@@ -91,7 +99,6 @@ def test_get_substates(clean_registration_context: RegistrationContext):
     Args:
         clean_registration_context: A fresh, empty registration context.
     """
-    from reflex.state import BaseState
 
     class GetSubRoot(BaseState):
         pass
@@ -113,7 +120,6 @@ def test_get_substates_by_name(clean_registration_context: RegistrationContext):
     Args:
         clean_registration_context: A fresh, empty registration context.
     """
-    from reflex.state import BaseState
 
     class NamedState(BaseState):
         pass
@@ -369,7 +375,6 @@ def test_fork_clears_app_and_preserves_registrations(
     """
     import reflex as rx
     from reflex.event import EventHandler
-    from reflex.state import BaseState
 
     class ForkState(BaseState):
         x: int = 0
@@ -422,6 +427,312 @@ def test_bundled_libraries_isolated_between_contexts():
 
     with RegistrationContext() as ctx_b:
         assert "some-extra-lib" not in ctx_b.bundled_libraries
+
+
+def test_resolver_installed_later_renames_existing_vars(
+    clean_registration_context: RegistrationContext,
+):
+    """A resolver installed after a state exists rebuilds the Vars it holds."""
+    import reflex as rx
+
+    class LateRenamedState(rx.State):
+        value: str = ""
+
+        @rx.var
+        def doubled(self) -> str:
+            return self.value * 2
+
+    default_expr = str(LateRenamedState.value)
+    with temporary_resolver(
+        stub_resolver(state_name="zzz", target=LateRenamedState, var_prefix="v_")
+    ):
+        context = format.format_state_name(LateRenamedState.get_full_name())
+        assert context.endswith("__zzz")
+        prefix = format.format_state_local(LateRenamedState)
+        assert prefix == f"$rx_{context}"
+        assert str(LateRenamedState.value) == f"{prefix}.v_value"
+        for var in (
+            LateRenamedState.base_vars["value"],
+            LateRenamedState.vars["value"],
+        ):
+            assert str(var) == f"{prefix}.v_value"
+            var_data = var._get_all_var_data()
+            assert var_data is not None
+            # The field subscription names the field by its renamed key.
+            assert var_data.hooks == (
+                f'const {prefix} = useStateContext("{LateRenamedState.get_full_name()}", ["v_value"])',
+            )
+            # Dependency tracking keys on the name that never changes.
+            assert var_data.state == LateRenamedState._get_default_full_name()
+        assert str(LateRenamedState.doubled) == f"{prefix}.v_doubled"
+        assert LateRenamedState._var_names_by_key["v_value"] == "value"
+        # Deltas and full state dicts key the vars the way the frontend reads them.
+        state = LateRenamedState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+        full_name = LateRenamedState.get_full_name()
+        assert state.dict() == {full_name: {"v_value": "", "v_doubled": ""}}
+        state.value = "a"
+        assert state.get_delta() == {full_name: {"v_value": "a", "v_doubled": "aa"}}
+    assert str(LateRenamedState.value) == default_expr
+    state = LateRenamedState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    assert state.dict() == {
+        LateRenamedState.get_full_name(): {
+            f"value{FIELD_MARKER}": "",
+            f"doubled{FIELD_MARKER}": "",
+        }
+    }
+
+
+def test_resolver_installed_later_renames_inherited_vars(
+    clean_registration_context: RegistrationContext,
+):
+    """A substate's map of inherited vars follows its parent's rebuilt Vars."""
+    import reflex as rx
+
+    class RenamedParent(rx.State):
+        value: int = 0
+
+    class KeptChild(RenamedParent):
+        pass
+
+    with temporary_resolver(stub_resolver(state_name="p", target=RenamedParent)):
+        assert KeptChild.vars["value"] is RenamedParent.base_vars["value"]
+        assert str(KeptChild.vars["value"]).endswith("__p.value_rx_state_")
+
+
+def test_resolver_installed_later_renames_the_router_var():
+    """The cached router switchboard is rebuilt with the root's new name."""
+    with temporary_resolver(stub_resolver(state_name="r")):
+        assert str(State.router.url).startswith("$rx_r.")
+    assert str(State.router.url).startswith(f"{State.get_name()}.")
+
+
+def test_default_resolver_returns_none():
+    """The default resolver yields no overrides."""
+    resolver = DefaultNameResolver()
+    assert resolver.resolve_state_name(State) is None
+    assert resolver.resolve_handler_name(State, "any_handler") is None
+    assert resolver.resolve_var_name(State, "any_var") is None
+
+
+def test_default_resolver_satisfies_protocol():
+    """``DefaultNameResolver`` is a structural :class:`NameResolver`."""
+    assert isinstance(DefaultNameResolver(), NameResolver)
+
+
+def test_minify_resolver_satisfies_protocol():
+    """``MinifyNameResolver`` is a structural :class:`NameResolver`."""
+    resolver = minify_resolver()
+    assert isinstance(resolver, NameResolver)
+
+
+def test_get_state_name_falls_back_to_default():
+    """``RegistrationContext.get_state_name`` returns the built-in name when
+    the resolver returns None (the default).
+    """
+    ctx = RegistrationContext.get()
+    assert ctx.get_state_name(State) == RegistrationContext.default_state_name(State)
+
+
+def test_get_handler_name_falls_back_to_default():
+    """``RegistrationContext.get_handler_name`` returns the input name when
+    the resolver returns None (the default).
+    """
+    ctx = RegistrationContext.get()
+    assert ctx.get_handler_name(State, "some_handler") == "some_handler"
+
+
+def test_set_name_resolver_propagates_through_get_name():
+    """A custom resolver swaps ``BaseState.get_name`` for the targeted class."""
+    with temporary_resolver(stub_resolver(state_name="fixed_name")):
+        assert State.get_name() == "fixed_name"
+
+
+def test_set_name_resolver_propagates_through_format_event_handler():
+    """A custom resolver swaps the formatted handler name."""
+    from reflex.state import OnLoadInternalState
+    from reflex.utils.format import format_event_handler
+
+    with temporary_resolver(stub_resolver(handler_prefix="px_")):
+        formatted = format_event_handler(OnLoadInternalState.on_load_internal)  # pyright: ignore[reportArgumentType]
+        assert formatted.endswith(".px_on_load_internal")
+
+
+def test_resolver_swap_clears_lru_caches():
+    """``set_name_resolver`` invalidates the name caches immediately."""
+    with temporary_resolver(stub_resolver(state_name="first")) as ctx:
+        assert State.get_full_name() == "first"
+        ctx.set_name_resolver(stub_resolver(state_name="second"))
+        assert State.get_full_name() == "second"
+
+
+def test_builtin_resolver_giving_the_names_in_use_is_only_swapped_in():
+    """A built-in resolver with the digest in use keeps the Vars as they are."""
+    with temporary_resolver(DefaultNameResolver()) as ctx:
+        var = State.base_vars["is_hydrated"]
+        unminified = minify_resolver()
+        ctx.set_name_resolver(unminified)
+        assert ctx.name_resolver is unminified
+        assert State.base_vars["is_hydrated"] is var
+        # A custom resolver may rename under any digest, so it always rebuilds.
+        ctx.set_name_resolver(stub_resolver())
+        assert State.base_vars["is_hydrated"] is not var
+
+
+def test_reinstalling_a_resolver_undoes_the_names_a_fork_installed():
+    """The names are cached on classes the fork shares, so they are rebuilt."""
+    with temporary_resolver(DefaultNameResolver()) as ctx:
+        with ctx.fork() as fork:
+            fork.set_name_resolver(
+                minify_resolver(make_config(include_state_root=True), states=True)
+            )
+            assert State.get_name() == "a"
+        ctx.set_name_resolver(ctx.name_resolver)
+        assert State.get_name() == RegistrationContext.default_state_name(State)
+
+
+def test_reinstalling_undoes_a_fork_s_names_after_an_install_elsewhere():
+    """An install in a context without a state does not mark that state rebuilt."""
+    with temporary_resolver(DefaultNameResolver()) as ctx:
+        default_expr = str(State.base_vars["is_hydrated"])
+        with ctx.fork() as fork:
+            fork.set_name_resolver(
+                minify_resolver(make_config(include_state_root=True), states=True)
+            )
+            assert str(State.base_vars["is_hydrated"]) == "$rx_a.is_hydrated_rx_state_"
+        with RegistrationContext() as unrelated:
+            unrelated.set_name_resolver(DefaultNameResolver())
+        ctx.set_name_resolver(ctx.name_resolver)
+        assert str(State.base_vars["is_hydrated"]) == default_expr
+
+
+def test_chain_of_resolvers():
+    """Resolvers compose with a tiny user-written chain wrapper."""
+
+    class Chain:
+        """Returns the first non-None override from the wrapped resolvers."""
+
+        def __init__(self, *resolvers):
+            self.resolvers = resolvers
+
+        def resolve_state_name(self, state_cls):
+            for r in self.resolvers:
+                v = r.resolve_state_name(state_cls)
+                if v is not None:
+                    return v
+            return None
+
+        def resolve_handler_name(self, state_cls, handler_name):
+            for r in self.resolvers:
+                v = r.resolve_handler_name(state_cls, handler_name)
+                if v is not None:
+                    return v
+            return None
+
+        def resolve_var_name(self, state_cls, var_name):
+            for r in self.resolvers:
+                v = r.resolve_var_name(state_cls, var_name)
+                if v is not None:
+                    return v
+            return None
+
+        def digest(self):
+            return "".join(r.digest() for r in self.resolvers)
+
+    chain = Chain(stub_resolver(state_name="from_first"), DefaultNameResolver())
+    with temporary_resolver(chain):
+        assert State.get_name() == "from_first"
+
+
+def test_handlers_resolving_to_one_name_raise(
+    clean_registration_context: RegistrationContext,
+):
+    """A handler resolved onto another handler's name in its state is rejected.
+
+    Registering both under one name would let an event for one run the other.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+    """
+
+    class FooToA:
+        def resolve_state_name(self, state_cls):
+            return None
+
+        def resolve_handler_name(self, state_cls, handler_name):
+            return "a" if handler_name == "foo" else None
+
+        def resolve_var_name(self, state_cls, var_name):
+            return None
+
+        def digest(self):
+            return ""
+
+    with (
+        temporary_resolver(FooToA()),
+        pytest.raises(StateValueError, match="'foo' and 'a'"),
+    ):
+
+        class CollidingHandlers(BaseState):
+            def foo(self):
+                pass
+
+            def a(self):
+                pass
+
+
+def test_handler_is_registered_under_the_name_its_events_carry(
+    clean_registration_context: RegistrationContext,
+):
+    """The registry key is the formatted name, even for an empty resolved name.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+    """
+
+    class EmptyFoo:
+        def resolve_state_name(self, state_cls):
+            return None
+
+        def resolve_handler_name(self, state_cls, handler_name):
+            return "" if handler_name == "foo" else None
+
+        def resolve_var_name(self, state_cls, var_name):
+            return None
+
+        def digest(self):
+            return ""
+
+    with temporary_resolver(EmptyFoo()):
+
+        class EmptyNamedHandlerState(BaseState):
+            def foo(self):
+                pass
+
+        handler = EmptyNamedHandlerState.event_handlers["foo"]
+        name = format.format_event_handler(handler)
+        assert name == f"{EmptyNamedHandlerState.get_full_name()}."
+        assert clean_registration_context.event_handlers[name].handler is handler
+
+
+def test_refresh_keys_keeps_reloaded_substates_out(
+    clean_registration_context: RegistrationContext,
+):
+    """Re-keying keeps a substate that a module reload removed out of the tree.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+    """
+    from reflex.state import reload_state_module
+
+    class ReloadedParent(BaseState):
+        pass
+
+    class ReloadedChild(ReloadedParent):
+        pass
+
+    reload_state_module(ReloadedChild._get_source_module(), ReloadedParent)
+    clean_registration_context.refresh_keys()
+    assert ReloadedChild not in clean_registration_context.get_substates(ReloadedParent)
 
 
 def test_reset_compile_caches_empties_per_compile_maps(

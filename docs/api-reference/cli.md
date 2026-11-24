@@ -17,12 +17,14 @@ Options:
 
 Commands:
   cloud      The Hosting CLI.
+  compile    Compile the app in the current directory.
   db         Subcommands for managing the database schema.
   deploy     Deploy the app to the Reflex hosting service.
   export     Export the app to a zip file.
   init       Initialize a new Reflex app in the current directory.
   login      Authenticate with experimental Reflex hosting service.
   logout     Log out of access to Reflex hosting service.
+  minify     Manage state, event and var name minification.
   rename     Rename the app in the current directory.
   run        Run the app in the current directory.
   script     Subcommands for running helper scripts.
@@ -111,6 +113,29 @@ Options:
 The `reflex cloud` command provides access to the Reflex Cloud hosting service. It includes subcommands for managing apps, projects, secrets, and more.
 
 For detailed documentation on Reflex Cloud and deployment, see the [Cloud Quick Start Guide](https://reflex.dev/docs/hosting/deploy-quick-start/).
+
+## Minify
+
+The `reflex minify` command manages the short state, event handler and var names
+used when name minification is enabled.
+
+```bash
+$ reflex minify --help
+Usage: reflex minify [OPTIONS] COMMAND [ARGS]...
+
+  Manage state, event and var name minification.
+
+Commands:
+  init      Initialize minify.json with IDs for all states, events and vars.
+  list      Print the state tree with IDs and minified names.
+  lookup    Lookup a state, event handler or var by its minified path (e.g.,...
+  sync      Synchronize minify.json with the current codebase.
+  validate  Validate minify.json against the current codebase.
+```
+
+See [Name Minification](/docs/api-reference/minification/) for
+the `minify.json` format, the `REFLEX_MINIFY_*` environment variables, and the
+deployment requirements.
 
 ## Script
 

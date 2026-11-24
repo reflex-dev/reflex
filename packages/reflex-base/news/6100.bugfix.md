@@ -1,0 +1,1 @@
+An event that reaches no registered handler is now passed to the app's `backend_exception_handler` as well as logged, so it surfaces in the browser instead of leaving the page waiting for an update that never arrives.
