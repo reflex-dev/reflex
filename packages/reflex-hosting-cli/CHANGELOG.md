@@ -1,3 +1,10 @@
+## v0.2.2.post1 (2026-11-23)
+
+### Miscellaneous
+
+- Allow `reflex-build-sdk` 0.1.2. ([#7973](https://github.com/reflex-dev/reflex/issues/7973))
+
+
 ## v0.2.2 (2026-11-11)
 
 ### Bug Fixes
