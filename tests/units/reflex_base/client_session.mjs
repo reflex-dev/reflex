@@ -692,3 +692,49 @@ test("a tab that becomes visible does not repeat an exchange the backend denied"
   tab.documentListeners.get("visibilitychange")();
   assert.equal(tab.emitted.length, emitted);
 });
+
+test("an exchange that keeps failing stops holding HTTP calls after three attempts", async () => {
+  // A proxy that does not forward /_reflex/session answers 404 without end.
+  const tab = await browserSession({
+    fetch: async () => ({ ok: false, status: 404 }),
+  });
+  await tab.connect();
+  await (await tab.accept("first-tab", "credential")).exchange;
+  let ready = false;
+  const readiness = tab.runtime.waitForSession().then(() => {
+    ready = true;
+  });
+  readiness.catch(() => {});
+  for (const attempt of [2, 3]) {
+    await tick();
+    assert.equal(ready, false, `still waiting before attempt ${attempt}`);
+    await tab.callbacks.get("session_token")("credential");
+  }
+  await readiness;
+  assert.equal(tab.requests.length, 3);
+  // The retry continues, and the page keeps showing the failure.
+  assert.equal(tab.timeouts.size, 1);
+  assert.equal(tab.errors.length, 3);
+});
+
+test("an exchange that succeeds after a denial schedules the next refresh", async () => {
+  let denied = true;
+  const tab = await browserSession({
+    fetch: async () =>
+      denied
+        ? { ok: false, status: 403 }
+        : {
+            ok: true,
+            json: async () => ({ client_token: "first-tab", expires_in: 100 }),
+          },
+  });
+  await tab.connect();
+  await (await tab.accept("first-tab", "credential")).exchange;
+  assert.equal(tab.timeouts.size, 0);
+  denied = false;
+  await tab.callbacks.get("session_token")("credential");
+  assert.deepEqual(
+    [...tab.timeouts.keys()].map((id) => tab.delays.get(id)),
+    [50000],
+  );
+});

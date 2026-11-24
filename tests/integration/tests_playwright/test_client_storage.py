@@ -11,6 +11,7 @@ from playwright.sync_api import Page, expect
 from reflex_base.constants.state import FIELD_MARKER
 
 from reflex.testing import AppHarness
+from tests.integration.utils import CLIENT_TOKEN_KEY_JS
 
 
 def ClientSide():
@@ -34,7 +35,7 @@ def ClientSide():
         @rx.event
         def reset_token_no_hydrate(self):
             return rx.run_script(
-                f"{{token = '{uuid.uuid4()}'; window.sessionStorage.setItem('token', token);}}"
+                f"window.sessionStorage.setItem({CLIENT_TOKEN_KEY_JS}, '{uuid.uuid4()}');"
             )
 
     class ClientSideSubState(ClientSideState):
@@ -382,7 +383,7 @@ def test_client_side_state(client_side: AppHarness, opened_page: Page):
         f"{sub_sub_state}.l1s{FIELD_MARKER}": "l1s value",
     }
     session_storage = _storage(page, "sessionStorage")
-    session_storage.pop("token", None)
+    session_storage.pop(page.evaluate(CLIENT_TOKEN_KEY_JS), None)
     assert session_storage == {
         f"{sub_state}.s1{FIELD_MARKER}": "s1 value",
         f"{sub_state}.s2{FIELD_MARKER}": "s2 value",
@@ -438,7 +439,7 @@ def test_client_side_state(client_side: AppHarness, opened_page: Page):
     )
     expect(page.locator("#c5")).to_have_text("c5 value")
 
-    page.evaluate("sessionStorage.setItem('token', '')")
+    page.evaluate(f"sessionStorage.setItem({CLIENT_TOKEN_KEY_JS}, '')")
     page.reload()
     token = _wait_for_token(page)
     _expect_displayed_values(
