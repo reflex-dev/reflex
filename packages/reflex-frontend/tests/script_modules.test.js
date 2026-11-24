@@ -291,6 +291,39 @@ test("finds an import without an extension as Vite does, JSON included", async (
   });
 });
 
+test("finds the TypeScript file an import names by the JavaScript it compiles to", async () => {
+  // As TypeScript and Vite do: `.js` names `.ts` or else `.tsx`, `.jsx` names
+  // `.tsx`, and `.mjs` names `.mts`.
+  const directory = writeFiles({
+    "party.ts": [
+      'import { plain } from "./plain.js";',
+      'import { Widget } from "./widget.js";',
+      'import { View } from "./view.jsx";',
+      'import { esm } from "./esm.mjs";',
+      "export function go() {}",
+    ].join("\n"),
+    "plain.ts": "export const plain = 1;\n",
+    "widget.tsx": 'import "widget-pkg";\nexport const Widget = () => null;\n',
+    "view.tsx": "export const View = () => null;\n",
+    "esm.mts": "export const esm = 1;\n",
+  });
+  const { modules, imports } = await readModules(directory, ["party.ts"]);
+  expect(modules["party.ts"].files).toEqual([
+    "party.ts",
+    "plain.ts",
+    "widget.tsx",
+    "view.tsx",
+    "esm.mts",
+  ]);
+  expect(imports).toEqual({
+    "party.ts": [],
+    "plain.ts": [],
+    "widget.tsx": ["widget-pkg"],
+    "view.tsx": [],
+    "esm.mts": [],
+  });
+});
+
 test("lists the packages a stylesheet imports", async () => {
   // Vite resolves a bare `@import` from the stylesheet first, then from the
   // installed packages, so a name with no file beside it is a package.
