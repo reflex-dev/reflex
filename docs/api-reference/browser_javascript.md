@@ -415,7 +415,8 @@ arguments: `def run(*args: Any)`.
 - When the app stops importing a module, Reflex removes the stub it wrote for
   it.
 - Reflex reads the types with TypeScript, which it installs with the app's
-  frontend packages in development.
+  frontend packages in every mode, so `reflex.lock` is the same in development
+  and production. The browser bundle never includes it.
 - Pyright reports a stub that has no Python module beside it as
   `reportMissingModuleSource`. Turn that rule off:
 

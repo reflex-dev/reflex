@@ -903,8 +903,8 @@ def test_compile_script_modules(
 ):
     """Modules are copied with the files they reach and indexed.
 
-    Typescript, which reads their types for their stubs, is installed only in
-    development.
+    Typescript, which reads their types for their stubs, is installed in every
+    mode, so that the app's lockfile is the same in development and production.
 
     Args:
         script_app: the app package, the stand-in script's output and its runs.
@@ -961,7 +961,7 @@ def test_compile_script_modules(
             ),
         ),
     ]
-    packages = ["canvas-confetti", "dayjs", *([] if prod else [_TYPESCRIPT_PACKAGE])]
+    packages = ["canvas-confetti", "dayjs", _TYPESCRIPT_PACKAGE]
     assert package_imports == {
         package: [rx.ImportVar(tag=None, render=False)] for package in packages
     }

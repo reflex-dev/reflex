@@ -552,8 +552,8 @@ def compile_script_modules(
 
     Returns:
         The (path, code) outputs; the npm packages to install, which are those
-        the modules import and, in development, typescript, which reads their
-        types for ``write_script_stubs``; the (source, target) copies of
+        the modules import and typescript, which reads their types for
+        ``write_script_stubs``; the (source, target) copies of
         their files; and what was read of each module, by its file.
 
     Raises:
@@ -608,8 +608,9 @@ def compile_script_modules(
         for file, specifiers in report["imports"].items()
         for package in _package_imports(Path(file), specifiers)
     }
-    if not is_prod_mode():
-        package_imports[_TYPESCRIPT_PACKAGE] = [ImportVar(tag=None, render=False)]
+    # In every mode, so that the app's lockfile is the same in each. The browser
+    # bundle never imports it.
+    package_imports[_TYPESCRIPT_PACKAGE] = [ImportVar(tag=None, render=False)]
     outputs = [(index, f"export default {{\n{loaders}}};\n")]
     return outputs, package_imports, list(copies.items()), read
 
