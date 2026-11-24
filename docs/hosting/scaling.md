@@ -61,12 +61,12 @@ The labeled arrows distinguish traffic types. On narrow screens, scroll the diag
 
 ## Serve requests with replaceable backends
 
-Host the exported frontend independently, for example on a CDN. Configure its API URL for the WebSocket-capable load balancer in front of the Python backends. Each region's replicas share that region's session Redis; durable records, files and jobs live outside individual processes and local disks.
+Host the exported frontend independently, for example on a CDN. Configure its API URL for the WebSocket-capable load balancer in front of the Python backends, and set `REFLEX_DEPLOY_URL` on the backends to the frontend's public URL so they accept its WebSocket connections. Each region's replicas share that region's session Redis; durable records, files and jobs live outside individual processes and local disks.
 
 Start with deliberate process counts so adding replicas does not multiply oversized database or Redis connection pools. One Granian process per small instance is a measurement starting point:
 
 ```bash
-GRANIAN_WORKERS=1 reflex run --env prod \
+REFLEX_DEPLOY_URL=https://app.example.com GRANIAN_WORKERS=1 reflex run --env prod \
     --backend-only --backend-port 8000
 ```
 

@@ -10,6 +10,7 @@ import threading
 import urllib.parse
 from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
+from contextvars import ContextVar
 from importlib.machinery import PathFinder
 from pathlib import Path, PureWindowsPath
 from types import ModuleType
@@ -37,8 +38,9 @@ from reflex_base.utils.exceptions import ConfigError, InvalidPluginConfigError
 
 logger = logging.getLogger(__name__)
 
-# The config is built several times in one run; warn about React Compiler once.
+# The config is built several times in one run; warn about each setting once.
 _warned_react_compiler = False
+_warned_auto_memoize = False
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -169,7 +171,7 @@ class BaseConfig:
         api_url: The backend url the frontend will connect to. Only needs to be set when the backend is listening on a different address than the frontend.
         deploy_url: The public url the frontend is hosted on, when it differs from the backend origin. Unset by default: in prod mode the backend then serves the frontend from its own origin, and frontend_url falls back to http://localhost:<frontend_port>.
         backend_host: The url the backend will be hosted on.
-        trusted_proxy_hops: Number of trusted reverse proxies used to resolve client IPs from X-Forwarded-For. Defaults to 0, which ignores X-Forwarded-For.
+        trusted_proxy_hops: Number of trusted reverse proxies used to resolve client IPs from X-Forwarded-For, and the host and scheme of event websocket requests from X-Forwarded-Host and X-Forwarded-Proto. Defaults to 0, which ignores these headers.
         db_url: The database url used by rx.Model.
         async_db_url: The async database url used by rx.Model.
         redis_url: The redis url.
@@ -177,7 +179,7 @@ class BaseConfig:
         bun_path: The bun path.
         frozen_lockfile: Run frontend package manager in lockfile-enforcing mode (only honored by bun).
         static_page_generation_timeout: Timeout to do a production build of a frontend page.
-        cors_allowed_origins: Comma separated list of origins that are allowed to connect to the backend API. The default allows any origin in dev mode; in prod mode it allows only the origin of deploy_url, or only same-origin requests when deploy_url is unset.
+        cors_allowed_origins: Comma separated list of origins that are allowed to connect to the backend API. The default allows any origin in dev mode; in prod mode it allows the backend's own origin and, when deploy_url is set, the origin of deploy_url.
         vite_allowed_hosts: Allowed hosts for the Vite dev server. Set to True to allow all hosts, or provide a list of hostnames (e.g. ["myservice.local"]) to allow specific ones. Prevents 403 errors in Docker, Codespaces, reverse proxies, etc.
         react_strict_mode: Whether to use React strict mode.
         react_compiler: Enable experimental React Compiler memoization for generated components in development and production. Defaults to False.
@@ -191,6 +193,7 @@ class BaseConfig:
         redis_token_expiration: Token expiration time for redis state manager.
         env_file: Path to file containing key-values pairs to load into the environment; Dotenv format. Multiple files may be separated by os.pathsep. Requires the python-dotenv package.
         state_auto_setters: Whether to automatically create setters for state base vars.
+        state_explicit_event_handlers: Whether only methods decorated with `@rx.event` become event handlers. By default every public method of a user-defined state is an event handler.
         default_color_mode: The default color mode for the app: "system" (follow the OS preference), "light", or "dark". Applies to the built-in color mode switcher and `color_mode_cond` without requiring a radix theme.
         show_built_with_reflex: Whether to display the sticky "Built with Reflex" badge on all pages.
         is_reflex_cloud: Whether the app is running in the reflex cloud environment.
@@ -276,6 +279,8 @@ class BaseConfig:
     env_file: str | None = None
 
     state_auto_setters: bool = False
+
+    state_explicit_event_handlers: bool = False
 
     default_color_mode: LiteralColorMode = "system"
 
@@ -399,7 +404,7 @@ class Config(BaseConfig):
         for key, env_value in env_kwargs.items():
             setattr(self, key, env_value)
 
-        global _warned_react_compiler
+        global _warned_auto_memoize, _warned_react_compiler
         if self.react_compiler and not _warned_react_compiler:
             _warned_react_compiler = True
             logger.warning(
@@ -408,7 +413,12 @@ class Config(BaseConfig):
                 "pages can stay unoptimized."
             )
 
-        if not self.auto_memoize and not self.react_compiler:
+        if (
+            not self.auto_memoize
+            and not self.react_compiler
+            and not _warned_auto_memoize
+        ):
+            _warned_auto_memoize = True
             logger.warning(
                 "auto_memoize=False without react_compiler=True disables page "
                 "memoization. Every state change can re-render the whole page. "
@@ -471,10 +481,10 @@ class Config(BaseConfig):
         self._non_default_attributes = set(kwargs.keys())
         self._replace_defaults(**kwargs)
 
-        # Publish for State-class creation so it never re-enters get_config()
-        # (which AttributeErrors if a State is defined while rxconfig.py is mid-import).
-        global _state_auto_setters
-        _state_auto_setters = self.state_auto_setters
+        # Publish to the in-progress rxconfig.py import, if any, so States defined
+        # after this Config in rxconfig.py resolve their flags from it.
+        if (load := _config_load.get()) is not None:
+            load.config = self
 
         if (
             self.state_manager_mode == constants.StateManagerMode.REDIS
@@ -990,27 +1000,64 @@ def _record_imports() -> Iterator[_ImportRecorder]:
 # Protect sys.path from concurrent modification during config loading.
 _load_config_lock = threading.RLock()
 
-# Cached state_auto_setters so State-class creation never re-enters get_config().
-_state_auto_setters: bool | None = None
+
+@dataclasses.dataclass
+class _ConfigLoad:
+    """An in-progress rxconfig.py import, holding its Config once constructed."""
+
+    config: Config | None = None
+
+
+# Set for the duration of _get_config() so States defined inside rxconfig.py see
+# the Config being loaded (or env/default before it exists), never a stale one.
+_config_load: ContextVar[_ConfigLoad | None] = ContextVar("_config_load", default=None)
+
+
+def _get_state_flag(name: str) -> bool:
+    """Resolve a boolean State-class creation flag without loading rxconfig.
+
+    Uses the Config of the in-progress rxconfig.py import, else the Config cached
+    on the active RegistrationContext, else the REFLEX_<NAME> env var, then
+    False. Backend workers load the config before they import the app, so their
+    States find it cached. Never loads rxconfig, since an rxconfig.py may import
+    the very module defining the State.
+
+    Args:
+        name: The config field name.
+
+    Returns:
+        The resolved flag value.
+    """
+    load = _config_load.get()
+    config = (
+        load.config
+        if load is not None
+        else RegistrationContext.ensure_context()._config
+    )
+    if config is not None:
+        return getattr(config, name)
+    env_val = os.environ.get(Config._prefixes[0] + name.upper())
+    if env_val and env_val.strip():
+        return interpret_env_var_value(env_val, bool, name)
+    return False
 
 
 def get_state_auto_setters() -> bool:
     """Return whether state auto-setters are enabled, without importing rxconfig.
 
-    Reads the value cached when the Config was built. Before any Config exists
-    (e.g. a State defined inside rxconfig.py during its import), falls back to the
-    REFLEX_STATE_AUTO_SETTERS env var, then the default (False). This never calls
-    get_config() or imports rxconfig, so it cannot re-enter config loading.
-
     Returns:
         Whether state auto-setters are enabled.
     """
-    if _state_auto_setters is not None:
-        return _state_auto_setters
-    env_val = os.environ.get(Config._prefixes[0] + "STATE_AUTO_SETTERS")
-    if env_val and env_val.strip():
-        return interpret_env_var_value(env_val, bool, "state_auto_setters")
-    return False
+    return _get_state_flag("state_auto_setters")
+
+
+def get_state_explicit_event_handlers() -> bool:
+    """Return whether only `@rx.event` methods become event handlers, without importing rxconfig.
+
+    Returns:
+        Whether explicit event handlers are required.
+    """
+    return _get_state_flag("state_explicit_event_handlers")
 
 
 def _get_config(project_root: Path | None = None) -> Config:
@@ -1039,6 +1086,7 @@ def _get_config(project_root: Path | None = None) -> Config:
         # which removal by value could confuse with caller-owned ones.
         cwd = str(project_root)
         sys.path.insert(0, cwd)
+        load_token = _config_load.set(_ConfigLoad())
         try:
             # Never cache rxconfig itself — each load goes to disk so different
             # RegistrationContexts hold independent Config instances.
@@ -1071,6 +1119,7 @@ def _get_config(project_root: Path | None = None) -> Config:
                     )
             return rxconfig.config
         finally:
+            _config_load.reset(load_token)
             for i, entry in enumerate(sys.path):
                 if entry is cwd:
                     del sys.path[i]
@@ -1135,8 +1184,8 @@ def get_config(reload: bool = False) -> Config:
 def reload_config() -> Config:
     """Force a fresh load of the config into the current RegistrationContext.
 
-    Clears any cached config on the current context and reloads rxconfig.py
-    from disk.
+    Reloads rxconfig.py from disk and replaces any cached config on the current
+    context. If the load fails, the context keeps its previous config.
 
     Returns:
         The freshly loaded app config.

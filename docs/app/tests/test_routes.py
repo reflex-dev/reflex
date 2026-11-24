@@ -1,5 +1,6 @@
 """Integration tests for all routes in Reflex."""
 
+import os
 import re
 import subprocess
 import sys
@@ -23,6 +24,28 @@ def test_metadata_preserves_acronyms_and_code_identifiers(title, expected):
     """Normalize standalone acronyms without rewriting component names."""
     seo_title, _ = docs_metadata("/api-reference/cli/", title, None)
     assert seo_title.startswith(expected + " · ")
+
+
+@pytest.mark.parametrize(
+    ("path", "title", "expected"),
+    [
+        (
+            "/enterprise/ag-grid/pivot-mode/",
+            "Pivot Mode",
+            "Pivot Mode · AG Grid · Enterprise · Reflex Docs",
+        ),
+        (
+            "/ai/integrations/github/",
+            "Github",
+            "GitHub · Integrations · AI · Reflex Docs",
+        ),
+        ("/ui/overview/", "Overview", "Overview · UI · Reflex Docs"),
+    ],
+)
+def test_metadata_title_uses_the_shared_acronyms(path, title, expected):
+    """Search titles spell acronyms like the breadcrumbs and sidebar."""
+    seo_title, _ = docs_metadata(path, title, None)
+    assert seo_title == expected
 
 
 @pytest.mark.parametrize(
@@ -143,6 +166,30 @@ def test_custom_components_urls_redirect_to_wrapping_react():
         timeout=120,
     )
     assert result.returncode == 0, result.stderr[-2000:]
+
+
+def test_cloud_overview_moved_under_hosting_with_a_redirect():
+    """The Cloud overview lives in the Cloud section; its old URL redirects there."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from reflex_docs.reflex_docs import app, redirects\n"
+            "print('hosting/overview' in app._unevaluated_pages, "
+            "[r for r in redirects if r[0] == '/overview/'])\n",
+        ],
+        cwd=Path(__file__).resolve().parents[1],
+        # reflex-enterprise exits before the app is built when not logged in.
+        env={**os.environ, "CI": "true"},
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=120,
+    )
+    assert result.returncode == 0, result.stderr[-2000:]
+    assert result.stdout.splitlines()[-1] == (
+        "True [('/overview/', '/hosting/overview/')]"
+    )
 
 
 def test_docs_route_descriptions_fit_search_snippet_length(routes_fixture):
@@ -583,5 +630,22 @@ def test_routes_have_specific_descriptions(routes_fixture):
 )
 def test_library_route_titles(routes_fixture, path, expected):
     """Published library pages carry the final title search engines see."""
+    titles = {route.path: route.seo_title or route.title for route in routes_fixture}
+    assert titles[path] == expected
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    [
+        ("/api-reference/app/", "rx.App API Reference · Reflex Docs"),
+        ("/api-reference/state/", "rx.State API Reference · Reflex Docs"),
+        ("/api-reference/var/", "rx.Var API Reference · Reflex Docs"),
+        ("/api-reference/eventhandler/", "rx.EventHandler API Reference · Reflex Docs"),
+        ("/api-reference/eventspec/", "rx.event.EventSpec API Reference · Reflex Docs"),
+        ("/api-reference/statemanager/", "StateManager API Reference · Reflex Docs"),
+    ],
+)
+def test_api_reference_route_titles(routes_fixture, path, expected):
+    """API reference titles lead with the public name users type into search."""
     titles = {route.path: route.seo_title or route.title for route in routes_fixture}
     assert titles[path] == expected

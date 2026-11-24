@@ -749,6 +749,28 @@ class _ProxyItemsView(_ProxyDictView[_KT, _VT], ItemsView[_KT, _VT]):
 _DICT_VIEWS = {"items": _ProxyItemsView, "values": _ProxyValuesView}
 
 
+def _inplace_operator(name: str) -> Callable[[MutableProxy, Any], Any]:
+    """Build an in-place operator method that marks the proxied state dirty.
+
+    CPython looks up in-place operators on the type, so they bypass the
+    `__getattr__` that wraps named mutating methods.
+
+    Args:
+        name: The in-place operator dunder, like `__iadd__`.
+
+    Returns:
+        A method that applies the operator to the wrapped object, marks the
+        state dirty and returns the proxy.
+    """
+    operator = getattr(wrapt.ObjectProxy, name)
+
+    def inplace(self: MutableProxy, other: Any) -> Any:
+        return self._mark_dirty(operator, args=(self, other))
+
+    inplace.__name__ = inplace.__qualname__ = name
+    return inplace
+
+
 class MutableProxy(wrapt.ObjectProxy):
     """A proxy for a mutable object that tracks changes."""
 
@@ -1215,6 +1237,13 @@ class MutableProxy(wrapt.ObjectProxy):
             super().__setattr__(name, value)
             return
         self._mark_dirty(super().__setattr__, args=(name, value))
+
+    __iadd__ = _inplace_operator("__iadd__")
+    __imul__ = _inplace_operator("__imul__")
+    __ior__ = _inplace_operator("__ior__")
+    __iand__ = _inplace_operator("__iand__")
+    __isub__ = _inplace_operator("__isub__")
+    __ixor__ = _inplace_operator("__ixor__")
 
     def __copy__(self) -> Any:
         """Return a copy of the proxy.

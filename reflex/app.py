@@ -9,6 +9,7 @@ import dataclasses
 import functools
 import importlib
 import inspect
+import ipaddress
 import json
 import logging
 import operator
@@ -31,11 +32,12 @@ from contextvars import Token
 from datetime import timedelta
 from pathlib import Path
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, Any, ForwardRef, overload
 
 from reflex_base import constants, otel
+from reflex_base.client_state import _collect_declarations
 from reflex_base.components.component import Component, ComponentStyle
-from reflex_base.config import get_config, reload_config
+from reflex_base.config import Config, get_config, reload_config
 from reflex_base.context.base import BaseContext
 from reflex_base.environment import auto_reload_cooldown, environment
 from reflex_base.event import (
@@ -44,6 +46,8 @@ from reflex_base.event import (
     EventSpec,
     EventType,
     IndividualEventType,
+    _check_not_undecorated_state_method,
+    event_sequence,
     noop,
 )
 from reflex_base.event.context import EventContext
@@ -80,7 +84,7 @@ from starlette.middleware import cors
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from starlette.staticfiles import StaticFiles
-from typing_extensions import Unpack
+from typing_extensions import Unpack, evaluate_forward_ref
 
 from reflex._upload import UploadedFilesHeadersMiddleware, upload
 from reflex._upload import UploadFile as UploadFile
@@ -120,6 +124,9 @@ if sys.version_info < (3, 13):
     from typing_extensions import deprecated
 else:
     from warnings import deprecated
+
+if sys.version_info >= (3, 14):
+    from annotationlib import Format
 
 if TYPE_CHECKING:
     from engineio import AsyncServer as AsyncEngineIOServer
@@ -495,6 +502,18 @@ def _is_location_specifier(specifier: str) -> bool:
 _DEFAULT_PORTS = {"http": 80, "https": 443}
 
 
+def _cors_origins_explicit(config: Config) -> bool:
+    """Whether ``cors_allowed_origins`` was set in rxconfig.py or the environment.
+
+    Args:
+        config: The app config.
+
+    Returns:
+        Whether the configured origins are used exactly as given.
+    """
+    return "cors_allowed_origins" in config._non_default_attributes
+
+
 def _cors_allowed_origins() -> list[str] | None:
     """Resolve the origins the backend accepts cross-origin requests from.
 
@@ -509,7 +528,7 @@ def _cors_allowed_origins() -> list[str] | None:
         leave CORS unconfigured.
     """
     config = get_config()
-    if "cors_allowed_origins" in config._non_default_attributes or not is_prod_mode():
+    if _cors_origins_explicit(config) or not is_prod_mode():
         return list(config.cors_allowed_origins)
     if not config.deploy_url:
         return None
@@ -522,6 +541,341 @@ def _cors_allowed_origins() -> list[str] | None:
     if port is None or port == _DEFAULT_PORTS.get(parts.scheme):
         return [f"{parts.scheme}://{host}"]
     return [f"{parts.scheme}://{host}:{port}"]
+
+
+def _get_typed_signature(call: Callable) -> inspect.Signature:
+    """Get the signature of a callable with its string annotations resolved.
+
+    String annotations (``from __future__ import annotations`` or quoted forward
+    references) are evaluated in the module that defines the callable, following
+    ``__wrapped__`` and callable instances.
+
+    Args:
+        call: The callable to inspect.
+
+    Returns:
+        The signature with every resolvable annotation evaluated.
+    """
+    try:
+        signature = inspect.signature(call, eval_str=True)
+    except NameError:
+        # Names imported only under TYPE_CHECKING cannot be evaluated at runtime.
+        if sys.version_info >= (3, 14):
+            signature = inspect.signature(call, annotation_format=Format.FORWARDREF)
+        else:
+            signature = inspect.signature(call)
+    globalns = getattr(inspect.unwrap(call), "__globals__", {})
+    return signature.replace(
+        parameters=[
+            param.replace(annotation=_get_typed_annotation(param.annotation, globalns))
+            for param in signature.parameters.values()
+        ],
+        return_annotation=_get_typed_annotation(signature.return_annotation, globalns),
+    )
+
+
+def _get_typed_annotation(annotation: Any, globalns: dict[str, Any]) -> Any:
+    """Evaluate a string annotation that is left after ``eval_str``.
+
+    A quoted forward reference under ``from __future__ import annotations`` is a
+    string again after one evaluation, so it is evaluated as a ``ForwardRef``.
+
+    Args:
+        annotation: The annotation to evaluate.
+        globalns: The module namespace of the callable.
+
+    Returns:
+        The evaluated annotation, or the annotation unchanged when it is not a
+        string or names something that is not defined at runtime.
+    """
+    if isinstance(annotation, str):
+        try:
+            return evaluate_forward_ref(ForwardRef(annotation), globals=globalns)
+        except NameError:
+            return annotation
+    return annotation
+
+
+def _host_authority(host: str, default_port: int) -> tuple[str | None, int] | None:
+    """Split a ``Host`` header value into a lowercase hostname and a port.
+
+    Args:
+        host: The header value; only its first comma-separated entry is used.
+        default_port: The port to assume when the value names none.
+
+    Returns:
+        The (hostname, port) pair, or None when the value is malformed.
+    """
+    try:
+        parts = urllib.parse.urlsplit(f"//{host.partition(',')[0].strip()}")
+        port = parts.port
+    except ValueError:
+        return None
+    return parts.hostname, port or default_port
+
+
+_MAX_LOGGED_HEADER = 200
+
+
+def _clip(value: str | None) -> str:
+    """Quote a request header value for a log line, cut to a bounded length.
+
+    Args:
+        value: The header value, if any.
+
+    Returns:
+        The quoted, possibly shortened value.
+    """
+    return repr(value if value is None else value[:_MAX_LOGGED_HEADER])
+
+
+def _trusted_forwarded_value(
+    value: str, trusted_proxy_hops: int, *, appended: bool = True
+) -> str | None:
+    """Pick the entry a trusted proxy chain wrote into a comma-separated header.
+
+    A proxy that appends what it received makes the entry ``trusted_proxy_hops``
+    from the right the outermost trusted proxy's, and any entry left of it the
+    client's. Proxies set ``X-Forwarded-Host`` and ``X-Forwarded-Proto`` rather
+    than append to them, so for those a chain shorter than
+    ``trusted_proxy_hops`` holds only entries trusted proxies wrote, and its
+    leftmost entry is the outermost one.
+
+    Args:
+        value: The header value, e.g. of ``X-Forwarded-For``.
+        trusted_proxy_hops: The number of trusted reverse proxies; 0 trusts none.
+        appended: Whether every trusted proxy appends an entry, as for
+            ``X-Forwarded-For``.
+
+    Returns:
+        The trusted entry, or None when no proxy is trusted, the header is
+        empty, or an appended chain is shorter than ``trusted_proxy_hops``.
+    """
+    if not trusted_proxy_hops:
+        return None
+    entries = [entry.strip() for entry in value.split(",") if entry.strip()]
+    if len(entries) >= trusted_proxy_hops:
+        return entries[-trusted_proxy_hops]
+    return None if appended or not entries else entries[0]
+
+
+def _is_port(text: str) -> bool:
+    """Return whether text is a port number.
+
+    Args:
+        text: The text after the ``:`` of an address.
+
+    Returns:
+        Whether the text is ASCII digits for a number from 0 to 65535.
+    """
+    return len(text) <= 5 and text.isascii() and text.isdigit() and int(text) < 65536
+
+
+def _forwarded_client_ip(entry: str) -> str | None:
+    """Normalize an ``X-Forwarded-For`` entry to an IP address.
+
+    Args:
+        entry: The entry, an IP address with an optional port and IPv6 brackets.
+
+    Returns:
+        The normalized address, or None when the entry is not an IP address.
+    """
+    if entry.startswith("["):
+        entry, closed, rest = entry[1:].partition("]")
+        port_ok = not rest or (rest.startswith(":") and _is_port(rest[1:]))
+        if not closed or not port_ok:
+            return None
+    elif entry.count(":") == 1:
+        entry, _, port = entry.partition(":")
+        if not _is_port(port):
+            return None
+    if "%" in entry:
+        # A zone index only means something on the proxy's own host, and
+        # ``ipaddress`` keeps it without validating it.
+        return None
+    try:
+        ip = ipaddress.ip_address(entry)
+    except ValueError:
+        return None
+    # A dual-stack proxy writes an IPv4 client as ``::ffff:a.b.c.d``.
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped:
+        ip = ip.ipv4_mapped
+    return str(ip)
+
+
+def _origin_matches_request(
+    origin: str, hosts: Iterable[str | None], forwarded_proto: str | None
+) -> bool:
+    """Whether a browser ``Origin`` names the host the request was sent to.
+
+    An https origin matches a request that arrived over plain http, since a
+    TLS-terminating proxy need not send ``X-Forwarded-Proto``, but an http
+    origin never matches a request that a trusted proxy reports as https.
+
+    Args:
+        origin: The request's ``Origin`` header.
+        hosts: The request's ``Host`` header and any trusted forwarded host.
+        forwarded_proto: The trusted ``X-Forwarded-Proto`` entry, if any.
+
+    Returns:
+        Whether the origin is the request's own origin.
+    """
+    try:
+        parts = urllib.parse.urlsplit(origin)
+        port = parts.port
+    except ValueError:
+        return False
+    default_port = _DEFAULT_PORTS.get(parts.scheme)
+    # A browser serializes an origin as scheme://host[:port], nothing more.
+    if (
+        default_port is None
+        or not parts.hostname
+        or "@" in parts.netloc
+        or origin != f"{parts.scheme}://{parts.netloc}"
+    ):
+        return False
+    if parts.scheme == "http" and (forwarded_proto or "").lower() in ("https", "wss"):
+        return False
+    authority = (parts.hostname, port or default_port)
+    return any(
+        _host_authority(host, default_port) == authority for host in hosts if host
+    )
+
+
+class _SocketOriginCheck:
+    """Decide which browser origins may open the event websocket.
+
+    Engine.IO calls it as ``cors_allowed_origins`` with each request's
+    ``Origin`` and environ. ``X-Forwarded-Host`` and ``X-Forwarded-Proto`` are
+    read only through ``trusted_proxy_hops`` trusted proxies, as for the client
+    IP. The first rejection logs a warning that names the setting which would
+    let the origin in.
+    """
+
+    __slots__ = ("_origins", "_same_origin", "_trusted_proxy_hops", "_warned")
+
+    def __init__(
+        self, origins: Iterable[str], same_origin: bool, trusted_proxy_hops: int
+    ):
+        """Initialize the check.
+
+        Args:
+            origins: The origins accepted as is.
+            same_origin: Whether to also accept the request's own origin.
+            trusted_proxy_hops: The number of trusted reverse proxies.
+        """
+        self._origins = frozenset(origins)
+        self._same_origin = same_origin
+        self._trusted_proxy_hops = trusted_proxy_hops
+        self._warned = False
+
+    def __call__(self, origin: str | None, environ: Mapping[str, Any]) -> bool:
+        """Check one request's origin.
+
+        Args:
+            origin: The request's ``Origin`` header, if any.
+            environ: The WSGI-style environ engine.io built for the request.
+
+        Returns:
+            Whether the origin may connect.
+        """
+        if not origin:
+            return False
+        if origin in self._origins:
+            return True
+        if not self._same_origin:
+            self._warn(
+                origin,
+                f"it is not in cors_allowed_origins {sorted(self._origins)}; if it "
+                "is your frontend's origin, add it to cors_allowed_origins "
+                "(REFLEX_CORS_ALLOWED_ORIGINS)",
+            )
+            return False
+        hops = self._trusted_proxy_hops
+        host = environ.get("HTTP_HOST")
+        forwarded_host = environ.get("HTTP_X_FORWARDED_HOST")
+        if _origin_matches_request(
+            origin,
+            (
+                host,
+                _trusted_forwarded_value(forwarded_host or "", hops, appended=False),
+            ),
+            _trusted_forwarded_value(
+                environ.get("HTTP_X_FORWARDED_PROTO", ""), hops, appended=False
+            ),
+        ):
+            return True
+        if self._warned:
+            return False
+        # Any client can send this handshake, so the advice never makes the
+        # rejected origin a setting's value.
+        deploy_url = (
+            "if it is your frontend's origin, set REFLEX_DEPLOY_URL on the backend "
+            "to the frontend's public URL"
+        )
+        if (
+            not hops
+            and forwarded_host
+            and _origin_matches_request(origin, (forwarded_host,), None)
+        ):
+            fix = (
+                "the untrusted X-Forwarded-Host names that origin, so if only your "
+                "reverse proxies can reach the backend, set trusted_proxy_hops "
+                f"(REFLEX_TRUSTED_PROXY_HOPS) to their number; otherwise, {deploy_url}"
+            )
+        else:
+            fix = (
+                f"{deploy_url} or add it to cors_allowed_origins; a reverse proxy "
+                "must forward the original Host header"
+            )
+        self._warn(
+            origin,
+            "in prod mode the backend accepts only its own origin (request Host "
+            f"{_clip(host)}, X-Forwarded-Host {_clip(forwarded_host)} "
+            + ("trusted" if hops else "ignored as trusted_proxy_hops is 0")
+            + ")"
+            + (f" and {sorted(self._origins)}" if self._origins else "")
+            + f"; {fix}",
+        )
+        return False
+
+    def _warn(self, origin: str, reason: str):
+        """Log the first rejection of this worker.
+
+        Args:
+            origin: The rejected origin.
+            reason: Why it was rejected and how to allow it.
+        """
+        if self._warned:
+            return
+        self._warned = True
+        logger.warning(
+            f"Rejected an event websocket from origin {_clip(origin)}: {reason}. "
+            "This warning is logged once per worker."
+        )
+
+
+def _socket_cors_allowed_origins() -> list[str] | _SocketOriginCheck:
+    """Resolve the Socket.IO ``cors_allowed_origins`` for the event websocket.
+
+    Unless ``cors_allowed_origins`` is set explicitly, the backend's own
+    origin is accepted on top of the resolved origins, so setting
+    ``deploy_url`` never locks out a frontend served by the backend itself.
+
+    Returns:
+        The resolved origins when they allow any origin or are an explicit
+        empty list (which engine.io treats as no origin check), otherwise a
+        check.
+    """
+    origins = _cors_allowed_origins()
+    if origins is not None and (not origins or "*" in origins):
+        return origins
+    config = get_config()
+    return _SocketOriginCheck(
+        origins or (),
+        same_origin=not _cors_origins_explicit(config),
+        trusted_proxy_hops=config.trusted_proxy_hops,
+    )
 
 
 @dataclasses.dataclass()
@@ -761,7 +1115,9 @@ class App(MiddlewareMixin, LifespanMixin):
             self.sio = AsyncServer(
                 async_mode="asgi",
                 cors_allowed_origins=(
-                    _cors_allowed_origins() if config.transport == "websocket" else []
+                    _socket_cors_allowed_origins()
+                    if config.transport == "websocket"
+                    else []
                 ),
                 cors_credentials=config.transport == "websocket",
                 max_http_buffer_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
@@ -895,6 +1251,8 @@ class App(MiddlewareMixin, LifespanMixin):
             None while the event processor is active.
         """
         # The app may have been imported before the server forked its workers.
+        state_manager = self.state_manager
+        state_manager._reset_instance_id()
         event_namespace = self.event_namespace
         if event_namespace is not None:
             event_namespace._token_manager._reset_instance_id()
@@ -905,7 +1263,7 @@ class App(MiddlewareMixin, LifespanMixin):
             event_loop_blocking_threshold=get_config().event_loop_blocking_threshold,
         )
         async with self._event_processor.configure(
-            state_manager=self.state_manager,
+            state_manager=state_manager,
             event_namespace=event_namespace,
         ):
             yield
@@ -1258,6 +1616,9 @@ class App(MiddlewareMixin, LifespanMixin):
         # Check if the route given is valid
         verify_route_validity(route)
 
+        for load_event in event_sequence(on_load):
+            _check_not_undecorated_state_method(load_event, "on_load")
+
         if isinstance(component, Callable):
             source_module = memo_paths.capture_source_module(component)
         else:
@@ -1511,12 +1872,15 @@ class App(MiddlewareMixin, LifespanMixin):
 
         self._plugin_routes_registered = True
 
-    def _compile_page(self, route: str, save_page: bool = True):
+    def _compile_page(self, route: str, save_page: bool = True) -> Component | None:
         """Compile a page.
 
         Args:
             route: The route of the page to compile.
             save_page: If True, the compiled page is saved to self._pages.
+
+        Returns:
+            The evaluated page, or None if it was evaluated earlier in this process.
         """
         # Evaluating a page has global side effects (dynamic state creation), so
         # skip routes already evaluated in this process to avoid duplicating them.
@@ -1524,7 +1888,7 @@ class App(MiddlewareMixin, LifespanMixin):
         # page saved, or it is already saved. Otherwise fall through to build and
         # store the component so ``save_page=True`` still populates ``_pages``.
         if route in self._evaluated_pages and (not save_page or route in self._pages):
-            return
+            return None
 
         n_states_before = len(all_base_state_classes)
         component = compiler.compile_unevaluated_page(
@@ -1544,6 +1908,7 @@ class App(MiddlewareMixin, LifespanMixin):
         self._check_routes_conflict(route)
         if save_page:
             self._pages[route] = component
+        return component
 
     @property
     def _page_routes(self) -> list[str]:
@@ -1862,6 +2227,7 @@ class App(MiddlewareMixin, LifespanMixin):
         dry_run: bool = False,
         use_rich: bool = True,
         trigger: CompileTrigger | None = None,
+        compile_initial_state: bool = True,
     ):
         """Compile the app and output it to the pages folder.
 
@@ -1871,6 +2237,8 @@ class App(MiddlewareMixin, LifespanMixin):
             use_rich: Whether to use rich progress bars.
             trigger: Label identifying what initiated this compile. Recorded
                 on the ``compile`` telemetry event.
+            compile_initial_state: Whether a skipped compile still serializes
+                the initial state.
 
         Raises:
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
@@ -1878,7 +2246,8 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         from reflex_base.utils.deterministic_hash import clear_hash_caches
 
-        with otel.compile_span(trigger, dry_run):
+        # One record of client state declarations spans the whole compile.
+        with otel.compile_span(trigger, dry_run), _collect_declarations():
             ctx = TelemetryContext.start(trigger=trigger)
             try:
                 if ctx is None:
@@ -1887,6 +2256,7 @@ class App(MiddlewareMixin, LifespanMixin):
                         prerender_routes=prerender_routes,
                         dry_run=dry_run,
                         use_rich=use_rich,
+                        compile_initial_state=compile_initial_state,
                     )
                     return
 
@@ -1898,6 +2268,7 @@ class App(MiddlewareMixin, LifespanMixin):
                             prerender_routes=prerender_routes,
                             dry_run=dry_run,
                             use_rich=use_rich,
+                            compile_initial_state=compile_initial_state,
                         )
                     except Exception as exc:
                         ctx.set_exception(exc)
@@ -2053,6 +2424,7 @@ class App(MiddlewareMixin, LifespanMixin):
                     await self.event_namespace.emit_update(
                         update=StateUpdate(delta=delta),
                         token=token.ident,
+                        suppress_warnings=True,
                     )
 
     def _validate_exception_handlers(self):
@@ -2098,11 +2470,12 @@ class App(MiddlewareMixin, LifespanMixin):
                 raise ValueError(msg)
 
             # Check if the function has the necessary annotations and types in the right order
-            argspec = inspect.getfullargspec(handler_fn)
+            sig = _get_typed_signature(handler_fn)
             arg_annotations = {
-                k: eval(v) if isinstance(v, str) else v
-                for k, v in argspec.annotations.items()
-                if k not in ["args", "kwargs", "return"]
+                k: param.annotation
+                for k, param in sig.parameters.items()
+                if param.annotation is not inspect.Parameter.empty
+                and k not in ["args", "kwargs"]
             }
 
             for required_arg_index, required_arg in enumerate(handler_spec):
@@ -2116,21 +2489,20 @@ class App(MiddlewareMixin, LifespanMixin):
                     )
                     raise ValueError(msg)
 
-                if not issubclass(arg_annotations[required_arg], Exception):
+                # An annotation that names something undefined at runtime stays unresolved.
+                annotation = arg_annotations[required_arg]
+                if not isinstance(annotation, type) or not issubclass(
+                    annotation, Exception
+                ):
                     msg = (
                         f"Provided custom {handler_domain} exception handler `{fn_name_}` has the wrong type for {required_arg} argument."
-                        f"Expected to be `Exception` but got `{arg_annotations[required_arg]}`"
+                        f"Expected to be `Exception` but got `{annotation}`"
                     )
                     raise ValueError(msg)
 
             # Check if the return type is valid for backend exception handler
             if handler_domain == "backend":
-                sig = inspect.signature(self.backend_exception_handler)
-                return_type = (
-                    eval(sig.return_annotation)
-                    if isinstance(sig.return_annotation, str)
-                    else sig.return_annotation
-                )
+                return_type = sig.return_annotation
 
                 valid = bool(
                     return_type == EventSpec
@@ -2354,7 +2726,7 @@ class EventNamespace(AsyncNamespace):
         """
         if isinstance(self._token_manager, RedisTokenManager):
             # Make sure this instance is watching for updates from other instances.
-            self._token_manager.ensure_lost_and_found_task(self.emit_update)
+            await self._token_manager.ensure_lost_and_found_subscribed(self.emit_update)
         boot_event = frontend_schema = None
         if isinstance(auth, dict):
             boot_event = auth.get(constants.CompileVars.CONNECT_AUTH_EVENT)
@@ -2443,14 +2815,17 @@ class EventNamespace(AsyncNamespace):
 
         # X-Forwarded-For is client-controlled unless the request arrived through
         # a configured chain of trusted reverse proxies.
-        trusted_proxy_hops = get_config().trusted_proxy_hops
-        if trusted_proxy_hops:
-            forwarded_for = headers.get("x-forwarded-for", "")
-            forwarded_ips = [
-                ip.strip() for ip in forwarded_for.split(",") if ip.strip()
-            ]
-            if len(forwarded_ips) >= trusted_proxy_hops:
-                client_ip = forwarded_ips[-trusted_proxy_hops]
+        forwarded_ip = _trusted_forwarded_value(
+            headers.get("x-forwarded-for", ""), get_config().trusted_proxy_hops
+        )
+        if forwarded_ip is not None:
+            if (normalized_ip := _forwarded_client_ip(forwarded_ip)) is not None:
+                client_ip = normalized_ip
+            else:
+                logger.debug(
+                    f"Ignoring X-Forwarded-For entry {_clip(forwarded_ip)}: "
+                    "not an IP address."
+                )
         return {
             constants.RouteVar.SESSION_ID: sid,
             constants.RouteVar.HEADERS: headers,
@@ -2496,12 +2871,16 @@ class EventNamespace(AsyncNamespace):
             return task
         return None
 
-    async def emit_update(self, update: StateUpdate, token: str) -> None:
+    async def emit_update(
+        self, update: StateUpdate, token: str, suppress_warnings: bool = False
+    ) -> None:
         """Emit an update to the client.
 
         Args:
             update: The state update to send.
             token: The client token (tab) associated with the event.
+            suppress_warnings: Whether to skip the warning when no client is
+                connected with the token.
         """
         socket_record = self._token_manager.token_to_socket.get(token)
         if (
@@ -2511,7 +2890,7 @@ class EventNamespace(AsyncNamespace):
             if isinstance(self._token_manager, RedisTokenManager):
                 # The socket belongs to another instance of the app, send it to the lost and found.
                 await self._token_manager.emit_lost_and_found(token, update)
-            else:
+            elif not suppress_warnings:
                 # If the socket record is None, we are not connected to a client. Prevent sending
                 # updates to all clients.
                 logger.warning(
@@ -2633,9 +3012,10 @@ class EventNamespace(AsyncNamespace):
         if name in self._warned_dropped_results:
             return
         self._warned_dropped_results.add(name)
-        handler = self.app._registration_context.event_handlers[name].handler
+        registered = self.app._registration_context.event_handlers.get(name)
+        label = registered.handler.fn.__qualname__ if registered else name
         logger.warning(
-            f"Event handler {handler.fn.__qualname__} returned a value, but it was "
+            f"Event handler {label} returned a value, but it was "
             "triggered from the frontend, so the value is dropped: only backend "
             "code that awaits the handler receives its return value. Return None "
             "or events to chain from a handler used as an event trigger."
