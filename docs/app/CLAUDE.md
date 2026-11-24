@@ -27,6 +27,7 @@ docs/                       # content: *.md outside docs/app/ and docs/package/ 
       pages/docs_landing/   # the /docs/ home page
       pages/integrations/   # integration pages and gallery
       templates/docpage/    # the docpage decorator, page layout, sidebar (sidebar/sidebar_items/)
+      sections.py           # maps a route's first path segment to its navbar tab and sidebar section
       components/, views/   # app components: navbar, search, footer, feedback
       changelogs.py         # changelog pages from each package's CHANGELOG.md
       redirects.py          # middleware serving 301s for legacy URLs
