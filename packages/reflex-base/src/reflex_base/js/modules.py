@@ -3,7 +3,7 @@
 Importing a module does not read it: each name looked up on it is an event
 handler for the function of that name, and the compiler checks that the module
 exports a function of every name looked up. The event runs the function in the
-browser by name: the compiler copies the module into ``.web`` and
+browser by name: the compiler links the app package into ``.web`` and
 ``utils/scripts.js`` loads it by its Python module name, so only the module
 name, the function name and the JSON arguments are sent, and nothing is
 evaluated.
