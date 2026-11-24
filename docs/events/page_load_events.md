@@ -41,6 +41,17 @@ def index():
     return rx.text("A Beautiful App")
 ```
 
+## Cancellation
+
+Unfinished `on_load` event chains are cancelled when the client disconnects,
+navigates to another page or reconnects. This includes events returned or yielded
+by the page-load handler. A reconnect starts the new page's load events again.
+Independent background events started outside the page-load chain continue
+running after a disconnect.
+
+Use `try`/`finally` to release resources when an async handler is cancelled. Avoid
+suppressing `asyncio.CancelledError`, which prevents the handler from stopping.
+
 ## Handling Loading and Errors
 
 Avoid heavy synchronous work directly in an `on_load` handler — the page renders before the handler finishes, so a slow handler leaves the user staring at stale or empty data with no feedback. Instead:

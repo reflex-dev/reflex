@@ -374,9 +374,12 @@ def command_source_path(name: str) -> str | None:
     )
 
 
+# Titles that title-casing the module name gets wrong.
+_TITLES = {"vmtypes": "VM Types"}
+
 pages = []
 for module_name, module_value in modules.items():
-    title = module_name.replace("_", " ").title()
+    title = _TITLES.get(module_name) or module_name.replace("_", " ").title()
     docs = generate_docs(module_value, title)
     sources = {
         source

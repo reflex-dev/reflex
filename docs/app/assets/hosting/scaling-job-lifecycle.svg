@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000" role="img" aria-labelledby="title description">
+  <title id="title">A durable job handoff and recovery lifecycle</title>
+  <desc id="description">An authorized request creates a durable job and outbox record in one transaction using a stable job identifier and a tenant-scoped idempotency key enforced by database uniqueness. The backend can return the job identifier while a dispatcher retries publication until broker confirmation. The broker delivers work to an independent worker. The worker applies effects that are idempotent or transactionally deduplicated by job ID and persists the outcome and result reference before acknowledging success. A worker crash before acknowledgement can lead to redelivery under the selected broker policy, so duplicate delivery must be safe. Any backend checks authorization and reads progress or results from durable records, using a primary or verified caught-up replica for freshness-sensitive reads. This is a design pattern requiring configured and tested persistence, recovery and retention, not an exactly-once guarantee.</desc>
+  <defs>
+    <style>
+      text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #172b4d; font-size: 16px; }
+      .title { font-size: 25px; font-weight: 700; }
+      .heading { font-size: 18px; font-weight: 650; }
+      .small { font-size: 15px; }
+      .muted { fill: #465a72; }
+      .card { fill: #fff; stroke: #c4cfde; stroke-width: 1.5; }
+      .async { fill: none; stroke: #7145a5; stroke-width: 2.5; stroke-linejoin: round; }
+      .data { fill: none; stroke: #275d9d; stroke-width: 2; stroke-linejoin: round; }
+      .retry { fill: none; stroke: #9a5d10; stroke-width: 2; stroke-dasharray: 7 5; stroke-linejoin: round; }
+      .label { paint-order: stroke; stroke: #fff; stroke-width: 7px; stroke-linejoin: round; }
+    </style>
+    <marker id="async-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7145a5"/></marker>
+    <marker id="data-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#275d9d"/></marker>
+    <marker id="retry-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#9a5d10"/></marker>
+  </defs>
+  <rect width="800" height="1000" rx="16" fill="#fff"/>
+  <text x="30" y="40" class="title">A job can outlive its accepting backend</text>
+  <text x="30" y="69" class="muted">Example: transactional outbox + configured broker + shared durable results.</text>
+
+  <rect x="40" y="110" width="720" height="112" rx="12" fill="#eff6ff" stroke="#93b9e8" stroke-width="1.5"/>
+  <text x="62" y="143" class="heading">1. Authorize and record the request</text>
+  <text x="62" y="171">Commit job + outbox entry in one database transaction.</text>
+  <text x="62" y="197">Stable job ID; enforce a tenant-scoped idempotency key in the database.</text>
+
+  <path d="M220 222 V282" class="data" marker-end="url(#data-arrow)"/>
+  <text x="237" y="257" class="small label">After commit</text>
+  <rect x="40" y="282" width="350" height="111" rx="10" class="card"/>
+  <text x="60" y="316" class="heading">Return the job ID to the UI</text>
+  <text x="60" y="343">Return from the event; show status.</text>
+  <text x="60" y="370">The original backend can retire.</text>
+
+  <path d="M575 222 V282" class="async" marker-end="url(#async-arrow)"/>
+  <text x="591" y="257" class="small label">Independently</text>
+  <rect x="430" y="282" width="330" height="111" rx="10" fill="#f4f0ff" stroke="#b9a5e1" stroke-width="1.5"/>
+  <text x="450" y="316" class="heading">2. Dispatch the outbox entry</text>
+  <text x="450" y="343">Publish the same job ID on retry.</text>
+  <text x="450" y="370">Mark sent after broker confirms.</text>
+
+  <path d="M595 393 V455" class="async" marker-start="url(#async-arrow)" marker-end="url(#async-arrow)"/>
+  <text x="612" y="430" class="small label">Publish / confirm</text>
+  <rect x="430" y="455" width="330" height="85" rx="10" fill="#f4f0ff" stroke="#b9a5e1" stroke-width="1.5"/>
+  <text x="450" y="488" class="heading">3. Broker delivers the job</text>
+  <text x="450" y="516">Persistence + redelivery configured</text>
+  <path d="M595 540 V605" class="async" marker-end="url(#async-arrow)"/>
+  <text x="612" y="578" class="small label">Deliver</text>
+
+  <rect x="430" y="605" width="330" height="117" rx="10" fill="#f4f0ff" stroke="#b9a5e1" stroke-width="1.5"/>
+  <text x="450" y="639" class="heading">4. Worker runs independently</text>
+  <text x="450" y="666">Idempotent / deduplicated effects</text>
+  <text x="450" y="693">Bound retries; surface failed jobs.</text>
+  <path d="M430 664 H393 V500 H430" class="retry" marker-end="url(#retry-arrow)"/>
+  <text x="48" y="473" class="heading">Recovery is explicit</text>
+  <text x="48" y="505">Crash before acknowledgement?</text>
+  <text x="48" y="531">Recover / redeliver under the</text>
+  <text x="48" y="557">selected broker and worker policy.</text>
+  <text x="48" y="599" class="heading">Duplicate delivery is possible</text>
+  <text x="48" y="631">Retry must not duplicate effects.</text>
+  <text x="48" y="657">External effects may need their</text>
+  <text x="48" y="683">own idempotency or reconciliation.</text>
+
+  <path d="M595 722 V782" class="data" marker-end="url(#data-arrow)"/>
+  <text x="611" y="757" class="small label">Persist first</text>
+  <rect x="40" y="782" width="720" height="115" rx="12" fill="#eff6ff" stroke="#93b9e8" stroke-width="1.5"/>
+  <text x="62" y="815" class="heading">5. Store outcome + result reference, then acknowledge success</text>
+  <text x="62" y="843">Any backend can authorize and read the job; use the primary for fresh reads.</text>
+  <text x="62" y="870">Store large outputs in shared object storage; set retention and recovery policy.</text>
+  <path d="M760 840 H784 V500 H760" class="async" marker-end="url(#async-arrow)"/>
+  <text x="48" y="940" class="muted">A queue library alone does not supply durability or an exactly-once guarantee.</text>
+  <text x="48" y="967" class="muted">Test interrupted publication, worker loss, duplicate delivery and result recovery.</text>
+</svg>

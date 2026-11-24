@@ -425,6 +425,20 @@ def test_stream_logs_keeps_posix_sigterm_codes_as_failures_on_windows(
     )
 
 
+def test_stream_logs_accepts_any_exit_code_after_a_stop_request(caplog):
+    """A process the caller asked to stop is not a failure, whatever its code.
+
+    Args:
+        caplog: Pytest log capture.
+    """
+    process = _finished_process(1)
+
+    with caplog.at_level(logging.ERROR):
+        list(stream_logs("Starting frontend", process, expected_exit=lambda: True))
+
+    assert not caplog.records
+
+
 def test_stream_logs_still_fails_on_a_real_error_exit(caplog):
     """The relaxed set must not swallow an actual non-zero exit.
 

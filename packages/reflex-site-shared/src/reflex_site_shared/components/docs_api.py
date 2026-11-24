@@ -56,7 +56,7 @@ def docs_api_table(
             rx.el.tbody(*rows, class_name="bg-background"),
             class_name=(
                 "w-full min-w-[40rem] table-fixed border-collapse text-left "
-                "[&_td_code]:min-w-0 [&_td_code]:whitespace-normal [&_td_code]:break-words"
+                "[&_td_code]:min-w-0 [&_td_code]:whitespace-normal [&_td_code]:[overflow-wrap:anywhere]"
             ),
         ),
         class_name=(
@@ -282,7 +282,7 @@ def callable_api_reference(
             name,
             as_="h3",
             id=_heading_id(name),
-            class_name="font-large text-foreground mt-8 mb-2",
+            class_name="docs-heading font-large text-foreground mt-8 mb-2",
         ),
         rx.text(
             _summary(docstring),

@@ -103,7 +103,7 @@ async function browserSession({
         connected: false,
         io: {
           opts: options,
-          encoder: {},
+          encoder: { encode: (packet) => [JSON.stringify(packet)] },
           decoder: {},
           open(callback) {
             warmups.push(options.query.token);
@@ -114,6 +114,10 @@ async function browserSession({
         emit: (event, payload) => emitted.push([event, payload]),
         connect() {
           connections.push(this.io.opts.query.token);
+          // Socket.IO builds the auth payload when it sends the connection.
+          this.auth((payload) => {
+            this.sentAuth = payload;
+          });
           return this;
         },
         disconnect() {
@@ -182,10 +186,10 @@ test("cold websocket hydrates before cookie exchange completes", async () => {
   await tab.connect();
   assert.deepEqual(tab.connections, [""]);
   assert.equal(
-    tab.socket.current.auth.event.name,
+    tab.socket.current.sentAuth.event.name,
     "reflex___state.test.hydrate_and_load",
   );
-  assert.deepEqual(tab.socket.current.auth.event.payload.hashes, {
+  assert.deepEqual(tab.socket.current.sentAuth.event.payload.hashes, {
     test_state: "compiled-defaults",
   });
   assert.equal(tab.requests.length, 0);
@@ -217,11 +221,12 @@ test("cold websocket hydrates before cookie exchange completes", async () => {
   }
 });
 
-test("legacy tokens are presented for validation without being adopted", async () => {
+test("a legacy token stays the tab token until the server replaces it", async () => {
   const sessionStorage = storage();
   sessionStorage.setItem("token", "legacy-unbound");
   const tab = await browserSession({ sessionStorage });
-  assert.equal(tab.runtime.getToken(), "");
+  // HTTP helpers such as uploads send this token before any replacement.
+  assert.equal(tab.runtime.getToken(), "legacy-unbound");
   await tab.connect();
   assert.deepEqual(tab.connections, ["legacy-unbound"]);
   await tab.accept("bound-tab");
@@ -280,10 +285,12 @@ test("fresh hint reconnects directly without HTTP or a lock", async () => {
   assert.deepEqual(tab.connections, ["existing-tab"]);
   assert.equal(tab.requests.length, 0);
   await tab.accept("existing-tab");
+  // The cookie is not due yet, so the connection asks for no new credential.
+  assert.deepEqual(tab.emitted, []);
   tab.socket.current.disconnect();
   await tab.socket.current.reconnect();
   assert.deepEqual(tab.connections, ["existing-tab", "existing-tab"]);
-  assert.equal(tab.socket.current.auth.event.payload.hashes, undefined);
+  assert.equal(tab.socket.current.sentAuth.event.payload.hashes, undefined);
   assert.equal(tab.requests.length, 0);
 });
 
@@ -376,7 +383,7 @@ test("failed exchange releases the cold-tab lock and surfaces failure", async ()
   const webLocks = locks();
   const first = await browserSession({
     webLocks,
-    fetch: async () => ({ ok: false, status: 403 }),
+    fetch: async () => ({ ok: false, status: 503 }),
   });
   const second = await browserSession({ webLocks });
   await first.connect();
@@ -465,7 +472,7 @@ test("uploads wait for the cookie while following WebSocket events drain", async
 
 test("failed initial exchange holds HTTP readiness until recovery or disconnect", async () => {
   const tab = await browserSession({
-    fetch: async () => ({ ok: false, status: 403 }),
+    fetch: async () => ({ ok: false, status: 503 }),
   });
   await tab.connect();
   await (await tab.accept("first-tab", "credential")).exchange;
@@ -571,4 +578,62 @@ test("an exchange completing after disconnect cannot replace a newer connection'
   await exchange;
   assert.equal(tab.runtime.getToken(), "next-tab");
   assert.equal(tab.timeouts.size, 0);
+});
+
+test("an untrusted origin ends the exchange without blocking uploads", async () => {
+  const tab = await browserSession({
+    fetch: async () => ({ ok: false, status: 403 }),
+  });
+  await tab.connect();
+  await (await tab.accept("first-tab", "credential")).exchange;
+  // The socket works, so the page shows no connection error.
+  assert.deepEqual(tab.errors, []);
+  await tab.runtime.waitForSession();
+  await tab.runtime.applyRestEvent(
+    { name: "upload", handler: "uploadFiles", payload: { files: [] } },
+    tab.socket.current,
+  );
+  await tick();
+  assert.equal(tab.uploads.length, 1);
+  // The server configuration decides the answer, so a retry cannot change it.
+  assert.equal(tab.timeouts.size, 0);
+  assert.equal(tab.requests.length, 1);
+});
+
+test("a failed cookie renewal does not hold HTTP readiness", async () => {
+  const tab = await browserSession({
+    fetch: async () => ({ ok: false, status: 503 }),
+  });
+  await tab.connect();
+  await tab.accept("bound-tab");
+  // The socket connected with a valid cookie, so the server sends no credential.
+  await tab.callbacks.get("session_token")(null);
+  assert.deepEqual(JSON.parse(tab.requests[0][1].body), {});
+  await tab.runtime.waitForSession();
+  await tab.runtime.applyRestEvent(
+    { name: "upload", handler: "uploadFiles", payload: { files: [] } },
+    tab.socket.current,
+  );
+  await tick();
+  assert.equal(tab.uploads.length, 1);
+});
+
+test("a refresh interval over the timer limit does not fire at once", async () => {
+  const tab = await browserSession({
+    fetch: async () => ({
+      ok: true,
+      json: async () => ({
+        client_token: "bound-tab",
+        expires_in: 60 * 86400,
+        refresh_in: 30 * 86400,
+      }),
+    }),
+  });
+  await tab.connect();
+  await (await tab.accept("bound-tab", "credential")).exchange;
+  // A browser runs a timer over 2**31 - 1 ms with no delay.
+  assert.deepEqual(
+    [...tab.timeouts.keys()].map((id) => tab.delays.get(id)),
+    [2 ** 31 - 1],
+  );
 });

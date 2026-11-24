@@ -41,7 +41,6 @@ export async function createQueueRuntime(
     "socket.io-client": { default: io ?? unused },
     mergician: { mergician: unused },
     "$/env.json": { default: env ?? {} },
-    "$/reflex.json": { default: {} },
     "universal-cookie": {
       default: class {
         remove() {}
@@ -60,6 +59,13 @@ export async function createQueueRuntime(
       useParams: () => ({}),
     },
     "$/utils/context": app,
+    "$/utils/client_state": {
+      CLIENT_STATE_REF: "__client_state",
+      getClientState: unused,
+      // Published on `refs` when the module loads, so it has to answer.
+      getClientStore: () => ({}),
+      setClientState: unused,
+    },
     "$/utils/context-registry": {
       app,
       eventLoop: { addEvents: unused },
@@ -81,6 +87,8 @@ export { event_queue };
   );
   const linked = new Map();
   await module.link((specifier) => {
+    // state.js imports itself to hand its exports to server-provided scripts.
+    if (specifier === "$/utils/state") return module;
     if (!linked.has(specifier)) {
       const exports = dependencies[specifier];
       if (!exports)

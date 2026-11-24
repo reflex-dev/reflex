@@ -74,6 +74,11 @@ def _llms_txt_directive() -> rx.Component:
 # Create the app.
 app = rxe.App(
     style=styles.BASE_STYLE,
+    stylesheets=[
+        "/docs-theme.css",
+        "/docs-header-theme.css",
+        "/docs-overlays-theme.css",
+    ],
     app_wraps={},
     theme=rx.theme(
         _llms_txt_directive(),
@@ -84,6 +89,10 @@ app = rxe.App(
     head_components=[
         *get_google_analytics_trackers(tracking_id="G-4T7C8ZD9TR"),
         *favicons_links(),
+        rx.el.meta(
+            name="referrer",
+            content="strict-origin-when-cross-origin",
+        ),
     ],
 )
 
@@ -238,6 +247,10 @@ redirects = [
 ]
 redirects.extend([
     ("/ai/features/ide/", "/ai/features/editor-modes/"),
+    ("/ai/integrations/airtable/", "/ai/apis/"),
+    ("/ai-builder/integrations/airtable/", "/ai/apis/"),
+    ("/ai/integrations/langchain/", "/ai/python-libraries/"),
+    ("/ai-builder/integrations/langchain/", "/ai/python-libraries/"),
     ("/ai-builder/features/ide/", "/ai/features/editor-modes/"),
     ("/ai/features/customization/", "/ai/features/design-systems/"),
     ("/ai-builder/features/customization/", "/ai/features/design-systems/"),

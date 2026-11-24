@@ -116,13 +116,13 @@ rx.grid(
 
 ## Example
 
-Here is a example of how to use state within a Reflex app.
+Here is an example of how to use state within a Reflex app.
 Click the text to change its color.
 
 ```python demo exec
 class ExampleState(rx.State):
     # A base var for the list of colors to cycle through.
-    colors: list[str] = ["black", "red", "green", "blue", "purple"]
+    colors: list[str] = ["var(--gray-12)", "red", "green", "blue", "purple"]
 
     # A base var for the index of the current color.
     index: int = 0

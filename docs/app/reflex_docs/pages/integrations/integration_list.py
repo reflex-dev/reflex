@@ -2,6 +2,8 @@ import os
 
 import frontmatter
 
+from reflex_docs.utils.acronyms import uppercase_acronyms
+
 
 # Get the paths for our integrations from the source docs/
 def get_integration_path() -> list:
@@ -42,10 +44,7 @@ def get_integration_path() -> list:
                     tag = ""
 
                 description = post.get("description", "").strip()
-                title = key.replace("_", " ").title()
-
-                if title == "Open Ai":
-                    title = "Open AI"
+                title = uppercase_acronyms(key.replace("_", " ").title())
 
             result.append({
                 key: {

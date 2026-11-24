@@ -4,13 +4,14 @@ import asyncio
 import contextlib
 import logging
 from collections.abc import AsyncIterator
-from dataclasses import MISSING
+from dataclasses import MISSING, replace
 from typing import TYPE_CHECKING, Self, TypeVar
 
 from reflex_base.constants import ROUTER_DATA, ROUTER_VARS
 from reflex_base.event import Event, get_hydrate_event
+from reflex_base.event.context import EventContext
 from reflex_base.registry import RegistrationContext
-from reflex_base.session import SessionToken
+from reflex_base.session import SessionToken, is_client_token
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_base.vars.base import _owner_state
 
@@ -256,6 +257,10 @@ class SharedStateBaseInternal(State):
         if "_" in token:
             msg = f"Invalid token {token} for linking state {self.get_full_name()}, cannot use underscore (_) in the token name."
             raise ReflexRuntimeError(msg)
+
+        if is_client_token(token):
+            # A link to a client token reaches that client's own state.
+            replace(EventContext.get(), token=token)
 
         # Associate substate with the given link token.
         state_name = self.get_full_name()

@@ -178,8 +178,8 @@ class SessionMiddleware:
         scope["reflex.session"] = session
         response_started = False
 
-        async def send_with_session(message: Message) -> None:
-            """Refresh valid sessions when the HTTP response has no session cookie.
+        async def send_response(message: Message) -> None:
+            """Record that the response started, so a late error is not replaced.
 
             Args:
                 message: The outgoing ASGI message.
@@ -187,22 +187,6 @@ class SessionMiddleware:
             nonlocal response_started
             if message["type"] == "http.response.start":
                 response_started = True
-                response_headers = message.setdefault("headers", [])
-                if (
-                    session is not None
-                    and self.manager.should_refresh(session)
-                    and not any(
-                        name.lower() == b"set-cookie"
-                        and value.startswith(f"{self.cookie_name}=".encode("ascii"))
-                        for name, value in response_headers
-                    )
-                ):
-                    response_headers.append((
-                        b"set-cookie",
-                        _session_cookie(
-                            self.manager, self.manager.refresh(session), self.secure
-                        ),
-                    ))
             await send(message)
 
         try:
@@ -216,7 +200,7 @@ class SessionMiddleware:
                 await self.app(
                     scope,
                     receive,
-                    send if scope["type"] == "websocket" else send_with_session,
+                    send if scope["type"] == "websocket" else send_response,
                 )
             except SessionAuthorizationError as error:
                 if scope["type"] == "websocket":
@@ -225,7 +209,7 @@ class SessionMiddleware:
                 if response_started:
                     raise
                 response = await session_authorization_error(Request(scope), error)
-                await response(scope, receive, send_with_session)
+                await response(scope, receive, send_response)
 
 
 async def session_authorization_error(  # noqa: RUF029
@@ -245,6 +229,29 @@ async def session_authorization_error(  # noqa: RUF029
         status_code=403,
         headers={"Cache-Control": "no-store"},
     )
+
+
+def _trusted_origin(request: Request, allowed_origins: tuple[str, ...]) -> bool:
+    """Check whether the page that sent a request may install a session credential.
+
+    The frontend replaces a loopback API host with the host of its own page, so
+    a page on the host that this request reached is trusted. Cookies are not
+    scoped by port, so another port on that host gains nothing from the exchange.
+
+    Args:
+        request: The incoming session request.
+        allowed_origins: Explicit browser origins trusted to exchange credentials.
+
+    Returns:
+        Whether the request Origin is trusted.
+    """
+    origin = request.headers.get("origin")
+    if origin is None:
+        return False
+    if origin in allowed_origins:
+        return True
+    hostname = urlsplit(origin).hostname
+    return hostname is not None and hostname == request.url.hostname
 
 
 async def session_endpoint(
@@ -283,7 +290,7 @@ async def session_endpoint(
 
     try:
         payload = json.loads(await request.body() or b"{}")
-    except (ValueError, UnicodeError):
+    except (ValueError, UnicodeError, RecursionError):
         payload = None
     if not isinstance(payload, dict) or (
         "session_token" in payload and not isinstance(payload["session_token"], str)
@@ -296,8 +303,7 @@ async def session_endpoint(
 
     session = request.scope.get("reflex.session")
     if session is None and "session_token" in payload:
-        origin = request.headers.get("origin")
-        if origin is None or origin == "null" or origin not in allowed_origins:
+        if not _trusted_origin(request, allowed_origins):
             return JSONResponse(
                 {"detail": "Session exchange requires a trusted Origin."},
                 status_code=403,
@@ -312,7 +318,11 @@ async def session_endpoint(
             )
     session = manager.refresh(session) if session is not None else manager.create()
     client_token = request.headers.get("reflex-client-token", "")
-    if not session.authorizes(client_token):
+    # Match the socket connection: the compatibility modes keep an unowned token.
+    if not client_token or (
+        environment.REFLEX_SESSION_TOKEN_MODE.get() == "enforce"
+        and not session.authorizes(client_token)
+    ):
         client_token = manager.create_client_token(session)
     response = JSONResponse(
         {

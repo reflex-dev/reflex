@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import functools
+
 import reflex as rx
 from reflex_site_shared.components.docs_shell import (
     docs_sidebar_category as sidebar_category,
@@ -25,7 +27,7 @@ from .sidebar_items.enterprise import (
     enterprise_items,
     enterprise_usage_items,
 )
-from .sidebar_items.learn import backend, frontend, hosting, learn
+from .sidebar_items.learn import backend, frontend, hosting, learn, workflows
 from .sidebar_items.recipes import recipes
 from .sidebar_items.reference import api_reference, changelog_items
 from .state import SideBarBase, SideBarItem
@@ -138,7 +140,9 @@ def sidebar_item_comp(
         child = item.children[0]
         return rx.el.li(
             sidebar_link(
-                rx.el.p(item.names, class_name="m-0 text-sm font-[475]"),
+                rx.el.p(
+                    item.names, class_name="m-0 text-sm font-[475] text-foreground"
+                ),
                 href=child.link,
                 aria_current=rx.cond(url == child.link, "page", "false"),
                 class_name="flex min-h-8 w-full items-center rounded-lg py-1 pl-[2.5rem] text-foreground hover:!text-foreground transition-colors [&[aria-current=page]]:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
@@ -199,6 +203,7 @@ append_to_items(
     learn
     + frontend
     + backend
+    + workflows
     + hosting
     + component_lib
     + graphing_libs
@@ -225,6 +230,31 @@ def get_prev_next(url):
             next_link = flat_items[i + 1] if i < len(flat_items) - 1 else None
             return prev_link, next_link
     return None, None
+
+
+@functools.cache
+def _labels_by_route() -> dict[str, str]:
+    """Map each sidebar link, without slashes, to its first sidebar label.
+
+    Returns:
+        The label of each linked page.
+    """
+    labels: dict[str, str] = {}
+    for item in flat_items:
+        labels.setdefault(item.link.strip("/"), item.names)
+    return labels
+
+
+def sidebar_label(url: str) -> str | None:
+    """Get the sidebar label of a docs page.
+
+    Args:
+        url: The page's app-relative route.
+
+    Returns:
+        The label the sidebar shows for the page, or None if it has no entry.
+    """
+    return _labels_by_route().get(url.strip("/"))
 
 
 def filter_out_non_sidebar_items(items: list[SideBarBase]) -> list[SideBarItem]:
@@ -290,6 +320,7 @@ def sidebar_comp(
     component_lib_index: rx.vars.ArrayVar[list[int]],
     frontend_index: rx.vars.ArrayVar[list[int]],
     backend_index: rx.vars.ArrayVar[list[int]],
+    workflows_index: rx.vars.ArrayVar[list[int]],
     hosting_index: rx.vars.ArrayVar[list[int]],
     html_lib_index: rx.vars.ArrayVar[list[int]],
     graphing_libs_index: rx.vars.ArrayVar[list[int]],
@@ -314,6 +345,7 @@ def sidebar_comp(
     from reflex_docs.pages.docs import ai_builder as ai_builder_pages
     from reflex_docs.pages.docs import enterprise, getting_started, state, ui
     from reflex_docs.pages.docs import hosting as hosting_page
+    from reflex_docs.pages.docs import workflows as workflows_pages
     from reflex_docs.pages.docs.library import library
     from reflex_docs.pages.docs.recipes_overview import overview
 
@@ -526,6 +558,13 @@ def sidebar_comp(
             url,
         ),
         create_sidebar_section(
+            "Workflows",
+            workflows_pages.overview.path,
+            filter_out_non_sidebar_items(workflows),
+            workflows_index,
+            url,
+        ),
+        create_sidebar_section(
             "Recipes",
             overview.path,
             recipes,
@@ -589,6 +628,7 @@ def sidebar(url=None, width: str = "100%") -> rx.Component:
             component_lib_index=calculate_index(component_lib, normalized_url),
             frontend_index=calculate_index(frontend, normalized_url),
             backend_index=calculate_index(backend, normalized_url),
+            workflows_index=calculate_index(workflows, normalized_url),
             hosting_index=calculate_index(hosting, normalized_url),
             html_lib_index=calculate_index(html_lib, normalized_url),
             graphing_libs_index=calculate_index(graphing_libs, normalized_url),

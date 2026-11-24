@@ -38,6 +38,10 @@ unassigned, and as a source of interaction ideas.
 | Registration / multi-app | Two apps in one process; `AppHarness` twice | Sequential and simultaneous; check for registration leakage between them |
 | Optional dependencies | Bare install, each extra, and the upgrade path | Import the optional package's feature without the extra and judge the error message quality |
 | DevTools / perf | App with nested substates, custom components, client-only wrappers | Walk React fibers for `displayName`; record navigation main-thread cost; verify perf claims rather than trusting them |
+| Frontend state store | Every mutation kind (append/sort/reverse/delete key/type change/nested model) with the DOM compared to the backend state after each step | A third-party component that mutates the objects it is given (AG Grid cell edits) next to a *memoized* consumer of the same var (`rx.memo`, a chart, a second grid); a handler that stores the edited value as is vs one that normalizes it; recharts on the same data (it deep-freezes what it receives) |
+| Process model | Prod with Redis and several workers, dev with hot reload | Import-time side effects under a forking supervisor (threads, logging `QueueListener`, schedulers, DB engines, module-level random values); every start method; SIGTERM/SIGINT/kill -9 of one worker; a broken-then-fixed module in dev |
+| Forms | The same legacy forms (dict handlers, id-only, `id == name`, checkbox / switch / groups, sliders, selects) run on old and new | Diff exactly what the handler receives between versions — every changed key or value needs a changelog line; empty selections in every handler kind (dict, TypedDict, form-data object) |
+| Network / security headers | A probe app recording `router.session` and headers, plus a forwarding proxy and a raw websocket client | Spoofed / repeated / non-UTF-8 headers; trusted-proxy depth 0, 1, 2; every surface that reads the value — websocket, uploads, API routes, enterprise REST / MCP — must agree |
 
 ## Downstream and packaging clusters
 
@@ -49,4 +53,9 @@ Two clusters that are not feature-shaped but catch the highest-severity problems
   names. A bare `AttributeError`/`ImportError` with no pointer to the replacement is a finding even
   when the removal itself was intended.
 - **Packaging.** `.claude/skills/prerelease-test/scripts/audit_pyi.py`, plus a check that each package's declared dependency pins
-  match what the changelog says and that installing from the sdist works.
+  match what the changelog says and that installing from the sdist works — and that a wheel *built*
+  from each changed sdist keeps every stub (SKILL.md, Phase 5). Read the `reflex` wheel's sibling
+  floors: a stock `pip install -U reflex` that keeps old siblings does not deliver their fixes.
+- **Hosting CLI.** Never against the real Reflex Cloud: point the CLI at a local fake control
+  plane (derive the payload shapes from the CLI source and the PRs' tests) and record the requests
+  it receives. Compare deploy archives (file list, exclusions, compression) between versions.

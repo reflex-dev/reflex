@@ -20,6 +20,10 @@ from reflex.utils.tasks import ensure_task
 
 logger = logging.getLogger(__name__)
 
+# Seconds after the lost and found subscriber starts that connects wait for
+# redis to confirm its subscription before going ahead without it.
+LOST_AND_FOUND_SUBSCRIBE_TIMEOUT = 5
+
 if TYPE_CHECKING:
     from redis.asyncio import Redis
 
@@ -233,6 +237,9 @@ class RedisTokenManager(LocalTokenManager):
         # Pub/sub tasks for handling sockets owned by other instances.
         self._socket_record_task: asyncio.Task | None = None
         self._lost_and_found_task: asyncio.Task | None = None
+        self._lost_and_found_subscribed = asyncio.Event()
+        # Event loop time until which connects wait for the subscription.
+        self._lost_and_found_wait_deadline = 0.0
 
     def _get_redis_key(self, token: str) -> str:
         """Get Redis key for token mapping.
@@ -437,14 +444,25 @@ class RedisTokenManager(LocalTokenManager):
         Args:
             emit_update: The function to emit state updates.
         """
+        # Every attempt, including a retry after a failure, gets connects to
+        # wait for its subscription.
+        self._lost_and_found_wait_deadline = (
+            asyncio.get_running_loop().time() + LOST_AND_FOUND_SUBSCRIBE_TIMEOUT
+        )
         async with self.redis.pubsub() as pubsub:
             await pubsub.psubscribe(
                 f"channel:{self._get_lost_and_found_key(self.instance_id)}"
             )
-            async for message in pubsub.listen():
-                if message["type"] == "pmessage":
-                    record = pickle.loads(message["data"])
-                    await emit_update(record.update, record.token)
+            try:
+                # Messages are only delivered once redis confirms the subscription.
+                async for message in pubsub.listen():
+                    if message["type"] == "pmessage":
+                        record = pickle.loads(message["data"])
+                        await emit_update(record.update, record.token)
+                    elif message["type"] == "psubscribe":
+                        self._lost_and_found_subscribed.set()
+            finally:
+                self._lost_and_found_subscribed.clear()
 
     def ensure_lost_and_found_task(
         self,
@@ -462,6 +480,47 @@ class RedisTokenManager(LocalTokenManager):
             suppress_exceptions=[Exception],
             emit_update=emit_update,
         )
+
+    async def ensure_lost_and_found_subscribed(
+        self,
+        emit_update: Callable[[StateUpdate, str], Coroutine[None, None, None]],
+    ) -> None:
+        """Ensure the lost and found subscriber task runs and is subscribed.
+
+        Redis drops a delta another instance publishes before the subscription
+        is confirmed, so a connect waits for it before storing the socket record
+        that sends other instances' deltas here. Connects wait only until
+        ``LOST_AND_FOUND_SUBSCRIBE_TIMEOUT`` seconds after the current
+        subscription attempt started, so a redis that cannot confirm it does
+        not stall every connect.
+
+        Args:
+            emit_update: The function to emit state updates.
+        """
+        if self._lost_and_found_subscribed.is_set():
+            return
+        loop = asyncio.get_running_loop()
+        if self._lost_and_found_task is None or self._lost_and_found_task.done():
+            self.ensure_lost_and_found_task(emit_update)
+            self._lost_and_found_wait_deadline = (
+                loop.time() + LOST_AND_FOUND_SUBSCRIBE_TIMEOUT
+            )
+        waited = False
+        while not self._lost_and_found_subscribed.is_set():
+            # Re-read each time: a timeout can fire up to a clock tick early,
+            # and a new subscription attempt moves the deadline.
+            if (remaining := self._lost_and_found_wait_deadline - loop.time()) <= 0:
+                if waited:
+                    logger.warning(
+                        "Redis did not confirm the lost and found subscription in "
+                        "time; updates from other instances may be lost until it does."
+                    )
+                return
+            waited = True
+            with contextlib.suppress(TimeoutError):
+                await asyncio.wait_for(
+                    self._lost_and_found_subscribed.wait(), timeout=remaining
+                )
 
     async def _get_token_owner(self, token: str, refresh: bool = False) -> str | None:
         """Get the instance ID of the owner of a token.
