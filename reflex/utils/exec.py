@@ -25,6 +25,7 @@ from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.constants.base import LogLevel
 from reflex_base.environment import environment
+from reflex_base.js.finder import _app_package
 from reflex_base.telemetry_context import CompileTrigger
 from reflex_base.utils import console, log
 from reflex_base.utils.decorator import once
@@ -815,7 +816,7 @@ def _get_reload_filter() -> type[watchfiles.DefaultFilter]:
     """
     import watchfiles
 
-    package = get_module_path(get_config().module.partition(".")[0])
+    package = get_module_path(_app_package())
     root = package.parent.parent.resolve() if package else None
     copies = get_web_dir() / constants.Dirs.SCRIPT_MODULES_PATH
 
