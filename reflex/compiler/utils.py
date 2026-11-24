@@ -760,6 +760,14 @@ def write_script_stubs(modules: Mapping[Path, _ScriptExports]) -> None:
     type_files = {str(path): type_files.get(str(path), []) for path in modules}
 
     def digest(path: Path) -> str:
+        """Hash what a module's stub is made from.
+
+        Args:
+            path: The module.
+
+        Returns:
+            The digest of its files and the files its types were read from.
+        """
         files = [*modules[path]["files"], *type_files[str(path)]]
         return _module_digest(Path(files[0]), files)
 
