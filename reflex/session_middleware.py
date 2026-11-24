@@ -309,7 +309,7 @@ async def session_endpoint(
                 status_code=403,
                 headers={"Cache-Control": "no-store"},
             )
-        session = manager.decode(payload["session_token"])
+        session = manager.decode(payload["session_token"], exchange=True)
         if session is None:
             return JSONResponse(
                 {"detail": "Invalid or expired session token."},
@@ -317,13 +317,9 @@ async def session_endpoint(
                 headers={"Cache-Control": "no-store"},
             )
     session = manager.refresh(session) if session is not None else manager.create()
-    client_token = request.headers.get("reflex-client-token", "")
-    # Match the socket connection: the compatibility modes keep an unowned token.
-    if not client_token or (
-        environment.REFLEX_SESSION_TOKEN_MODE.get() == "enforce"
-        and not session.authorizes(client_token)
-    ):
-        client_token = manager.create_client_token(session)
+    client_token = manager.client_token_for(
+        session, request.headers.get("reflex-client-token", "")
+    )
     response = JSONResponse(
         {
             "token_type": "cookie",

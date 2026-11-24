@@ -17,6 +17,8 @@ from typing import ClassVar
 
 from reflex_base import constants
 from reflex_base.environment import environment
+from reflex_base.utils import console
+from reflex_base.utils.exceptions import SessionAuthorizationError
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +27,8 @@ _SID = re.compile(r"[0-9a-f]{32}\Z")
 _CLIENT_TOKEN = re.compile(r"([0-9a-f]{32})\.([0-9a-f]{32})\Z")
 _BASE64URL = re.compile(r"[A-Za-z0-9_-]+\Z")
 _AUTH_CACHE_SIZE = 128
+# Seconds that a credential sent over a socket stays exchangeable for a cookie.
+_EXCHANGE_TTL = 60
 
 
 def _base64url(value: bytes) -> str:
@@ -186,6 +190,36 @@ class SessionToken:
 SessionToken.SYSTEM = SessionToken(issued_at=0, expires_at=0, _sid="")
 
 
+def authorize(session: SessionToken | None, client_token: str) -> None:
+    """Check that a session may access the state of a client token.
+
+    Args:
+        session: The session that requests access, or None for anonymous access.
+        client_token: The client token whose state is requested.
+
+    Raises:
+        SessionAuthorizationError: If enforcement rejects the client token.
+    """
+    if not client_token or (session is not None and session.authorizes(client_token)):
+        return
+    mode = environment.REFLEX_SESSION_TOKEN_MODE.get()
+    if mode == "off":
+        return
+    if mode == "enforce":
+        msg = "The session does not authorize this client token."
+        raise SessionAuthorizationError(msg)
+    console.deprecate(
+        feature_name="State access without an authorized session",
+        reason=(
+            "Pass the requesting session when accessing client state. "
+            "Trusted server-side work may explicitly use SessionToken.SYSTEM. "
+            "REFLEX_SESSION_TOKEN_MODE=enforce rejects this access."
+        ),
+        deprecation_version="0.11.1",
+        removal_version="1.0",
+    )
+
+
 class SessionTokenManager:
     """Internal codec for browser session cookies and their client tokens."""
 
@@ -246,41 +280,45 @@ class SessionTokenManager:
         now = int(time.time())
         return SessionToken(now, now + self.ttl, secrets.token_hex(16))
 
-    def encode(self, session: SessionToken) -> str:
+    def encode(self, session: SessionToken, *, exchange: bool = False) -> str:
         """Encode a session as an HS256 JWT using the active signing key.
+
+        An exchange credential goes to page scripts over a socket. It is valid
+        for a short time and only at the session endpoint, never as a cookie.
 
         Args:
             session: The session to encode.
+            exchange: Whether to encode a short-lived credential for exchange.
 
         Returns:
-            A signed JWT suitable for an HttpOnly cookie.
+            A signed JWT suitable for an HttpOnly cookie, or for one exchange.
         """
+        claims = {
+            "v": 1,
+            "aud": self._audience,
+            "sid": session._sid,
+            "iat": session.issued_at,
+            "exp": session.expires_at,
+        }
+        if exchange:
+            claims["use"] = "exchange"
+            claims["exp"] = min(session.expires_at, int(time.time()) + _EXCHANGE_TTL)
         kid, key = next(iter(self._keys.items()))
         header = _base64url(
             json.dumps(
                 {"alg": "HS256", "typ": "JWT", "kid": kid}, separators=(",", ":")
             ).encode()
         )
-        payload = _base64url(
-            json.dumps(
-                {
-                    "v": 1,
-                    "aud": self._audience,
-                    "sid": session._sid,
-                    "iat": session.issued_at,
-                    "exp": session.expires_at,
-                },
-                separators=(",", ":"),
-            ).encode()
-        )
+        payload = _base64url(json.dumps(claims, separators=(",", ":")).encode())
         message = f"{header}.{payload}"
         return f"{message}.{_base64url(hmac.digest(key, message.encode('ascii'), 'sha256'))}"
 
-    def decode(self, token: str) -> SessionToken | None:
+    def decode(self, token: str, *, exchange: bool = False) -> SessionToken | None:
         """Verify the signature, schema, version, and lifetime of a session JWT.
 
         Args:
-            token: An untrusted cookie value.
+            token: An untrusted cookie value or exchange credential.
+            exchange: Whether to accept only a credential encoded for exchange.
 
         Returns:
             The verified session, or None for invalid or expired credentials.
@@ -318,6 +356,7 @@ class SessionTokenManager:
                 type(claims.get("v")) is not int
                 or claims["v"] != 1
                 or claims.get("aud") != self._audience
+                or claims.get("use") != ("exchange" if exchange else None)
                 or not isinstance(sid, str)
                 or not _SID.fullmatch(sid)
                 or type(issued_at) is not int
@@ -340,6 +379,26 @@ class SessionTokenManager:
         """
         now = int(time.time())
         return SessionToken(now, now + self.ttl, session._sid)
+
+    def client_token_for(self, session: SessionToken, client_token: str) -> str:
+        """Get the client token that a tab uses with its session.
+
+        A tab keeps the token that it presents when the session owns it. The
+        compatibility modes also keep a token that the session does not own.
+
+        Args:
+            session: The session of the tab.
+            client_token: The token that the tab presents, or an empty string.
+
+        Returns:
+            The presented token, or a new token bound to the session.
+        """
+        if client_token and (
+            session.authorizes(client_token)
+            or environment.REFLEX_SESSION_TOKEN_MODE.get() != "enforce"
+        ):
+            return client_token
+        return self.create_client_token(session)
 
     def create_client_token(self, session: SessionToken) -> str:
         """Create a random client token cryptographically bound to a session.

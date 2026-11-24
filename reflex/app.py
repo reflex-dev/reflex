@@ -2705,6 +2705,21 @@ def _decode_asgi_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, st
     return decoded
 
 
+@dataclasses.dataclass(slots=True)
+class _SocketSession:
+    """The browser session of one socket connection.
+
+    Attributes:
+        session: The session that authorizes the socket's events.
+        refresh_at: When to ask the client to renew its credential.
+        from_cookie: Whether the socket connected with a valid session cookie.
+    """
+
+    session: SessionToken
+    refresh_at: float
+    from_cookie: bool
+
+
 class EventNamespace(AsyncNamespace):
     """The event namespace."""
 
@@ -2741,10 +2756,7 @@ class EventNamespace(AsyncNamespace):
         # connect time instead of for every event on the connection.
         self._static_router_data: dict[str, dict[str, Any]] = {}
 
-        self._sessions: dict[str, SessionToken] = {}
-        self._session_refresh_at: dict[str, float] = {}
-        # Sockets that connected with a valid session cookie.
-        self._cookie_sids: set[str] = set()
+        self._sessions: dict[str, _SocketSession] = {}
 
         # Start time and count of the current process-wide client_error window.
         self._client_error_window_start = 0.0
@@ -2823,26 +2835,23 @@ class EventNamespace(AsyncNamespace):
         query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING", ""))
         token_list = query_params.get("token", [])
         token = token_list[0] if token_list else ""
-        mode = environment.REFLEX_SESSION_TOKEN_MODE.get()
         issued_session = None
-        if mode == "off" and not token:
-            token = str(uuid.uuid4())
-            await self.emit("new_token", token, to=sid)
-        if mode != "off":
+        if environment.REFLEX_SESSION_TOKEN_MODE.get() == "off":
+            if not token:
+                token = str(uuid.uuid4())
+                await self.emit("new_token", token, to=sid)
+        else:
             manager = self.app._session_token_manager
             session = environ.get("asgi.scope", {}).get("reflex.session")
-            issue_session = session is None
+            from_cookie = session is not None
             if session is None:
-                session = manager.create()
-            else:
-                self._cookie_sids.add(sid)
-            self._sessions[sid] = session
-            self._session_refresh_at[sid] = session.issued_at + manager.refresh_interval
-            if not token or (mode == "enforce" and not session.authorizes(token)):
-                token = manager.create_client_token(session)
+                session = issued_session = manager.create()
+            self._sessions[sid] = _SocketSession(
+                session, session.issued_at + manager.refresh_interval, from_cookie
+            )
+            if (bound_token := manager.client_token_for(session, token)) != token:
+                token = bound_token
                 await self.emit("new_token", token, to=sid)
-            if issue_session:
-                issued_session = session
         if token:
             # The boot event records the new sid and token under its state lock.
             await self.link_token_to_sid(sid, token, update_state=boot_event is None)
@@ -2851,7 +2860,7 @@ class EventNamespace(AsyncNamespace):
         if issued_session is not None:
             await self.emit(
                 "session_token",
-                self.app._session_token_manager.encode(issued_session),
+                self.app._session_token_manager.encode(issued_session, exchange=True),
                 to=sid,
             )
 
@@ -2876,8 +2885,6 @@ class EventNamespace(AsyncNamespace):
                 # refuses the connect.
                 self._static_router_data.pop(sid, None)
                 self._sessions.pop(sid, None)
-                self._session_refresh_at.pop(sid, None)
-                self._cookie_sids.discard(sid)
                 if (linked_token := self.sid_to_token.get(sid)) is not None:
                     await self._token_manager.disconnect_token(linked_token, sid)
                 raise
@@ -2894,16 +2901,18 @@ class EventNamespace(AsyncNamespace):
         Args:
             sid: The Socket.IO session id requesting renewal.
         """
-        if (session := self._sessions.get(sid)) is None:
+        if (socket_session := self._sessions.get(sid)) is None:
             return
-        if sid in self._cookie_sids and time.time() < session.expires_at:
+        if (
+            socket_session.from_cookie
+            and time.time() < socket_session.session.expires_at
+        ):
             await self.emit("session_token", None, to=sid)
             return
         manager = self.app._session_token_manager
-        renewed = manager.refresh(session)
-        self._sessions[sid] = renewed
-        self._session_refresh_at[sid] = renewed.issued_at + manager.refresh_interval
-        await self.emit("session_token", manager.encode(renewed), to=sid)
+        renewed = socket_session.session = manager.refresh(socket_session.session)
+        socket_session.refresh_at = renewed.issued_at + manager.refresh_interval
+        await self.emit("session_token", manager.encode(renewed, exchange=True), to=sid)
 
     def _build_static_router_data(self, sid: str, environ: dict) -> dict[str, Any]:
         """Build the connection-scoped router_data entries for a socket.
@@ -2960,8 +2969,6 @@ class EventNamespace(AsyncNamespace):
         self._client_error_counts.pop(sid, None)
         self._static_router_data.pop(sid, None)
         self._sessions.pop(sid, None)
-        self._session_refresh_at.pop(sid, None)
-        self._cookie_sids.discard(sid)
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
@@ -3042,12 +3049,14 @@ class EventNamespace(AsyncNamespace):
             )
             return
 
-        session = self._sessions.get(sid)
-        if session is not None and time.time() >= self._session_refresh_at[sid]:
-            self._session_refresh_at[sid] = (
-                time.time() + self.app._session_token_manager.refresh_interval
-            )
-            await self.emit("session_refresh", to=sid)
+        session = None
+        if (socket_session := self._sessions.get(sid)) is not None:
+            session = socket_session.session
+            if time.time() >= socket_session.refresh_at:
+                socket_session.refresh_at = (
+                    time.time() + self.app._session_token_manager.refresh_interval
+                )
+                await self.emit("session_refresh", to=sid)
 
         fields = data
 
@@ -3252,7 +3261,8 @@ class EventNamespace(AsyncNamespace):
                 without an extra load and save of the whole state tree.
         """
         # Use TokenManager for duplicate detection and Redis support
-        session = self._sessions.get(sid)
+        socket_session = self._sessions.get(sid)
+        session = socket_session.session if socket_session is not None else None
         if session is not None:
             # Validate before linking or loading any client state.
             context = dataclasses.replace(

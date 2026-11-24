@@ -12,11 +12,8 @@ from typing import TYPE_CHECKING, Any, Protocol
 
 from reflex_base import otel
 from reflex_base.context.base import BaseContext
-from reflex_base.environment import environment
-from reflex_base.session import SessionToken
-from reflex_base.utils import console
+from reflex_base.session import SessionToken, authorize
 from reflex_base.utils.compat import MISSING_TYPE
-from reflex_base.utils.exceptions import SessionAuthorizationError
 from reflex_base.utils.format import to_snake_case
 
 if TYPE_CHECKING:
@@ -158,26 +155,7 @@ class EventContext(BaseContext):
         Raises:
             SessionAuthorizationError: If enforcement rejects the client token.
         """
-        if not self.token or (
-            self.session_token is not None and self.session_token.authorizes(self.token)
-        ):
-            return
-        mode = environment.REFLEX_SESSION_TOKEN_MODE.get()
-        if mode == "off":
-            return
-        if mode == "enforce":
-            msg = "The session does not authorize this client token."
-            raise SessionAuthorizationError(msg)
-        console.deprecate(
-            feature_name="State access without an authorized session",
-            reason=(
-                "Pass the requesting session when accessing client state. "
-                "Trusted server-side work may explicitly use SessionToken.SYSTEM. "
-                "REFLEX_SESSION_TOKEN_MODE=enforce rejects this access."
-            ),
-            deprecation_version="0.11.1",
-            removal_version="1.0",
-        )
+        authorize(self.session_token, self.token)
 
     def fork(
         self,
