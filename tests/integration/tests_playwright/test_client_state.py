@@ -152,9 +152,7 @@ def ClientStateApp():
                 on_click=rx.call_function(
                     ArgsFunctionOperationBuilder.create(
                         args_names=(),
-                        return_expr=shared.global_set.to(FunctionVar).call(
-                            "from-plain-js"
-                        ),
+                        return_expr=shared.global_set.call("from-plain-js"),
                     )
                 ),
             ),

@@ -620,7 +620,7 @@ class ClientStateVar(Var):
         ).to(self._var_type)
 
     @property
-    def global_set(self) -> Var:
+    def global_set(self) -> FunctionVar:
         """Set the client state variable from JS outside a React component.
 
         Unlike `set` this needs no hook, so the returned function can be handed
