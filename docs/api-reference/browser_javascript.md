@@ -184,9 +184,9 @@ The rules:
   finite number of seconds to wait for a result. Set timeout to a number of seconds such as 30, or to None to wait
   without a limit.``
 
-- The script keeps running while the tab's socket reconnects. A tab that reconnects within `browser_call_grace_period`
-  seconds (5 by default) still delivers its result. A tab that is closed, reloaded or navigated away stops the script,
-  and the call fails.
+- The script keeps running while the tab's socket reconnects. A tab that reconnects to the same backend worker within
+  `browser_call_grace_period` seconds (5 by default) still delivers its result. A tab that is closed, reloaded or
+  navigated away stops the script, and the call fails.
 
 The exceptions are imported from `reflex.utils.exceptions`:
 
@@ -223,10 +223,11 @@ Each error below gives its exact message, with the values of an example call, an
   - When the call is made: `` `_call_script` cannot run in the browser tab: the tab is not connected to this backend
     worker, because it was closed, is reconnecting, or reconnected to another worker. Catch BrowserDisconnectedError
     where the tab may be gone; with several backend workers, route each tab to one worker (sticky sessions). ``
-  - After the grace period: ``The browser tab disconnected and did not reconnect within browser_call_grace_period (5.0
-    seconds), so the script's result is lost: the tab was closed, or lost its connection. Catch
-    BrowserDisconnectedError where the user may close the tab, or raise `browser_call_grace_period` in rxconfig.py if
-    connections drop for longer.``
+  - After the grace period: ``The browser tab did not reconnect to this backend worker within
+    browser_call_grace_period (5.0 seconds), so the script's result is lost: the tab was closed, lost its connection for
+    longer, or reconnected to another backend worker, which cannot pass the result on. Catch BrowserDisconnectedError
+    where the user may close the tab, raise `browser_call_grace_period` in rxconfig.py if connections drop for longer,
+    and with several backend workers route each tab to one worker (sticky sessions).``
   - As soon as a reloaded page connects: ``The browser tab reloaded or left the page before the script returned a
     result, so the script stopped. Catch BrowserDisconnectedError where the user may reload or leave the page while
     the script runs.``
@@ -244,7 +245,8 @@ Each error below gives its exact message, with the values of an example call, an
 
 The browser sends the result to the backend worker its tab is connected to. With several workers sharing state through
 Redis, a background task awaits results only from tabs connected to its own worker. Calls to other tabs raise
-`BrowserDisconnectedError`.
+`BrowserDisconnectedError`. A tab that reconnects, or reloads, onto another worker while a call waits fails the call
+when the grace period ends, and its result is lost.
 ```
 
 ## Using React Hooks

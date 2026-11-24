@@ -699,11 +699,15 @@ def test_awaited_call_fails_when_the_tab_stays_away_past_the_grace_period(
     _await_user(call_script_page)
     _drop_connection(call_script_page, int(GRACE_PERIOD * 1000) + 1500)
     expect(call_script_page.locator("#awaited")).to_have_value(
-        "BrowserDisconnectedError: The browser tab disconnected and did not "
-        f"reconnect within browser_call_grace_period ({GRACE_PERIOD} seconds), so "
-        "the script's result is lost: the tab was closed, or lost its connection. "
-        "Catch BrowserDisconnectedError where the user may close the tab, or raise "
-        "`browser_call_grace_period` in rxconfig.py if connections drop for longer.",
+        "BrowserDisconnectedError: The browser tab did not reconnect to this "
+        "backend worker within browser_call_grace_period "
+        f"({GRACE_PERIOD} seconds), so the script's result is lost: the tab was "
+        "closed, lost its connection for longer, or reconnected to another "
+        "backend worker, which cannot pass the result on. Catch "
+        "BrowserDisconnectedError where the user may close the tab, raise "
+        "`browser_call_grace_period` in rxconfig.py if connections drop for "
+        "longer, and with several backend workers route each tab to one worker "
+        "(sticky sessions).",
         timeout=10_000,
     )
 

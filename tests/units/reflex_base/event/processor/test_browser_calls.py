@@ -44,12 +44,14 @@ def grace_expired(grace_period: float) -> str:
         The error message.
     """
     return (
-        "The browser tab disconnected and did not reconnect within "
+        "The browser tab did not reconnect to this backend worker within "
         f"browser_call_grace_period ({grace_period} seconds), so the script's "
-        "result is lost: the tab was closed, or lost its connection. Catch "
-        "BrowserDisconnectedError where the user may close the tab, or raise "
-        "`browser_call_grace_period` in rxconfig.py if connections drop for "
-        "longer."
+        "result is lost: the tab was closed, lost its connection for longer, or "
+        "reconnected to another backend worker, which cannot pass the result "
+        "on. Catch BrowserDisconnectedError where the user may close the tab, "
+        "raise `browser_call_grace_period` in rxconfig.py if connections drop "
+        "for longer, and with several backend workers route each tab to one "
+        "worker (sticky sessions)."
     )
 
 

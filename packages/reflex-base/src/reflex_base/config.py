@@ -204,7 +204,7 @@ class BaseConfig:
         transport: The transport method for client-server communication.
         event_loop_blocking_threshold: Minimum event-loop blocking duration in seconds to report in development. Set to 0 to disable detection.
         browser_call_timeout: Seconds an awaited browser call, such as `await rx.call_script(...)` in a background event handler, waits for the browser's result before raising TimeoutError, or None to wait without a limit. A call's own `timeout=` overrides it.
-        browser_call_grace_period: Seconds an awaited browser call survives its tab disconnecting: a reconnect within it delivers the result, otherwise the call raises BrowserDisconnectedError.
+        browser_call_grace_period: Seconds an awaited browser call survives its tab disconnecting: a reconnect to the same backend worker within it delivers the result, otherwise the call raises BrowserDisconnectedError.
     """
 
     app_name: str

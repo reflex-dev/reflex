@@ -59,7 +59,7 @@ config = rx.Config(
 ```
 
 - `browser_call_timeout` (default `30.0`): the seconds, more than 0, an awaited call waits for its result before raising `TimeoutError`, or `None` to wait without a limit. A call can override it with `timeout=`.
-- `browser_call_grace_period` (default `5.0`): the seconds an awaited call waits for its tab to reconnect after a disconnect before raising `BrowserDisconnectedError`; `0` raises it as soon as the tab disconnects. A reloaded page fails its calls as soon as it connects.
+- `browser_call_grace_period` (default `5.0`): the seconds an awaited call waits for its tab to reconnect to the same backend worker after a disconnect before raising `BrowserDisconnectedError`; `0` raises it as soon as the tab disconnects. A reloaded page fails its calls as soon as it connects to that worker.
 
 They can also be set in seconds with `REFLEX_BROWSER_CALL_TIMEOUT` and `REFLEX_BROWSER_CALL_GRACE_PERIOD`. Waiting without a limit is set in `rxconfig.py`. A negative, infinite or NaN value raises `ConfigError` when the app starts.
 

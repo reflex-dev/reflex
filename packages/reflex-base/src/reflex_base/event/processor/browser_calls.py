@@ -181,8 +181,9 @@ class BrowserCalls:
     def disconnect(self, token: ClientToken, grace_period: float) -> None:
         """Start the grace period of a client's calls after it disconnected.
 
-        Its tab may reconnect within it, and its results then still arrive. A
-        refused connect disconnects it again without restarting the grace
+        Its tab may reconnect to this worker within it, and its results then
+        still arrive; a tab that reconnects to another worker sends its result
+        there, and this worker never hears of it. A refused connect disconnects it again without restarting the grace
         period: a tab whose connects keep failing would otherwise hold its
         calls forever.
 
@@ -193,12 +194,14 @@ class BrowserCalls:
         if (tab := self._tabs.get(token)) is None or tab.grace_timer is not None:
             return
         msg = (
-            "The browser tab disconnected and did not reconnect within "
+            "The browser tab did not reconnect to this backend worker within "
             f"browser_call_grace_period ({grace_period} seconds), so the script's "
-            "result is lost: the tab was closed, or lost its connection. Catch "
-            "BrowserDisconnectedError where the user may close the tab, or raise "
-            "`browser_call_grace_period` in rxconfig.py if connections drop for "
-            "longer."
+            "result is lost: the tab was closed, lost its connection for longer, "
+            "or reconnected to another backend worker, which cannot pass the "
+            "result on. Catch BrowserDisconnectedError where the user may close "
+            "the tab, raise `browser_call_grace_period` in rxconfig.py if "
+            "connections drop for longer, and with several backend workers route "
+            "each tab to one worker (sticky sessions)."
         )
         if grace_period <= 0:
             self._fail(tab, msg)
