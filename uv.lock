@@ -4043,7 +4043,6 @@ source = { editable = "." }
 dependencies = [
     { name = "click" },
     { name = "granian", extra = ["reload"] },
-    { name = "httpx" },
     { name = "httpx2" },
     { name = "packaging" },
     { name = "psutil", marker = "sys_platform == 'win32'" },
@@ -4152,7 +4151,6 @@ requires-dist = [
     { name = "click", specifier = ">=8.2" },
     { name = "granian", extras = ["reload"], specifier = ">=2.7.4" },
     { name = "greenlet", marker = "extra == 'db'", specifier = ">=3.3" },
-    { name = "httpx", specifier = ">=0.26,<1.0" },
     { name = "httpx2", specifier = ">=2.15.1,<3.0" },
     { name = "packaging", specifier = ">=24.2,<27" },
     { name = "psutil", marker = "sys_platform == 'win32'", specifier = ">=7.0.0,<8.0" },
