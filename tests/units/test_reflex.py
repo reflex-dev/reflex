@@ -275,8 +275,11 @@ def test_run_exports_secret_key_before_backend_starts(
     """
     from reflex.utils import exec
 
+    generated_key = environment.REFLEX_GENERATED_SECRET_KEY.name
     monkeypatch.setenv("REFLEX_SECRET_KEY", "unset")
     monkeypatch.delenv("REFLEX_SECRET_KEY")
+    monkeypatch.setenv(generated_key, "unset")
+    monkeypatch.delenv(generated_key)
     monkeypatch.setenv("REFLEX_ENV_MODE", "dev")
     mocker.patch.object(reflex, "get_config")
     # Stop before the servers start; the key must already be exported.
@@ -285,7 +288,7 @@ def test_run_exports_secret_key_before_backend_starts(
     with pytest.raises(SystemExit):
         reflex._run(running_mode=running_mode)
 
-    assert ("REFLEX_SECRET_KEY" in os.environ) is generated
+    assert (generated_key in os.environ) is generated
 
 
 def test_cloud_commands_registered():
