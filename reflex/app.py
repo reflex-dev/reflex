@@ -2896,11 +2896,11 @@ class EventNamespace(AsyncNamespace):
     async def on_session_refresh(self, sid: str) -> None:
         """Renew credentials for the session already authenticated by this socket.
 
-        Connection authority survives cookie expiry, including suspended browser
-        timers. The credential is delivered only to the requesting connection,
-        and only when the browser has no valid copy: a socket that connected
-        with a cookie renews that HttpOnly cookie over HTTP, so page scripts
-        cannot read the credential from the socket.
+        A socket that connected with a cookie renews that HttpOnly cookie at the
+        session endpoint, so page scripts cannot read a credential from the
+        socket. The endpoint renews a valid cookie and issues a new session for
+        an expired one, also after the maximum session age. A socket that
+        connected without a cookie gets a credential for one exchange.
 
         Args:
             sid: The Socket.IO session id requesting renewal.
@@ -2909,10 +2909,10 @@ class EventNamespace(AsyncNamespace):
             return
         manager = self.app._session_token_manager
         session = socket_session.session
-        if time.time() >= session.created_at + manager.max_age:
-            # The session ended: the next connection gets a new session.
-            return
-        if socket_session.from_cookie and time.time() < session.expires_at:
+        if (
+            socket_session.from_cookie
+            or time.time() >= session.created_at + manager.max_age
+        ):
             await self.emit("session_token", None, to=sid)
             return
         renewed = socket_session.session = manager.refresh(session)
@@ -3290,9 +3290,13 @@ class EventNamespace(AsyncNamespace):
 
         # Update client state to apply new sid/token for running background tasks.
         if update_state and self.app._state is not None:
-            context = EventContext.get().fork(
-                token=new_token or token, session_token=session
-            )
+            try:
+                context = EventContext.get().fork(
+                    token=new_token or token, session_token=session
+                )
+            except LookupError:
+                # No request scope, for example a harness that connects directly.
+                context = contextlib.nullcontext()
             with context:
                 async with self.app.state_manager.modify_state(
                     BaseStateToken(ident=new_token or token, cls=self.app._state)
