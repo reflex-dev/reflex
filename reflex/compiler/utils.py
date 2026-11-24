@@ -673,7 +673,7 @@ def _read_script_signatures(paths: Sequence[Path]) -> Signatures | None:
         if detail is None
         else (
             f"{_SIGNATURES_SCRIPT} failed. If this repeats, delete "
-            f"{get_web_dir() / 'node_modules'} so that the next run reinstalls "
+            f"{get_web_dir() / Javascript.NODE_MODULES} so that the next run reinstalls "
             "typescript, or report the error at "
             f"https://github.com/reflex-dev/reflex/issues:\n{detail}"
         )
