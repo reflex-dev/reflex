@@ -1605,6 +1605,7 @@ export const connect = async (
       const refreshDelay =
         (session.refresh_in ?? session.expires_in / 2) * 1000;
       sessionEstablished = true;
+      sessionRejected = false;
       try {
         window.localStorage.setItem(
           sessionRefreshStorageKey(),
@@ -1643,6 +1644,9 @@ export const connect = async (
       // Each attempt requests a fresh credential, including after cookie expiry.
       const delay = Math.min(30000, 1000 * 2 ** Math.min(sessionFailures++, 5));
       sessionTimer = window.setTimeout(requestSessionRefresh, delay);
+      // A failure that lasts is not transient, for example a proxy that does
+      // not forward this route. Stop holding HTTP calls; the retry goes on.
+      if (sessionFailures >= 3) finishSessionExchange();
     } finally {
       if (sessionController === controller) {
         sessionController = undefined;

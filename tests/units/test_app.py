@@ -6055,24 +6055,22 @@ async def test_session_refresh_notice_is_throttled(
     assert "sid" not in namespace._sessions
 
 
-async def test_socket_renews_expired_cookie_without_changing_state_owner(
+async def test_socket_without_cookie_renews_its_session_in_band(
     event_namespace_with_processor_mock,
     mocker,
 ):
-    """A live connection can renew its own session after an idle browser's cookie expires."""
+    """A socket that connected without a cookie renews through an exchange credential."""
     namespace = event_namespace_with_processor_mock
     manager = namespace.app._session_token_manager
     # A cookie lifetime below the maximum session age leaves room to renew.
     mocker.patch.object(manager, "ttl", 100)
-    session = manager.create()
-    token = manager.create_client_token(session)
-    environ = _connect_environ(token)
-    environ["asgi.scope"]["reflex.session"] = session
-    await namespace.on_connect("sid", environ)
+    await namespace.on_connect("sid", _connect_environ(""))
+    session = namespace._sessions["sid"].session
+    token = namespace.sid_to_token["sid"]
+    emitted = cast(AsyncMock, namespace.emit)
     mocker.patch("reflex_base.session.time.time", return_value=session.expires_at + 1)
     assert manager.decode(manager.encode(session)) is None
     await namespace.on_session_refresh("sid")
-    emitted = cast(AsyncMock, namespace.emit)
     credential = emitted.call_args.args[1]
     # The socket credential is for one exchange and is not valid as a cookie.
     assert manager.decode(credential) is None
@@ -6090,6 +6088,33 @@ async def test_socket_renews_expired_cookie_without_changing_state_owner(
         await task
     await namespace.on_session_refresh("sid")
     emitted.assert_not_called()
+
+
+async def test_socket_with_cookie_never_gets_a_credential(
+    event_namespace_with_processor_mock,
+    mocker,
+):
+    """A socket that connected with a cookie renews over HTTP, also after expiry.
+
+    The backend keeps the session as it was at connect and cannot see later
+    renewals of the cookie. The session endpoint can: it renews a valid cookie
+    and issues a new session for an expired one.
+    """
+    namespace = event_namespace_with_processor_mock
+    manager = namespace.app._session_token_manager
+    mocker.patch.object(manager, "ttl", 100)
+    session = manager.create()
+    environ = _connect_environ(manager.create_client_token(session))
+    environ["asgi.scope"]["reflex.session"] = session
+    await namespace.on_connect("sid", environ)
+    emitted = cast(AsyncMock, namespace.emit)
+    emitted.reset_mock()
+    mocker.patch("reflex.app.time.time", return_value=session.expires_at + 1)
+
+    await namespace.on_session_refresh("sid")
+
+    emitted.assert_awaited_once_with("session_token", None, to="sid")
+    assert namespace._sessions["sid"].session is session
 
 
 @pytest.mark.parametrize("cookie", [True, False])
@@ -6209,11 +6234,11 @@ async def test_shared_state_link_to_client_token_needs_its_session(
     await asyncio.gather(*UPDATE_OTHER_CLIENT_TASKS)
 
 
-async def test_socket_does_not_renew_a_session_past_its_maximum_age(
+async def test_socket_sends_a_session_past_its_maximum_age_to_the_endpoint(
     event_namespace_with_processor_mock: EventNamespace,
     mocker: MockerFixture,
 ):
-    """A live socket gets no new credential once its session reached the maximum age.
+    """A socket whose session reached the maximum age renews at the session endpoint.
 
     Args:
         event_namespace_with_processor_mock: The namespace fixture.
@@ -6231,7 +6256,8 @@ async def test_socket_does_not_renew_a_session_past_its_maximum_age(
 
     await namespace.on_session_refresh("sid")
 
-    emitted.assert_not_called()
+    # The session endpoint issues the new session; the socket sends no credential.
+    emitted.assert_awaited_once_with("session_token", None, to="sid")
     assert namespace._sessions["sid"].session is session
 
 
@@ -6277,6 +6303,26 @@ def test_session_manager_uses_the_configured_lifetimes(
     app._add_default_endpoints()
     manager = app._session_token_manager
     assert (manager.ttl, manager.refresh_interval, manager.max_age) == (100, 25, 300)
+
+
+async def test_link_token_to_sid_needs_no_event_context(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A token is linked to its socket when no event context is set.
+
+    Args:
+        monkeypatch: Environment fixture.
+    """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "off")
+    app = App(_state=State)
+    app._state_manager = StateManagerMemory()
+    namespace = EventNamespace("/event", app)
+    namespace._token_manager = LocalTokenManager()
+    namespace.emit = AsyncMock()
+
+    await namespace.link_token_to_sid("sid", "token")
+
+    assert namespace.sid_to_token == {"sid": "token"}
 
 
 def _dropped_result_warning(label: str) -> str:
