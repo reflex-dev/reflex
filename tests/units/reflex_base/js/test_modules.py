@@ -194,7 +194,12 @@ def test_an_uncalled_function_is_a_result_callback(app_package: Path):
             rx.call_script("[7, 8]", callback=lambda result: celebrate(result))
         )
     )
-    assert "args:[_result]" in uncalled
+    assert uncalled == (
+        '(ReflexEvent("_call_script", ({ ["javascript_code"] : "[7, 8]", '
+        '["callback"] : "(_result) => {addEvents([ReflexEvent(\\"_call_js\\", '
+        '{module:\\"js_app.party\\",function:\\"celebrate\\",args:[_result]})])}" '
+        "}), ({  })))"
+    )
 
 
 def test_a_module_first_imported_while_an_event_runs_is_an_error(app_package: Path):
