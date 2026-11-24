@@ -79,7 +79,14 @@ one session; if a competing cookie wins, the affected tab reconnects with the
 server's replacement token. Waiting HTTP requests remain queued until that
 replacement connection is accepted. Storage keys are scoped to the backend URL.
 
-`session_token_ttl` in `rx.Config` defaults to seven days.
+`session_token_ttl` in `rx.Config` is the lifetime of one session credential and
+defaults to seven days. `session_token_max_age` is the maximum age of the
+session and also defaults to seven days. It counts from the first issue of the
+session, and renewal cannot extend a session past it. At that age the session
+ends: the next connection gets a new session, and under `enforce` the tab gets
+a new token and fresh state. With both defaults, a session lasts seven days.
+Set `session_token_ttl` below `session_token_max_age` to end an idle session
+sooner while an active one renews up to the maximum age.
 `session_token_refresh_interval` defaults to half that lifetime. Only
 `POST /_reflex/session` renews the cookie, and its response is `no-store`, so a
 shared cache never stores the credential. A browser timer renews an idle
@@ -166,7 +173,7 @@ If you replace the old key with the new key, every session resets at once.
 1. Put the new key first and keep the old key after it, separated by a comma:
    `REFLEX_SECRET_KEY=<new key>,<old key>`. New cookies use the first key.
    Cookies signed with the old key stay valid.
-2. Wait at least one session lifetime (`session_token_ttl`, seven days by
+2. Wait at least the maximum session age (`session_token_max_age`, seven days by
    default). Active sessions move to the new key when their cookie refreshes.
    Tab bindings are kept.
 3. Remove the old key: `REFLEX_SECRET_KEY=<new key>`.
