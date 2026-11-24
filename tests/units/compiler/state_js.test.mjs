@@ -25,6 +25,7 @@ async function setup({
   initialState = { root: {}, child: {} },
   dropConnects = 0,
   dropReason = "transport close",
+  replayOnConnect = [],
   maxPayload = 1_000_000,
   eventUrl = "ws://localhost:8000/_event",
   firstPayload = {},
@@ -155,7 +156,15 @@ async function setup({
           }
           this.finishConnectAck = () => {
             this.connected = true;
+            // Like Socket.onconnect: events received before the CONNECT ack are
+            // replayed first, and "connect" fires even if one of them disconnected.
+            for (const [name, ...args] of replayOnConnect) {
+              handlers.get(name)(...args);
+            }
             const connected = handlers.get("connect")();
+            if (!this.connected) {
+              return connected;
+            }
             handlers.get("new_token")("assigned-token");
             handlers.get("event")({ delta: { child: { count: 7 } } });
             return connected;
@@ -169,7 +178,11 @@ async function setup({
       },
       disconnect() {
         this.disconnects++;
-        this.connected = false;
+        // Like socket.io-client, only an open namespace reports the close.
+        if (this.connected) {
+          this.connected = false;
+          handlers.get("disconnect")("io client disconnect");
+        }
       },
     };
     sockets.push(socket);
@@ -209,10 +222,13 @@ async function setup({
         initialState: stateful ? initialState : {},
         onLoadInternalEvent() {},
         on_load_internal_event: onLoadInternalEvent,
-        state_name: stateName,
+        main_state_name: stateName,
+        hydrate_and_load: "root.hydrate_and_load",
+        update_vars_internal:
+          "root.reflex___state____update_vars_internal_state.update_vars_internal",
+        handle_frontend_exception: "exception.handle_frontend_exception",
         stateSchema: { version: "test" },
         clientStorage,
-        exception_state_name: "exception",
       },
       eventLoop: { addEvents() {}, connectErrors: [] },
     },
@@ -660,6 +676,19 @@ test("a dropped connection reconnects at once", async () => {
   assert.equal(socket.namespaceConnects, 2);
   assert.equal(app.connectErrors.length, 0);
   assert.equal(app.timers.size, 0);
+});
+
+test("a fatal mismatch replayed before connect is not retried and stays visible", async () => {
+  const app = await setup({
+    replayOnConnect: [["scheme_mismatch", { frontend: "a", backend: "b" }]],
+  });
+  app.flush();
+  await app.connect();
+  assert.equal(app.socket.current.disconnects, 1);
+  assert.equal(app.timers.size, 0);
+  const errors = app.connectErrors;
+  assert.equal(errors.length, 1);
+  assert.equal(errors[0].fatal, true);
 });
 
 for (const reason of ["error", "timeout", "pagehide", "hot reload"]) {

@@ -1,10 +1,12 @@
+import copy
 import json
 import logging
 import shutil
 import subprocess
 from collections import UserList
 from collections.abc import Callable, Mapping, Sequence
-from typing import Any, TypeVar, cast
+from pathlib import Path
+from typing import Any, TypeVar, cast, get_type_hints
 from unittest.mock import patch
 
 import pytest
@@ -24,9 +26,11 @@ from reflex_base.event import (
     event,
     event_sequence,
     fix_events,
+    get_event,
     on_submit_event,
     on_submit_string_event,
 )
+from reflex_base.event.context import EventContext
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import console, format, log
 from reflex_base.utils.exceptions import (
@@ -41,7 +45,13 @@ from rich.console import Console
 from typing_extensions import TypeAliasType
 
 import reflex as rx
+from reflex.istate.manager import StateManager
+from reflex.istate.manager.token import BaseStateToken
+from reflex.istate.proxy import StateProxy
+from reflex.minify import StateEntry, get_state_full_path
 from reflex.state import BaseState
+from tests.units.minify_helpers import install_config, set_minify_modes
+from tests.units.name_resolvers import stub_resolver, temporary_resolver
 
 
 def make_var(value) -> Var:
@@ -1597,6 +1607,18 @@ def test_arg_mismatch_warning_renders_brackets_verbatim(capsys, monkeypatch):
     assert "\\" not in out
 
 
+def test_typing_event_helper_is_not_public():
+    """The pyright-only handler marker is not part of the ``rx.event`` namespace.
+
+    It lives in ``reflex.state`` as ``_typing_event``; both the name it used to
+    be attached under and the current one are checked.
+    """
+    import reflex as rx
+
+    assert not hasattr(rx.event, "typing_event")
+    assert not hasattr(rx.event, "_typing_event")
+
+
 def test_event_chain_cache_lives_on_the_registration_context(
     forked_registration_context: RegistrationContext,
 ):
@@ -1682,6 +1704,99 @@ def test_event_chain_create_shares_chains_bound_from_one_handler():
         EventChain.create([ChainState.handler], args_spec=args_spec, key="on_click")
         is not chain
     )
+
+
+class CopiedHandlerState(BaseState):
+    """A state whose handler is copied before a resolver switch."""
+
+    def handle(self):
+        """A handler."""
+
+
+@pytest.mark.parametrize(
+    "derive",
+    [
+        copy.copy,
+        copy.deepcopy,
+        lambda handler: handler.stop_propagation,
+    ],
+    ids=["copy", "deepcopy", "stop_propagation"],
+)
+def test_derived_handler_is_not_named_by_a_previous_resolver(
+    derive: Callable[[Any], Any],
+):
+    """A handler copied or derived before a resolver switch gets the new name.
+
+    Args:
+        derive: Builds the handler to format from the registered one.
+    """
+    handler = CopiedHandlerState.event_handlers["handle"]
+    derived = derive(handler)
+    format.format_event_handler(derived)
+    with temporary_resolver(stub_resolver(handler_prefix="h_")):
+        assert format.format_event_handler(derived).endswith(".h_handle")
+    assert format.format_event_handler(derived).endswith(".handle")
+
+
+def test_copied_handler_leaves_the_cached_resolver_behind():
+    """Copies drop the cached name, so deepcopy never copies the resolver."""
+    handler = CopiedHandlerState.event_handlers["handle"]
+    format.format_event_handler(handler)
+    assert handler._formatted_name is not None
+    for clone in (copy.copy, copy.deepcopy):
+        copied = clone(handler)
+        assert copied._formatted_name is None
+        assert copied == handler
+
+
+class ProxiedEventState(BaseState):
+    """A root state whose background handler names itself through its proxy."""
+
+    outside: str = ""
+    inside: str = ""
+
+    @rx.event(background=True)
+    async def handle(self):
+        """Record this handler's event name, outside and inside the lock."""
+        outside = get_event(self, "handle")
+        async with self:
+            self.outside = outside
+            self.inside = get_event(self, "handle")
+
+
+async def test_get_event_names_a_state_proxy_by_the_wrapped_state(
+    temp_minify_json: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+):
+    """A background task's StateProxy resolves its handler through the wrapped state.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+    """
+    set_minify_modes(monkeypatch, states=True, events=True)
+    path = get_state_full_path(ProxiedEventState)
+    install_config(
+        states={path: StateEntry(id="p", parent=None)},
+        events={path: {"handle": "h"}},
+    )
+    state_token = BaseStateToken(ident=token, cls=ProxiedEventState)
+    async with state_manager.modify_state(state_token) as root:
+        proxy = StateProxy(root)
+
+    await ProxiedEventState.event_handlers["handle"].fn(proxy)
+    assert (proxy.outside, proxy.inside) == ("p.h", "p.h")
+
+
+def test_event_handler_type_hints_resolve():
+    """Every ``EventHandler`` field annotation resolves at runtime, as docgen needs."""
+    assert "_formatted_name" in get_type_hints(EventHandler, include_extras=True)
 
 
 _BOUNDED_SPEC_ARG = TypeVar("_BOUNDED_SPEC_ARG", bound=Mapping[str, Any])
