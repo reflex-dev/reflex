@@ -240,6 +240,7 @@ const ensureSession = async (sessionCredential, controller) => {
       signal: controller.signal,
     });
     if (!response.ok) {
+      /** @type {Error & { status?: number }} */
       const error = new Error(`Session request failed: ${response.status}`);
       error.status = response.status;
       throw error;
@@ -1598,7 +1599,7 @@ export const connect = async (
         (session.refresh_in ?? session.expires_in / 2) * 1000;
       window.localStorage.setItem(
         sessionRefreshStorageKey(),
-        Date.now() + refreshDelay,
+        String(Date.now() + refreshDelay),
       );
       sessionFailures = 0;
       setConnectErrors([]);
