@@ -85,6 +85,70 @@ def test_a_directory_without_init_does_not_hide_a_script(app_package: Path):
     assert celebrate == _JsFunction("js_app.party", "celebrate")
 
 
+def _load_config(project: Path, rxconfig_imports: str) -> subprocess.CompletedProcess:
+    """Load the config of a project whose rxconfig.py imports a module.
+
+    Args:
+        project: The project's directory.
+        rxconfig_imports: The import statement rxconfig.py starts with.
+
+    Returns:
+        The process that loaded it and printed the app's name.
+    """
+    (project / "rxconfig.py").write_text(
+        f"import reflex as rx\n\n{rxconfig_imports}\n\n"
+        "config = rx.Config(app_name='js_app', plugins=[], telemetry_enabled=False)\n"
+    )
+    return subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from reflex_base.config import get_config; print(get_config().app_name)",
+        ],
+        cwd=project,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+def test_a_script_imported_while_the_config_loads_is_not_found(tmp_path: Path):
+    """A script is not found while rxconfig.py loads: its package is not known yet.
+
+    Loading the config to know it would run rxconfig.py again inside itself.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+    """
+    app = tmp_path / "js_app"
+    app.mkdir()
+    (app / "__init__.py").write_text("")
+    (app / "settings.py").write_text("from js_app.party import go\n\nTITLE = 'x'\n")
+    (app / "party.js").write_text("export function go() {}\n")
+    loaded = _load_config(tmp_path, "from js_app.settings import TITLE")
+    assert loaded.returncode == 1
+    assert loaded.stderr.splitlines()[-1] == (
+        "ModuleNotFoundError: No module named 'js_app.party'"
+    )
+
+
+def test_an_import_that_may_fail_still_fails_while_the_config_loads(tmp_path: Path):
+    """A library that falls back when an import fails, beside a script of its name, loads.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+    """
+    library = tmp_path / "optlib"
+    library.mkdir()
+    (library / "__init__.py").write_text(
+        "try:\n    from optlib import speedups\nexcept ImportError:\n"
+        "    speedups = None\n\nVERSION = '1.0'\n"
+    )
+    (library / "speedups.js").write_text("export function go() {}\n")
+    loaded = _load_config(tmp_path, "from optlib import VERSION")
+    assert (loaded.returncode, loaded.stdout) == (0, "js_app\n"), loaded.stderr
+
+
 def test_the_finder_imports_nothing_heavy():
     """The finder loads on the first import no other finder found, so it stays cheap."""
     loaded = subprocess.run(

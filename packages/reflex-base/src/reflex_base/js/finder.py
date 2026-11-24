@@ -68,11 +68,15 @@ def _app_package() -> str:
     """Get the name of the app's top-level package.
 
     Returns:
-        The package ``rxconfig.py`` names, or an empty string without one.
+        The package ``rxconfig.py`` names, or an empty string without one or
+        while it loads.
     """
     # Imported here: the config loads only once a JavaScript file is found.
-    from reflex_base.config import get_config
+    from reflex_base.config import _config_load, get_config
 
+    # Loading the config while it loads would run rxconfig.py inside itself.
+    if _config_load.get() is not None:
+        return ""
     return get_config().module.partition(".")[0]
 
 

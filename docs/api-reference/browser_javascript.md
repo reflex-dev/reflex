@@ -305,7 +305,9 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
 
 - Only modules in your app's package import this way: the package that
   `app_name` in `rxconfig.py` names. A `.js` file in another package, such as
-  a library you installed, is never imported.
+  a library you installed, is never imported. Nor is a module imported while
+  `rxconfig.py` loads, directly or through another module: the app's package
+  is not known yet, so the import fails with `ModuleNotFoundError`.
 - A Python module or package of the same name wins over a JavaScript one. A
   directory without `__init__.py`, such as a folder of images, does not.
 - Import each function by name, as in `from my_app.scripts.party import
