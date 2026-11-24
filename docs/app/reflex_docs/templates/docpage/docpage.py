@@ -28,6 +28,7 @@ from reflex_site_shared.route import Route, get_path
 from reflex_site_shared.templates.docs import docs_layout_shell
 from reflex_site_shared.utils.docpage import right_sidebar_item_highlight
 
+from reflex_docs.sections import navbar_tab
 from reflex_docs.utils.acronyms import uppercase_acronyms
 
 _REGISTERED_DOC_ROUTES: set[str] = set()
@@ -225,6 +226,10 @@ def breadcrumb_data(path: str, title: str) -> dict:
     }
 
 
+# Route segments whose section goes by another name in the navbar and sidebar.
+_SECTION_LABELS = {"hosting": "Cloud", "library": "Components"}
+
+
 def _breadcrumb_label(segment: str) -> str:
     """Turn a route segment into a breadcrumb label, keeping acronyms uppercase.
 
@@ -232,8 +237,11 @@ def _breadcrumb_label(segment: str) -> str:
         segment: A kebab- or snake-case route segment, such as ``api-reference``.
 
     Returns:
-        The title-cased label, such as ``API Reference``.
+        The section's navigation name for a section segment, such as ``Cloud``
+        for ``hosting``; otherwise the title-cased label, such as ``API Reference``.
     """
+    if (label := _SECTION_LABELS.get(segment)) is not None:
+        return label
     return uppercase_acronyms(to_title_case(to_snake_case(segment), sep=" "))
 
 
@@ -530,7 +538,7 @@ def docpage(
 
             show_right_sidebar = right_sidebar and len(toc) >= 2
             return docs_layout_shell(
-                docs_navbar(),
+                docs_navbar(active_tab=navbar_tab(path)),
                 rx.el.main(
                     docs_left_sidebar(sidebar),
                     rx.box(
