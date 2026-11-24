@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 import pytest
+from pytest_mock import MockerFixture
 from reflex_base.event import Event
 from reflex_base.event.context import EventContext
 from reflex_base.js.modules import (
@@ -192,6 +193,32 @@ def test_an_uncalled_function_returned_by_a_handler_is_called_with_no_arguments(
             },
         )
     ]
+
+
+def test_a_function_stored_on_a_class_stays_the_function(
+    mocker: MockerFixture,
+):
+    """A function on a class reads back unbound and unchanged: it belongs to its module.
+
+    Args:
+        mocker: pytest-mock fixture.
+    """
+    deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+    celebrate = _JsFunction("app.scripts.party", "celebrate")
+
+    class Effects:
+        go = celebrate
+
+    assert Effects.go is celebrate
+    assert Effects().go is celebrate
+
+    class JsEffectsState(rx.State):
+        go = celebrate
+
+    assert JsEffectsState.go is celebrate
+    assert celebrate.state is None
+    assert "go" not in JsEffectsState.event_handlers
+    deprecate.assert_not_called()
 
 
 def test_var_arguments_are_compiled_into_the_event():

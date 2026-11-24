@@ -25,7 +25,7 @@ import keyword
 import sys
 from pathlib import Path
 from types import ModuleType
-from typing import Any
+from typing import Any, Self
 
 from reflex_base.event import EventHandler, EventSpec
 from reflex_base.event.context import EventContext
@@ -196,6 +196,26 @@ class _JsFunction(EventHandler):
             The hash.
         """
         return hash((self.module, self.name, tuple(self.event_actions.items())))
+
+    def __set_name__(self, owner: type, name: str) -> None:
+        """Stay unbound on a class: the function belongs to its module.
+
+        Args:
+            owner: The class.
+            name: The attribute name.
+        """
+
+    def __get__(self, instance: Any, owner: type | None = None) -> Self:
+        """Read back as the function from a class or its instances.
+
+        Args:
+            instance: The instance it is read on, or None.
+            owner: The class it is read through.
+
+        Returns:
+            This function.
+        """
+        return self
 
     def __call__(self, *args: Any) -> EventSpec:
         """Build the event that calls the function in the browser.
