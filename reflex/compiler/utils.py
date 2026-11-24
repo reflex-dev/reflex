@@ -548,18 +548,32 @@ def compile_script_modules(
     return outputs, package_imports, list(copies.items())
 
 
-def copy_files(copies: Iterable[tuple[Path, Path]]) -> None:
-    """Copy files byte for byte, skipping those whose target is up to date.
+def copy_files(copies: Iterable[tuple[Path, Path]], directory: Path) -> None:
+    """Copy files byte for byte into a directory, and remove its other files.
+
+    A target that is up to date is left alone. Removing the files of earlier
+    copies keeps one that is no longer reached from being bundled, as when it
+    is found before the file that replaced it.
 
     Args:
-        copies: The (source, target) pairs.
+        copies: The (source, target) pairs, each target in the directory.
+        directory: The directory.
     """
+    targets = set()
     for source, target in copies:
+        targets.add(target)
         data = source.read_bytes()
         if target.is_file() and target.read_bytes() == data:
             continue
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
+    for parent, _, names in os.walk(directory, topdown=False):
+        folder = Path(parent)
+        for name in names:
+            if folder / name not in targets:
+                (folder / name).unlink()
+        if not any(folder.iterdir()):
+            folder.rmdir()
 
 
 def _restore_bundled_libraries() -> bool:

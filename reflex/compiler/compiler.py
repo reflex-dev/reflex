@@ -1307,7 +1307,7 @@ def _install_frontend_packages(
     if script_modules and not (get_web_dir() / "node_modules" / "vite").is_dir():
         app._get_frontend_packages(imports)
     outputs, script_imports, copies = utils.compile_script_modules(script_modules)
-    utils.copy_files(copies)
+    utils.copy_files(copies, get_web_dir() / constants.Dirs.SCRIPT_MODULES_PATH)
     app._get_frontend_packages(utils.merge_imports(imports, script_imports))
     return outputs
 

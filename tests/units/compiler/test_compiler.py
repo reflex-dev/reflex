@@ -2454,7 +2454,9 @@ def test_install_frontend_packages_reads_modules_after_the_parser_is_installed(
         utils, "compile_script_modules", side_effect=compile_script_modules
     )
     mocker.patch.object(
-        utils, "copy_files", side_effect=lambda c: calls.append(("copy", c))
+        utils,
+        "copy_files",
+        side_effect=lambda c, directory: calls.append(("copy", c, directory)),
     )
     imports = {"react": [ImportVar(tag="useState")]}
 
@@ -2462,6 +2464,41 @@ def test_install_frontend_packages_reads_modules_after_the_parser_is_installed(
     assert calls == [
         *([imports] if first_install else []),
         ("read", modules),
-        ("copy", copies),
+        ("copy", copies, tmp_path / "utils" / "script_modules"),
         {**imports, **script_imports},
     ]
+
+
+def test_install_frontend_packages_removes_stale_copies(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """Only the files the modules reach stay copied, so no removed file shadows one.
+
+    Args:
+        tmp_path: The web directory.
+        mocker: Fixture for standing in for the read of the modules and the install.
+    """
+    mocker.patch("reflex.compiler.compiler.get_web_dir", return_value=tmp_path)
+    (tmp_path / "node_modules" / "vite").mkdir(parents=True)
+    modules_dir = tmp_path / "utils" / "script_modules"
+    # `./helpers` found helpers.js, now replaced by helpers.ts, and a module
+    # that is no longer imported left a directory.
+    for stale in ("app/scripts/helpers.js", "app/old/gone.js"):
+        (modules_dir / stale).parent.mkdir(parents=True, exist_ok=True)
+        (modules_dir / stale).write_text("export const old = 1;\n")
+    source = tmp_path / "helpers.ts"
+    source.write_text("export const helper = 1;\n")
+    mocker.patch("reflex.compiler.compiler._app_modules", return_value={})
+    mocker.patch.object(
+        utils,
+        "compile_script_modules",
+        return_value=([], {}, [(source, modules_dir / "app/scripts/helpers.ts")]),
+    )
+    app = rx.App(enable_state=False)
+    mocker.patch.object(app, "_get_frontend_packages")
+
+    compiler._install_frontend_packages(app, {})
+
+    assert sorted(
+        path.relative_to(modules_dir).as_posix() for path in modules_dir.rglob("*")
+    ) == ["app", "app/scripts", "app/scripts/helpers.ts"]

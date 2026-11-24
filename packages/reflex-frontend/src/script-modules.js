@@ -65,6 +65,13 @@ const RESOLVE_EXTENSIONS = [
   ".tsx",
   ".json",
 ];
+// The TypeScript files an import may name by the JavaScript file each compiles
+// to, by that file's extension, tried in order, as TypeScript and Vite do.
+const TYPESCRIPT_SOURCES = {
+  ".js": [".ts", ".tsx"],
+  ".jsx": [".tsx"],
+  ".mjs": [".mts"],
+};
 // Initializers of a `const` that make it a value Python cannot call.
 const VALUE_TYPES = new Set([
   "ArrayExpression",
@@ -128,15 +135,14 @@ const isFile = (path) =>
  */
 const resolveImport = (directory, specifier) => {
   const target = resolve(directory, stripQuery(specifier));
-  const candidates = [target, ...RESOLVE_EXTENSIONS.map((ext) => target + ext)];
-  if (target.endsWith(".js")) {
-    // TypeScript imports a .ts file by the .js name it compiles to.
-    candidates.push(`${target.slice(0, -3)}.ts`);
-  }
-  candidates.push(
+  const extension = extname(target);
+  const base = target.slice(0, target.length - extension.length);
+  return [
+    target,
+    ...(TYPESCRIPT_SOURCES[extension] ?? []).map((ext) => base + ext),
+    ...RESOLVE_EXTENSIONS.map((ext) => target + ext),
     ...RESOLVE_EXTENSIONS.map((ext) => join(target, `index${ext}`)),
-  );
-  return candidates.find(isFile);
+  ].find(isFile);
 };
 
 /**
