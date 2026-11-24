@@ -2447,6 +2447,14 @@ def test_install_frontend_packages_reads_modules_after_the_parser_is_installed(
     script_imports = {"canvas-confetti": [ImportVar(tag=None, render=False)]}
 
     def compile_script_modules(script_modules: dict[str, _ScriptModule]):
+        """Record the modules read, and return fixed outputs.
+
+        Args:
+            script_modules: The modules.
+
+        Returns:
+            The outputs, the imports and the copies.
+        """
         calls.append(("read", script_modules))
         return outputs, script_imports, copies
 

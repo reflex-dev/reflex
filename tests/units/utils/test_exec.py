@@ -222,6 +222,11 @@ def test_run_uvicorn_backend_sets_reload_env_var_and_clears_marker(
     seen: dict[str, str | None] = {}
 
     def fake_run(reloader):
+        """Record the reload variable the reloader runs with, and close its sockets.
+
+        Args:
+            reloader: The reloader.
+        """
         for sock in reloader.sockets:
             sock.close()
         seen["value"] = os.environ.get(DEV_BACKEND_RELOAD_ENV_NAME)
@@ -329,13 +334,23 @@ def test_run_granian_backend_reloads_for_a_data_file_a_javascript_module_reaches
 
     class FakeGranian:
         def __init__(self, *_args, **kwargs):
+            """Record the options the server is made with.
+
+            Args:
+                *_args: The positional options.
+                **kwargs: The keyword options.
+            """
             options.update(kwargs)
 
         def on_reload(self, _callback):
-            pass
+            """Ignore the reload callback.
+
+            Args:
+                _callback: The callback.
+            """
 
         def serve(self):
-            pass
+            """Return at once instead of serving."""
 
     mocker.patch.object(granian_server, "Server", FakeGranian)
 
@@ -353,6 +368,14 @@ def test_run_granian_backend_reloads_for_a_data_file_a_javascript_module_reaches
     )
 
     def reloads(path: Path) -> bool:
+        """Whether a change to a file reloads the backend.
+
+        Args:
+            path: The file.
+
+        Returns:
+            Whether Granian's filter passes it.
+        """
         return watch_filter(watchfiles.Change.modified, str(path))
 
     assert reloads(package / "scripts" / "config.json")
