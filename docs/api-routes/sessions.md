@@ -16,7 +16,7 @@ Set `REFLEX_SESSION_TOKEN_MODE` in the backend environment:
 
 | Mode | Behavior |
 | --- | --- |
-| `warn` (default) | Issues sessions and warns about unauthorized state access, while allowing it for compatibility. |
+| `warn` (default) | Issues sessions and warns about unauthorized state access, while allowing it for compatibility. A tab keeps a client token that its session does not own. |
 | `enforce` | Requires session ownership for event contexts and uploads. A socket presenting an unbound client token receives a new token and fresh state. |
 | `off` | Disables ownership enforcement. Fresh tabs receive a client token; existing legacy tokens remain usable. |
 
@@ -38,6 +38,13 @@ WebSocket events continue; waiting HTTP requests resume when the cookie is ready
 Disconnecting cancels the pending exchange. The credential is never
 stored in localStorage or sessionStorage.
 
+A `403` from the exchange means the backend does not trust the origin of the
+page (see [Origins, cookies, and embedding](#origins-cookies-and-embedding)).
+The frontend logs the origin to the browser console once, does not retry, and
+releases waiting uploads. The app keeps working over the WebSocket, but the
+browser has no session cookie, so `enforce` resets the state of that tab on
+each new connection.
+
 The endpoint also supports a JSON POST with no credential to create a session
 for a non-browser client. It returns `token_type`, `expires_in`, `refresh_in`, and
 `client_token`, and sets the cookie. Pass an existing `Reflex-Client-Token`
@@ -51,10 +58,14 @@ server's replacement token. Waiting HTTP requests remain queued until that
 replacement connection is accepted. Storage keys are scoped to the backend URL.
 
 `session_token_ttl` in `rx.Config` defaults to seven days.
-`session_token_refresh_interval` defaults to half that lifetime. HTTP responses
-refresh an existing session after that age. Browser timers renew idle sessions;
-returning to a visible tab also requests renewal over its authenticated socket,
-so a suspended timer does not require a new session while that socket survives.
+`session_token_refresh_interval` defaults to half that lifetime. Only
+`POST /_reflex/session` renews the cookie, and its response is `no-store`, so a
+shared cache never stores the credential. A browser timer renews an idle
+session at that age, and a tab that becomes visible after that age renews at
+once, so a suspended timer does not require a new session while the socket
+survives. A socket that connected with a valid cookie renews it over HTTP: the
+backend sends the credential over the socket only when the browser has no valid
+cookie, so page scripts cannot read a credential that is in the cookie.
 A socket retains its validated session for its
 connected lifetime. Cookie expiry is checked on subsequent HTTP requests and
 reconnections. Refresh retains the session ID and existing tab bindings.
@@ -69,9 +80,10 @@ The signed audience also binds each credential to `app_name`, so one app cannot
 accept another app's session even when they share a signing key.
 
 Installing an in-band credential requires a trusted Origin. Reflex trusts
-`deploy_url`, `api_url`, explicit `cors_allowed_origins`, and the development
-loopback frontend origins. `cors_allowed_origins=["*"]` does **not** authorize
-credential exchange. Configure `deploy_url` for the frontend and list any
+`deploy_url`, `api_url`, explicit `cors_allowed_origins`, the development
+loopback frontend origins, and a page on the host that the request reached
+(for example a development server opened through a LAN address).
+`cors_allowed_origins=["*"]` does **not** authorize credential exchange. Configure `deploy_url` for the frontend and list any
 EmbedPlugin host origins explicitly. This prevents another origin from
 installing a session credential it already knows. A valid existing cookie
 always takes precedence over an exchanged credential.
@@ -82,6 +94,21 @@ site's partition. Browsers that block third-party cookies without supporting
 partitioned cookies cannot persist sessions in those contexts. Plain HTTP on
 a non-loopback development host uses a warning and an insecure `SameSite=Lax`
 cookie; use HTTPS for embedding and production.
+
+A browser stores a `Secure` cookie only from HTTPS or a loopback host. A
+production app served over plain HTTP on another host, or a development server
+opened through a LAN address while `api_url` is a loopback URL, therefore has
+no persistent session. `warn` and `off` keep the tab token, so such an app
+works as before. `enforce` gives the tab a new token and fresh state on each
+new connection, so use HTTPS, or set `api_url` to the address that the browser
+uses.
+
+All ports of the backend host share the cookie, because cookies are not scoped
+by port. A page on another port of that host can therefore open a socket in
+the same session and get its own client token. It
+cannot read the state of another tab without that tab's client token. Do not
+treat the session alone as proof of who the user is, and list explicit
+`cors_allowed_origins` when other apps share the host.
 
 Cookie headers remain readable on the server through `self.router.headers`.
 They are omitted from frontend router data, and the session credential itself
@@ -136,7 +163,9 @@ It does not imply that the client is logged in.
 `app.modify_state`, event enqueueing, and chained events inherit the ambient
 session. HTTP and custom WebSocket routes receive the requesting session, and
 framework WebSocket events receive the socket's session. Explicit `session_token=None` means anonymous
-access. A handler cannot modify another session's state under `enforce`.
+access. A handler cannot modify another session's state under `enforce`. The
+same check applies when a handler links an `rx.SharedState` to a client token:
+only the session that owns that token can make the link.
 
 Lifespan work starts with `SessionToken.SYSTEM`. For intentional trusted
 server-side fan-out, pass it explicitly:
@@ -145,9 +174,9 @@ server-side fan-out, pass it explicitly:
 from reflex_base.session import SessionToken
 
 async with app.modify_state(
-    rx.BaseStateToken(client_token, MyState),
-    session_token=SessionToken.SYSTEM,
-) as state:
+    client_token, session_token=SessionToken.SYSTEM
+) as root_state:
+    state = await root_state.get_state(MyState)
     state.message = "Server maintenance starts soon"
 ```
 
