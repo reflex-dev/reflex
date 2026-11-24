@@ -194,7 +194,8 @@ def test_exchange_websocket_session(manager: SessionTokenManager):
 
 
 @pytest.mark.parametrize(
-    "origin", [None, "null", "https://evil.test", "*", "https://api.test.evil.test"]
+    "origin",
+    [None, "null", "https://evil.test", "*", "https://api.test.evil.test", "https://["],
 )
 def test_exchange_rejects_untrusted_origin(
     manager: SessionTokenManager, origin: str | None
@@ -531,12 +532,24 @@ def test_cookie_policy(
     monkeypatch.setenv("REFLEX_ENV_MODE", mode)
     with TestClient(_app(manager, api_url), base_url="http://internal-proxy") as client:
         response = client.post("/_reflex/session", json={})
-    cookie = response.headers["set-cookie"]
-    assert ("; Secure" in cookie) is secure
-    assert ("; Partitioned" in cookie) is secure
-    assert cookie.startswith("__Host-") is secure
-    assert f"SameSite={'None' if secure else 'Lax'}" in cookie
-    assert ("insecure SameSite=Lax" in caplog.text) is not secure
+    name, _, rest = response.headers["set-cookie"].partition("=")
+    credential, _, attributes = rest.partition("; ")
+    assert manager.decode(credential) is not None
+    if secure:
+        assert name == f"__Host-{manager.cookie_name}"
+        assert attributes == (
+            "Path=/; Max-Age=100; HttpOnly; SameSite=None; Secure; Partitioned"
+        )
+        assert caplog.messages == []
+    else:
+        assert name == manager.cookie_name
+        assert attributes == "Path=/; Max-Age=100; HttpOnly; SameSite=Lax"
+        assert caplog.messages == [
+            (
+                "Session cookies use insecure SameSite=Lax on this development HTTP "
+                "API URL. Use HTTPS for secure, cross-site session cookies."
+            )
+        ]
 
 
 @pytest.mark.asyncio

@@ -251,7 +251,10 @@ def _trusted_origin(request: Request, allowed_origins: tuple[str, ...]) -> bool:
         return False
     if origin in allowed_origins:
         return True
-    hostname = urlsplit(origin).hostname
+    try:
+        hostname = urlsplit(origin).hostname
+    except ValueError:
+        return False
     return hostname is not None and hostname == request.url.hostname
 
 
