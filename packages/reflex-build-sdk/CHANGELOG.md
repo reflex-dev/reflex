@@ -2,6 +2,17 @@
 
 <!-- towncrier release notes start -->
 
+## v0.1.3a1 (2026-11-23)
+
+### Breaking Changes
+
+- `reflex_build_sdk.triggers` no longer accepts HMAC (`v1`) signatures or reads `REFLEX_TRIGGER_SECRET`: `verify` and `parse_delivery` drop their `secret` argument, `SECRET_ENV` is removed, and `sign` takes `whsk_` Ed25519 signing keys only. The platform never sent HMAC-signed deliveries, so no deployed app relied on them.
+
+### Features
+
+- `reflex_build_sdk.triggers` verifies the platform's Ed25519 (`v1a`) delivery signatures against the public key in `REFLEX_TRIGGER_PUBLIC_KEY`, so an app holds nothing that could sign a delivery. Install `reflex-build-sdk[triggers]` to get the `cryptography` package it needs. `triggers.public_key(signing_key)` returns the public half of a `whsk_` signing key.
+
+
 ## v0.1.2 (2026-11-23)
 
 ### Features

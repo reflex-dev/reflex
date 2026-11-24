@@ -1,1 +1,0 @@
-`reflex_build_sdk.triggers` no longer accepts HMAC (`v1`) signatures or reads `REFLEX_TRIGGER_SECRET`: `verify` and `parse_delivery` drop their `secret` argument, `SECRET_ENV` is removed, and `sign` takes `whsk_` Ed25519 signing keys only. The platform never sent HMAC-signed deliveries, so no deployed app relied on them.

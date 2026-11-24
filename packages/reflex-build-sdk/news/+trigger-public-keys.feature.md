@@ -1,1 +1,0 @@
-`reflex_build_sdk.triggers` verifies the platform's Ed25519 (`v1a`) delivery signatures against the public key in `REFLEX_TRIGGER_PUBLIC_KEY`, so an app holds nothing that could sign a delivery. Install `reflex-build-sdk[triggers]` to get the `cryptography` package it needs. `triggers.public_key(signing_key)` returns the public half of a `whsk_` signing key.
