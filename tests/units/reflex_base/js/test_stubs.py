@@ -111,9 +111,26 @@ def test_render_stub_maps_types_without_json_form_to_any():
     """
 
     def var(value: str) -> str:
+        """Render a type that may also be a Var of it.
+
+        Args:
+            value: The type.
+
+        Returns:
+            The union of the type and its Var.
+        """
         return f"{value} | _Var[{value}]"
 
     def container(shape: str, item: str) -> str:
+        """Render a container type whose items, and itself, may be Vars.
+
+        Args:
+            shape: The container, with `{}` for its item type.
+            item: The item type.
+
+        Returns:
+            The container type.
+        """
         # An item may be a Var too, as may the whole container.
         return f"{shape.format(var(item))} | _Var[{shape.format(item)}]"
 

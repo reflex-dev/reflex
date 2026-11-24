@@ -357,7 +357,7 @@ class _ScriptModulesReport(TypedDict):
     # The version of this shape, which the script changes with it.
     format: Literal[1]
     modules: dict[str, _ScriptExports]
-    # Per script, the specifiers it imports that are not relative paths.
+    # Per script or stylesheet, the specifiers it imports that are not local files.
     imports: dict[str, list[str]]
     errors: list[_ScriptSyntaxError]
     loops: list[_ScriptLinkLoop]
@@ -430,9 +430,9 @@ def _read_script_modules(paths: Sequence[Path]) -> _ScriptModulesReport:
         paths: The modules.
 
     Returns:
-        Each module's files and exports, each script's imports, the first
-        syntax error of each file, and each import of a file that reaches
-        itself again through a directory link.
+        Each module's files and exports, each script's and stylesheet's
+        imports, the first syntax error of each file, and each import of a
+        file that reaches itself again through a directory link.
 
     Raises:
         ReflexRuntimeError: If the script fails, or prints output of another

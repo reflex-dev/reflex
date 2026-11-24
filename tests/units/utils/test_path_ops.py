@@ -951,6 +951,15 @@ def test_write_file_atomic_replaces_the_file_whole(
     replace = Path.replace
 
     def record(self: Path, target: Path) -> Path:
+        """Record the temporary file a write replaces its target with.
+
+        Args:
+            self: The temporary file.
+            target: The target.
+
+        Returns:
+            The target.
+        """
         replaced.append(re.sub(r"\.[0-9a-f]{16}\.", ".<hex>.", self.name))
         return replace(self, target)
 

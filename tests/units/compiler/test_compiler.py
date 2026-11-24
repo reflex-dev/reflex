@@ -2463,6 +2463,11 @@ def test_install_frontend_packages_reads_modules_after_the_parser_is_installed(
         return outputs, script_imports, copies, read
 
     def write_script_stubs(read):
+        """Record that the stubs were written.
+
+        Args:
+            read: What was read of the modules.
+        """
         calls.append(("stubs", read))
 
     mocker.patch.object(
