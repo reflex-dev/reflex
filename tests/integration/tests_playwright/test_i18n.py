@@ -39,7 +39,9 @@ def I18nApp():
     locales = Path("locales")
     locales.mkdir(exist_ok=True)
     (locales / "de.po").write_text(de_po, encoding="utf-8")
-    (locales / "en.po").write_text(po_header, encoding="utf-8")
+    # Only the English catalog translates this, so it shows when that loaded.
+    en_po = po_header + 'msgid "No catalog"\nmsgstr "English catalog"\n'
+    (locales / "en.po").write_text(en_po, encoding="utf-8")
 
     class PageState(rx.State):
         count: int = 1
@@ -98,6 +100,7 @@ def I18nApp():
                 id="token",
             ),
             rx.text(rx.t("Hello"), id="static-hello"),
+            rx.text(rx.t("No catalog"), id="catalog-marker"),
             rx.text(
                 rx.t("{count} item", plural="{count} items", count=PageState.count),
                 id="static-count",
@@ -359,19 +362,19 @@ def test_switch_waits_for_the_new_catalog(i18n_app: AppHarness, page: Page):
 
     page.route("**/i18n/de.js*", hold_catalog)
     page.goto(i18n_app.frontend_url)
-    expect(page.locator("#token")).not_to_have_value("")
-    # Set once the default locale's catalog is committed.
-    expect(page.locator("html")).to_have_attribute("dir", "ltr")
+    expect(page.locator("#catalog-marker")).to_have_text("English catalog")
 
     with page.expect_request("**/i18n/de.js*"):
         page.click("#to-de")
     expect(page.locator("#static-hello")).to_have_text("Hello")
+    expect(page.locator("#catalog-marker")).to_have_text("English catalog")
     expect(page.locator("#client-number")).to_have_text("1,234.50")
     expect(page.locator("html")).to_have_attribute("lang", "en")
 
     for route in held_catalogs:
         route.continue_()
     expect(page.locator("#static-hello")).to_have_text("Hallo")
+    expect(page.locator("#catalog-marker")).to_have_text("No catalog")
     expect(page.locator("#client-number")).to_have_text("1.234,50")
     expect(page.locator("html")).to_have_attribute("lang", "de")
 

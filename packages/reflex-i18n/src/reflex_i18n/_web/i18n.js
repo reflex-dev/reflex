@@ -302,10 +302,10 @@ export function I18nProvider({ children, onLocaleChange, serverLocale }) {
 
   useEffect(() => {
     // With URL routing the routing wrap (on every page) owns <html lang>/dir.
-    if (!urlRouting && loaded.locale !== undefined) {
-      applyDocumentLocale(loaded.locale);
+    if (!urlRouting) {
+      applyDocumentLocale(shownLocale);
     }
-  }, [loaded.locale]);
+  }, [shownLocale]);
 
   // Runs once the held locale's catalog is committed, so the revealed
   // document already shows the translated text.
