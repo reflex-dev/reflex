@@ -159,6 +159,24 @@ def test_ngettext_plural(tmp_path: Path, monkeypatch):
         assert ngettext("{n} item", "{n} items", 3) == "{n} Artikel"
 
 
+def test_partially_translated_plural_falls_back_to_the_source(
+    tmp_path: Path, monkeypatch
+):
+    """A plural with an empty form stays untranslated, as the browser catalog keeps it."""
+    monkeypatch.chdir(tmp_path)
+    _write_po(
+        tmp_path / "locales",
+        "de",
+        'msgid "{n} item"\nmsgid_plural "{n} items"\n'
+        'msgstr[0] "{n} Artikel"\nmsgstr[1] ""\n',
+    )
+    set_active_i18n_config(I18nConfig(locales=["en", "de"], default_locale="en"))
+
+    with use_locale("de"):
+        assert ngettext("{n} item", "{n} items", 1) == "{n} item"
+        assert ngettext("{n} item", "{n} items", 3) == "{n} items"
+
+
 def test_ngettext_without_locale():
     assert ngettext("one", "many", 1) == "one"
     assert ngettext("one", "many", 2) == "many"

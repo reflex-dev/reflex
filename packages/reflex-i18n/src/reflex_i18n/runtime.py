@@ -105,8 +105,16 @@ class _CatalogTranslations(_gettext_module.GNUTranslations):
         """
         from babel.messages.mofile import write_mo
 
+        from .catalog import is_translated
+
+        # The browser catalog leaves out a partially translated plural; drop it
+        # here too, so both sides show the source text for it.
+        complete = copy.deepcopy(catalog)
+        for message in list(complete):
+            if message.id and not is_translated(message):
+                complete.delete(message.id, message.context)
         buffer = io.BytesIO()
-        write_mo(buffer, catalog)
+        write_mo(buffer, complete)
         buffer.seek(0)
         super().__init__(buffer)
         # Babel leaves Plural-Forms out of the .mo for a locale it has no data for.
