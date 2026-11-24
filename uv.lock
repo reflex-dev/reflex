@@ -4127,7 +4127,7 @@ dev = [
     { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "reflex-bench" },
-    { name = "reflex-build-sdk", extra = ["aiohttp", "httpx", "httpx2"] },
+    { name = "reflex-build-sdk", extra = ["aiohttp", "httpx", "httpx2", "triggers"] },
     { name = "reflex-docgen" },
     { name = "reflex-otel" },
     { name = "reflex-release" },
@@ -4224,7 +4224,7 @@ dev = [
     { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "reflex-bench", editable = "packages/reflex-bench" },
-    { name = "reflex-build-sdk", extras = ["aiohttp", "httpx", "httpx2"], editable = "packages/reflex-build-sdk" },
+    { name = "reflex-build-sdk", extras = ["aiohttp", "httpx", "httpx2", "triggers"], editable = "packages/reflex-build-sdk" },
     { name = "reflex-docgen", editable = "packages/reflex-docgen" },
     { name = "reflex-otel", editable = "packages/reflex-otel" },
     { name = "reflex-release", editable = "packages/reflex-release" },
@@ -4304,14 +4304,18 @@ httpx = [
 httpx2 = [
     { name = "httpx2" },
 ]
+triggers = [
+    { name = "cryptography" },
+]
 
 [package.metadata]
 requires-dist = [
     { name = "aiohttp", marker = "extra == 'aiohttp'", specifier = ">=3.10.0,<4.0" },
+    { name = "cryptography", marker = "extra == 'triggers'", specifier = ">=43.0" },
     { name = "httpx", marker = "extra == 'httpx'", specifier = ">=0.25.1,<1.0" },
     { name = "httpx2", marker = "extra == 'httpx2'", specifier = ">=2.0.0,<3.0" },
 ]
-provides-extras = ["aiohttp", "httpx", "httpx2"]
+provides-extras = ["aiohttp", "httpx", "httpx2", "triggers"]
 
 [[package]]
 name = "reflex-components-code"

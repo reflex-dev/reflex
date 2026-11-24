@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import sys
 from typing import Any
 
 import pytest
@@ -28,6 +29,21 @@ WIRE_HEADERS = {
     "webhook-id": "dlv_7b1f0c1e",
     "webhook-timestamp": "1700000000",
     "webhook-signature": "v1,hnYn2REsu5V8335updd/lhvOiKFOVHO3UhCB++A9z6M=",
+}
+
+# The same delivery signed the way the platform signs it: Ed25519, with only the
+# public key on the app's side. Ed25519 signatures are deterministic.
+SIGNING_KEY = "whsk_AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8="
+PUBLIC_KEY = "whpk_A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg="
+OLD_SIGNING_KEY = "whsk_ICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj8="
+OLD_PUBLIC_KEY = "whpk_Kay64UG8yvCyLhqU000LxzYeUm0L/hLIl5S8kyKWbdc="
+SIGNED_HEADERS = {
+    "webhook-id": "dlv_7b1f0c1e",
+    "webhook-timestamp": "1700000000",
+    "webhook-signature": (
+        "v1a,RiOk5rlZHwiVYpsjgaY0j/fCPksH/FixRtcF1mxev4omB06KyMlwR/3i6q29P6n1YFZswRvS"
+        "LmsahWN0Q7rUDw=="
+    ),
 }
 
 
@@ -143,11 +159,153 @@ def test_a_delivery_signed_by_old_and_new_secrets_verifies_with_either():
 
 
 def test_the_secret_comes_from_the_environment(monkeypatch):
+    monkeypatch.delenv(triggers.PUBLIC_KEY_ENV, raising=False)
     monkeypatch.setenv(triggers.SECRET_ENV, SECRET)
     assert triggers.verify(WIRE_BODY, WIRE_HEADERS, now=NOW) == ("dlv_7b1f0c1e", NOW)
     monkeypatch.delenv(triggers.SECRET_ENV)
     assert _refusal(WIRE_BODY, WIRE_HEADERS) == (
-        "InvalidSignature: no trigger secret: REFLEX_TRIGGER_SECRET is not set"
+        "InvalidSignature: no trigger key: neither REFLEX_TRIGGER_PUBLIC_KEY nor"
+        " REFLEX_TRIGGER_SECRET is set"
+    )
+
+
+def test_the_platform_signs_with_a_key_the_app_holds_only_the_public_half_of():
+    assert triggers.public_key(SIGNING_KEY) == PUBLIC_KEY
+    assert (
+        triggers.sign(WIRE_BODY, SIGNING_KEY, msg_id="dlv_7b1f0c1e", timestamp=NOW)
+        == SIGNED_HEADERS
+    )
+    delivery = triggers.parse_delivery(
+        WIRE_BODY, SIGNED_HEADERS, public_key=PUBLIC_KEY, now=NOW
+    )
+    assert delivery == triggers.parse_delivery(
+        WIRE_BODY, WIRE_HEADERS, secret=SECRET, now=NOW
+    )
+
+
+def test_the_public_key_comes_from_the_environment_and_outranks_a_secret(
+    monkeypatch,
+):
+    monkeypatch.setenv(triggers.PUBLIC_KEY_ENV, PUBLIC_KEY)
+    monkeypatch.setenv(triggers.SECRET_ENV, SECRET)
+    assert triggers.verify(WIRE_BODY, SIGNED_HEADERS, now=NOW) == (
+        "dlv_7b1f0c1e",
+        NOW,
+    )
+    # A secret the app also holds signs nothing it accepts once it has a key.
+    assert _refusal(WIRE_BODY, WIRE_HEADERS) == "InvalidSignature: no signature matches"
+    both = {
+        **WIRE_HEADERS,
+        "webhook-signature": WIRE_HEADERS["webhook-signature"]
+        + " "
+        + SIGNED_HEADERS["webhook-signature"],
+    }
+    assert triggers.verify(WIRE_BODY, both, now=NOW) == ("dlv_7b1f0c1e", NOW)
+
+
+def test_a_delivery_signed_by_old_and_new_keys_verifies_with_either():
+    headers = triggers.sign(
+        WIRE_BODY, f"{OLD_SIGNING_KEY} {SIGNING_KEY}", msg_id="dlv_1", timestamp=NOW
+    )
+    assert len(headers["webhook-signature"].split(" ")) == 2
+    for public_key in (OLD_PUBLIC_KEY, PUBLIC_KEY, [OLD_PUBLIC_KEY, PUBLIC_KEY]):
+        assert triggers.verify(WIRE_BODY, headers, public_key=public_key, now=NOW) == (
+            "dlv_1",
+            NOW,
+        )
+
+
+@pytest.mark.parametrize(
+    ("body", "headers", "public_key", "reason"),
+    [
+        (WIRE_BODY, SIGNED_HEADERS, OLD_PUBLIC_KEY, "no signature matches"),
+        (WIRE_BODY + b" ", SIGNED_HEADERS, PUBLIC_KEY, "no signature matches"),
+        (
+            WIRE_BODY,
+            {**SIGNED_HEADERS, "webhook-id": "dlv_another"},
+            PUBLIC_KEY,
+            "no signature matches",
+        ),
+        (WIRE_BODY, WIRE_HEADERS, PUBLIC_KEY, "no signature matches"),
+        (
+            WIRE_BODY,
+            {**SIGNED_HEADERS, "webhook-signature": "v1a,!!!!"},
+            PUBLIC_KEY,
+            "no signature matches",
+        ),
+        (
+            WIRE_BODY,
+            {**SIGNED_HEADERS, "webhook-signature": "v1a,c2hvcnQ="},
+            PUBLIC_KEY,
+            "no signature matches",
+        ),
+        (
+            WIRE_BODY,
+            {**SIGNED_HEADERS, "webhook-signature": "v1a,sîgnature"},
+            PUBLIC_KEY,
+            "no signature matches",
+        ),
+        (
+            WIRE_BODY,
+            {**SIGNED_HEADERS, "webhook-timestamp": str(NOW + 301)},
+            PUBLIC_KEY,
+            "webhook-timestamp is outside the allowed tolerance",
+        ),
+        (WIRE_BODY, SIGNED_HEADERS, "whpk_", "a trigger key is not a valid whpk_ key"),
+        (
+            WIRE_BODY,
+            SIGNED_HEADERS,
+            "whpk_c2hvcnQ=",
+            "a trigger key is not a valid whpk_ key",
+        ),
+        (
+            WIRE_BODY,
+            SIGNED_HEADERS,
+            SIGNING_KEY,
+            "a trigger key is not a valid whpk_ key",
+        ),
+        (WIRE_BODY, SIGNED_HEADERS, SECRET, "a trigger key is not a valid whpk_ key"),
+        (
+            WIRE_BODY,
+            SIGNED_HEADERS,
+            "",
+            (
+                "no trigger key: neither REFLEX_TRIGGER_PUBLIC_KEY nor"
+                " REFLEX_TRIGGER_SECRET is set"
+            ),
+        ),
+    ],
+)
+def test_a_request_the_platforms_key_did_not_sign_is_refused(
+    body, headers, public_key, reason
+):
+    assert (
+        _refusal(body, headers, public_key=public_key) == f"InvalidSignature: {reason}"
+    )
+
+
+@pytest.mark.parametrize("key", ["whsk_", "whsk_c2hvcnQ=", "whsk_!!!!"])
+def test_a_signing_key_that_is_not_a_key_signs_nothing(key):
+    with pytest.raises(ValueError) as raised:
+        triggers.sign(WIRE_BODY, key, msg_id="x")
+    assert str(raised.value) == "a trigger key is not a valid whsk_ key"
+    with pytest.raises(ValueError) as raised:
+        triggers.public_key(key)
+    assert str(raised.value) == "a trigger key is not a valid whsk_ key"
+
+
+def test_v1a_without_cryptography_names_the_extra(monkeypatch):
+    monkeypatch.setitem(sys.modules, "cryptography.hazmat.primitives.asymmetric", None)
+    with pytest.raises(ImportError) as raised:
+        triggers.verify(WIRE_BODY, SIGNED_HEADERS, public_key=PUBLIC_KEY, now=NOW)
+    assert str(raised.value) == (
+        "v1a trigger signatures need the cryptography package: install"
+        " reflex-build-sdk[triggers]"
+    )
+    # HMAC still works without it.
+    assert triggers.verify(WIRE_BODY, WIRE_HEADERS, secret=SECRET, now=NOW) == (
+        "dlv_7b1f0c1e",
+        NOW,
     )
 
 
