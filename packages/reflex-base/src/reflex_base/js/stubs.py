@@ -295,27 +295,49 @@ def _render_type(type_: JsonType, used: set[str], items_take_vars: bool = False)
     return _render_union(type_["members"], used, items_take_vars)
 
 
+def _value_or_var(type_: JsonType, used: set[str]) -> str:
+    """Render the type of an argument or of an item in one: a value, or a Var of it.
+
+    A string also takes an event handler, which is sent as its name, inside a
+    list or a mapping too.
+
+    Args:
+        type_: The JSON type, not ``any``.
+        used: The names the stub uses, which this adds to.
+
+    Returns:
+        The type.
+    """
+    value = _render_type(type_, used, items_take_vars=True)
+    rendered = f"{value} | {_use('Var', used)}[{_render_type(type_, used)}]"
+    if type_ == "str" or (
+        not isinstance(type_, str)
+        and type_["kind"] == "union"
+        and "str" in type_["members"]
+    ):
+        handler = _use("EventCallback", used)
+        rendered += f" | {handler}[*{_use('tuple', used)}[{_use('Any', used)}, ...]]"
+    return rendered
+
+
 def _render_item(type_: JsonType, used: set[str], takes_var: bool) -> str:
     """Render the type of an item of a list or a value of a mapping.
 
     Args:
         type_: The item's JSON type.
         used: The names the stub uses, which this adds to.
-        takes_var: Whether the item may also be a Var.
+        takes_var: Whether the item may also be a Var or an event handler.
 
     Returns:
         The type.
     """
-    item = _render_type(type_, used, takes_var)
     if not takes_var or type_ == "any":
-        return item
-    return f"{item} | {_use('Var', used)}[{_render_type(type_, used)}]"
+        return _render_type(type_, used)
+    return _value_or_var(type_, used)
 
 
 def _annotation(type_: JsonType, used: set[str]) -> str:
     """Get the annotation of a parameter: its value, or a Var of it.
-
-    A string parameter also takes an event handler, which is sent as its name.
 
     Args:
         type_: The parameter's JSON type.
@@ -326,16 +348,7 @@ def _annotation(type_: JsonType, used: set[str]) -> str:
     """
     if type_ == "any":
         return _use("Any", used)
-    value = _render_type(type_, used, items_take_vars=True)
-    annotation = f"{value} | {_use('Var', used)}[{_render_type(type_, used)}]"
-    if type_ == "str" or (
-        not isinstance(type_, str)
-        and type_["kind"] == "union"
-        and "str" in type_["members"]
-    ):
-        handler = _use("EventCallback", used)
-        annotation += f" | {handler}[*{_use('tuple', used)}[{_use('Any', used)}, ...]]"
-    return annotation
+    return _value_or_var(type_, used)
 
 
 def _render_signature(name: str, signature: Signature, used: set[str]) -> str:
