@@ -18,7 +18,7 @@ from reflex.testing import AppHarness
 def ClientStateApp():
     """App exercising ``rx.client_state`` runtime behavior."""
     from reflex_base.constants.compiler import MemoizationDisposition, MemoizationMode
-    from reflex_base.vars.function import ArgsFunctionOperationBuilder
+    from reflex_base.vars.function import ArgsFunctionOperationBuilder, FunctionVar
     from reflex_components_core.el.elements.inline import Span
 
     import reflex as rx
