@@ -9,7 +9,9 @@ import copy
 import json
 import operator
 import os
+import shutil
 import subprocess
+import sys
 import tempfile
 import traceback
 from collections.abc import Iterable, Mapping, Sequence
@@ -310,7 +312,8 @@ _SCRIPT_MODULES_SCRIPT = "script-modules.js"
 class _ScriptExports(TypedDict):
     """What ``script-modules.js`` reads of one module."""
 
-    # The module and every local file it reaches, the module first.
+    # The module and every local file it reaches, the module first, each by the
+    # path its import names.
     files: list[str]
     functions: list[str]
     values: list[str]
@@ -327,14 +330,6 @@ class _ScriptSyntaxError(TypedDict):
     message: str
 
 
-class _ScriptLinkLoop(TypedDict):
-    """An import of a file that reaches itself again through a directory link."""
-
-    importer: str
-    file: str
-    link: str
-
-
 class _ScriptModulesReport(TypedDict):
     """What ``script-modules.js`` prints."""
 
@@ -344,7 +339,6 @@ class _ScriptModulesReport(TypedDict):
     # Per script or stylesheet, the specifiers it imports that are not local files.
     imports: dict[str, list[str]]
     errors: list[_ScriptSyntaxError]
-    loops: list[_ScriptLinkLoop]
 
 
 def _read_script_modules(paths: Sequence[Path]) -> _ScriptModulesReport:
@@ -355,8 +349,7 @@ def _read_script_modules(paths: Sequence[Path]) -> _ScriptModulesReport:
 
     Returns:
         Each module's files and exports, each script's and stylesheet's
-        imports, the first syntax error of each file, and each import of a
-        file that reaches itself again through a directory link.
+        imports, and the first syntax error of each file.
 
     Raises:
         ReflexRuntimeError: If the script fails, or prints output of another
@@ -431,76 +424,96 @@ def _check_script_names(
         raise ReflexRuntimeError(msg)
 
 
-def _copy_targets(
-    module: str, files: list[str], package_dir: Path, modules_dir: Path
-) -> dict[Path, Path]:
-    """Map the files of a JavaScript module to where they are copied.
+def _check_script_files(module: str, files: list[str], package_dir: Path) -> None:
+    """Check that a JavaScript module reaches no file outside the app's package.
 
-    They are copied at their paths from the directory that holds the app's
-    package, so relative imports resolve as they do in the source tree.
+    The bundler reads the package through a link in ``.web`` and resolves each
+    import from the path that names it, so a file outside the package would be
+    looked for inside ``.web``.
 
     Args:
         module: The module's Python name.
-        files: The module, by its real path, and the local files it reaches,
-            by the paths their imports name.
-        package_dir: The real path of the directory of the app's package.
-        modules_dir: The directory the files are copied to.
-
-    Returns:
-        The target of each file.
+        files: The module and the local files it reaches, by the paths their
+            imports name.
+        package_dir: The directory of the app's package.
 
     Raises:
         ReflexRuntimeError: If a file is outside the package's directory.
     """
-    targets: dict[Path, Path] = {}
-    for index, file in enumerate(map(Path, files)):
-        if not file.is_relative_to(package_dir):
-            # The module itself, by its real path, is outside only through a link.
-            outside = f"{'imports' if index else 'links to'} {file}"
-        elif not (real := file.resolve()).is_relative_to(package_dir):
-            outside = f"imports {file}, a link to {real}"
-        else:
-            targets[file] = modules_dir / file.relative_to(package_dir.parent)
-            continue
-        msg = (
-            f"The JavaScript module {module} {outside}, which is outside "
-            f"{package_dir}, the directory of the app's package, and only that "
-            "directory is copied into the compiled app. Move the file into it, "
-            "or publish it as an npm package and import it by name."
-        )
-        raise ReflexRuntimeError(msg)
-    return targets
+    for file in files:
+        if not Path(file).is_relative_to(package_dir):
+            msg = (
+                f"The JavaScript module {module} imports {file}, which is outside "
+                f"{package_dir}, the directory of the app's package, and only that "
+                "directory is linked into the compiled app. Move the file into it, "
+                "or publish it as an npm package and import it by name."
+            )
+            raise ReflexRuntimeError(msg)
+
+
+def _link_directory(link: Path, target: Path) -> None:
+    """Make a path a link to a directory, unless it is one already.
+
+    Whatever else is at the path, a link elsewhere or a directory, is replaced.
+    On Windows, where a symbolic link needs a privilege most users lack, the
+    link is a directory junction.
+
+    Args:
+        link: The path.
+        target: The directory, by its absolute path.
+    """
+    if os.path.realpath(link) == os.path.realpath(target):
+        return
+    try:
+        # Removes a link of either kind; a directory raises.
+        link.unlink()
+    except FileNotFoundError:
+        link.parent.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        shutil.rmtree(link)
+    if sys.platform == "win32":
+        import _winapi
+
+        _winapi.CreateJunction(str(target), str(link))
+    else:
+        link.symlink_to(target, target_is_directory=True)
 
 
 def compile_script_modules(
     modules: Mapping[str, _ScriptModule],
-) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]], list[tuple[Path, Path]]]:
+) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
     """Compile the JavaScript modules the app imports from Python.
 
     They are read with the bundler's parser, so the frontend packages must be
-    installed. Each module and the local files it reaches are copied under
-    ``utils/script_modules``, ``utils/scripts.js`` maps each module's Python
-    name to a function that loads it, and a type stub is written next to each
-    module, for type checkers. An app that imports none runs nothing.
+    installed. ``utils/script_modules/<package>`` is linked to the app's
+    package directory, so the bundler reads the modules and the files they
+    import where they are, ``utils/scripts.js`` maps each module's Python name
+    to a function that loads it through that link, and a type stub is written
+    next to each module, for type checkers. An app that imports none runs
+    nothing.
 
     Args:
         modules: The modules, by name.
 
     Returns:
-        The (path, code) outputs, the npm packages the modules import, to
-        install, and the (source, target) copies of their files.
+        The (path, code) outputs, and the npm packages the modules import, to
+        install.
 
     Raises:
-        ReflexRuntimeError: If a file does not parse, or reaches itself again
-            through a directory link, and as the checks this calls do, if
-            Python uses a name a module does not export as a function, or a
-            module reaches a file outside the app's package.
+        ReflexRuntimeError: If a file does not parse, and as the checks this
+            calls do, if Python uses a name a module does not export as a
+            function, or a module reaches a file outside the app's package.
     """
     web_dir = get_web_dir()
     index = str(web_dir / (constants.Dirs.SCRIPTS_PATH + constants.Ext.JS))
     if not modules:
-        return [(index, "export default {};\n")], {}, []
-    paths = {name: module.path.resolve() for name, module in modules.items()}
+        return [(index, "export default {};\n")], {}
+    # Not resolved: the bundler reads each file where the path Python imports
+    # names it, through any link on the way.
+    paths = {
+        name: Path(os.path.abspath(module.path))  # noqa: PTH100
+        for name, module in modules.items()
+    }
     report = _read_script_modules(list(paths.values()))
     if report["errors"]:
         error = report["errors"][0]
@@ -510,35 +523,24 @@ def compile_script_modules(
             "from Python, directly or through another JavaScript module."
         )
         raise ReflexRuntimeError(msg)
-    if report["loops"]:
-        loop = report["loops"][0]
-        msg = (
-            f"The JavaScript file {loop['importer']} imports {loop['file']} "
-            f"through {loop['link']}, a link back to a directory its imports were "
-            "already in, so the same files are imported again one link deeper, "
-            "without end, and the compiled app, which copies files and not links, "
-            "cannot hold them. Import the file by a path that does not go through "
-            f"{loop['link']}, or replace {loop['link']} with a real directory."
-        )
-        raise ReflexRuntimeError(msg)
     modules_dir = web_dir / constants.Dirs.SCRIPT_MODULES_PATH
     outputs: list[tuple[str, str]] = []
-    copies: dict[Path, Path] = {}
     loaders = ""
     for name, module in modules.items():
         path = paths[name]
         exports = report["modules"][str(path)]
-        # From the path Python imports, which a link does not move out of it.
-        package_dir = module.path.parents[name.count(".") - 1].resolve()
-        copies.update(_copy_targets(name, exports["files"], package_dir, modules_dir))
-        _check_script_names(
-            name, module.names, exports, path.relative_to(package_dir.parent)
-        )
+        package_dir = path.parents[name.count(".") - 1]
+        _check_script_files(name, exports["files"], package_dir)
+        shown = path.relative_to(package_dir.parent)
+        _check_script_names(name, module.names, exports, shown)
+        _link_directory(modules_dir / package_dir.name, package_dir)
         outputs.append((
             str(module.path.with_suffix(".pyi")),
             _render_stub(module.path, exports["functions"]),
         ))
-        specifier = json.dumps(f"$/{copies[path].relative_to(web_dir).as_posix()}")
+        specifier = json.dumps(
+            f"$/{constants.Dirs.SCRIPT_MODULES_PATH}/{shown.as_posix()}"
+        )
         loaders += f"  {json.dumps(name)}: () => import({specifier}),\n"
     outputs.append((index, f"export default {{\n{loaders}}};\n"))
     package_imports = {
@@ -546,35 +548,7 @@ def compile_script_modules(
         for file, specifiers in report["imports"].items()
         for package in _package_imports(Path(file), specifiers)
     }
-    return outputs, package_imports, list(copies.items())
-
-
-def copy_files(copies: Iterable[tuple[Path, Path]], directory: Path) -> None:
-    """Copy files byte for byte into a directory, and remove its other files.
-
-    A target that is up to date is left alone. Removing the files of earlier
-    copies keeps one that is no longer reached from being bundled, as when it
-    is found before the file that replaced it.
-
-    Args:
-        copies: The (source, target) pairs, each target in the directory.
-        directory: The directory.
-    """
-    targets = set()
-    for source, target in copies:
-        targets.add(target)
-        data = source.read_bytes()
-        if target.is_file() and target.read_bytes() == data:
-            continue
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(data)
-    for parent, _, names in os.walk(directory, topdown=False):
-        folder = Path(parent)
-        for name in names:
-            if folder / name not in targets:
-                (folder / name).unlink()
-        if not any(folder.iterdir()):
-            folder.rmdir()
+    return outputs, package_imports
 
 
 def _restore_bundled_libraries() -> bool:
