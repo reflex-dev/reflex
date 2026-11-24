@@ -274,6 +274,86 @@ def test_run_granian_backend_sets_reload_env_var_and_clears_marker(
     assert seen["value"] == "True"
 
 
+def _script_module_app(tmp_path: Path, mocker: MockerFixture) -> Path:
+    """Lay out an app package with a JSON file a JavaScript module imports.
+
+    Args:
+        tmp_path: The directory that holds the package.
+        mocker: Fixture for pointing the app and its web directory there.
+
+    Returns:
+        The package's directory.
+    """
+    package = tmp_path / "app"
+    package.mkdir()
+    (package / "__init__.py").touch()
+    mocker.patch.object(
+        exec_utils, "get_module_path", return_value=package / "__init__.py"
+    )
+    mocker.patch.object(exec_utils, "get_reload_paths", return_value=[package])
+    mocker.patch.object(exec_utils, "reset_dev_backend_reload_marker")
+    web_dir = tmp_path / ".web"
+    mocker.patch.object(exec_utils, "get_web_dir", return_value=web_dir)
+    # The compile copied the file at its path from the package's directory.
+    copy = web_dir / "utils" / "script_modules" / "app" / "scripts" / "config.json"
+    copy.parent.mkdir(parents=True)
+    copy.write_text("{}")
+    return package
+
+
+def test_run_granian_backend_reloads_for_a_data_file_a_javascript_module_reaches(
+    tmp_path: Path, mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """A JSON file reloads the backend, which copies it again, if a JavaScript module imports it.
+
+    Args:
+        tmp_path: The directory that holds the app package.
+        mocker: Fixture for standing in for Granian.
+        monkeypatch: Fixture restoring the reload environment variable.
+    """
+    watchfiles = pytest.importorskip("watchfiles")
+    granian_server = pytest.importorskip("granian.server")
+    package = _script_module_app(tmp_path, mocker)
+    monkeypatch.delenv(DEV_BACKEND_RELOAD_ENV_NAME, raising=False)
+    mocker.patch.object(
+        exec_utils, "get_app_instance_from_file", return_value="app:app"
+    )
+    options: dict[str, Any] = {}
+
+    class FakeGranian:
+        def __init__(self, *_args, **kwargs):
+            options.update(kwargs)
+
+        def on_reload(self, _callback):
+            pass
+
+        def serve(self):
+            pass
+
+    mocker.patch.object(granian_server, "Server", FakeGranian)
+
+    exec_utils.run_granian_backend(
+        host="127.0.0.1", port=0, loglevel=exec_utils.LogLevel.INFO
+    )
+
+    # Granian adds its ignore patterns to those of the filter class.
+    filter_class = options.get("reload_filter") or watchfiles.DefaultFilter
+    watch_filter = filter_class(
+        ignore_entity_patterns=(
+            *filter_class.ignore_entity_patterns,
+            *options.get("reload_ignore_patterns", ()),
+        )
+    )
+
+    def reloads(path: Path) -> bool:
+        return watch_filter(watchfiles.Change.modified, str(path))
+
+    assert reloads(package / "scripts" / "config.json")
+    assert reloads(package / "scripts" / "party.ts")
+    assert not reloads(package / "data.json")
+    assert not reloads(package / "notes")
+
+
 @pytest.mark.parametrize(
     ("strict", "default_method", "expected"),
     [

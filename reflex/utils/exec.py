@@ -18,7 +18,7 @@ import sys
 import threading
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, NamedTuple, TypedDict
+from typing import TYPE_CHECKING, Any, NamedTuple, TypedDict
 
 import click
 from reflex_base import constants
@@ -34,6 +34,9 @@ from reflex_base.utils.process_tree import stop_process_tree
 from reflex.utils import path_ops
 from reflex.utils.misc import get_module_path
 from reflex.utils.prerequisites import get_web_dir
+
+if TYPE_CHECKING:
+    import watchfiles
 
 logger = logging.getLogger(__name__)
 
@@ -789,6 +792,53 @@ HOTRELOAD_IGNORE_PATTERNS = (
 )
 
 
+def _get_reload_filter() -> type[watchfiles.DefaultFilter]:
+    """Get the filter of the changed files that reload the dev backend.
+
+    A file of the kinds an app may write while it runs reloads the backend only
+    if one of the app's JavaScript modules reaches it: the compile that the
+    reload runs copies each such file into the web directory, at its path from
+    the directory that holds the app's package.
+
+    Returns:
+        The filter class.
+    """
+    import watchfiles
+
+    package = get_module_path(get_config().module.partition(".")[0])
+    root = package.parent.parent.resolve() if package else None
+    copies = get_web_dir() / constants.Dirs.SCRIPT_MODULES_PATH
+
+    class ReloadFilter(watchfiles.DefaultFilter):
+        """The default filter, which also ignores the data files no module reaches."""
+
+        ignore_entity_patterns = (
+            *watchfiles.DefaultFilter.ignore_entity_patterns,
+            *HOTRELOAD_IGNORE_PATTERNS,
+        )
+
+        def __call__(self, change: watchfiles.Change, path: str) -> bool:
+            """Whether a change reloads the backend.
+
+            Args:
+                change: The kind of change.
+                path: The changed file.
+
+            Returns:
+                Whether the file is not ignored, or a JavaScript module reaches it.
+            """
+            if super().__call__(change, path):
+                return True
+            file = Path(path).resolve()
+            return (
+                root is not None
+                and file.is_relative_to(root)
+                and (copies / file.relative_to(root)).is_file()
+            )
+
+    return ReloadFilter
+
+
 def _granian_log_dictconfig() -> dict[str, Any] | None:
     """Get the Granian logging config override for the active log mode.
 
@@ -974,7 +1024,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         reload=True,
         reload_paths=get_reload_paths(),
         reload_ignore_worker_failure=True,
-        reload_ignore_patterns=HOTRELOAD_IGNORE_PATTERNS,
+        reload_filter=_get_reload_filter(),
         reload_tick=100,
         workers_kill_timeout=2,
     )
