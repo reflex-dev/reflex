@@ -344,6 +344,38 @@ def test_first_paint_never_shows_the_source_text(i18n_app: AppHarness, page: Pag
     assert page.evaluate("window.sourceTextPainted") is False
 
 
+def test_switch_waits_for_the_new_catalog(i18n_app: AppHarness, page: Page):
+    """Text, formatting and <html lang> switch together once the catalog loaded.
+
+    Args:
+        i18n_app: Running harness for the i18n app.
+        page: Playwright page.
+    """
+    assert i18n_app.frontend_url is not None
+    held_catalogs: list[Route] = []
+
+    def hold_catalog(route: Route) -> None:
+        held_catalogs.append(route)
+
+    page.route("**/i18n/de.js*", hold_catalog)
+    page.goto(i18n_app.frontend_url)
+    expect(page.locator("#token")).not_to_have_value("")
+    # Set once the default locale's catalog is committed.
+    expect(page.locator("html")).to_have_attribute("dir", "ltr")
+
+    with page.expect_request("**/i18n/de.js*"):
+        page.click("#to-de")
+    expect(page.locator("#static-hello")).to_have_text("Hello")
+    expect(page.locator("#client-number")).to_have_text("1,234.50")
+    expect(page.locator("html")).to_have_attribute("lang", "en")
+
+    for route in held_catalogs:
+        route.continue_()
+    expect(page.locator("#static-hello")).to_have_text("Hallo")
+    expect(page.locator("#client-number")).to_have_text("1.234,50")
+    expect(page.locator("html")).to_have_attribute("lang", "de")
+
+
 def test_picked_translation_follows_the_locale(i18n_app: AppHarness, page: Page):
     """rx.i18n.pick shows translated data in the active locale, switching instantly.
 

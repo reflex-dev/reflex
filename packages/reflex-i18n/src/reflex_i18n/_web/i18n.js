@@ -290,14 +290,22 @@ export function I18nProvider({ children, onLocaleChange, serverLocale }) {
           error,
         );
       });
-    // With URL routing the routing wrap (on every page) owns <html lang>/dir.
-    if (!urlRouting) {
-      applyDocumentLocale(locale);
-    }
     return () => {
       cancelled = true;
     };
   }, [locale]);
+
+  // A switch takes effect once the new locale's catalog has loaded, so text,
+  // formatting and <html lang> change together: neither the source text nor a
+  // mix of two languages shows while the catalog downloads.
+  const shownLocale = loaded.locale ?? locale;
+
+  useEffect(() => {
+    // With URL routing the routing wrap (on every page) owns <html lang>/dir.
+    if (!urlRouting && loaded.locale !== undefined) {
+      applyDocumentLocale(loaded.locale);
+    }
+  }, [loaded.locale]);
 
   // Runs once the held locale's catalog is committed, so the revealed
   // document already shows the translated text.
@@ -340,7 +348,7 @@ export function I18nProvider({ children, onLocaleChange, serverLocale }) {
 
   return createElement(
     I18nContext.Provider,
-    { value: { locale, catalog: loaded.catalog, setLocale } },
+    { value: { locale: shownLocale, catalog: loaded.catalog, setLocale } },
     children,
   );
 }
