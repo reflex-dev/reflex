@@ -51,6 +51,16 @@ def test_sidebar_active_pill_stays_inside_indented_row() -> None:
     rendered = docs_sidebar_leaf._definition.component.render()
 
     def find_pill(node, parents):
+        """Find the active-highlight pill in a render dict.
+
+        Args:
+            node: The render-dict node to search from.
+            parents: The ancestors of node, outermost first.
+
+        Returns:
+            The ancestor list of the pill node (excluding the pill itself),
+            or None if no node carries the pill's exact className.
+        """
         if not isinstance(node, dict):
             return None
         props = node.get("props") or []
@@ -78,17 +88,17 @@ def test_sidebar_active_pill_stays_inside_indented_row() -> None:
     parents = find_pill(rendered, [])
     assert parents is not None, "active highlight pill not found"
     flex = next(n for n in reversed(parents) if n.get("name") == "RadixThemesFlex")
-    flex_cls = " ".join(str(p) for p in flex.get("props") or [])
-    assert "guideMarginClass" in flex_cls
+    assert (flex.get("props") or []) == [
+        'className:(isTrue(activeRxMemo) ? ("relative "+guideMarginClassRxMemo+" flex h-8 max-w-[14rem] items-center") : "relative flex h-8 items-center pl-4")'
+    ]
 
     label = next(
         n for n in flex.get("children", []) if n.get("name") == "RadixThemesText"
     )
-    label_cls = " ".join(str(p) for p in label.get("props") or [])
-    assert (
-        '"relative m-0 pl-4 text-sm font-[475] text-foreground transition-color"'
-        in label_cls
-    )
+    assert (label.get("props") or []) == [
+        'as:"p"',
+        'className:(isTrue(activeRxMemo) ? "relative m-0 pl-4 text-sm font-[475] text-foreground transition-color" : "m-0 w-full text-sm font-[475] text-foreground transition-color")',
+    ]
 
     pill_top = next(n for n in reversed(parents) if n in flex.get("children", []))
     assert flex["children"].index(pill_top) < flex["children"].index(label)
