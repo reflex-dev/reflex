@@ -2234,6 +2234,56 @@ class _TagsRecord:
     name: str
 
 
+@dataclasses.dataclass(frozen=True)
+class _Point:
+    x: int
+    y: int
+
+
+@pytest.mark.parametrize(
+    ("value", "hint", "expected"),
+    [
+        (["c", "d", "c"], set[str], {"c", "d"}),
+        (["c", "d"], frozenset[str], frozenset({"c", "d"})),
+        (["c", "d"], frozenset, frozenset({"c", "d"})),
+        (["c", "d"], set[str] | None, {"c", "d"}),
+        (None, set[str] | None, None),
+        ([[1, 2], [1, 2], [3, 4]], set[tuple[int, int]], {(1, 2), (3, 4)}),
+        ([{"x": 1, "y": 2}], frozenset[_Point], frozenset({_Point(1, 2)})),
+        ([["a"], ["b", "a"]], set[frozenset[str]], {frozenset("a"), frozenset("ab")}),
+        ([1, 2], tuple[int, int], (1, 2)),
+        ([1, 2, 3], tuple[int, ...], (1, 2, 3)),
+        ([1, 2, 3], tuple[int], (1, 2, 3)),
+        ([1, "a", "b"], tuple[int, *tuple[str, ...]], (1, "a", "b")),
+        ([[1, 2]], set[Any], [[1, 2]]),
+        ([[1, 2]], set, [[1, 2]]),
+        (["c", "d"], list[str], ["c", "d"]),
+    ],
+)
+def test_transform_event_arg_collections(value: Any, hint: Any, expected: Any):
+    """A JSON array becomes the set, frozenset or tuple its annotation names.
+
+    Unhashable elements are converted by the element annotation; when that
+    still leaves them unhashable, the array arrives unchanged.
+
+    Args:
+        value: The received argument.
+        hint: The handler's annotation for the argument.
+        expected: The transformed argument.
+    """
+    result = _transform_event_arg(value, hint)
+    assert result == expected
+    assert type(result) is type(expected)
+
+
+def test_transform_event_payload_unhashable_set_keeps_other_args():
+    """An array that cannot become a set leaves the other arguments coerced."""
+    payload = _transform_event_payload(
+        {"tags": [[1, 2]], "names": ["a"]}, {"tags": set, "names": frozenset[str]}
+    )
+    assert payload == {"tags": [[1, 2]], "names": frozenset({"a"})}
+
+
 def test_transform_event_payload_decodes_unannotated_form_data():
     """Form data reaches an unannotated handler arg as a dict."""
     payload = _transform_event_payload(
