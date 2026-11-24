@@ -41,36 +41,4 @@ export const reflex = Object.freeze({
    * @returns {any} The event.
    */
   event: (name, payload = {}) => ReflexEvent(name, payload),
-
-  /**
-   * Get an npm library bundled for dynamic components, loading it first when
-   * the app loads optional libraries lazily.
-   * @param {string} name The library's import name, e.g. "react".
-   * @returns {Promise<any>} The library's module namespace.
-   */
-  library: async (name) => {
-    if (name.startsWith("$/")) {
-      throw new Error(
-        `reflex.library("${name}") cannot load "${name}": a name starting with "$/" is a module of the app's frontend, not a bundled npm library. Use reflex.ref, reflex.addEvents and reflex.event instead of Reflex internals, and import your own modules from a JavaScript module.`,
-      );
-    }
-    await window.__reflex_load?.([name]);
-    // Without lazy loading, the app root registers the libraries in an effect.
-    if (window.__reflex === undefined) {
-      throw new Error(
-        `reflex.library("${name}") cannot load "${name}" yet: the app registers its bundled libraries when it first mounts, and it has not mounted. Call reflex.library from an event, such as on_mount or on_click, rather than while a module loads.`,
-      );
-    }
-    // The registry is an object literal: `constructor` and the like are
-    // inherited, not bundled libraries.
-    const module = Object.hasOwn(window.__reflex, name)
-      ? window.__reflex[name]
-      : undefined;
-    if (module === undefined) {
-      throw new Error(
-        `reflex.library("${name}") cannot load "${name}": the app does not bundle it for dynamic components. Bundle it by calling bundle_library("${name}") from reflex.components.dynamic in your app's Python code.`,
-      );
-    }
-    return module;
-  },
 });

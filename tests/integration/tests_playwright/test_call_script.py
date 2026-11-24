@@ -46,7 +46,6 @@ def CallScript():
         value: str = "Initial"
         last_result: rx.Field[int] = rx.field(0)
         reflex_result: str = ""
-        mounted_library: str = ""
 
         @rx.event
         def call_script_callback(self, result):
@@ -201,10 +200,6 @@ def CallScript():
         @rx.event
         def set_reflex_result(self, value: str):
             self.reflex_result = value
-
-        @rx.event
-        def set_mounted_library(self, value: str):
-            self.mounted_library = value
 
         @rx.event
         def ref_from_backend(self):
@@ -378,21 +373,9 @@ def CallScript():
                 ),
                 id="call_with_var_str_cast_wrapped_inline",
             ),
-            rx.input(
-                id="reflex_target",
-                default_value="from the ref",
-                on_mount=rx.call_script(
-                    "reflex.library('react').then((react) => typeof react.useState)",
-                    callback=CallScriptState.set_mounted_library,
-                ),
-            ),
+            rx.input(id="reflex_target", default_value="from the ref"),
             rx.input(
                 value=CallScriptState.reflex_result, id="reflex_result", read_only=True
-            ),
-            rx.input(
-                value=CallScriptState.mounted_library,
-                id="mounted_library",
-                read_only=True,
             ),
             rx.button(
                 "ref_from_string",
@@ -601,7 +584,6 @@ def test_reflex_api(call_script_page: Page):
         call_script_page: Playwright page.
     """
     result = call_script_page.locator("#reflex_result")
-    expect(call_script_page.locator("#mounted_library")).to_have_value("function")
 
     call_script_page.locator("#ref_from_string").click()
     expect(result).to_have_value("from the ref")

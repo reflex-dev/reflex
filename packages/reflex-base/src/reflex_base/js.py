@@ -17,7 +17,7 @@ from reflex_base.vars.base import Var, VarData
 from reflex_base.vars.function import FunctionVar
 from reflex_base.vars.object import ObjectVar
 
-__all__ = ["library", "ref"]
+__all__ = ["ref"]
 
 _REFLEX_VAR_DATA = VarData(
     imports={f"$/{Dirs.REFLEX_API_PATH}": [ImportVar(tag="reflex")]}
@@ -52,15 +52,3 @@ def ref(id: str | Var[str]) -> ObjectVar[Mapping[str, Mapping[str, Any]]]:
         component with that id has mounted.
     """
     return _call("ref", id).to(ObjectVar, Mapping[str, Mapping[str, Any]])
-
-
-def library(name: str | Var[str]) -> Var:
-    """Get an npm library bundled for dynamic components.
-
-    Args:
-        name: The library's import name, e.g. ``"react"``.
-
-    Returns:
-        A promise of the library's module namespace.
-    """
-    return _call("library", name)
