@@ -9,7 +9,7 @@ import sys
 import threading
 import time
 import traceback
-from collections.abc import AsyncIterator, Mapping
+from collections.abc import AsyncIterator, Generator, Mapping
 from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
@@ -48,14 +48,22 @@ async def _slow_handler(delay: float = 0.5):
     await asyncio.sleep(delay)
 
 
+# Set once the blocking monitor warns. The blocking handlers hold the loop until
+# then, at most _MAX_BLOCK_SECONDS, so a slow runner cannot unblock it first.
+_BLOCKING_REPORTED = threading.Event()
+_MAX_BLOCK_SECONDS = 5
+
+
 def _blocking_sync_handler():
-    """Block the event loop briefly for the detector integration test."""
-    time.sleep(0.12)
+    """Block the event loop in sleeps until the detector reports it."""
+    deadline = time.monotonic() + _MAX_BLOCK_SECONDS
+    while not _BLOCKING_REPORTED.is_set() and time.monotonic() < deadline:
+        time.sleep(0.01)
 
 
 def _blocking_stdlib_handler():
-    """Block the event loop inside a stdlib call for the detector test."""
-    threading.Event().wait(0.12)
+    """Block the event loop inside a stdlib call until the detector reports it."""
+    _BLOCKING_REPORTED.wait(_MAX_BLOCK_SECONDS)
 
 
 async def _error_handler():  # noqa: RUF029
@@ -660,16 +668,45 @@ async def test_events_are_processed(
     assert _CALL_LOG == [{"value": "hello"}]
 
 
+@pytest.fixture
+def blocking_caplog(
+    caplog: pytest.LogCaptureFixture,
+) -> Generator[pytest.LogCaptureFixture, None, None]:
+    """Capture the blocking monitor's warnings and release the blocking handlers at the first.
+
+    Yields:
+        The log capture fixture.
+    """
+    caplog.set_level(logging.WARNING, logger="reflex_base.event.processor.blocking")
+
+    class _ReleaseOnWarning(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            """Release the blocking handlers.
+
+            Args:
+                record: The log record.
+            """
+            _BLOCKING_REPORTED.set()
+
+    _BLOCKING_REPORTED.clear()
+    handler = _ReleaseOnWarning(level=logging.WARNING)
+    blocking_logger = logging.getLogger("reflex_base.event.processor.blocking")
+    blocking_logger.addHandler(handler)
+    try:
+        yield caplog
+    finally:
+        blocking_logger.removeHandler(handler)
+
+
 async def test_processor_reports_blocking_sync_handler(
     mock_event_processor: EventProcessor,
     token: str,
     monkeypatch: pytest.MonkeyPatch,
-    caplog: pytest.LogCaptureFixture,
+    blocking_caplog: pytest.LogCaptureFixture,
 ):
     """Report blocking handlers executed through the event queue."""
     monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
     mock_event_processor.event_loop_blocking_threshold = 0.04
-    caplog.set_level(logging.WARNING, logger="reflex_base.event.processor.blocking")
 
     async with mock_event_processor as ep:
         await ep.enqueue(token, Event.from_event_type(blocking_sync_event())[0])
@@ -681,7 +718,7 @@ async def test_processor_reports_blocking_sync_handler(
         re.sub(
             r"(?<=line )\d+|(?<=\.py:)\d+|(?<=for )\d+\.\d+s", "N", record.getMessage()
         )
-        for record in caplog.records
+        for record in blocking_caplog.records
     ]
     subject = "Event handler _blocking_sync_handler"
     # The stack of the event task ends at the blocking line, without loop frames.
@@ -697,7 +734,7 @@ async def test_processor_reports_blocking_sync_handler(
             f'  File "{processor_module.__file__}", line N, in _execute_event\n'
             "    result = registered_handler.handler.fn(**event.payload)\n"
             f'  File "{__file__}", line N, in _blocking_sync_handler\n'
-            "    time.sleep(0.12)"
+            "    time.sleep(0.01)"
         ),
         f"{subject} blocked the event loop for N in total.",
     ]
@@ -707,12 +744,11 @@ async def test_processor_reports_innermost_app_frame(
     mock_event_processor: EventProcessor,
     token: str,
     monkeypatch: pytest.MonkeyPatch,
-    caplog: pytest.LogCaptureFixture,
+    blocking_caplog: pytest.LogCaptureFixture,
 ):
     """Name the app line that called the blocking library code."""
     monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
     mock_event_processor.event_loop_blocking_threshold = 0.04
-    caplog.set_level(logging.WARNING, logger="reflex_base.event.processor.blocking")
 
     async with mock_event_processor as ep:
         await ep.enqueue(token, Event.from_event_type(blocking_stdlib_event())[0])
@@ -720,34 +756,53 @@ async def test_processor_reports_innermost_app_frame(
     path = Path(
         "tests", "units", "reflex_base", "event", "processor", "test_event_processor.py"
     )
-    assert f"is blocking the event loop at {path}:" in caplog.text
-    assert "in _blocking_stdlib_handler (threshold" in caplog.text
+    assert f"is blocking the event loop at {path}:" in blocking_caplog.text
+    assert "in _blocking_stdlib_handler (threshold" in blocking_caplog.text
 
 
 async def test_processor_reports_blocking_after_handler_returns(
     mock_event_processor: EventProcessor,
     token: str,
     monkeypatch: pytest.MonkeyPatch,
-    caplog: pytest.LogCaptureFixture,
+    blocking_caplog: pytest.LogCaptureFixture,
 ):
     """Attribute blocking in post-handler processing (e.g. computed vars) to the event."""
     execute_event = EventProcessor._execute_event
 
     async def _execute_event(self: EventProcessor, **kwargs):
         await execute_event(self, **kwargs)
-        time.sleep(0.12)  # noqa: ASYNC251
+        _blocking_sync_handler()
 
     monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
     monkeypatch.setattr(EventProcessor, "_execute_event", _execute_event)
     mock_event_processor.event_loop_blocking_threshold = 0.04
-    caplog.set_level(logging.WARNING, logger="reflex_base.event.processor.blocking")
 
     async with mock_event_processor as ep:
         await ep.enqueue(token, Event.from_event_type(noop_event())[0])
 
-    assert "_noop_handler" in caplog.text
-    assert "blocked the event loop" in caplog.text
-    assert "time.sleep(0.12)  # noqa: ASYNC251" in caplog.text
+    messages = [
+        re.sub(
+            r"(?<=line )\d+|(?<=\.py:)\d+|(?<=for )\d+\.\d+s", "N", record.getMessage()
+        )
+        for record in blocking_caplog.records
+    ]
+    subject = "Event handler _noop_handler"
+    assert messages == [
+        (
+            f"{subject} is blocking the event loop at "
+            f"{Path(__file__).relative_to(Path.cwd())}:N in _blocking_sync_handler "
+            "(threshold: 0.040s), including state updates such as computed vars. "
+            "Move blocking I/O to a thread pool or use a non-blocking async API.\n"
+            "Stack when the threshold was reached (most recent call last):\n"
+            f'  File "{processor_module.__file__}", line N, in _process_event_queue_entry\n'
+            "    return await self._execute_event(\n"
+            f'  File "{__file__}", line N, in _execute_event\n'
+            "    _blocking_sync_handler()\n"
+            f'  File "{__file__}", line N, in _blocking_sync_handler\n'
+            "    time.sleep(0.01)"
+        ),
+        f"{subject} blocked the event loop for N in total.",
+    ]
 
 
 async def test_enqueue_returns_future(
@@ -1525,6 +1580,109 @@ async def test_superseding_event_cancels_previous_chain(
         assert ep._superseded == {}
 
     assert _CALL_LOG == [{"value": "stale_cancelled"}, {"value": "fresh"}]
+
+
+async def test_superseding_event_keeps_the_result_of_a_finished_run(
+    processor: EventProcessor,
+    token: str,
+):
+    """A run that finished before it was superseded resolves with its result.
+
+    The newer invocation is enqueued after the older handler returned and
+    before its task's done callback resolved the future. Only the events the
+    finished run chained are cancelled.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    release = asyncio.Event()
+    returning = asyncio.Event()
+
+    async def _search(value: str = "default", chain: bool = False) -> str:
+        if chain:
+            await EventContext.get().enqueue(
+                Event.from_event_type(logging_event(f"{value}_chained"))[0]
+            )
+            await release.wait()
+            # Wakes the superseding enqueue ahead of this task's done callbacks.
+            returning.set()
+        return value.upper()
+
+    _search._reflex_supersedes = True  # type: ignore[attr-defined]
+    search_event = EventHandler(fn=_search)
+    RegistrationContext.register_event_handler(search_event)
+
+    processor.configure()
+    async with processor as ep:
+        first = await ep.enqueue(
+            token, Event.from_event_type(search_event("first", True))[0]
+        )
+
+        async def supersede() -> EventFuture:
+            await returning.wait()
+            assert ep._tasks[first.txid].done()
+            assert not first.done()
+            return await ep.enqueue(
+                token, Event.from_event_type(search_event("second"))[0]
+            )
+
+        superseding = asyncio.create_task(supersede())
+        # Park the superseding task on the gate before the handler sets it.
+        await asyncio.sleep(0)
+        release.set()
+        second = await asyncio.wait_for(superseding, timeout=1)
+        assert await asyncio.wait_for(first, timeout=1) == "FIRST"
+        assert await asyncio.wait_for(second.wait_all(), timeout=1) == "SECOND"
+        (chained,) = first.children
+        assert chained.cancelled()
+        await _drain_superseded(ep)
+        assert ep._superseded == {}
+
+    assert _CALL_LOG == []
+
+
+async def test_queued_handler_superseding_a_finished_run_keeps_its_result(
+    processor: EventProcessor,
+    token: str,
+):
+    """The next queued handler cannot cancel the finished run it follows.
+
+    The handler queued behind a superseding run starts as soon as that run's
+    task finishes (eagerly on Python 3.12+), and supersedes it before
+    suspending. The finished run still resolves with its result.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    release = asyncio.Event()
+
+    async def _search(value: str = "default") -> str:
+        if value == "first":
+            await release.wait()
+        return value.upper()
+
+    async def _search_again():
+        await EventContext.get().enqueue(
+            Event.from_event_type(search_event("second"))[0]
+        )
+
+    _search._reflex_supersedes = True  # type: ignore[attr-defined]
+    search_event = EventHandler(fn=_search)
+    search_again_event = EventHandler(fn=_search_again)
+    RegistrationContext.register_event_handler(search_event)
+    RegistrationContext.register_event_handler(search_again_event)
+
+    processor.configure()
+    async with processor as ep:
+        first = await ep.enqueue(token, Event.from_event_type(search_event("first"))[0])
+        again = await ep.enqueue(token, Event.from_event_type(search_again_event())[0])
+        release.set()
+        assert await asyncio.wait_for(first, timeout=1) == "FIRST"
+        await asyncio.wait_for(again.wait_all(), timeout=1)
+        (second,) = again.children
+        assert second.result() == "SECOND"
 
 
 async def test_superseding_event_logs_debug_on_cancel(

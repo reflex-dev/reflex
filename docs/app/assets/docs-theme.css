@@ -139,6 +139,8 @@ html:not(:has(.docs-sidebar-slot)) .docs-persistent-sidebar { display: none; }
 }
 .docs-sidebar a:hover p { color: var(--foreground); }
 .docs-sidebar a[aria-current='page'] p { font-weight: 500; }
+.docs-sidebar summary p,
+.docs-sidebar .docs-sidebar-group-label { font-weight: 500; }
 .docs-sidebar a:focus-visible,
 .docs-sidebar summary:focus-visible {
   outline: 2px solid var(--ring);

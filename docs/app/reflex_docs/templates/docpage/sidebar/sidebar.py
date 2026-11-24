@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import functools
+
 import reflex as rx
 from reflex.vars import VarData
 from reflex_base.utils.imports import ImportVar
@@ -14,6 +16,8 @@ from reflex_site_shared.components.docs_shell import (
     docs_sidebar_category as sidebar_category,
 )
 from reflex_site_shared.components.docs_shell import docs_sidebar_leaf as sidebar_leaf
+
+from reflex_docs import sections
 
 from .sidebar_items.ai import (
     agent_toolkit_items,
@@ -33,13 +37,29 @@ from .sidebar_items.recipes import recipes
 from .sidebar_items.reference import api_reference, changelog_items
 from .state import SideBarBase, SideBarItem
 
-# Normalize the client-side route the same way docpage routes are registered:
-# drop the /docs frontend path, fold component "/low" pages onto their parent,
-# and end with a single trailing slash.
-_SIDEBAR_URL_HOOK = r"""const docsSidebarUrl = useLocation()
-  .pathname.replace(/\/+$/, "")
-  .replace(/^\/docs(?=\/|$)/, "")
-  .replace(/^(\/library(?=\/).*)\/low$/, "$1") + "/";"""
+
+def _normalize_route_js(pathname: str) -> str:
+    """Build the JS expression normalizing a route as docpage routes are registered.
+
+    Drops the /docs frontend path, folds component "/low" pages onto their
+    parent, and ends the route with a single trailing slash.
+
+    Args:
+        pathname: A JS expression evaluating to the browser's pathname.
+
+    Returns:
+        A JS expression evaluating to the normalized app-relative route.
+    """
+    return (
+        f"({pathname}"
+        r'.replace(/\/+$/, "").replace(/^\/docs(?=\/|$)/, "")'
+        r'.replace(/^(\/library(?=\/).*)\/low$/, "$1") + "/")'
+    )
+
+
+_SIDEBAR_URL_HOOK = (
+    f"const docsSidebarUrl = {_normalize_route_js('useLocation().pathname')};"
+)
 
 # Groups render open for the route the sidebar first mounted on and the prop
 # never changes after that, so React never collapses a group the reader opened
@@ -172,7 +192,8 @@ def sidebar_item_comp(
         return rx.el.li(
             sidebar_link(
                 rx.el.p(
-                    item.names, class_name="m-0 text-sm font-[475] text-foreground"
+                    item.names,
+                    class_name="docs-sidebar-group-label m-0 text-sm font-[475] text-foreground",
                 ),
                 href=child.link,
                 aria_current=rx.cond(url == child.link, "page", "false"),
@@ -232,6 +253,31 @@ def get_prev_next(url):
     return None, None
 
 
+@functools.cache
+def _labels_by_route() -> dict[str, str]:
+    """Map each sidebar link, without slashes, to its first sidebar label.
+
+    Returns:
+        The label of each linked page.
+    """
+    labels: dict[str, str] = {}
+    for item in flat_items:
+        labels.setdefault(item.link.strip("/"), item.names)
+    return labels
+
+
+def sidebar_label(url: str) -> str | None:
+    """Get the sidebar label of a docs page.
+
+    Args:
+        url: The page's app-relative route.
+
+    Returns:
+        The label the sidebar shows for the page, or None if it has no entry.
+    """
+    return _labels_by_route().get(url.strip("/"))
+
+
 def filter_out_non_sidebar_items(items: list[SideBarBase]) -> list[SideBarItem]:
     """Filter out non-sidebar items making sure only SideBarItems are present.
 
@@ -268,22 +314,23 @@ def create_sidebar_section(
 def sidebar_comp() -> rx.Component:
     """Render the docs sidebar for the current client-side route.
 
-    The sidebar reads the route from react-router rather than from props, so a
-    single mounted instance follows navigation without being rebuilt per page.
+    The sidebar reads the route from react-router rather than from props, and
+    derives its section from it (see ``reflex_docs.sections``), so a single
+    mounted instance follows navigation without being rebuilt per page.
 
     Returns:
         The scrollable sidebar navigation for the active docs section.
     """
     from reflex_docs.pages.docs import ai_builder as ai_builder_pages
-    from reflex_docs.pages.docs import enterprise, getting_started, state, ui
-    from reflex_docs.pages.docs import hosting as hosting_page
+    from reflex_docs.pages.docs import cloud, enterprise, getting_started, state, ui
     from reflex_docs.pages.docs import workflows as workflows_pages
     from reflex_docs.pages.docs.library import library
     from reflex_docs.pages.docs.recipes_overview import overview
 
     url = SIDEBAR_URL
-    is_docs_hosting = url.startswith("/hosting/")
-    is_docs_ai_builder = url.startswith("/ai/")
+    section = sections.docs_section_var(url)
+    is_docs_hosting = section == sections.CLOUD
+    is_docs_ai_builder = section == sections.AI
     is_ai_mcp_or_skills = (
         url.startswith("/ai/integrations/agent-toolkit/")
         | url.startswith("/ai/integrations/skills/")
@@ -291,24 +338,15 @@ def sidebar_comp() -> rx.Component:
         | url.startswith("/ai/integrations/mcp")
     )
 
-    is_library = url.contains("library") | url.contains("/mcp-")
-    is_api_reference = url.contains("api-reference") | url.startswith("/changelog/")
-    is_enterprise = url.contains("enterprise")
-    is_default_docs = ~is_library & ~is_api_reference & ~is_enterprise
+    is_library = section == sections.COMPONENTS
+    is_api_reference = section == sections.API_REFERENCE
+    is_enterprise = section == sections.ENTERPRISE
+    is_default_docs = section == sections.FRAMEWORK
 
-    hosting_categories = rx.el.ul(
-        sidebar_category(
-            "Cloud",
-            hosting_page.deploy_quick_start.path,
-            None,
-            True,
-        ),
-        class_name="flex flex-col items-start gap-2 w-full list-none",
-    )
     hosting_content = rx.el.ul(
         create_sidebar_section(
             "Cloud",
-            hosting_page.deploy_quick_start.path,
+            cloud.overview.path,
             hosting,
             url,
         ),
@@ -377,7 +415,7 @@ def sidebar_comp() -> rx.Component:
 
     docs_categories = rx.el.ul(
         sidebar_category(
-            "Learn",
+            "Framework",
             getting_started.introduction.path,
             "graduation-cap",
             is_default_docs,
@@ -392,13 +430,13 @@ def sidebar_comp() -> rx.Component:
             "API Reference",
             api_reference[0].link,
             "book-text",
-            ~is_library & is_api_reference,
+            is_api_reference,
         ),
         sidebar_category(
             "Enterprise",
             enterprise.overview.path,
             "building-2",
-            ~is_library & ~is_api_reference & is_enterprise,
+            is_enterprise,
         ),
         class_name="flex flex-col items-start gap-2 w-full list-none",
     )
@@ -504,7 +542,7 @@ def sidebar_comp() -> rx.Component:
 
     categories = rx.cond(
         is_docs_hosting,
-        hosting_categories,
+        rx.fragment(),
         rx.cond(is_docs_ai_builder, ai_builder_categories, docs_categories),
     )
     content = rx.cond(
