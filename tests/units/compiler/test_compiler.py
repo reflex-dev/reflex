@@ -11,6 +11,7 @@ from typing import Any
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.compiler.templates import EncodedInitialState
 from reflex_base.components.component import BaseComponent, Component
 from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
 from reflex_base.components.memo import MEMOS
@@ -1340,6 +1341,81 @@ def test_backend_compile_restores_registry_before_initial_state_serialization(
     assert restore.call_args_list == [mocker.call()]
     assert compile_initial_state.call_args_list == [mocker.call(BackendState)]
     assert calls == ["restore", "initial_state"]
+
+
+class _WrappingCodec(rx.plugins.Plugin):
+    """Wraps state updates in a field of its own, which its decoder unwraps."""
+
+    def encode_state_update(self, update: dict[str, Any], /) -> dict[str, Any]:
+        """Wrap the update.
+
+        Args:
+            update: The update's fields.
+
+        Returns:
+            An update holding them in its ``payload``.
+        """
+        return {"payload": update}
+
+    def get_state_update_decoder(self, **context) -> str:
+        """Get the codec's decoder module.
+
+        Args:
+            context: The context for the plugin.
+
+        Returns:
+            The decoder's module specifier.
+        """
+        return "$/utils/payload"
+
+
+@pytest.mark.parametrize("with_stateful_marker", [False, True])
+@pytest.mark.usefixtures("clean_registration_context")
+def test_backend_compile_encodes_the_initial_state_for_the_decoders(
+    tmp_path: Path, mocker: MockerFixture, with_stateful_marker: bool
+):
+    """Backend-only compilation encodes the initial state as the frontend compile does.
+
+    The codec moves the delta out of the top level of the update.
+
+    Args:
+        tmp_path: The backend directory.
+        mocker: Fixture for selecting the backend-only compile path.
+        with_stateful_marker: Whether a previous start left a stateful-page marker.
+    """
+
+    class WrappedBackendRoot(BaseState):
+        """State used to exercise backend-only compilation with a codec."""
+
+        value: int = 0
+
+    app = rx.App(_state=WrappedBackendRoot)
+    mocker.patch.object(app, "_apply_decorated_pages")
+    mocker.patch.object(app, "_should_compile", return_value=False)
+    mocker.patch.object(app, "_add_optional_endpoints")
+    mocker.patch.object(prerequisites, "get_backend_dir", return_value=tmp_path)
+    if with_stateful_marker:
+        (tmp_path / constants.Dirs.STATEFUL_PAGES).write_text("[]", encoding="utf-8")
+    mocker.patch.object(utils, "_restore_bundled_libraries", return_value=True)
+    config = rx.Config(
+        app_name="testing", plugins=[_WrappingCodec()], _skip_plugins_checks=True
+    )
+    mocker.patch.object(compiler, "get_config", return_value=config)
+    mocker.patch("reflex.state.get_config", return_value=config)
+    compile_initial_state = mocker.spy(utils, "_compile_initial_state")
+
+    assert compiler.compile_app(app, use_rich=False) is False
+
+    initial_state = utils.compile_state(WrappedBackendRoot)
+    assert compile_initial_state.spy_return_list == [
+        (
+            initial_state,
+            EncodedInitialState(
+                update_json=json_dumps({"payload": {"delta": initial_state}}),
+                decoders=("$/utils/payload",),
+            ),
+        )
+    ]
 
 
 @pytest.mark.parametrize("with_stateful_marker", [False, True])

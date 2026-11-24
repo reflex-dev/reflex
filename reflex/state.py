@@ -3303,6 +3303,19 @@ def _state_update_encoders() -> tuple[Plugin, ...]:
     )
 
 
+def _state_update_decoders() -> tuple[str, ...]:
+    """Get the configured plugins' state update decoders, in the order they decode.
+
+    Returns:
+        The decoder module specifiers, last plugin first.
+    """
+    return tuple(
+        decoder
+        for plugin in reversed(get_config().plugins)
+        if (decoder := plugin.get_state_update_decoder()) is not None
+    )
+
+
 def _encode_state_update(
     update: dict[str, Any], encoders: Sequence[Plugin]
 ) -> dict[str, Any]:

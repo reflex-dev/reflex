@@ -240,19 +240,6 @@ def _resolve_default_color_mode(theme: Component | None) -> str:
     return get_config().default_color_mode
 
 
-def _state_update_decoders() -> list[str]:
-    """Get the configured plugins' state update decoders, in the order they decode.
-
-    Returns:
-        The decoder module specifiers, last plugin first.
-    """
-    return [
-        decoder
-        for plugin in reversed(get_config().plugins)
-        if (decoder := plugin.get_state_update_decoder()) is not None
-    ]
-
-
 def _compile_contexts(
     state: type[BaseState] | None,
     theme: Component | None,
@@ -275,11 +262,7 @@ def _compile_contexts(
     )
     # Without state, no update reaches the frontend to decode.
     initial_state, initial_state_json = (
-        utils._compile_initial_state(
-            state,
-            component_imports=component_imports,
-            state_update_decoders=_state_update_decoders(),
-        )
+        utils._compile_initial_state(state, component_imports=component_imports)
         if state
         else (None, None)
     )

@@ -57,6 +57,7 @@ from reflex.istate.storage import (
 from reflex.state import (
     BaseState,
     _encode_state_update,
+    _state_update_decoders,
     _state_update_encoders,
     cache_initial_snapshot,
 )
@@ -261,22 +262,17 @@ def compile_state(state: type[BaseState]) -> dict:
 
 
 def _compile_initial_state(
-    state: type[BaseState],
-    *,
-    component_imports: ParsedImportDict | None = None,
-    state_update_decoders: Sequence[str] = (),
+    state: type[BaseState], *, component_imports: ParsedImportDict | None = None
 ) -> tuple[dict, str | EncodedInitialState]:
     """Serialize initial state while discovering its dynamic component imports.
 
     The initial state is encoded as the delta of a state update, like every
-    update the backend sends.
+    update the backend sends. With decoders configured, the whole encoded
+    update is serialized for them to decode, not only its delta.
 
     Args:
         state: The app state class.
         component_imports: Optional accumulator for frontend package installation.
-        state_update_decoders: The modules the frontend decodes updates with;
-            given any, the whole encoded update is serialized for them to
-            decode, not only its delta.
 
     Returns:
         The initial state dictionary, and its serialized JSON or, with
@@ -302,13 +298,13 @@ def _compile_initial_state(
 
     initial_state = compile_state(state)
     update = _encode_state_update({"delta": initial_state}, _state_update_encoders())
-    if not state_update_decoders:
+    if not (decoders := _state_update_decoders()):
         return initial_state, format.json_dumps(
             update["delta"], default=serialize_initial_value
         )
     return initial_state, EncodedInitialState(
         update_json=format.json_dumps(update, default=serialize_initial_value),
-        decoders=state_update_decoders,
+        decoders=decoders,
     )
 
 
