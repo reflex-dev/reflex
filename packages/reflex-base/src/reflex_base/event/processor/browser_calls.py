@@ -43,6 +43,8 @@ _PAGE_REPLACED = (
 class _Tab:
     """The calls awaiting the results of one client token's tab."""
 
+    # The token the calls are filed under; a reconnect can give it a new one.
+    token: ClientToken
     # The page load the calls were sent to: a script stops with its page.
     page: PageId
     rids: set[RequestId] = dataclasses.field(default_factory=set)
@@ -92,7 +94,7 @@ class BrowserCalls:
         future = self._futures[rid] = asyncio.get_running_loop().create_future()
         tab = self._tabs.get(token)
         if tab is None:
-            tab = self._tabs[token] = _Tab(page)
+            tab = self._tabs[token] = _Tab(token, page)
         tab.rids.add(rid)
         try:
             # Only the browser-call events carry a request id, in their
@@ -118,8 +120,8 @@ class BrowserCalls:
             tab.rids.remove(rid)
             # A disconnect may have failed the tab's calls already, and a new
             # call made a new _Tab for the token.
-            if not tab.rids and self._tabs.get(token) is tab:
-                del self._tabs[token]
+            if not tab.rids and self._tabs.get(tab.token) is tab:
+                del self._tabs[tab.token]
                 if tab.grace_timer is not None:
                     tab.grace_timer.cancel()
 
@@ -199,25 +201,37 @@ class BrowserCalls:
             "longer."
         )
         if grace_period <= 0:
-            self._fail(token, msg)
+            self._fail(tab, msg)
         else:
             tab.grace_timer = asyncio.get_running_loop().call_later(
-                grace_period, self._fail, token, msg
+                grace_period, self._fail, tab, msg
             )
 
-    def connecting(self, token: ClientToken, page: PageId) -> None:
+    def connecting(
+        self, token: ClientToken, page: PageId, new_token: ClientToken | None = None
+    ) -> None:
         """Fail a client's calls at once when it connects from another page load.
 
         The page the calls run in reloaded or navigated away. Calls of the
         same page keep waiting, in their grace period until the connect is
-        accepted.
+        accepted. A connect given a new token, because the token's old socket
+        is still linked, moves the calls of its page to the new token, so the
+        old socket's disconnect does not fail them; another page load given a
+        new token is a duplicated tab, and leaves the calls with their tab.
 
         Args:
-            token: The connecting client token.
+            token: The client token the tab connects with.
             page: The page load it connects from.
+            new_token: The token the connection was given instead, if any.
         """
-        if (tab := self._tabs.get(token)) is not None and tab.page != page:
-            self._fail(token, _PAGE_REPLACED)
+        if (tab := self._tabs.get(token)) is None:
+            return
+        if tab.page != page:
+            if new_token is None:
+                self._fail(tab, _PAGE_REPLACED)
+        elif new_token is not None:
+            tab.token = new_token
+            self._tabs[new_token] = self._tabs.pop(token)
 
     def connected(self, token: ClientToken) -> None:
         """End the grace period of a client whose connect was accepted.
@@ -237,14 +251,14 @@ class BrowserCalls:
         for future in self._futures.values():
             future.cancel()
 
-    def _fail(self, token: ClientToken, message: str) -> None:
-        """Fail a client's calls with BrowserDisconnectedError.
+    def _fail(self, tab: _Tab, message: str) -> None:
+        """Fail a tab's calls with BrowserDisconnectedError.
 
         Args:
-            token: The client token.
+            tab: The tab.
             message: The error's message.
         """
-        tab = self._tabs.pop(token)
+        del self._tabs[tab.token]
         if tab.grace_timer is not None:
             tab.grace_timer.cancel()
         for rid in tab.rids:

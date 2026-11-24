@@ -5912,6 +5912,29 @@ async def test_refused_reconnects_do_not_extend_the_grace_period():
 
 
 @pytest.mark.asyncio
+async def test_a_tab_reconnecting_under_a_new_token_keeps_its_browser_calls():
+    """A tab whose old socket lingers half-open reconnects under a new token; reaping the old socket does not fail its calls.
+
+    The server still links the token to the old socket, so the reconnect of
+    the same page load is given a new token, and the old socket disconnects
+    only when its pings time out.
+    """
+    namespace, processor = _namespace_with_browser_calls()
+    processor.browser_call_grace_period = 0
+    async with processor:
+        await namespace.on_connect("sid1", BROWSER_CALL_ENVIRON, {"page": "p1"})
+        call, rid = await _start_browser_call(namespace, processor)
+        await namespace.on_connect("sid2", BROWSER_CALL_ENVIRON, {"page": "p1"})
+        assert namespace.sid_to_token["sid2"] != "tok"
+        await _disconnect(namespace, "sid1")
+        await asyncio.sleep(0)
+        assert not call.done()
+        await namespace.on_result("sid2", {"rid": rid, "json": b"1"})
+        assert await call == 1
+    assert processor._browser_calls._tabs == {}
+
+
+@pytest.mark.asyncio
 async def test_link_token_to_sid_records_the_connecting_identity(
     token: str,
     event_namespace_with_processor_mock: EventNamespace,

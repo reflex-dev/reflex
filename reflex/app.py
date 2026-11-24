@@ -2777,12 +2777,14 @@ class EventNamespace(AsyncNamespace):
             new_token = await self.link_token_to_sid(
                 sid, token_list[0], update_state=boot_event is None
             )
-            if (
-                new_token is None
-                and (processor := self.app._event_processor) is not None
-            ):
-                # A tab that reloaded or left the page stopped its scripts.
-                processor._browser_calls.connecting(ClientToken(token_list[0]), page)
+            if (processor := self.app._event_processor) is not None:
+                # A tab that reloaded or left the page stopped its scripts; one
+                # given a new token takes them along.
+                processor._browser_calls.connecting(
+                    ClientToken(token_list[0]),
+                    page,
+                    None if new_token is None else ClientToken(new_token),
+                )
         else:
             logger.warning(f"No token provided in connection for session {sid}")
 

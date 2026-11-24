@@ -372,6 +372,52 @@ async def test_a_connect_from_another_page_load_fails_the_calls_at_once():
     _assert_forgotten(calls)
 
 
+async def test_a_tab_given_a_new_token_takes_its_calls_along():
+    """The same page load reconnecting under a new token moves its calls; another page load leaves them.
+
+    A tab whose old socket lingers half-open is given a new token when it
+    reconnects, and the old socket disconnects much later. A duplicated tab
+    is given a new token too, but comes from another page load, and the
+    calls stay with the tab that runs them.
+    """
+    calls = BrowserCalls()
+    new = ClientToken("new")
+    _, moved, moved_rid = await _start_call(calls)
+    calls.disconnect(TOKEN, 5)
+    timer = calls._tabs[TOKEN].grace_timer
+    calls.connecting(TOKEN, P1, new)
+    assert calls._tabs.keys() == {new}
+    calls.connected(new)
+    assert timer is not None
+    assert timer.cancelled()
+    calls.disconnect(TOKEN, 0)
+    await asyncio.sleep(0)
+    assert not moved.done()
+    calls.resolve(moved_rid, {"json": "1"})
+    assert await moved == 1
+    _assert_forgotten(calls)
+
+    _, stays, _ = await _start_call(calls)
+    calls.connecting(TOKEN, P2, new)
+    assert calls._tabs.keys() == {TOKEN}
+    calls.disconnect(TOKEN, 0)
+    assert await _raised(stays) == (BrowserDisconnectedError, grace_expired(0))
+    _assert_forgotten(calls)
+
+
+async def test_a_grace_period_ends_for_the_token_its_calls_moved_to():
+    """A tab disconnected and given a new token by its reconnect fails its calls under that token when it does not come back."""
+    calls = BrowserCalls()
+    new = ClientToken("new")
+    _, task, _ = await _start_call(calls)
+    calls.disconnect(TOKEN, 0.01)
+    calls.connecting(TOKEN, P1, new)
+    # The connect is refused.
+    calls.disconnect(new, 0.01)
+    assert await _raised(task) == (BrowserDisconnectedError, grace_expired(0.01))
+    _assert_forgotten(calls)
+
+
 async def test_connect_events_without_a_grace_period_change_nothing():
     """A token without calls, or a tab whose connect started its calls, is left as it is."""
     calls = BrowserCalls()
