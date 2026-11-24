@@ -82,7 +82,9 @@ class RouteRegex(SimpleNamespace):
         rf"{_OPENING_BRACKET * 2}{_DOT_DOT_DOT}({_ARG_NAME}){_CLOSING_BRACKET * 2}"
     )
 
-    SPLAT_CATCHALL = "[[...splat]]"
+    # The name of the catch-all arg, and the only catch-all pattern allowed.
+    SPLAT_ARG = "splat"
+    SPLAT_CATCHALL = f"[[...{SPLAT_ARG}]]"
     SINGLE_SEGMENT = "__SINGLE_SEGMENT__"
     DOUBLE_SEGMENT = "__DOUBLE_SEGMENT__"
     DOUBLE_CATCHALL_SEGMENT = "__DOUBLE_CATCHALL_SEGMENT__"

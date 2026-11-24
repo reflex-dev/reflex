@@ -221,6 +221,8 @@ _MAPPING: lazy_loader.SubmodAttrsType = {
         "ComponentState",
         "State",
         "dynamic",
+        "route_arg",
+        "route_catch_all",
     ],
     "istate.shared": ["SharedState"],
     "istate.wrappers": ["get_state"],
