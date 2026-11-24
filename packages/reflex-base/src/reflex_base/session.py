@@ -72,6 +72,18 @@ def _client_signature(sid: str, nonce: str) -> str:
     )[:16].hex()
 
 
+def is_client_token(value: str) -> bool:
+    """Check whether a value has the format of a session-bound client token.
+
+    Args:
+        value: The value to check.
+
+    Returns:
+        Whether the value is a nonce with an authentication tag.
+    """
+    return _CLIENT_TOKEN.fullmatch(value) is not None
+
+
 def ensure_secret_key() -> str:
     """Get REFLEX_SECRET_KEY, generating a temporary key when it is not set.
 
@@ -80,8 +92,14 @@ def ensure_secret_key() -> str:
 
     Returns:
         The comma-separated secret key ring.
+
+    Raises:
+        ValueError: If a configured key is shorter than 32 bytes.
     """
     if (configured := environment.REFLEX_SECRET_KEY.get()) is not None:
+        if any(len(key.strip().encode()) < 32 for key in configured.split(",")):
+            msg = "REFLEX_SECRET_KEY keys must each be at least 32 bytes"
+            raise ValueError(msg)
         return configured
     key = secrets.token_hex(32)
     environment.REFLEX_SECRET_KEY.set(key)
@@ -111,11 +129,10 @@ def _load_secrets() -> tuple[bytes, ...]:
     Raises:
         ValueError: If a configured key is shorter than 32 bytes.
     """
-    keys = tuple(key.strip().encode() for key in ensure_secret_key().split(","))
-    if any(len(key) < 32 for key in keys):
-        msg = "REFLEX_SECRET_KEY keys must each be at least 32 bytes"
-        raise ValueError(msg)
-    return tuple(hmac.digest(key, _SESSION_KEY_PURPOSE, "sha256") for key in keys)
+    return tuple(
+        hmac.digest(key.strip().encode(), _SESSION_KEY_PURPOSE, "sha256")
+        for key in ensure_secret_key().split(",")
+    )
 
 
 @dataclass(frozen=True)
@@ -311,17 +328,6 @@ class SessionTokenManager:
             return SessionToken(issued_at, expires_at, sid)
         except (ValueError, UnicodeError, binascii.Error, RecursionError):
             return None
-
-    def should_refresh(self, session: SessionToken) -> bool:
-        """Check whether a session has reached its configured refresh age.
-
-        Args:
-            session: The verified session to check.
-
-        Returns:
-            Whether to issue a refreshed cookie.
-        """
-        return time.time() - session.issued_at >= self.refresh_interval
 
     def refresh(self, session: SessionToken) -> SessionToken:
         """Renew a session while preserving its client-token bindings.

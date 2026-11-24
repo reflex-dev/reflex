@@ -16,6 +16,26 @@ class TokenValidationError(ReflexHostingCliError):
     surface it for correlation with server-side logs.
     """
 
+    def __init__(self, message: str, request_id: str = "", retryable: bool = True):
+        """Initialize the error.
+
+        Args:
+            message: The error message.
+            request_id: The X-Request-ID header sent with the failed request.
+            retryable: Whether trying again later may succeed. False when the
+                control plane refused the request itself.
+        """
+        super().__init__(message)
+        self.request_id = request_id
+        self.retryable = retryable
+
+
+class TokenAccessDeniedError(TokenValidationError, ValueError):
+    """Raised when the control plane rejects the access token.
+
+    Trying again with the same token cannot succeed, so it is never retryable.
+    """
+
     def __init__(self, message: str, request_id: str = ""):
         """Initialize the error.
 
@@ -23,12 +43,7 @@ class TokenValidationError(ReflexHostingCliError):
             message: The error message.
             request_id: The X-Request-ID header sent with the failed request.
         """
-        super().__init__(message)
-        self.request_id = request_id
-
-
-class TokenAccessDeniedError(TokenValidationError, ValueError):
-    """Raised when the control plane rejects the access token."""
+        super().__init__(message, request_id, retryable=False)
 
 
 class GetAppError(ReflexHostingCliError):

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import functools
+import gc
 import hashlib
 import importlib.util
 import json
@@ -19,6 +20,7 @@ from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, NamedTuple, TypedDict
 
+import click
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.constants.base import LogLevel
@@ -26,6 +28,8 @@ from reflex_base.environment import environment
 from reflex_base.telemetry_context import CompileTrigger
 from reflex_base.utils import console, log
 from reflex_base.utils.decorator import once
+from reflex_base.utils.exceptions import EnvironmentVarValueError
+from reflex_base.utils.process_tree import stop_process_tree
 
 from reflex.utils import path_ops
 from reflex.utils.misc import get_module_path
@@ -33,12 +37,15 @@ from reflex.utils.prerequisites import get_web_dir
 
 logger = logging.getLogger(__name__)
 
-# For uvicorn windows bug fix (#2335)
+# The frontend dev server process, stopped by `reflex run` when it unwinds.
 frontend_process = None
 _frontend_process_lock = threading.Lock()
 _frontend_shutting_down = False
+# Seconds the frontend tree gets to exit on SIGTERM before SIGKILL.
+_FRONTEND_STOP_TIMEOUT = 5
 
 DEV_BACKEND_RELOAD_MARKER = ".reflex_dev_backend_started"
+_GRANIAN_RESPAWN_ENV = "GRANIAN_RESPAWN_FAILED_WORKERS"
 
 
 def get_dev_backend_reload_marker() -> Path:
@@ -89,7 +96,7 @@ def get_package_json_and_hash(package_json_path: Path) -> tuple[PackageJson, str
     Returns:
         A tuple containing the content of package.json as a dictionary and its SHA-256 hash.
     """
-    with package_json_path.open("r") as file:
+    with package_json_path.open(encoding="utf-8") as file:
         json_data = json.load(file)
 
     # Calculate the hash
@@ -178,25 +185,6 @@ def get_different_packages(
     return dependencies_change, dev_dependencies_change
 
 
-def kill(proc_pid: int):
-    """Kills a process and all its child processes.
-
-    Requires the `psutil` library to be installed.
-
-    Args:
-        proc_pid: The process ID of the process to be killed.
-
-    Example:
-        >>> kill(1234)
-    """
-    import psutil
-
-    process = psutil.Process(proc_pid)
-    for proc in process.children(recursive=True):
-        proc.kill()
-    process.kill()
-
-
 def notify_frontend(url: str, backend_present: bool):
     """Output a string notifying where the frontend is running.
 
@@ -231,9 +219,9 @@ def _with_development_condition(environ: Mapping[str, str]) -> dict[str, str]:
     react-router's dev CLI requires the condition and relaunches itself to
     enable it. Setting it up front skips that relaunch under node, which reads
     NODE_OPTIONS. Bun applies neither NODE_OPTIONS nor BUN_OPTIONS to the
-    process it spawns for a package script, so a node-less install relaunches
-    regardless and relies on the CLI passing the condition along as a flag.
-    The setting does not leak into the parent process.
+    process it spawns for a package script, so `_frontend_dev_command` passes
+    the condition to bun as a flag instead. The setting does not leak into the
+    parent process.
 
     Args:
         environ: The base environment.
@@ -246,6 +234,33 @@ def _with_development_condition(environ: Mapping[str, str]) -> dict[str, str]:
     if _DEV_CONDITION_FLAG not in existing.split():
         env["NODE_OPTIONS"] = f"{existing} {_DEV_CONDITION_FLAG}".strip()
     return env
+
+
+def _frontend_dev_command() -> list[str]:
+    """Build the command that starts the frontend dev server.
+
+    Node runs the package.json `dev` script and takes the `development`
+    condition from NODE_OPTIONS. Without a supported node, bun is the runtime
+    and ignores that variable, leaving react-router's dev CLI to relaunch
+    itself with the condition, which fails on Windows. When bun is the
+    runtime, bun runs the CLI directly with the condition as a flag, so the
+    CLI never relaunches.
+
+    Returns:
+        The command to run from the web directory.
+    """
+    from reflex.utils import js_runtimes
+
+    executor = js_runtimes.get_js_package_executor(raise_on_none=True)[0]
+    if js_runtimes.check_node_version() or executor[0] != str(path_ops.get_bun_path()):
+        return [*executor, "run", "dev"]
+    return [
+        executor[0],
+        _DEV_CONDITION_FLAG,
+        "run",
+        "--bun",
+        *constants.PackageJson.Commands.DEV.split(),
+    ]
 
 
 def frontend_env(environ: Mapping[str, str]) -> dict[str, str]:
@@ -268,9 +283,7 @@ def frontend_env(environ: Mapping[str, str]) -> dict[str, str]:
 # run_process_and_launch_url is assumed to be used
 # only to launch the frontend
 # If this is not the case, might have to change the logic
-def run_process_and_launch_url(
-    run_command: list[str | None], backend_present: bool = True
-):
+def run_process_and_launch_url(run_command: list[str], backend_present: bool = True):
     """Run the process and launch the URL.
 
     Args:
@@ -300,10 +313,15 @@ def run_process_and_launch_url(
             global frontend_process
             with _frontend_process_lock:
                 frontend_process = process
-                if _frontend_shutting_down and process.poll() is None:
-                    process.terminate()
+                launched_too_late = _frontend_shutting_down
+            if launched_too_late:
+                stop_process_tree(process, timeout=_FRONTEND_STOP_TIMEOUT)
         if process.stdout:
-            for line in processes.stream_logs("Starting frontend", process):
+            for line in processes.stream_logs(
+                "Starting frontend",
+                process,
+                expected_exit=lambda: _frontend_shutting_down,
+            ):
                 new_content, new_hash = get_package_json_and_hash(json_file_path)
                 if new_hash != last_hash:
                     dependencies_change, dev_dependencies_change = (
@@ -348,14 +366,7 @@ def run_frontend(root: Path, port: str, backend_present: bool = True):
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
-    run_process_and_launch_url(
-        [
-            *js_runtimes.get_js_package_executor(raise_on_none=True)[0],
-            "run",
-            "dev",
-        ],
-        backend_present,
-    )
+    run_process_and_launch_url(_frontend_dev_command(), backend_present)
 
 
 def notify_app_running():
@@ -517,13 +528,33 @@ def get_app_module():
     return get_config().module
 
 
-def get_app_instance():
-    """Get the app module for the backend.
+def _backend_app():
+    """Load the config, then import the app and create its ASGI app.
+
+    Backend workers import this factory instead of the app module, so the config
+    exists before the app defines its State classes. A prod worker keeps the app
+    for its whole life, so it then freezes the heap: full collections skip what
+    the build left alive instead of walking it on every pass.
 
     Returns:
-        The app module for the backend.
+        The backend ASGI app.
     """
-    return f"{get_app_module()}:{constants.CompileVars.APP}"
+    app_module = importlib.import_module(get_app_module())
+    asgi_app = getattr(app_module, constants.CompileVars.APP)()
+    if is_prod_mode():
+        # Collect first, so the build's garbage is freed rather than frozen.
+        gc.collect()
+        gc.freeze()
+    return asgi_app
+
+
+def get_app_instance():
+    """Get the ASGI factory target for the backend workers.
+
+    Returns:
+        The ASGI factory target for the backend workers.
+    """
+    return f"{__name__}:_backend_app"
 
 
 def get_app_file() -> Path:
@@ -548,10 +579,10 @@ def get_app_file() -> Path:
 
 
 def get_app_instance_from_file() -> str:
-    """Get the app module for the backend.
+    """Check that the app module exists, then get the backend worker target.
 
     Returns:
-        The app module for the backend.
+        The ASGI factory target for the backend workers.
     """
     get_app_file()
     return get_app_instance()
@@ -586,6 +617,9 @@ def run_backend(
 
     # Run the backend in development mode.
     if should_use_granian():
+        # Fix the start method first so a backend-only run, which skips the
+        # compile pool, preloads under the same rule as the reload worker.
+        set_dev_start_method()
         # Forked workers inherit imported modules from the supervisor. Spawned
         # and forkserver workers do not, so preloading the app there only keeps
         # the full framework graph resident in the long-lived supervisor.
@@ -666,8 +700,13 @@ def get_reload_paths() -> Sequence[Path]:
     include_dirs = tuple(
         map(Path.absolute, environment.REFLEX_HOT_RELOAD_INCLUDE_PATHS.get())
     )
+    # A path that does not exist excludes nothing, and samefile raises on it.
     exclude_dirs = tuple(
-        map(Path.absolute, environment.REFLEX_HOT_RELOAD_EXCLUDE_PATHS.get())
+        path
+        for path in map(
+            Path.absolute, environment.REFLEX_HOT_RELOAD_EXCLUDE_PATHS.get()
+        )
+        if path.exists()
     )
 
     def is_excluded_by_default(path: Path) -> bool:
@@ -774,12 +813,11 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         port: The app port
         loglevel: The log level.
     """
+    import multiprocessing
+
     logger.debug("Using Granian for backend")
 
-    if environment.REFLEX_STRICT_HOT_RELOAD.get():
-        import multiprocessing
-
-        multiprocessing.set_start_method("spawn", force=True)
+    set_dev_start_method()
 
     from granian.constants import Interfaces
     from granian.log import LogLevels
@@ -914,6 +952,14 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
             self._close_shared_socket()
             super().shutdown(exit_code)
 
+    # The app itself is not imported here: the reload worker must load it
+    # fresh on every restart. Only the framework pages are shared.
+    # The supervisor forks again on every reload; the run-dev event was sent
+    # before this point and nothing in it sends telemetry afterwards.
+    if multiprocessing.get_start_method() == "fork" and not _freeze_for_fork():
+        logger.debug("A telemetry send is still running; spawning the worker.")
+        multiprocessing.set_start_method("spawn", force=True)
+
     reset_dev_backend_reload_marker()
     environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.set(True)
 
@@ -1029,7 +1075,7 @@ def run_uvicorn_backend_prod(
 
 
 def _backend_start_method() -> str | None:
-    """Resolve the multiprocessing start method for production backend workers.
+    """Resolve the multiprocessing start method for backend workers.
 
     Returns:
         The start method to force, or None to keep the interpreter default.
@@ -1046,6 +1092,46 @@ def _backend_start_method() -> str | None:
     return None
 
 
+def set_dev_start_method() -> None:
+    """Fix the multiprocessing start method for the development backend.
+
+    An explicit ``REFLEX_BACKEND_START_METHOD`` wins; otherwise strict hot
+    reload spawns workers and the platform rule of ``_backend_start_method``
+    applies. Call this before the first child process starts, or a forkserver
+    started for the compile pool stays alive for the whole session.
+    """
+    import multiprocessing
+
+    if (
+        environment.REFLEX_STRICT_HOT_RELOAD.get()
+        and environment.REFLEX_BACKEND_START_METHOD.get() is None
+    ):
+        start_method = "spawn"
+    else:
+        start_method = _backend_start_method()
+    if start_method is not None:
+        multiprocessing.set_start_method(start_method, force=True)
+
+
+def _freeze_for_fork() -> bool:
+    """Stop the telemetry thread and freeze the heap before forking workers.
+
+    Forking while the telemetry thread may hold a lock can deadlock the child.
+    Without the freeze, worker GC passes write to the inherited objects'
+    headers, which copies the shared pages private again.
+
+    Returns:
+        Whether forking is safe; False when a telemetry thread is still alive.
+    """
+    from reflex.utils import telemetry
+
+    if not telemetry._shutdown_executor():
+        return False
+    gc.collect()
+    gc.freeze()
+    return True
+
+
 def _preload_for_fork(app_target: str | None) -> bool:
     """Import the app in the supervisor so forked workers share its pages.
 
@@ -1056,25 +1142,16 @@ def _preload_for_fork(app_target: str | None) -> bool:
     Returns:
         Whether forking is safe; False when a telemetry thread is still alive.
     """
-    import gc
-
     from reflex_base.utils import serializers
 
-    from reflex.utils import prerequisites, telemetry
+    from reflex.utils import prerequisites
 
     if app_target is None:
         prerequisites.get_app()
     serializers._prepare_serializers_for_fork()
-    # Forking while the telemetry thread may hold a lock can deadlock the child.
     # Nothing in the supervisor sends telemetry after this point, so no thread
     # exists at any later fork either (e.g. a worker respawn).
-    if not telemetry._shutdown_executor():
-        return False
-    # Freezing keeps worker GC passes from writing to the preloaded objects'
-    # headers, which would copy-on-write the shared pages private again.
-    gc.collect()
-    gc.freeze()
-    return True
+    return _freeze_for_fork()
 
 
 def run_granian_backend_prod(
@@ -1087,6 +1164,9 @@ def run_granian_backend_prod(
         port: The app port
         loglevel: The log level.
         app_target: The ASGI app target to run. Defaults to the reflex app instance.
+
+    Raises:
+        EnvironmentVarValueError: If GRANIAN_RESPAWN_FAILED_WORKERS is not a boolean.
     """
     import multiprocessing
 
@@ -1104,6 +1184,15 @@ def run_granian_backend_prod(
             logger.debug("A telemetry send is still running; spawning workers.")
             multiprocessing.set_start_method("spawn", force=True)
 
+    try:
+        # Parse it as Granian's own CLI does, so every value Granian accepts works.
+        respawn_failed_workers = click.BOOL.convert(
+            os.getenv(_GRANIAN_RESPAWN_ENV, "true"), None, None
+        )
+    except click.BadParameter as err:
+        msg = f"{_GRANIAN_RESPAWN_ENV}: {err.message}"
+        raise EnvironmentVarValueError(msg) from None
+
     granian_app = Granian(
         target=app_target or get_app_instance_from_file(),
         factory=True,
@@ -1113,6 +1202,9 @@ def run_granian_backend_prod(
         log_level=LogLevels(os.getenv("GRANIAN_LOG_LEVEL", loglevel.value)),
         log_dictconfig=_granian_log_dictconfig(),
         workers=int(os.getenv("GRANIAN_WORKERS", str(_get_backend_workers()))),
+        # Granian otherwise stops the server when any one worker dies. It still
+        # exits when a respawned worker dies again within a few seconds.
+        respawn_failed_workers=respawn_failed_workers,
     )
 
     granian_app.serve()

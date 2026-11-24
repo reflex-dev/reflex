@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from collections.abc import Mapping, Sequence
+from typing import Any, Literal
 
 from reflex_base.components.component import Component, ComponentNamespace, field
 from reflex_base.event import EventHandler, input_event, key_event
@@ -21,6 +22,36 @@ from reflex_components_radix.themes.base import (
 
 LiteralTextFieldSize = Literal["1", "2", "3"]
 LiteralTextFieldVariant = Literal["classic", "surface", "soft"]
+
+
+# Radix puts hidden and type on the inner input, so a hidden input leaves its
+# wrapper on the page as an empty bar. This rule hides the wrapper while the
+# rendered input is hidden, so it follows state and scripts too. :where keeps
+# the specificity of one class, so a display class from the user still wins.
+_HIDDEN_INPUT_WRAPPER = "&:where(:has(> input:is([hidden], [type=hidden i])))"
+
+
+def _can_hide_wrapper(props: Mapping[str, Any]) -> bool:
+    """Check if the TextField.Root wrapper must follow a hidden input.
+
+    Args:
+        props: The props of the input.
+
+    Returns:
+        True if the input can be hidden and the user sets no display.
+    """
+    style = props.get("style")
+    styles = style if isinstance(style, Sequence) else (style,)
+    if "display" in props or any(
+        isinstance(s, Mapping) and "display" in s for s in styles
+    ):
+        return False
+    hidden, input_type = props.get("hidden"), props.get("type")
+    return (
+        (hidden is not None and hidden is not False)
+        or isinstance(input_type, Var)
+        or (isinstance(input_type, str) and input_type.lower() == "hidden")
+    )
 
 
 class TextFieldRoot(elements.Input, RadixThemesComponent):
@@ -113,6 +144,15 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
             props["auto_complete"] = ternary_operation(
                 auto_complete, Var.create("on"), Var.create("off")
             )
+
+        if _can_hide_wrapper(props):
+            hide = {_HIDDEN_INPUT_WRAPPER: {"display": "none"}}
+            style = props.get("style")
+            if isinstance(style, Var):
+                # Put a style Var after the rule, so a display in it wins.
+                props["style"] = {**hide, "&": style}
+            else:
+                props.update(hide)
 
         value = props.get("value")
 

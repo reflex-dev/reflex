@@ -1,0 +1,1 @@
+Recharts legend labels in the docs demos use the page's text color in light and dark mode instead of each series' color, which measured as low as 2.5:1 against the demo background. The legend icon keeps the series color.

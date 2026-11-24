@@ -1,0 +1,1 @@
+On Windows, `REFLEX_HOT_RELOAD_INCLUDE_PATHS`, `REFLEX_HOT_RELOAD_EXCLUDE_PATHS` and `REFLEX_HOT_RELOAD_OVERRIDE_PATHS` can now be separated by `;`, so an absolute path is no longer split at its drive letter. A value without `;` is still split on `:`, except at a drive letter, so existing lists such as `data:lib` keep working. Other platforms still use `:`.

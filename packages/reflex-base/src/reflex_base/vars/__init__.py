@@ -1,6 +1,6 @@
 """Immutable-Based Var System."""
 
-from . import base, color, datetime, function, number, object, sequence
+from . import base, color, datetime, function, number, object, sequence, set
 from .base import (
     EMPTY_VAR_INT,
     EMPTY_VAR_STR,
@@ -11,8 +11,10 @@ from .base import (
     Var,
     VarData,
     field,
+    get_leaf_vars,
     get_unique_variable_name,
     get_uuid_string_var,
+    scoped_var_data,
     var_operation,
     var_operation_return,
 )
@@ -28,6 +30,7 @@ from .sequence import (
     LiteralStringVar,
     StringVar,
 )
+from .set import LiteralSetVar, SetVar
 from .special import use_hook_var, use_id
 
 __all__ = [
@@ -48,11 +51,13 @@ __all__ = [
     "LiteralColorVar",
     "LiteralNumberVar",
     "LiteralObjectVar",
+    "LiteralSetVar",
     "LiteralStringVar",
     "LiteralVar",
     "NumberVar",
     "ObjectVar",
     "RestProp",
+    "SetVar",
     "StringVar",
     "Var",
     "VarData",
@@ -62,11 +67,14 @@ __all__ = [
     "datetime",
     "field",
     "function",
+    "get_leaf_vars",
     "get_unique_variable_name",
     "get_uuid_string_var",
     "number",
     "object",
+    "scoped_var_data",
     "sequence",
+    "set",
     "use_hook_var",
     "use_id",
     "var_operation",
