@@ -8,6 +8,7 @@ import hashlib
 import hmac
 import json
 import logging
+import os
 import re
 import secrets
 import time
@@ -84,7 +85,10 @@ def ensure_secret_key() -> str:
     Raises:
         ValueError: If a configured key is shorter than 32 bytes.
     """
-    if (configured := environment.REFLEX_SECRET_KEY.get()) is not None:
+    # A blank value reads as unset. An environment file would restore it after
+    # a key is generated here, and each worker would then generate its own key.
+    configured = os.environ.get(environment.REFLEX_SECRET_KEY.name)
+    if configured is not None:
         if any(len(key.strip().encode()) < 32 for key in configured.split(",")):
             msg = "REFLEX_SECRET_KEY keys must each be at least 32 bytes"
             raise ValueError(msg)
