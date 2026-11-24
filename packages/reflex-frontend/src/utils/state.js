@@ -24,6 +24,10 @@ import { parseJson } from "$/utils/helpers/json";
 import throttle from "$/utils/helpers/throttle";
 import { uploadFiles } from "$/utils/helpers/upload";
 
+// What `ClientStateVar.global_value` and `global_set` compile to, exported so
+// the server-provided scripts runScript evaluates can call them too.
+export { getClientState, setClientState };
+
 // Endpoint URLs.
 const EVENTURL = env.EVENT;
 

@@ -585,6 +585,26 @@ def set_contains_operation(
 
 
 @var_operation
+def set_match_operation(subject: Var, cases: ArrayVar) -> CustomVarOperationReturn[Any]:
+    """Swap an ``rx.match`` subject for the first set case it equals.
+
+    ``rx.match`` compares the JSON of the subject with the JSON of each case,
+    and a set serializes in its iteration order, so a subject equal to a set
+    case takes that case's form before the comparison.
+
+    Args:
+        subject: The match subject.
+        cases: The set cases of the match.
+
+    Returns:
+        The set match operation.
+    """
+    return _set_helper_operation(
+        "pySetMatch", subject, cases, var_type=subject._var_type
+    )
+
+
+@var_operation
 def set_length_operation(value: SetVar) -> CustomVarOperationReturn[int]:
     """Get the number of elements in a set.
 

@@ -8,6 +8,7 @@ import { encodePayload } from "engine.io-parser";
 import { Encoder } from "socket.io-parser";
 import { describe, expect, test, vi } from "vitest";
 
+import { getClientState } from "$/utils/client_state";
 import { eventLoop } from "$/utils/context-registry";
 import { applyEvent, getToken } from "$/utils/state";
 
@@ -87,6 +88,21 @@ describe("_call_script", () => {
       y: true,
       z: 2,
     });
+  });
+
+  test("scripts read and write named client state", async () => {
+    // ClientStateVar.global_value and global_set compile to these calls, and
+    // so does a Var pushed from the backend, which arrives as a script.
+    const onerror = vi.fn();
+    window.onerror = onerror;
+    const seen = [];
+    await callScript(
+      'setClientState("script_count", 1); setClientState("script_count", (v) => v + 1); getClientState("script_count")',
+      (result) => seen.push(result),
+    );
+    expect(onerror).not.toHaveBeenCalled();
+    expect(seen).toEqual([2]);
+    expect(getClientState("script_count")).toBe(2);
   });
 
   test("callbacks dispatch through the event loop mounted at call time", async () => {
