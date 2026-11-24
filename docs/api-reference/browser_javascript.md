@@ -390,13 +390,16 @@ The compile stops with these errors:
   not read, so it is likely left over from another version.` Delete the `.web`
   directory, and the next run writes it again.
 
-In the browser, a call fails with `Cannot call my_app.scripts.party.nope: the
-JavaScript module my_app.scripts.party exports no function named nope.` when a
-name used only in an event handler is not exported as a function. Export the
-function, or correct the name in Python. A call fails with `Cannot call
-my_app.scripts.lazy.go: the frontend does not include the JavaScript module
-my_app.scripts.lazy` when the frontend was compiled without the module. Import
-the module at the top of a Python module that the app imports when it loads.
+In the browser, a call fails with these errors:
+
+- `Cannot call my_app.scripts.party.nope: the JavaScript module
+  my_app.scripts.party exports no function named nope. Export a function named
+  nope from it, or correct the name in Python.` A name used only in an event
+  handler is checked when it is called, not when the app compiles.
+- `Cannot call my_app.scripts.lazy.go: the frontend does not include the
+  JavaScript module my_app.scripts.lazy, as when Python first imports it inside
+  an event handler, after the app compiled. Import it at the top of a Python
+  module that the app imports when it loads.`
 
 ## Using React Hooks
 

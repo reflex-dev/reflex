@@ -32,6 +32,7 @@ from reflex_base.components.memo import (
     MemoFunctionDefinition,
     MemoParamKind,
 )
+from reflex_base.constants.base import Javascript
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.js.modules import _package_imports, _render_stub, _ScriptModule
 from reflex_base.registry import RegistrationContext
@@ -374,8 +375,8 @@ def _read_script_modules(paths: Sequence[Path]) -> _ScriptModulesReport:
         msg = (
             "Reflex could not read the JavaScript modules the app imports from "
             f"Python: {_SCRIPT_MODULES_SCRIPT} failed. If this repeats, delete "
-            f"{web_dir / 'node_modules'} so that the next run reinstalls the "
-            "frontend packages, or report the error at "
+            f"{web_dir / Javascript.NODE_MODULES} so that the next run reinstalls "
+            "the frontend packages, or report the error at "
             "https://github.com/reflex-dev/reflex/issues:\n"
             f"{process.stderr.strip()}"
         )
