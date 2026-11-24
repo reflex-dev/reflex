@@ -1223,9 +1223,9 @@ export const connect = async (
   socket.current.wait_connect = false;
   let firstConnect = true;
   let finishBootstrap;
-  let exchangingSession = false;
   let reconnectingSession = false;
   let sessionTimer;
+  // The abort controller of the exchange in progress, if any.
   let sessionController;
   let resolveSession;
   let rejectSession;
@@ -1262,7 +1262,6 @@ export const connect = async (
     window.clearTimeout(sessionTimer);
     sessionController?.abort();
     sessionController = undefined;
-    exchangingSession = false;
     if (!preserveReadiness) {
       reconnectingSession = false;
       rejectSession?.(new Error("Session connection closed"));
@@ -1377,7 +1376,7 @@ export const connect = async (
       if (!socket.current.connected) {
         console.log("Socket is disconnected, attempting to reconnect ");
         socket.current.reconnect();
-      } else if (!exchangingSession) {
+      } else if (!sessionController) {
         // A timer that the browser suspended can be past its refresh time.
         scheduleSessionRefresh();
       }
@@ -1414,9 +1413,9 @@ export const connect = async (
   socket.current.on("connect", async () => {
     if (reconnectingSession) {
       reconnectingSession = false;
-      if (!exchangingSession) finishSessionExchange();
+      if (!sessionController) finishSessionExchange();
     }
-    if (!exchangingSession) {
+    if (!sessionController) {
       releaseBootstrap();
       scheduleSessionRefresh();
     }
@@ -1578,7 +1577,6 @@ export const connect = async (
     if (sessionController) return;
     const controller = new AbortController();
     sessionController = controller;
-    exchangingSession = true;
     window.clearTimeout(sessionTimer);
     // HTTP calls wait only while the browser has no cookie: the server sends
     // a credential in-band when the socket connected without a valid one.
@@ -1633,7 +1631,6 @@ export const connect = async (
     } finally {
       if (sessionController === controller) {
         sessionController = undefined;
-        exchangingSession = false;
         releaseBootstrap();
       }
     }
