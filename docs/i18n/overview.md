@@ -37,8 +37,12 @@ config = rx.Config(
 )
 ```
 
-`default_locale` is the language your source strings are written in. Translations
-live in `.po` files under `locales/` (configurable with `catalog_dir=`).
+`default_locale` is the language your source strings are written in; pages are
+prerendered in it, so it is also the `<html lang>` unless you set
+`rx.App(html_lang=...)`. Translations live in `.po` files under `locales/`
+(configurable with `catalog_dir=`, a path relative to the app root or an absolute
+one, e.g. a directory inside your package). `rx.i18n.configured_locales()`
+returns the configured locales, and `rx.i18n.source_locale()` the default one.
 
 ## Static content with `rx.t`
 
@@ -412,7 +416,7 @@ Notes:
   locale routes, and compilation fails with a clear error.
 - Each locale route prerenders that language's content, `hreflang`,
   `canonical` and `<html lang>`/`dir`. Unprefixed pages of the default locale
-  keep the app-wide `rx.App(html_lang=...)`, so set it to your `default_locale`.
+  keep the app-wide `rx.App(html_lang=...)`, which defaults to `default_locale`.
 
 ## Translation catalogs
 
