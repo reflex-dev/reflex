@@ -217,6 +217,7 @@ def get_sidebar_items_backend():
             children=[
                 utility_methods.router_attributes,
                 utility_methods.lifespan_tasks,
+                utility_methods.exception_handlers,
                 utility_methods.other_methods,
             ],
         ),
@@ -260,9 +261,20 @@ def get_sidebar_items_workflows():
 
 
 def get_sidebar_items_hosting():
-    from reflex_docs.pages.docs import hosting
+    from reflex_docs.pages.docs import cloud, hosting
+    from reflex_docs.templates.docpage.sidebar.state import SideBarItem
 
     items = [
+        SideBarItem(
+            names="Overview",
+            children=[
+                SideBarItem(
+                    names="Overview",
+                    alt_name_for_next_prev="Cloud Overview",
+                    link=cloud.overview.path,
+                )
+            ],
+        ),
         create_item(
             "Deploy Quick Start",
             children=[
