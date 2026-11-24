@@ -27,28 +27,21 @@ beforeAll(async () => {
 });
 
 describe("unsupported DataEditor column types", () => {
-  test("display the cell value as text without replacing the raw value", () => {
-    expect(formatCell(125, { type: "currency" })).toEqual({
-      kind: "text",
-      data: 125,
-      displayData: "125",
-    });
-  });
-
-  test("display object values as JSON", () => {
-    const value = { amount: 125 };
-    expect(formatCell(value, { type: "currency" })).toEqual({
-      kind: "text",
-      data: value,
-      displayData: '{"amount":125}',
-    });
-  });
-
-  test.each([null, undefined])("display %s as an empty cell", (value) => {
-    expect(formatCell(value, { type: "currency" })).toEqual({
-      kind: "text",
-      data: value,
-      displayData: "",
-    });
+  test.each([
+    [125, "125"],
+    [0, "0"],
+    [false, "false"],
+    [true, "true"],
+    ["", ""],
+    ["text", "text"],
+    [null, ""],
+    [undefined, ""],
+    [{ amount: 125 }, '{"amount":125}'],
+    [[], "[]"],
+    [[1, "a", null], '[1,"a",null]'],
+  ])("display %j as text without replacing the raw value", (value, displayData) => {
+    const cell = formatCell(value, { type: "currency" });
+    expect(cell).toStrictEqual({ kind: "text", data: value, displayData });
+    expect(cell.data).toBe(value);
   });
 });
