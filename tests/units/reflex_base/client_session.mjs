@@ -40,6 +40,7 @@ async function browserSession({
   eventURL = "ws://localhost:8000/prefix/_event",
 } = {}) {
   const callbacks = new Map();
+  const documentListeners = new Map();
   const timeouts = new Map();
   const delays = new Map();
   const errors = [];
@@ -88,7 +89,8 @@ async function browserSession({
       document: {
         cookie: "",
         visibilityState: "visible",
-        addEventListener() {},
+        addEventListener: (event, listener) =>
+          documentListeners.set(event, listener),
         removeEventListener() {},
       },
       localStorage,
@@ -134,6 +136,7 @@ async function browserSession({
     runtime,
     socket,
     callbacks,
+    documentListeners,
     timeouts,
     delays,
     connections,
@@ -347,7 +350,7 @@ for (const teardown of [false, true]) {
     assert.equal(tab.uploads.length, 0);
     if (teardown) {
       tab.socket.current.releaseSessionBootstrap();
-      await assert.rejects(pending, /Session connection closed/);
+      await assert.rejects(pending, { message: "Session connection closed" });
       await tick();
       assert.equal(tab.uploads.length, 0);
     } else {
@@ -490,7 +493,7 @@ test("failed initial exchange holds HTTP readiness until recovery or disconnect"
   await tick();
   assert.equal(tab.uploads.length, 0);
   tab.socket.current.disconnect();
-  await assert.rejects(pending, /Session connection closed/);
+  await assert.rejects(pending, { message: "Session connection closed" });
   await tick();
   assert.equal(tab.uploads.length, 0);
 });
@@ -569,7 +572,7 @@ test("an exchange completing after disconnect cannot replace a newer connection'
   const ready = tab.runtime.waitForSession();
   ready.catch(() => {});
   tab.socket.current.disconnect();
-  await assert.rejects(ready, /Session connection closed/);
+  await assert.rejects(ready, { message: "Session connection closed" });
   await tab.callbacks.get("new_token")("next-tab");
   finish({
     ok: true,
@@ -636,4 +639,56 @@ test("a refresh interval over the timer limit does not fire at once", async () =
     [...tab.timeouts.keys()].map((id) => tab.delays.get(id)),
     [2 ** 31 - 1],
   );
+});
+
+test("a full localStorage does not hold HTTP readiness after the cookie is set", async () => {
+  const localStorage = storage();
+  localStorage.setItem = () => {
+    throw new Error("QuotaExceededError");
+  };
+  const tab = await browserSession({ localStorage });
+  await tab.connect();
+  await (await tab.accept("bound-tab", "credential")).exchange;
+  // The refresh time is a hint; the cookie exchange itself succeeded.
+  assert.deepEqual(tab.errors, []);
+  await tab.runtime.waitForSession();
+  assert.equal(tab.requests.length, 1);
+});
+
+test("a failed renewal after the first exchange does not hold HTTP readiness", async () => {
+  let fail = false;
+  const tab = await browserSession({
+    fetch: async () =>
+      fail
+        ? { ok: false, status: 503 }
+        : {
+            ok: true,
+            json: async () => ({ client_token: "bound-tab", expires_in: 100 }),
+          },
+  });
+  await tab.connect();
+  await (await tab.accept("bound-tab", "credential")).exchange;
+  // This socket connected without a cookie, so later renewals still carry a
+  // credential. The browser has the cookie from the first exchange.
+  fail = true;
+  await tab.callbacks.get("session_token")("renewed-credential");
+  await tab.runtime.waitForSession();
+  await tab.runtime.applyRestEvent(
+    { name: "upload", handler: "uploadFiles", payload: { files: [] } },
+    tab.socket.current,
+  );
+  await tick();
+  assert.equal(tab.uploads.length, 1);
+});
+
+test("a tab that becomes visible does not repeat an exchange the backend denied", async () => {
+  const tab = await browserSession({
+    fetch: async () => ({ ok: false, status: 403 }),
+  });
+  await tab.connect();
+  await (await tab.accept("first-tab", "credential")).exchange;
+  assert.equal(tab.requests.length, 1);
+  const emitted = tab.emitted.length;
+  tab.documentListeners.get("visibilitychange")();
+  assert.equal(tab.emitted.length, emitted);
 });
