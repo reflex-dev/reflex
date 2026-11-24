@@ -7,11 +7,7 @@ from pathlib import Path
 import pytest
 from reflex_base.event import Event
 from reflex_base.event.context import EventContext
-from reflex_base.js.modules import (
-    _app_modules,
-    _JsFunction,
-    _package_imports,
-)
+from reflex_base.js.modules import _app_modules, _JsFunction, _package_imports
 from reflex_base.utils import format
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_base.vars.base import LiteralVar, Var
