@@ -4459,7 +4459,10 @@ def test_router_field_names_are_reserved(name):
 
 
 @pytest.fixture
-def route_arg_root(monkeypatch: pytest.MonkeyPatch) -> type[BaseState]:
+def route_arg_root(
+    monkeypatch: pytest.MonkeyPatch,
+    forked_registration_context: RegistrationContext,
+) -> type[BaseState]:
     """A fresh root state for `rx.route_arg` and `rx.route_catch_all` to resolve against.
 
     Route args installed on `rx.State` would stay for the rest of the session,
@@ -4467,6 +4470,7 @@ def route_arg_root(monkeypatch: pytest.MonkeyPatch) -> type[BaseState]:
 
     Args:
         monkeypatch: The pytest monkeypatch fixture.
+        forked_registration_context: Keeps the test's states out of other tests.
 
     Returns:
         The root state the accessors resolve against.
