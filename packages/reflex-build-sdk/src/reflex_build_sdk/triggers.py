@@ -175,8 +175,12 @@ def _key_bytes(secret: str) -> bytes:
 
     Raises:
         ValueError: If a ``whsec_`` key is not base64 or decodes to nothing,
-            since an empty key is one anyone can sign with.
+            since an empty key is one anyone can sign with, or the value is an
+            Ed25519 ``whsk_`` or ``whpk_`` key, which is never an HMAC secret.
     """
+    if secret.startswith((_SIGNING_KEY_PREFIX, _PUBLIC_KEY_PREFIX)):
+        msg = f"a {secret[:5]} key is an Ed25519 key, not an HMAC secret"
+        raise ValueError(msg)
     if not secret.startswith(_SECRET_PREFIX):
         return secret.encode()
     try:

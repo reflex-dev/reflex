@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import base64
 import dataclasses
+import hashlib
+import hmac
 import json
 import sys
 from typing import Any
@@ -404,6 +407,25 @@ def test_a_secret_that_is_not_a_key_signs_and_verifies_nothing(secret):
     with pytest.raises(ValueError) as raised:
         triggers.sign(body, secret, msg_id="x")
     assert str(raised.value) == "a trigger secret is not a valid whsec_ key"
+
+
+@pytest.mark.parametrize("key", [SIGNING_KEY, PUBLIC_KEY])
+def test_an_ed25519_key_is_never_taken_as_an_hmac_secret(key):
+    body = b'{"version":1,"events":[]}'
+    # Signed with the key's text as the HMAC key, as a raw secret would be.
+    content = f"x.{NOW}.".encode() + body
+    digest = hmac.new(key.encode(), content, hashlib.sha256).digest()
+    forged = {
+        "webhook-id": "x",
+        "webhook-timestamp": str(NOW),
+        "webhook-signature": f"v1,{base64.b64encode(digest).decode()}",
+    }
+    reason = f"a {key[:5]} key is an Ed25519 key, not an HMAC secret"
+    assert _refusal(body, forged, secret=key) == f"InvalidSignature: {reason}"
+    if key == PUBLIC_KEY:
+        with pytest.raises(ValueError) as raised:
+            triggers.sign(body, key, msg_id="x")
+        assert str(raised.value) == reason
 
 
 def test_sign_needs_a_secret():
