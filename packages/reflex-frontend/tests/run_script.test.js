@@ -4,6 +4,8 @@
  * the minifier may mangle this module. These pin what the generated strings
  * can see and what the script returns.
  */
+import { encodePayload } from "engine.io-parser";
+import { Encoder } from "socket.io-parser";
 import { describe, expect, test, vi } from "vitest";
 
 import { eventLoop } from "$/utils/context-registry";
@@ -130,14 +132,19 @@ describe("_call_script", () => {
 });
 
 describe("awaited script results", () => {
-  // A connected socket whose server limits a frame to maxPayload.
+  // A connected socket whose server limits a frame to maxPayload, with the
+  // namespace and packet encoder of the app's.
   const connectedSocket = (
     maxPayload = 1_000_000,
     transport = "websocket",
   ) => ({
     emit: vi.fn(),
     connected: true,
-    io: { engine: { _maxPayload: maxPayload, transport: { name: transport } } },
+    nsp: "/_event",
+    io: {
+      encoder: new Encoder(),
+      engine: { _maxPayload: maxPayload, transport: { name: transport } },
+    },
   });
   const awaited = (event, socket = connectedSocket()) => ({
     socket,
@@ -193,9 +200,10 @@ describe("awaited script results", () => {
     // A websocket carries the bytes in one binary frame.
     ["websocket", 12, '"1234567890"', null],
     ["websocket", 11, '"1234567890"', 11],
-    // Polling carries them base64-encoded behind a one-character marker.
-    ["polling", 17, '"1234567890"', null],
-    ["polling", 16, '"1234567890"', 9],
+    // Polling carries them base64-encoded behind a one-character marker, in
+    // a request body it may share with the message that refers to them.
+    ["polling", 90, '"1234567890"', null],
+    ["polling", 89, '"1234567890"', 9],
   ])("over %s with a %d frame limit, rejects a result larger than a message can carry", async (transport, maxPayload, json, maxBytes) => {
     const { outcome } = awaited(
       script(json),
@@ -215,6 +223,25 @@ describe("awaited script results", () => {
           };
     const sent = await outcome();
     expect(maxBytes === null ? sent : withoutStack(sent)).toEqual(expected);
+  });
+
+  test("over polling, a result at the limit fills the request body it shares with its message", async () => {
+    const socket = connectedSocket(90, "polling");
+    const { outcome } = awaited(script('"1234567890"'), socket);
+    await outcome();
+    const [name, sent] = socket.emit.mock.calls[0];
+    // The body engine.io-client posts when the message and its attachment
+    // queue together, as they do while an earlier request is in flight.
+    const packets = socket.io.encoder
+      .encode({ type: 2, nsp: socket.nsp, data: [name, sent] })
+      .map((data) => ({ type: "message", data }));
+    const body = await new Promise((resolve) =>
+      encodePayload(packets, resolve),
+    );
+    expect(body).toBe(
+      '451-/_event,["result",{"rid":"r1","json":{"_placeholder":true,"num":0}}]\x1ebIjEyMzQ1Njc4OTAi',
+    );
+    expect(body.length).toBe(90);
   });
 
   test("measures a result settled while disconnected against the limit of the next connection", async () => {

@@ -716,18 +716,29 @@ const serializeScriptResult = (value) => {
  *
  * The server drops a transport whose frame exceeds the limit its handshake
  * announced, and the result would be lost. A websocket carries the bytes in
- * one binary frame; polling carries them base64-encoded behind a
- * one-character marker.
- * @param json The result as UTF-8 JSON.
+ * one binary frame. Polling carries them base64-encoded behind a
+ * one-character marker, in a request body that also holds the message
+ * referring to them when the two are queued together.
+ * @param outcome The request id and the result as UTF-8 JSON.
  * @param socket The connected socket that sends it.
  */
-const checkResultSize = (json, socket) => {
+const checkResultSize = (outcome, socket) => {
   // socket.io-client is pinned; test_hydration_storage.py covers these internals.
-  const { engine } = socket.io;
-  const maxBytes =
-    engine.transport.name === "websocket"
-      ? engine._maxPayload
-      : 3 * Math.floor((engine._maxPayload - 1) / 4);
+  const { encoder, engine } = socket.io;
+  let maxBytes = engine._maxPayload;
+  if (engine.transport.name !== "websocket") {
+    // The message as socket.emit encodes it: an EVENT packet (type 2) with a
+    // placeholder for the bytes.
+    const [message] = encoder.encode({
+      type: 2,
+      nsp: socket.nsp,
+      data: [RESULT_EVENT, outcome],
+    });
+    // Its Engine.IO message type, the separator and the marker take 3 bytes.
+    maxBytes =
+      3 * Math.floor((maxBytes - 3 - frameSize(message, "polling")) / 4);
+  }
+  const { json } = outcome;
   if (json.byteLength > maxBytes) {
     throw new RangeError(
       `The script returned ${json.byteLength} bytes of JSON, more than the ${maxBytes} a message to the backend can carry; return less data, or raise REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE on the backend.`,
@@ -754,8 +765,8 @@ const sendScriptResult = async (socket, rid, run) => {
         // The limit is the next connection's, known once it connects.
         await new Promise((resolve) => socket.once("connect", resolve));
       }
-      checkResultSize(json, socket);
       outcome = { rid, json };
+      checkResultSize(outcome, socket);
     } catch (e) {
       outcome = {
         rid,
