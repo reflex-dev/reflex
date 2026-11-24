@@ -191,6 +191,49 @@ def test_localized_page_renders_its_hooks_inside_its_locale_route(
     assert not ctx.compiled_pages["/de"].hooks
 
 
+@pytest.mark.parametrize("auto_memoize", [True, False])
+def test_localized_page_keeps_a_branch_lifecycle_event_in_its_branch(
+    monkeypatch: pytest.MonkeyPatch, auto_memoize: bool
+):
+    """An on_mount under rx.cond runs when its branch shows, not when the page mounts."""
+    from reflex_base.components.memo import memo_body_hooks
+    from reflex_base.config import get_config
+
+    from reflex.app import UnevaluatedPage
+    from reflex.compiler.plugins import (
+        CompileContext,
+        CompilerHooks,
+        default_page_plugins,
+    )
+
+    monkeypatch.setattr(get_config(), "auto_memoize", auto_memoize)
+    page = UnevaluatedPage(
+        component=_localized_page(
+            lambda: rx.box(
+                rx.text(rx.t("Hello")),
+                rx.cond(
+                    rx.Var("window.shown").to(bool),
+                    rx.text("Shown", on_mount=rx.console_log("shown")),
+                ),
+            ),
+            "de",
+        ),
+        route="/de",
+    )
+    ctx = CompileContext(
+        pages=[page],
+        hooks=CompilerHooks(plugins=default_page_plugins(auto_memoize=auto_memoize)),
+    )
+    with ctx:
+        ctx.compile()
+    [holder] = [
+        definition
+        for definition in ctx.auto_memo_components.values()
+        if '"shown"' in "".join(memo_body_hooks(definition))
+    ]
+    assert holder.component.tag == "Text"
+
+
 def test_expand_routes_noop_without_routing():
     plugin = I18nPlugin(locales=LOCALES, default_locale="en")
     ctx = _fake_context([_page("index")])

@@ -637,6 +637,16 @@ class MemoizeStatefulPlugin(Plugin):
             # A loop seals its subtree, so give each descendant with hooks of
             # its own a wrapper that is called inside the loop body.
             comp = _scope_instance_hooks(comp, page_context, compile_context)
+        elif is_snapshot_boundary(comp):
+            # A boundary seals its subtree as well, so the hooks under a branch
+            # or a loop in it would run when the boundary mounts.
+            comp = _scope_branch_hooks(
+                comp,
+                page_context,
+                compile_context,
+                f"on page `{page_context.route}`",
+                reserved,
+            )
         # Loop variables exist only in a loop body, so only a wrapper that is
         # called there can read one.
         scope_vars = (
