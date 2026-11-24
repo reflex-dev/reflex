@@ -1,1 +1,1 @@
-File uploads now carry the browser session cookie and reject client tokens belonging to another session when `REFLEX_SESSION_TOKEN_MODE=enforce` is enabled. See the [browser session guide](https://reflex.dev/docs/api-routes/sessions/) for configuration and migration.
+File uploads now carry the browser session cookie and reject client tokens belonging to another session. `REFLEX_SESSION_TOKEN_MODE=warn` or `off` turns the rejection off. See the [browser session guide](https://reflex.dev/docs/api-routes/sessions/) for configuration and migration.

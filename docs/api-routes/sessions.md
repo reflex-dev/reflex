@@ -10,22 +10,40 @@ tab and is not sufficient to access its state when enforcement is enabled.
 This establishes ownership of state, not a user identity or login. Application
 authentication and authorization still belong in your app or AuthPlugin.
 
-## Rollout
+## Modes
 
-Set `REFLEX_SESSION_TOKEN_MODE` in the backend environment:
+Session ownership is enforced by default. To change it, set
+`REFLEX_SESSION_TOKEN_MODE` in the environment of every backend worker and
+replica, for example `REFLEX_SESSION_TOKEN_MODE=warn reflex run`:
 
 | Mode | Behavior |
 | --- | --- |
-| `warn` (default) | Issues sessions and warns about unauthorized state access, while allowing it for compatibility. A tab keeps a client token that its session does not own. |
-| `enforce` | Requires session ownership for event contexts and uploads. A socket presenting an unbound client token receives a new token and fresh state. |
+| `enforce` (default) | Requires session ownership for event contexts and uploads. A socket presenting a client token that its session does not own receives a new token and fresh state. |
+| `warn` | Issues sessions and warns about unauthorized state access, while allowing it for compatibility. A tab keeps a client token that its session does not own. |
 | `off` | Disables ownership enforcement. Fresh tabs receive a client token; existing legacy tokens remain usable. |
 
-Use `enforce` after updating your frontend, integration clients, and
-reflex-enterprise. Legacy tokens are not bound to a session on first use: doing
-so would let anyone who learned an old token claim its state. Existing state
-therefore resets when an old tab first migrates to a bound token. Cached old
-frontends remain usable in `warn`; they cannot persist a new session cookie and
-will lose state on reconnect under `enforce`.
+## Upgrading
+
+Under `enforce`, an app that upgrades can see these changes:
+
+- A tab that was open during the upgrade holds a legacy token. Legacy tokens
+  are not bound to a session on first use: doing so would let anyone who
+  learned an old token claim its state. The tab therefore gets a new token and
+  its state resets once.
+- Server code that reaches the state of another client, such as a broadcast
+  from an event handler or a webhook route that calls `app.modify_state`,
+  raises `SessionAuthorizationError`. Pass `session_token=SessionToken.SYSTEM`
+  (see [Server-side state access](#server-side-state-access)).
+- A browser that does not store the session cookie gets fresh state on each
+  new connection (see [Origins, cookies, and embedding](#origins-cookies-and-embedding)).
+- A client that is not a browser must use the client token that the backend
+  sends, not one that it made.
+- A cached old frontend cannot persist a session cookie, so it loses state on
+  reconnect until the page reloads.
+
+Set `REFLEX_SESSION_TOKEN_MODE=warn` while you update server code, integration
+clients, and reflex-enterprise. `warn` allows each of these cases and logs a
+warning that names the call site.
 
 ## Startup and refresh
 
@@ -98,10 +116,10 @@ cookie; use HTTPS for embedding and production.
 A browser stores a `Secure` cookie only from HTTPS or a loopback host. A
 production app served over plain HTTP on another host, or a development server
 opened through a LAN address while `api_url` is a loopback URL, therefore has
-no persistent session. `warn` and `off` keep the tab token, so such an app
-works as before. `enforce` gives the tab a new token and fresh state on each
-new connection, so use HTTPS, or set `api_url` to the address that the browser
-uses.
+no persistent session. The default `enforce` mode gives the tab a new token and
+fresh state on each new connection, so use HTTPS, or set `api_url` to the
+address that the browser uses. `warn` and `off` keep the tab token, so such an
+app works as before.
 
 All ports of the backend host share the cookie, because cookies are not scoped
 by port. A page on another port of that host can therefore open a socket in
