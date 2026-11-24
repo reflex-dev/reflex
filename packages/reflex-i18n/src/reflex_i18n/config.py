@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import importlib.util
+import os
 import re
 from collections.abc import Sequence
 from pathlib import Path
@@ -55,7 +56,8 @@ class I18nConfig:
     # The locale the source-text msgids are written in.
     default_locale: str = "en"
 
-    # Directory (relative to the app root) containing {locale}.po catalogs.
+    # Directory containing {locale}.po catalogs, relative to the app root (the
+    # working directory reflex runs in) unless absolute.
     catalog_dir: str = "locales"
 
     # The locale for a visitor whose browser asks for none of the configured
@@ -70,7 +72,7 @@ class I18nConfig:
         self,
         locales: Sequence[str],
         default_locale: str = "en",
-        catalog_dir: str = "locales",
+        catalog_dir: str | os.PathLike[str] = "locales",
         fallback_locale: str | None = None,
         catalog_packages: Sequence[str] = (),
     ):
@@ -79,8 +81,8 @@ class I18nConfig:
         Args:
             locales: Locales the app supports, e.g. ``["en", "de"]``.
             default_locale: The locale the source-text msgids are written in.
-            catalog_dir: Directory (relative to the app root) containing
-                ``{locale}.po`` catalogs.
+            catalog_dir: Directory containing ``{locale}.po`` catalogs,
+                relative to the app root unless absolute.
             fallback_locale: The locale for a visitor whose browser asks for
                 none of the configured ones. Defaults to ``default_locale``.
             catalog_packages: Installed packages whose own catalogs
@@ -119,7 +121,7 @@ class I18nConfig:
                 raise ValueError(msg)
         object.__setattr__(self, "locales", locales_tuple)
         object.__setattr__(self, "default_locale", default_locale)
-        object.__setattr__(self, "catalog_dir", catalog_dir)
+        object.__setattr__(self, "catalog_dir", os.fspath(catalog_dir))
         object.__setattr__(self, "fallback_locale", fallback_locale)
         object.__setattr__(self, "catalog_packages", tuple(catalog_packages))
 

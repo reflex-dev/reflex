@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import logging
+import os
 import re
 from collections.abc import Sequence
 from pathlib import Path
@@ -224,7 +225,7 @@ class I18nPlugin(Plugin):
     locales: Sequence[str]
     default_locale: str = "en"
     fallback_locale: str | None = None
-    catalog_dir: str = "locales"
+    catalog_dir: str | os.PathLike[str] = "locales"
     catalog_packages: Sequence[str] = ()
     routing: PathPrefixRouting | None = None
 

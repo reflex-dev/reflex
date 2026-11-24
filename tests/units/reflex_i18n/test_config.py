@@ -77,6 +77,16 @@ def test_config_rejects_duplicate_locales(locales: tuple[str, ...]):
     )
 
 
+def test_config_takes_a_path_catalog_dir(tmp_path: Path):
+    config = I18nConfig(locales=["en"], catalog_dir=tmp_path / "catalogs")
+    assert config.catalog_dir == str(tmp_path / "catalogs")
+    set_active_i18n_config(config)
+    try:
+        assert get_active_catalog_dirs() == ((tmp_path / "catalogs").resolve(),)
+    finally:
+        set_active_i18n_config(None)
+
+
 def test_active_config_roundtrip():
     config = I18nConfig(locales=["en"])
     set_active_i18n_config(config)
