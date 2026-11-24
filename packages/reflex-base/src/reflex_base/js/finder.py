@@ -2,13 +2,14 @@
 
 ``from my_app.scripts.party import celebrate`` finds ``my_app/scripts/party.js``
 (or ``.ts``, ``.jsx``, ``.tsx``) when no Python module of that name exists and ``my_app`` is the
-app's package. Other packages' JavaScript files are never imported.
+app's package. A directory without ``__init__.py`` is no Python module. Other
+packages' JavaScript files are never imported.
 
 ``import reflex`` registers a small finder that loads this module on the first
-import of a submodule no other finder found, which can happen while ``reflex``
-itself loads, so it stays cheap: ``os.path`` instead of ``pathlib``, a loader
-that implements the import protocol without the ``importlib.abc`` base class,
-and no ``typing``. The config loads once a JavaScript file is found, and the
+import of a submodule that is no Python module, which can happen while
+``reflex`` itself loads, so it stays cheap: ``os.path`` instead of
+``pathlib``, a loader that implements the import protocol without the
+``importlib.abc`` base class, and no ``typing``. The config loads once a JavaScript file is found, and the
 event system with the first JavaScript module imported.
 """
 

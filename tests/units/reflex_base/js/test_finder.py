@@ -62,7 +62,7 @@ def test_a_missing_module_still_fails_to_import(app_package: Path):
 
 
 def test_a_python_module_wins_over_a_script_of_the_same_name(app_package: Path):
-    """The finder runs last, so a Python module shadows a script of its name.
+    """A Python module shadows a script of its name.
 
     Args:
         app_package: the app package, on sys.path.
@@ -70,6 +70,19 @@ def test_a_python_module_wins_over_a_script_of_the_same_name(app_package: Path):
     (app_package / "both.py").write_text("VALUE = 'python'\n")
     (app_package / "both.js").write_text("export function VALUE() {}\n")
     assert importlib.import_module("js_app.both").VALUE == "python"
+
+
+def test_a_directory_without_init_does_not_hide_a_script(app_package: Path):
+    """A directory of the script's name without ``__init__.py`` is not a Python module.
+
+    Args:
+        app_package: the app package, on sys.path.
+    """
+    (app_package / "party").mkdir()
+    (app_package / "party" / "bg.png").write_bytes(b"")
+    from js_app.party import celebrate  # pyright: ignore[reportMissingImports]
+
+    assert celebrate == _JsFunction("js_app.party", "celebrate")
 
 
 def test_the_finder_imports_nothing_heavy():
