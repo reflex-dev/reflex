@@ -941,6 +941,11 @@ def test_post_build_prefixes_the_default_locale_without_default_at_root(
     )
 
 
+def test_plugin_names_the_default_locale_as_document_language():
+    """Pages are prerendered in the default locale, before any catalog loads."""
+    assert I18nPlugin(locales=["en", "de"], default_locale="de").get_html_lang() == "de"
+
+
 def test_post_build_leaves_cookie_mode_pages_alone(tmp_path: Path):
     """Cookie mode has one URL per page, so no page has a locale of its own."""
     page = tmp_path / "de" / "index.html"

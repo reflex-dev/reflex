@@ -184,6 +184,18 @@ class Plugin:
         """
         return []
 
+    def get_html_lang(self, **context: Unpack[CommonContext]) -> str | None:
+        """Get the language of the document when the app sets no ``html_lang``.
+
+        Args:
+            context: The context for the plugin.
+
+        Returns:
+            The language tag for the ``<html>`` element, or None to leave it to
+            other plugins and the default.
+        """
+        return None
+
     def register_route(self, **context: Unpack[RegisterRouteContext]) -> None:
         """Contribute pages before the app's first compilation.
 

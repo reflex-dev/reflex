@@ -1285,6 +1285,21 @@ def _read_stateful_pages_marker() -> list[str] | None:
         raise
 
 
+def _document_lang(html_lang: str | None, plugins: Sequence[Plugin]) -> str | None:
+    """The language of the document root.
+
+    Args:
+        html_lang: The app's ``html_lang``, which takes precedence.
+        plugins: The configured plugins, asked in order.
+
+    Returns:
+        The app's language, else the first one a plugin names, else None.
+    """
+    if html_lang:
+        return html_lang
+    return next((lang for plugin in plugins if (lang := plugin.get_html_lang())), None)
+
+
 def compile_app(
     app: App,
     *,
@@ -1509,7 +1524,7 @@ def compile_app(
     compile_results.append(
         compile_document_root(
             app.head_components,
-            html_lang=app.html_lang,
+            html_lang=_document_lang(app.html_lang, config.plugins),
             html_custom_attrs=(
                 {"suppressHydrationWarning": True, **app.html_custom_attrs}
                 if app.html_custom_attrs

@@ -340,6 +340,17 @@ class I18nPlugin(Plugin):
             HreflangLinks.create()
         )
 
+    def get_html_lang(self, **context: Unpack[CommonContext]) -> str | None:
+        """The default locale, the language pages are prerendered in.
+
+        Args:
+            context: The plugin context.
+
+        Returns:
+            The default locale.
+        """
+        return self.default_locale
+
     def pre_compile(self, **context: Unpack[PreCompileContext]) -> None:
         """Register the catalog-emission task.
 
