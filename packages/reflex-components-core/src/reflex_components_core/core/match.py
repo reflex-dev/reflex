@@ -14,6 +14,8 @@ from reflex_base.utils.exceptions import MatchTypeError
 from reflex_base.utils.imports import ImportDict
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.sequence import LiteralArrayVar
+from reflex_base.vars.set import SetVar, set_match_operation
 
 from reflex_components_core.base import Fragment
 from reflex_components_core.base.bare import Bare
@@ -66,6 +68,16 @@ class Match(Component):
         match_cond_var = cls._create_condition_var(cond)
         cases, default = cls._process_cases(list(cases))
         match_cases = cls._process_match_cases(cases)
+        set_cases = [
+            condition
+            for conditions, _ in match_cases
+            for condition in conditions
+            if isinstance(condition, SetVar)
+        ]
+        if set_cases:
+            match_cond_var = set_match_operation(
+                match_cond_var, LiteralArrayVar.create(set_cases)
+            )
 
         match_cases = cls._validate_return_types(match_cases)
 
