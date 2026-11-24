@@ -911,7 +911,7 @@ def test_compile_script_modules(
     monkeypatch: pytest.MonkeyPatch,
     prod: bool,
 ):
-    """Modules are copied with the files they reach and indexed.
+    """Modules are indexed through a link to the app's package.
 
     Typescript, which reads their types for their stubs, is installed in every
     mode, so that the app's lockfile is the same in development and production.
@@ -924,6 +924,8 @@ def test_compile_script_modules(
     if prod:
         monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.PROD.value)
     package, report, runs = script_app
+    # The directory the link points to; the modules' files are never read.
+    package.mkdir()
     web_dir = utils.get_web_dir()
     party = package / "scripts" / "party.js"
     helpers = package / "scripts" / "helpers.js"
@@ -950,15 +952,13 @@ def test_compile_script_modules(
             str(widget): [],
         },
         "errors": [],
-        "loops": [],
     })
 
-    outputs, package_imports, copies, modules = utils.compile_script_modules(
-        _app_modules()
-    )
+    outputs, package_imports, modules = utils.compile_script_modules(_app_modules())
 
     assert runs == [[widget, party, typed]]
-    modules_dir = web_dir / "utils" / "script_modules" / "app"
+    # A symbolic link, or a junction on Windows.
+    assert (web_dir / "utils" / "script_modules" / "app").resolve() == package
     assert outputs == [
         (
             str(web_dir / "utils" / "scripts.js"),
@@ -975,14 +975,6 @@ def test_compile_script_modules(
     assert package_imports == {
         package: [rx.ImportVar(tag=None, render=False)] for package in packages
     }
-    # Each file once, at its path from the directory that holds the package.
-    assert copies == [
-        (widget, modules_dir / 'my-"widget".js'),
-        (helpers, modules_dir / "scripts" / "helpers.js"),
-        (party, modules_dir / "scripts" / "party.js"),
-        (css, modules_dir / "scripts" / "party.css"),
-        (typed, modules_dir / "typed.ts"),
-    ]
     # What was read of each module, for its stub.
     assert modules == {
         widget: report["modules"][str(widget)],
@@ -1045,7 +1037,7 @@ def test_compile_script_modules(
             (
                 "The JavaScript module app.scripts.party imports <env>, which is "
                 "outside <package>, the directory of the app's package, "
-                "and only that directory is copied into the compiled app. Move the "
+                "and only that directory is linked into the compiled app. Move the "
                 "file into it, or publish it as an npm package and import it by name."
             ),
         ),
@@ -1103,58 +1095,22 @@ def test_compile_script_modules_errors(
         },
         "imports": {},
         "errors": [{**error, "file": fill(error["file"])} for error in errors],
-        "loops": [],
     })
     with pytest.raises(ReflexRuntimeError) as error:
         utils.compile_script_modules(_app_modules())
     assert str(error.value) == fill(message)
 
 
-def test_compile_script_modules_rejects_a_link_loop(
-    script_app: tuple[Path, dict, list[list[Path]]],
-    monkeypatch: pytest.MonkeyPatch,
-):
-    """A file that reaches itself again through a directory link names the link and how to avoid it.
-
-    Args:
-        script_app: the app package, the stand-in script's output and its runs.
-        monkeypatch: pytest monkeypatch fixture.
-    """
-    package, report, _ = script_app
-    party = package / "scripts" / "party.js"
-    link = package / "scripts" / "loop"
-    _import_script_module(monkeypatch, "app.scripts.party", party, {"celebrate"})
-    report.update({
-        "modules": {str(party): _script_exports([party], ["celebrate"])},
-        "imports": {},
-        "errors": [],
-        "loops": [
-            {"importer": str(party), "file": str(link / "party.js"), "link": str(link)}
-        ],
-    })
-    with pytest.raises(ReflexRuntimeError) as error:
-        utils.compile_script_modules(_app_modules())
-    assert str(error.value) == (
-        f"The JavaScript file {party} imports {link / 'party.js'} through {link}, "
-        "a link back to a directory its imports were already in, so the same "
-        "files are imported again one link deeper, without end, and the compiled "
-        "app, which copies files and not links, cannot hold them. Import the file "
-        f"by a path that does not go through {link}, or replace {link} with a "
-        "real directory."
-    )
-
-
 @pytest.mark.parametrize("linked", ["module", "import"])
-def test_compile_script_modules_rejects_a_link_to_outside(
+def test_compile_script_modules_reads_links_where_they_are(
     script_app: tuple[Path, dict, list[list[Path]]],
     monkeypatch: pytest.MonkeyPatch,
     windows_platform: bool,
     linked: str,
 ):
-    """A module, or a file it imports, that is a link to a file outside the package is outside it.
+    """A module, or a file it imports, that links outside the package is read where it is.
 
-    The module is listed by its real path, and a file it imports by the path
-    the import names.
+    The bundler does not follow links, so a link in the package is inside it.
 
     Args:
         script_app: the app package, the stand-in script's output and its runs.
@@ -1164,7 +1120,7 @@ def test_compile_script_modules_rejects_a_link_to_outside(
     """
     if windows_platform:
         pytest.skip("Symlinks require additional privileges on Windows")
-    package, report, _ = script_app
+    package, report, runs = script_app
     shared = package.parent / "shared" / "vendor.js"
     shared.parent.mkdir()
     shared.write_text("export function shout() {}\n")
@@ -1172,27 +1128,20 @@ def test_compile_script_modules_rejects_a_link_to_outside(
     vendor.parent.mkdir(parents=True)
     vendor.symlink_to(shared)
     if linked == "module":
-        _import_script_module(monkeypatch, "app.scripts.vendor", vendor, {"shout"})
-        module, files = "app.scripts.vendor", [shared]
-        outside = f"links to {shared}"
+        name, files = "app.scripts.vendor", [vendor]
     else:
-        party = package / "scripts" / "party.js"
-        _import_script_module(monkeypatch, "app.scripts.party", party, {"shout"})
-        module, files = "app.scripts.party", [party, vendor]
-        outside = f"imports {vendor}, a link to {shared}"
+        name, files = "app.scripts.party", [package / "scripts" / "party.js", vendor]
+    _import_script_module(monkeypatch, name, files[0], {"shout"})
     report.update({
         "modules": {str(files[0]): _script_exports(files, ["shout"])},
         "imports": {},
         "errors": [],
-        "loops": [],
     })
-    with pytest.raises(ReflexRuntimeError) as error:
-        utils.compile_script_modules(_app_modules())
-    assert str(error.value) == (
-        f"The JavaScript module {module} {outside}, which is outside "
-        f"{package}, the directory of the app's package, and only that "
-        "directory is copied into the compiled app. Move the file into it, or "
-        "publish it as an npm package and import it by name."
+    outputs, _, _ = utils.compile_script_modules(_app_modules())
+    assert runs == [[files[0]]]
+    specifier = Path("$/utils/script_modules", files[0].relative_to(package.parent))
+    assert outputs[-1][1] == (
+        f'export default {{\n  "{name}": () => import("{specifier.as_posix()}"),\n}};\n'
     )
 
 
@@ -1217,7 +1166,6 @@ def test_compile_script_modules_reads_a_module_imported_in_another_context(
         "modules": {str(party): _script_exports([party], ["launch"])},
         "imports": {str(party): []},
         "errors": [],
-        "loops": [],
     })
     with RegistrationContext() as context:
         context._set_config(rx.Config(app_name="app"))
@@ -1244,7 +1192,6 @@ def test_compile_script_modules_without_modules(
     assert utils.compile_script_modules({}) == (
         [(str(utils.get_web_dir() / "utils" / "scripts.js"), "export default {};\n")],
         {},
-        [],
         {},
     )
     assert runs == []
@@ -1301,7 +1248,7 @@ def test_read_script_modules(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(utils, "get_web_dir", lambda: web_dir)
     _write_stand_in(
         web_dir,
-        "JSON.stringify({ format: 1, modules: {}, errors: [], loops: [],\n"
+        "JSON.stringify({ format: 1, modules: {}, errors: [],\n"
         "  imports: { [process.cwd()]: process.argv.slice(2) } })",
     )
     paths = [Path("/app/a.js"), Path("/app/b.ts")]
@@ -1310,7 +1257,6 @@ def test_read_script_modules(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         "modules": {},
         "imports": {str(web_dir): [str(path) for path in paths]},
         "errors": [],
-        "loops": [],
     }
     (web_dir / "script-modules.js").write_text(
         'process.stderr.write("Error: boom\\n"); process.exit(3);\n'
@@ -1335,20 +1281,15 @@ def test_read_script_modules(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         "JSON.stringify({ modules: {}, imports: {}, errors: [] })",
         "JSON.stringify({ format: 2, modules: {}, imports: {}, errors: [] })",
         # The right version, of another shape.
-        "JSON.stringify({ format: 1, modules: {}, imports: {}, loops: [] })",
-        "JSON.stringify({ format: 1, modules: {}, imports: {}, errors: [] })",
+        "JSON.stringify({ format: 1, modules: {}, imports: {} })",
         (
-            "JSON.stringify({ format: 1, imports: {}, errors: [], loops: [],\n"
+            "JSON.stringify({ format: 1, imports: {}, errors: [],\n"
             '  modules: { "/app/a.js": { files: [1], functions: [], values: [],\n'
             "    exportsAll: false } } })"
         ),
         (
-            "JSON.stringify({ format: 1, modules: {}, imports: {}, loops: [],\n"
+            "JSON.stringify({ format: 1, modules: {}, imports: {},\n"
             '  errors: [{ file: "/app/a.js", line: "3", column: 1, message: "" }] })'
-        ),
-        (
-            "JSON.stringify({ format: 1, modules: {}, imports: {}, errors: [],\n"
-            '  loops: [{ importer: "/app/a.js", file: "/app/l/a.js" }] })'
         ),
     ],
     ids=[
@@ -1356,10 +1297,8 @@ def test_read_script_modules(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         "no-format",
         "format-2",
         "no-errors",
-        "no-loops",
         "file-not-a-string",
         "line-not-a-number",
-        "loop-without-link",
     ],
 )
 def test_read_script_modules_rejects_output_of_another_shape(
@@ -1416,45 +1355,29 @@ def test_read_script_modules_contract(tmp_path: Path, monkeypatch: pytest.Monkey
     assert report["errors"] == [
         {"file": str(broken), "line": 1, "column": 14, "message": "Unexpected token"}
     ]
-    assert report["loops"] == []
 
 
-def test_read_script_modules_reports_a_link_loop(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, windows_platform: bool
-):
-    """The real script reports a file that reaches itself again through a directory link.
+def test_link_directory(tmp_path: Path, windows_platform: bool):
+    """The link is made once, and what the package holds is what it shows.
 
     Args:
         tmp_path: pytest tmp_path fixture.
-        monkeypatch: pytest monkeypatch fixture.
         windows_platform: Whether symlinks require Windows privileges.
     """
     if windows_platform:
         pytest.skip("Symlinks require additional privileges on Windows")
-    _require_node(packages=True)
-    monkeypatch.setattr(
-        utils, "get_web_dir", lambda: constants.Templates.Dirs.WEB_TEMPLATE
-    )
-    directory = tmp_path.resolve()
-    party, link = directory / "party.js", directory / "loop"
-    party.write_text('import "./loop/party.js";\nexport function go() {}\n')
-    link.symlink_to(directory)
-    assert utils._read_script_modules([party]) == {
-        "format": 1,
-        "modules": {
-            str(party): {
-                "files": [str(party)],
-                "functions": ["go"],
-                "values": [],
-                "exportsAll": False,
-            }
-        },
-        "imports": {str(party): []},
-        "errors": [],
-        "loops": [
-            {"importer": str(party), "file": str(link / "party.js"), "link": str(link)}
-        ],
-    }
+    package = tmp_path / "app"
+    (package / "scripts").mkdir(parents=True)
+    (package / "scripts" / "old.js").write_text("export const old = 1;\n")
+    link = tmp_path / ".web" / "utils" / "script_modules" / "app"
+    utils._link_directory(link, package)
+    made = link.lstat()
+    utils._link_directory(link, package)
+    assert link.lstat().st_ino == made.st_ino
+    # A file deleted from the package is gone from the bundler's view.
+    (package / "scripts" / "old.js").unlink()
+    (package / "scripts" / "new.ts").write_text("export const fresh = 1;\n")
+    assert sorted(path.name for path in (link / "scripts").iterdir()) == ["new.ts"]
 
 
 @pytest.fixture
@@ -2026,11 +1949,11 @@ def test_write_script_stubs_keeps_a_stub_it_cannot_read(
 def test_write_script_stubs_of_a_linked_module(
     stub_app: tuple[Path, dict[Path, Any]],
 ):
-    """A module that links elsewhere gets its stub beside the link, typed from its file.
+    """A module that links elsewhere gets its stub beside the link, typed through it.
 
-    Python imports it by the link, where type checkers look for the stub; the
-    types are read, and the digest taken, at the real path the module's files
-    are listed by.
+    Python imports it by the link, where type checkers look for the stub, and
+    the compile lists its files by that path without following the link, so
+    the types are read, and the digest taken, through the link.
 
     Args:
         stub_app: the module, and what was read of it.
@@ -2046,16 +1969,16 @@ def test_write_script_stubs_of_a_linked_module(
         _print_signatures(repr({"go": [{"parameters": [parameter]}]}), "[sys.argv[1]]")
     )
     web_dir = utils.get_web_dir()
-    assert _write_stubs({link: _script_exports([shared], ["go"])}) == [
+    assert _write_stubs({link: _script_exports([link], ["go"])}) == [
         (
             str(party.with_name("linked.pyi")),
             _PARTY_STUB.replace("party.js", "linked.js"),
         )
     ]
     assert json.loads((web_dir / "script_stubs.json").read_text()) == {
-        str(link): {"digest": _module_digest([str(shared)]), "files": [str(shared)]}
+        str(link): {"digest": _module_digest([str(link)]), "files": [str(link)]}
     }
-    assert (web_dir / "script-signatures.js.log").read_text() == f"{shared}\n"
+    assert (web_dir / "script-signatures.js.log").read_text() == f"{link}\n"
 
 
 def test_write_script_stubs_removes_stubs_of_modules_no_longer_imported(
@@ -2260,9 +2183,9 @@ def test_write_script_stubs_with_the_real_scripts(
 ):
     """A TypeScript and a JSDoc module are read by the scripts Reflex runs, through to their stubs.
 
-    A declaration file only their types read is not copied into the app, and
-    a change to it rewrites the stubs; a change to a module that keeps its
-    types rewrites none.
+    A declaration file only their types read is not among the files the
+    bundler reads, and a change to it rewrites the stubs; a change to a module
+    that keeps its types rewrites none.
 
     Args:
         tmp_path: pytest tmp_path fixture.
@@ -2292,15 +2215,14 @@ def test_write_script_stubs_with_the_real_scripts(
         '/** @param {import("./shapes").Shape} shape @param {string} id */\n'
         "export function place(shape, id) {}\n"
     )
-    _, _, copies, modules = utils.compile_script_modules({
+    _, _, modules = utils.compile_script_modules({
         "app.draw": _ScriptModule(draw, {"draw"}),
         "app.party": _ScriptModule(party, {"place"}),
     })
 
-    modules_dir = web_dir / "utils" / "script_modules" / "app"
-    assert copies == [
-        (draw, modules_dir / "draw.ts"),
-        (party, modules_dir / "party.js"),
+    assert [modules[path]["files"] for path in (draw, party)] == [
+        [str(draw)],
+        [str(party)],
     ]
     # Each module's own: neither lists the other.
     type_files = {
@@ -2371,7 +2293,7 @@ def test_write_script_stubs_follows_only_what_the_types_read(
     """A stub is rewritten when a package its types are read from changes, not Reflex's files or other packages.
 
     The module imports ``$/utils/reflex``, which reaches ``env.json``,
-    ``utils/scripts.js`` and through it the ``.web`` copies of every module:
+    ``utils/scripts.js`` and through it every module under ``.web``:
     Reflex's own files, which a new port or another module changes. Neither
     they nor the app's other packages change the stub's types.
 
@@ -2458,21 +2380,51 @@ def test_write_script_stubs_follows_only_what_the_types_read(
     }
 
 
-def test_copy_files_skips_up_to_date_targets(tmp_path: Path):
-    """A target with the same bytes is left alone; others are written.
+@pytest.mark.parametrize("stale", ["directory", "link", "dangling"])
+def test_link_directory_replaces_what_is_there(
+    tmp_path: Path, windows_platform: bool, stale: str
+):
+    """A directory of files, a link elsewhere or a dangling link is replaced.
 
     Args:
         tmp_path: pytest tmp_path fixture.
+        windows_platform: Whether symlinks require Windows privileges.
+        stale: what is at the link's path.
     """
-    source = tmp_path / "logo.png"
-    source.write_bytes(b"\x89PNG\xff")
-    out = tmp_path / "out"
-    target = out / "nested" / "logo.png"
-    utils.copy_files([(source, target)], out)
-    assert target.read_bytes() == b"\x89PNG\xff"
-    modified = target.stat().st_mtime_ns
-    utils.copy_files([(source, target)], out)
-    assert target.stat().st_mtime_ns == modified
-    source.write_bytes(b"\x89PNG\x00")
-    utils.copy_files([(source, target)], out)
-    assert target.read_bytes() == b"\x89PNG\x00"
+    if windows_platform:
+        pytest.skip("Symlinks require additional privileges on Windows")
+    package = tmp_path / "app"
+    package.mkdir()
+    elsewhere = tmp_path / "elsewhere"
+    (elsewhere / "scripts").mkdir(parents=True)
+    (elsewhere / "scripts" / "party.js").write_text("")
+    link = tmp_path / "script_modules" / "app"
+    link.parent.mkdir()
+    if stale == "directory":
+        shutil.copytree(elsewhere, link)
+    else:
+        link.symlink_to(elsewhere if stale == "link" else tmp_path / "gone")
+    utils._link_directory(link, package)
+    assert link.readlink() == package
+    # A link elsewhere is removed without what it points to.
+    assert (elsewhere / "scripts" / "party.js").is_file()
+
+
+def test_link_directory_makes_a_junction_on_windows(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """On Windows, where a symbolic link needs a privilege, the link is a junction.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    junctions: list[tuple[str, str]] = []
+    winapi = ModuleType("_winapi")
+    winapi.CreateJunction = lambda target, link: junctions.append((target, link))  # pyright: ignore[reportAttributeAccessIssue]
+    monkeypatch.setitem(sys.modules, "_winapi", winapi)
+    monkeypatch.setattr(sys, "platform", "win32")
+    link = tmp_path / "script_modules" / "app"
+    utils._link_directory(link, tmp_path / "app")
+    assert junctions == [(str(tmp_path / "app"), str(link))]
+    assert link.parent.is_dir()

@@ -333,8 +333,9 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
   `PartyState.set_width(100)`, arrives as the event `{name, payload}`, which
   the function dispatches with `reflex.addEvents([event])`. Both arrive the
   same way inside a list or a dict, from an event trigger or an event handler.
-- The function's return value is not sent back. To get a value back, pass an
-  event handler and dispatch it with the value, as `measure` does.
+- The function's return value is not sent back, and the events after the call
+  do not wait for a promise it returns. To get a value back, pass an event
+  handler and dispatch it with the value, as `measure` does.
 - The npm packages the module imports, such as `canvas-confetti`, are installed
   with the app, and so are those its stylesheets `@import`, such as
   `normalize.css` when no such file is beside the stylesheet. Pin a version with `frontend_packages` in `rxconfig.py`. Path
@@ -342,16 +343,12 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
   (`virtual:...`, `https://...`) are left to the bundler and not installed.
 - Local files the module imports with relative paths, such as `./helpers.js`,
   `./party.css` or `./logo.png`, are bundled with it, and so are the files they
-  import, including a stylesheet's `@import` and `url(...)` references. They
-  must be inside your app's package directory, which is all of your project
-  that is copied into the compiled app. A file imported as text
-  (`./example.js?raw`), or a script imported as a URL (`./worklet.js?url`), is
-  copied as it is, without the files it imports. So is a file the module names
-  with `new URL("./logo.png", import.meta.url)`, unless it starts a worker, as
-  in `new Worker(new URL("./worker.js", import.meta.url))`: a worker is bundled
-  with the files it imports. A file that is a symbolic link
-  is copied where the import names it, so the files it imports are found from
-  there.
+  import, including a stylesheet's `@import` and `url(...)` references. The
+  bundler reads them where they are, through `.web/utils/script_modules/my_app`,
+  a link to your app's package directory, so they must be inside that
+  directory, and the frontend must be built where the package is, as
+  `reflex export` does. A symbolic link in the package is read where the
+  import names it, so the files it imports are found from there.
 
 ### Type Stubs
 
@@ -484,19 +481,8 @@ The compile stops with these errors:
   line and column, in the module or in a file it imports.
 - `The JavaScript module my_app.scripts.party imports .../shared.js, which is
   outside .../my_app, the directory of the app's package, and only that
-  directory is copied into the compiled app.` Move the file into your app's
-  package, or publish it as an npm package and import it by name. A module that
-  is a link to a file outside the package gets the same error, with `links to`
-  in place of `imports`, and an imported file that is such a link is named with
-  its target: `imports .../helper.js, a link to .../shared.js, which is
-  outside`.
-- `The JavaScript file .../party.js imports .../loop/party.js through
-  .../loop, a link back to a directory its imports were already in, so the
-  same files are imported again one link deeper, without end.` A link to a
-  directory that holds it, such as `loop` pointing to `.`, lets an import reach
-  the same file again at a longer path, and each copy of the file would need
-  its own. Import the file by a path that does not go through the link, or
-  replace the link with a real directory.
+  directory is linked into the compiled app.` Move the file into your app's
+  package, or publish it as an npm package and import it by name.
 - `The JavaScript file .../party.js imports 'fs', a Node.js built-in module,
   which does not exist in the browser.` Remove the import, and do the work that
   needs it in a backend event handler instead.

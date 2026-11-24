@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 import pytest
+from pytest_mock import MockerFixture
 from reflex_base.event import Event
 from reflex_base.event.context import EventContext
 from reflex_base.js.modules import _app_modules, _JsFunction, _package_imports
@@ -121,6 +122,98 @@ def test_a_bound_event_argument_arrives_as_the_same_event_from_a_trigger_or_a_ha
         {"name": name, "payload": {"value": "v"}},
         [{"name": name, "payload": {"value": "w"}, "event_actions": {"debounce": 100}}],
     ]
+
+
+def test_handler_and_bound_event_arguments_send_the_same_values_from_a_trigger_or_a_handler():
+    """A trigger compiles the arguments that a backend handler sends as JSON.
+
+    Event handlers and bound events, in lists and dicts too, arrive with the
+    same values either way.
+    """
+
+    class JsSameArgumentsState(rx.State):
+        @rx.event
+        def done(self, value: str):
+            """Receive a value.
+
+            Args:
+                value: The value.
+            """
+
+    done = JsSameArgumentsState.done
+    report = _JsFunction("app.scripts.party", "report")
+    args = (done, done("v"), [done("w").debounce(100), (done,)], {"on": {"x": done}})
+    trigger = str(
+        LiteralVar.create(rx.button(on_click=report(*args)).event_triggers["on_click"])
+    )
+    (event,) = Event.from_event_type(report(*args))
+    sent = json.loads(format.json_dumps(event.payload["args"]))
+    assert f'["args"] : {LiteralVar.create(sent)!s} }}' in trigger
+
+
+def test_an_uncalled_function_in_a_cond_is_called_with_no_arguments():
+    """In ``rx.cond``, an uncalled function is called with no arguments, as an event handler is."""
+    celebrate = _JsFunction("app.scripts.party", "celebrate")
+    flag = Var(_js_expr="flag").to(bool)
+    button = rx.button(on_click=rx.cond(flag, celebrate, celebrate(2)))
+    assert str(LiteralVar.create(button.event_triggers["on_click"])) == (
+        '((_e) => (addEvents([(flag ? (ReflexEvent("_call_js", ({ ["module"] : '
+        '"app.scripts.party", ["function"] : "celebrate", ["args"] : [] }), '
+        '({  }))) : (ReflexEvent("_call_js", ({ ["module"] : "app.scripts.party", '
+        '["function"] : "celebrate", ["args"] : [2] }), ({  }))))], [_e], ({  }))))'
+    )
+
+
+def test_an_uncalled_function_keeps_its_event_actions():
+    """Event actions set on an uncalled function apply to the call a trigger makes."""
+    celebrate = _JsFunction("app.scripts.party", "celebrate").debounce(100)
+    field = rx.input(on_change=celebrate)
+    assert str(LiteralVar.create(field.event_triggers["on_change"])) == (
+        '((_e) => (addEvents([(ReflexEvent("_call_js", ({ ["module"] : '
+        '"app.scripts.party", ["function"] : "celebrate", '
+        '["args"] : [_e?.["target"]?.["value"]] }), ({ ["debounce"] : 100 })))], '
+        "[_e], ({  }))))"
+    )
+
+
+def test_an_uncalled_function_returned_by_a_handler_is_called_with_no_arguments():
+    """A handler can return a function uncalled, as it can return an event handler."""
+    assert Event.from_event_type(_JsFunction("app.scripts.party", "celebrate")) == [
+        Event(
+            name="_call_js",
+            payload={
+                "module": "app.scripts.party",
+                "function": "celebrate",
+                "args": [],
+            },
+        )
+    ]
+
+
+def test_a_function_stored_on_a_class_stays_the_function(
+    mocker: MockerFixture,
+):
+    """A function on a class reads back unbound and unchanged: it belongs to its module.
+
+    Args:
+        mocker: pytest-mock fixture.
+    """
+    deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+    celebrate = _JsFunction("app.scripts.party", "celebrate")
+
+    class Effects:
+        go = celebrate
+
+    assert Effects.go is celebrate
+    assert Effects().go is celebrate
+
+    class JsEffectsState(rx.State):
+        go = celebrate
+
+    assert JsEffectsState.go is celebrate
+    assert celebrate.state is None
+    assert "go" not in JsEffectsState.event_handlers
+    deprecate.assert_not_called()
 
 
 def test_var_arguments_are_compiled_into_the_event():

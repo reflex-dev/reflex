@@ -1309,10 +1309,7 @@ def _install_frontend_packages(
     vite = get_web_dir() / Javascript.NODE_MODULES / "vite"
     if script_modules and not vite.is_dir():
         app._get_frontend_packages(imports)
-    outputs, script_imports, copies, modules = utils.compile_script_modules(
-        script_modules
-    )
-    utils.copy_files(copies, get_web_dir() / constants.Dirs.SCRIPT_MODULES_PATH)
+    outputs, script_imports, modules = utils.compile_script_modules(script_modules)
     app._get_frontend_packages(utils.merge_imports(imports, script_imports))
     # Stubs are for type checkers during development: a production build leaves
     # the source tree alone. After the install: reading types needs typescript.

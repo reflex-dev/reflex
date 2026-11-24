@@ -1,11 +1,12 @@
 """JavaScript modules imported from Python, and calls to their exports.
 
-Importing a module does not read it: each name looked up on it is a function
-that returns an event, and the compiler checks that the module exports a
-function of every name looked up. The event runs the function in the browser by
-name: the compiler copies the module into ``.web`` and ``utils/scripts.js``
-loads it by its Python module name, so only the module name, the function name
-and the JSON arguments are sent, and nothing is evaluated.
+Importing a module does not read it: each name looked up on it is an event
+handler for the function of that name, and the compiler checks that the module
+exports a function of every name looked up. The event runs the function in the
+browser by name: the compiler links the app package into ``.web`` and
+``utils/scripts.js`` loads it by its Python module name, so only the module
+name, the function name and the JSON arguments are sent, and nothing is
+evaluated.
 
 The compiler finds the modules in ``sys.modules``, not in the registration
 context: Python runs a module once per process, so an app compiled again in a
@@ -20,20 +21,18 @@ from __future__ import annotations
 
 import dataclasses
 import functools
-import inspect
 import sys
 from pathlib import Path
 from types import ModuleType
-from typing import Any
+from typing import Any, Self
 
-from reflex_base.event import EventHandler, EventSpec, server_side
+from reflex_base.event import EventHandler, EventSpec
 from reflex_base.event.context import EventContext
 from reflex_base.js.finder import _app_package
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_base.utils.format import format_event_handler
+from reflex_base.vars.base import LiteralVar, Var
 
-# The name of the frontend event that calls a function of a module.
-_CALL_JS = "_call_js"
 # The attribute of a JavaScript module that holds what the compiler reads of it.
 _SCRIPT_MODULE = "__reflex_script_module__"
 
@@ -120,7 +119,7 @@ def _package_imports(file: Path, imports: list[str]) -> list[str]:
 
 
 def _call_js(module: str, function: str, args: list) -> None:
-    """The signature of the event that calls a function of a module.
+    """The frontend event that calls a function of a module, named after it.
 
     Args:
         module: The Python name of the module.
@@ -129,7 +128,18 @@ def _call_js(module: str, function: str, args: list) -> None:
     """
 
 
-_CALL_JS_SIGNATURE = inspect.signature(_call_js)
+_CALL_JS = EventHandler(fn=_call_js)
+
+
+def _js_function(*args: Any) -> None:
+    """Take any number of arguments, as a JavaScript function does.
+
+    The parameters of each function of a module, which an event trigger checks
+    its arguments against.
+
+    Args:
+        *args: The arguments.
+    """
 
 
 def _js_argument(value: Any) -> Any:
@@ -161,14 +171,50 @@ def _js_argument(value: Any) -> Any:
     return value
 
 
-@dataclasses.dataclass(frozen=True, slots=True)
-class _JsFunction:
-    """An exported function of a JavaScript module imported from Python."""
+@dataclasses.dataclass(frozen=True)
+class _JsFunction(EventHandler):
+    """An exported function of a JavaScript module imported from Python.
+
+    An event handler whose event runs the function in the browser, so it works
+    wherever an event handler does: an event trigger or a ``callback`` passes
+    it its arguments, and ``rx.cond`` or an event handler that returns it calls
+    it with none.
+    """
 
     # The dotted name of the module.
     module: str
     # The exported name.
     name: str
+    # The parameters, which take any number of arguments.
+    fn: Any = dataclasses.field(default=_js_function, kw_only=True, repr=False)
+
+    def __hash__(self) -> int:
+        """Hash the function by its module, name and event actions.
+
+        Returns:
+            The hash.
+        """
+        return hash((self.module, self.name, tuple(self.event_actions.items())))
+
+    def __set_name__(self, owner: type, name: str) -> None:
+        """Stay unbound on a class: the function belongs to its module.
+
+        Args:
+            owner: The class.
+            name: The attribute name.
+        """
+
+    def __get__(self, instance: Any, owner: type | None = None) -> Self:
+        """Read back as the function from a class or its instances.
+
+        Args:
+            instance: The instance it is read on, or None.
+            owner: The class it is read through.
+
+        Returns:
+            This function.
+        """
+        return self
 
     def __call__(self, *args: Any) -> EventSpec:
         """Build the event that calls the function in the browser.
@@ -183,14 +229,19 @@ class _JsFunction:
                 Values are sent as JSON.
 
         Returns:
-            The event.
+            The event, with the function's event actions.
         """
-        return server_side(
-            _CALL_JS,
-            _CALL_JS_SIGNATURE,
-            module=self.module,
-            function=self.name,
-            args=[_js_argument(arg) for arg in args],
+        return EventSpec(
+            handler=_CALL_JS,
+            args=(
+                (Var(_js_expr="module"), LiteralVar.create(self.module)),
+                (Var(_js_expr="function"), LiteralVar.create(self.name)),
+                (
+                    Var(_js_expr="args"),
+                    LiteralVar.create([_js_argument(arg) for arg in args]),
+                ),
+            ),
+            event_actions=self.event_actions.copy(),
         )
 
 

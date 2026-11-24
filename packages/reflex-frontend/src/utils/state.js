@@ -566,11 +566,11 @@ const runScript = (code, addEvents, socket, navigate, params) => {
 };
 
 /**
- * The namespace of each JavaScript module the app imports from Python that has
- * loaded, by the module's Python name.
- * @type {Record<string, Record<string, any>>}
+ * Each JavaScript module the app imports from Python whose load has settled,
+ * by the module's Python name: its namespace, or the error it failed with.
+ * @type {Record<string, {namespace: Record<string, any>} | {error: any}>}
  */
-const loadedScriptModules = {};
+const settledScriptModules = {};
 /**
  * The load of each of those modules that has started, by the same name.
  * @type {Record<string, Promise<void>>}
@@ -580,71 +580,67 @@ const scriptModuleLoads = {};
 /**
  * Load a JavaScript module the app imports from Python, once.
  * @param {string} module The module's Python name.
- * @returns {Promise<void>} Settles once the module has loaded or failed to.
+ * @returns {Promise<void>} Resolves once the module has loaded or failed to.
  */
 const loadScriptModule = (module) =>
-  (scriptModuleLoads[module] ??= scriptModules[module]().then((namespace) => {
-    loadedScriptModules[module] = namespace;
-  }));
+  (scriptModuleLoads[module] ??= scriptModules[module]().then(
+    (namespace) => {
+      settledScriptModules[module] = { namespace };
+    },
+    (error) => {
+      settledScriptModules[module] = { error };
+    },
+  ));
 
-// Load the app's modules with the page, so that a `_call_js` finds its module
-// loaded and calls the function without awaiting: `processEvent` may start the
-// next event while one awaits, and that event must see what the function did.
-// An app that imports no module loads nothing. A module that fails to load is
-// reported when one of its functions is called.
+// Load the app's modules with the page, so that a module call rarely waits for
+// one. An app that imports no module loads nothing. A module that fails to load
+// is reported when one of its functions is called.
 if (typeof window !== "undefined") {
   for (const module of Object.keys(scriptModules)) {
-    loadScriptModule(module).catch(() => {});
+    void loadScriptModule(module);
   }
 }
 
-// The call of a `_call_js` whose module is still loading, until its function
-// has run. `processEvent` starts an event that arrives while another awaits, so
-// the events after this call wait for it, in the order they arrived, to see
-// what its function did. They do not wait for a promise the function returns,
-// as they do not when the module has loaded: it can wait on the user.
-let pendingModuleCall;
+/**
+ * Get the load a module call waits for before it runs.
+ * @param {{name: string, payload: any}} event An event.
+ * @returns {Promise<void> | undefined} The load of the module the event calls a
+ * function of, while it loads; undefined for any other event.
+ */
+const pendingModuleLoad = ({ name, payload }) =>
+  name === "_call_js" &&
+  Object.hasOwn(scriptModules, payload.module) &&
+  !Object.hasOwn(settledScriptModules, payload.module)
+    ? loadScriptModule(payload.module)
+    : undefined;
 
 /**
  * Call an exported function of a JavaScript module the app imports from
- * Python. The modules are bundled, so nothing is evaluated: the event names the
- * module and the function, and carries the arguments as JSON.
+ * Python, once its module has loaded or failed to. The modules are bundled, so
+ * nothing is evaluated: the event names the module and the function, and
+ * carries the arguments as JSON.
  *
- * A function of a loaded module runs before this returns, so its effects are
- * visible to the next event even if it returns a promise.
+ * A promise the function returns is not awaited, as a script's is not: it can
+ * wait on the user, and the events after the call do not wait for it.
  * @param {{module: string, function: string, args: any[]}} payload The call.
- * @returns {any} The function's result, or a promise of it if the module had
- * not loaded yet.
  */
-const callModuleFunction = (payload) => {
-  const { module, function: name, args } = payload;
-  if (
-    !Object.hasOwn(loadedScriptModules, module) &&
-    Object.hasOwn(scriptModules, module)
-  ) {
-    // Wrapped, so that the call settles when the function returns rather than
-    // adopting the promise it may return.
-    const call = loadScriptModule(module).then(() => ({
-      result: callModuleFunction(payload),
-    }));
-    pendingModuleCall = call;
-    const clear = () => {
-      pendingModuleCall = undefined;
-    };
-    call.then(clear, clear);
-    return call.then(({ result }) => result);
-  }
-  const fn = Object.hasOwn(loadedScriptModules, module)
-    ? loadedScriptModules[module][name]
-    : undefined;
-  if (typeof fn !== "function") {
+const callModuleFunction = ({ module, function: name, args }) => {
+  if (!Object.hasOwn(scriptModules, module)) {
     throw new TypeError(
-      Object.hasOwn(scriptModules, module)
-        ? `Cannot call ${module}.${name}: the JavaScript module ${module} exports no function named ${name}. Export a function named ${name} from it, or correct the name in Python.`
-        : `Cannot call ${module}.${name}: the frontend does not include the JavaScript module ${module}, as when Python first imports it inside an event handler, after the app compiled. Import it at the top of a Python module that the app imports when it loads.`,
+      `Cannot call ${module}.${name}: the frontend does not include the JavaScript module ${module}, as when Python first imports it inside an event handler, after the app compiled. Import it at the top of a Python module that the app imports when it loads.`,
     );
   }
-  return fn(...args);
+  const settled = settledScriptModules[module];
+  if ("error" in settled) {
+    throw settled.error;
+  }
+  const fn = settled.namespace[name];
+  if (typeof fn !== "function") {
+    throw new TypeError(
+      `Cannot call ${module}.${name}: the JavaScript module ${module} exports no function named ${name}. Export a function named ${name} from it, or correct the name in Python.`,
+    );
+  }
+  fn(...args);
 };
 
 /**
@@ -921,8 +917,9 @@ export const applyEvent = async (event, socket, navigate, params) => {
   }
 
   if (event.name === "_call_js") {
+    // processEvent applies a module call once its module has settled.
     try {
-      await callModuleFunction(event.payload);
+      callModuleFunction(event.payload);
     } catch (e) {
       reportEventError("_call_js", e);
     }
@@ -1096,15 +1093,16 @@ export const processEvent = async (socket, navigate, params) => {
     return;
   }
 
+  // A module call stays at the head of the queue while its module loads, so
+  // no event after it starts before its function has run.
+  const moduleLoad = pendingModuleLoad(event_queue[0]);
+  if (moduleLoad !== undefined) {
+    await moduleLoad;
+    return processEvent(socket, navigate, params);
+  }
+
   // Apply the next event in the queue.
   const event = event_queue.shift();
-
-  // An event that waited may find another call pending after it: the event
-  // before it can be a module call that now waits for its own module.
-  while (pendingModuleCall !== undefined) {
-    // The call reports its own failure.
-    await pendingModuleCall.catch(() => {});
-  }
 
   try {
     // Process events with handlers via REST and all others via websockets.

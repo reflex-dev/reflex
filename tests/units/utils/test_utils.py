@@ -860,6 +860,25 @@ def test_vite_config_template_pins_preview_host() -> None:
     assert 'host: "127.0.0.1",' in config
 
 
+def test_vite_config_template_preserves_symlinks() -> None:
+    """Vite resolves imports from the link to the app's package, not its target.
+
+    The app's JavaScript modules are read through
+    ``utils/script_modules/<package>``, so their npm imports resolve from
+    ``.web/node_modules``.
+    """
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+    )
+    assert "preserveSymlinks: true," in config
+
+
 def test_vite_config_template_imports_plugin_with_extension() -> None:
     """Local plugin imports carry a file extension.
 
