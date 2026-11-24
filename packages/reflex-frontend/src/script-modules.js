@@ -14,8 +14,9 @@
  *       "values": [name, ...],     exports that are not functions
  *       "exportsAll": boolean      whether `export * from` adds unknown names
  *     }},
- *     "imports": {"<file>": [specifier, ...]},  per script, what it imports
- *                                               other than relative paths
+ *     "imports": {"<file>": [specifier, ...]},  per script or stylesheet,
+ *                                               what it imports other than
+ *                                               local files
  *     "errors": [{"file", "line", "column", "message"}]  the first syntax
  *                                                        error of each file
  *     "loops": [{"importer", "file", "link"}]  each import of a file that
@@ -45,9 +46,25 @@ const { parseSync, Visitor } = await import(
 );
 
 // Files that are parsed; other local files, such as images, are only copied.
-const SCRIPT_EXTENSIONS = new Set([".js", ".jsx", ".ts", ".tsx", ".mjs"]);
-// Tried in order for an import without an extension, as the bundler does.
-const RESOLVE_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx", ".mjs"];
+const SCRIPT_EXTENSIONS = new Set([
+  ".js",
+  ".jsx",
+  ".ts",
+  ".tsx",
+  ".mjs",
+  ".mts",
+]);
+// Tried in order for an import without an extension: Vite's default
+// `resolve.extensions`, which the app's config keeps.
+const RESOLVE_EXTENSIONS = [
+  ".mjs",
+  ".js",
+  ".mts",
+  ".ts",
+  ".jsx",
+  ".tsx",
+  ".json",
+];
 // Initializers of a `const` that make it a value Python cannot call.
 const VALUE_TYPES = new Set([
   "ArrayExpression",
@@ -319,28 +336,35 @@ const readScript = (file) => {
 };
 
 /**
- * Find the local files a stylesheet references with `@import` and `url(...)`.
- * Absolute paths, URLs, data URIs and fragments are not local files.
+ * Find the local files a stylesheet references with `@import` and `url(...)`,
+ * and the packages it imports. Absolute paths, URLs, data URIs and fragments
+ * are neither. Vite resolves an `@import` from the stylesheet first, so a bare
+ * name with no file beside it, such as `normalize.css`, names a package.
  * @param {string} file The stylesheet.
- * @returns {{references: Reference[]}} The files.
+ * @returns {{references: Reference[], imports: string[]}} The files and packages.
  */
-const readStylesheet = (file) => ({
-  references: [
-    ...readFileSync(file, "utf-8")
-      .replace(CSS_COMMENT, "")
-      .matchAll(CSS_REFERENCE),
-  ]
-    .map((match) => match[1] ?? match[2] ?? match[3])
-    .filter((reference) => !/^(?:[/#]|data:)|:\/\//.test(reference))
-    .map((reference) => resolve(dirname(file), stripQuery(reference)))
-    .filter(isFile)
-    .map((reference) => ({ file: reference, read: true })),
-});
+const readStylesheet = (file) => {
+  const references = [];
+  const imports = [];
+  const source = readFileSync(file, "utf-8").replace(CSS_COMMENT, "");
+  for (const match of source.matchAll(CSS_REFERENCE)) {
+    const reference = match[1] ?? match[2] ?? match[3];
+    if (/^(?:[/#]|data:)|:\/\//.test(reference)) continue;
+    const path = resolve(dirname(file), stripQuery(reference));
+    if (isFile(path)) {
+      references.push({ file: path, read: true });
+    } else if (match[0].startsWith("@import") && !reference.startsWith(".")) {
+      imports.push(reference);
+    }
+  }
+  return { references, imports };
+};
 
 /**
  * Read a local file.
  * @param {string} file The file.
- * @returns {any} What it references, and for a script, what it imports and exports.
+ * @returns {any} What it references, what a script or stylesheet imports, and
+ * what a script exports.
  */
 const readFile = (file) => {
   const extension = extname(file);

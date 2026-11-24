@@ -843,6 +843,14 @@ def script_app(
     runs: list[list[Path]] = []
 
     def read_script_modules(paths: list[Path]) -> dict:
+        """Record the paths of a run, and print the report the test fills.
+
+        Args:
+            paths: The modules.
+
+        Returns:
+            The report.
+        """
         runs.append(paths)
         return report
 
@@ -1072,6 +1080,14 @@ def test_compile_script_modules_errors(
     }
 
     def fill(text: str) -> str:
+        """Replace the path placeholders of an expected message.
+
+        Args:
+            text: The message, with placeholders.
+
+        Returns:
+            The message, with the paths.
+        """
         for placeholder, path in paths.items():
             text = text.replace(placeholder, path)
         return text

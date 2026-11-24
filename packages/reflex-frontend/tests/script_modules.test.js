@@ -106,12 +106,15 @@ test("lists each module's files, its exports, and what each script imports", asy
       },
     },
     // Without type-only imports, and with only a dynamic import of a string.
+    // A stylesheet's are those of its `@import`s that name a package.
     imports: {
       "party.ts": ["canvas-confetti", "$/utils/reflex", "star-pkg", "dayjs"],
       "helpers.ts": ["dayjs"],
+      "party.css": [],
       "widgets/index.jsx": [],
       "lazy.mjs": [],
       "lib/format.ts": [],
+      "theme.css": [],
       "counter.tsx": [],
     },
     errors: [],
@@ -209,7 +212,12 @@ test("copies a file that Vite loads as its text or URL without reading it", asyn
     "worker.js",
     "more.css",
   ]);
-  expect(imports).toEqual({ "party.js": [], "worker.js": ["worker-pkg"] });
+  expect(imports).toEqual({
+    "party.js": [],
+    "theme.css": [],
+    "worker.js": ["worker-pkg"],
+    "more.css": [],
+  });
 });
 
 test("copies a file a script names by URL, and reads a worker's imports", async () => {
@@ -252,6 +260,61 @@ test("copies a file a script names by URL, and reads a worker's imports", async 
     "worker.js": ["worker-pkg"],
     "shared.js": [],
     "helper.js": [],
+  });
+});
+
+test("finds an import without an extension as Vite does, JSON included", async () => {
+  // Vite tries .mjs, .js, .mts, .ts, .jsx, .tsx and .json, in that order.
+  const directory = writeFiles({
+    "party.js": [
+      'import settings from "./settings";',
+      'import { help } from "./helpers";',
+      'import { shared } from "./shared";',
+      "export function go() {}",
+    ].join("\n"),
+    "settings.json": "{}",
+    "helpers.js": "export const help = 1;\n",
+    "helpers.ts": "export const help = 2;\n",
+    "shared.mts": 'import "shared-pkg";\nexport const shared = 3;\n',
+  });
+  const { modules, imports } = await readModules(directory, ["party.js"]);
+  expect(modules["party.js"].files).toEqual([
+    "party.js",
+    "settings.json",
+    "helpers.js",
+    "shared.mts",
+  ]);
+  expect(imports).toEqual({
+    "party.js": [],
+    "helpers.js": [],
+    "shared.mts": ["shared-pkg"],
+  });
+});
+
+test("lists the packages a stylesheet imports", async () => {
+  // Vite resolves a bare `@import` from the stylesheet first, then from the
+  // installed packages, so a name with no file beside it is a package.
+  const directory = writeFiles({
+    "party.js": 'import "./theme.css";\nexport function go() {}\n',
+    "theme.css": [
+      '@import "normalize.css";',
+      "@import url(bootstrap/dist/css/bootstrap.css);",
+      '@import "local.css";',
+      '@import "./missing.css";',
+      ".logo { background: url(logo.png); }",
+    ].join("\n"),
+    "local.css": "",
+  });
+  const { modules, imports } = await readModules(directory, ["party.js"]);
+  expect(modules["party.js"].files).toEqual([
+    "party.js",
+    "theme.css",
+    "local.css",
+  ]);
+  expect(imports).toEqual({
+    "party.js": [],
+    "theme.css": ["normalize.css", "bootstrap/dist/css/bootstrap.css"],
+    "local.css": [],
   });
 });
 

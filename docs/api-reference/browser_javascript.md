@@ -325,7 +325,8 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
 - The function's return value is not sent back. To get a value back, pass an
   event handler and dispatch it with the value, as `measure` does.
 - The npm packages the module imports, such as `canvas-confetti`, are installed
-  with the app. Pin a version with `frontend_packages` in `rxconfig.py`. Path
+  with the app, and so are those its stylesheets `@import`, such as
+  `normalize.css` when no such file is beside the stylesheet. Pin a version with `frontend_packages` in `rxconfig.py`. Path
   aliases (`@/...`), subpath imports (`#...`) and specifiers with a scheme
   (`virtual:...`, `https://...`) are left to the bundler and not installed.
 - Local files the module imports with relative paths, such as `./helpers.js`,
