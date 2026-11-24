@@ -258,6 +258,17 @@ class StateSchemaMismatchError(ReflexError, TypeError):
     """Raised when the serialized schema of a state class does not match the current schema."""
 
 
+class StateUnreadableError(StateSchemaMismatchError):
+    """Raised when a stored state can no longer be unpickled.
+
+    This covers a corrupt, truncated or otherwise malformed state file, and a
+    stored state that references a class that has since moved or been removed.
+    It is a :class:`StateSchemaMismatchError` because the stored state is
+    discarded the same way, but callers may report it, unlike a plain schema
+    change (such as a field added to a state class) which is expected.
+    """
+
+
 class EnvironmentVarValueError(ReflexError, ValueError):
     """Raised when an environment variable is set to an invalid value."""
 
