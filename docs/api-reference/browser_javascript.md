@@ -334,7 +334,10 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
   must be inside your app's package directory, which is all of your project
   that is copied into the compiled app. A file imported as text
   (`./example.js?raw`), or a script imported as a URL (`./worklet.js?url`), is
-  copied as it is, without the files it imports. A file that is a symbolic link
+  copied as it is, without the files it imports. So is a file the module names
+  with `new URL("./logo.png", import.meta.url)`, unless it starts a worker, as
+  in `new Worker(new URL("./worker.js", import.meta.url))`: a worker is bundled
+  with the files it imports. A file that is a symbolic link
   is copied where the import names it, so the files it imports are found from
   there.
 
