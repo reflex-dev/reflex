@@ -29,10 +29,22 @@ const modules = vi.hoisted(() => {
   const answered = new Promise((resolve) => {
     answer = resolve;
   });
+  let releaseAsking = () => {};
+  const askingLoaded = new Promise((resolve) => {
+    releaseAsking = resolve;
+  });
+  let answerLate = () => {};
+  const answeredLate = new Promise((resolve) => {
+    answerLate = resolve;
+  });
   return {
     seen: [],
     answer,
     answered,
+    releaseAsking,
+    askingLoaded,
+    answerLate,
+    answeredLate,
     releaseSlow,
     slowLoaded,
     releaseGated,
@@ -84,6 +96,15 @@ vi.mock("$/utils/scripts", () => ({
       modules.secondLoaded.then(() => ({
         write: (value) => {
           globalThis.secondValue = value;
+        },
+      })),
+    "app.scripts.asking": () =>
+      modules.askingLoaded.then(() => ({
+        ask: () => {
+          modules.seen.push(["asked"]);
+          return modules.answeredLate.then((answer) =>
+            modules.seen.push(["answered", answer]),
+          );
         },
       })),
     "app.scripts.broken": () =>
@@ -205,6 +226,39 @@ test("an event queued while the modules load runs after the function before it",
   modules.releaseGated();
   await Promise.all([first, second]);
   expect(globalThis.reads).toEqual(["gated"]);
+});
+
+test("a function of a module that was loading holds back later events only until it runs", async () => {
+  // The events after it wait for the function to run, as they would had the
+  // module loaded, but not for the promise it returns.
+  globalThis.reads = [];
+  const socket = { connected: true, emit: vi.fn() };
+  const asking = queueEvents(
+    [callJsEvent("app.scripts.asking", "ask", [])],
+    socket,
+    false,
+    null,
+    null,
+  );
+  const next = queueEvents(
+    [
+      {
+        name: "_call_script",
+        payload: { javascript_code: "reads.push('next')" },
+      },
+    ],
+    socket,
+    false,
+    null,
+    null,
+  );
+  modules.releaseAsking();
+  await next;
+  expect(globalThis.reads).toEqual(["next"]);
+  expect(modules.seen).toEqual([["asked"]]);
+  modules.answerLate("yes");
+  await asking;
+  expect(modules.seen).toEqual([["asked"], ["answered", "yes"]]);
 });
 
 test("an event waits for each module call before it, not only the first", async () => {
