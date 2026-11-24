@@ -974,8 +974,8 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         newfn.__dict__.update(fn.__dict__)
         return newfn
 
-    @classmethod
-    def _item_is_event_handler(cls, name: str, value: Any) -> bool:
+    @staticmethod
+    def _item_is_event_handler(name: str, value: Any) -> bool:
         """Check if the item is an event handler.
 
         Args:
@@ -996,12 +996,13 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         ):
             # The default dedupe key is the feature name plus the class source
             # location, which would name only the first method of a class.
-            # Dedupe per method instead, so repeated class setup in one process stays quiet.
+            # Dedupe per wrapped function instead: each method is named once,
+            # and classes built again from the same definition (ComponentState
+            # instances, states defined in a function) stay quiet.
             if dedupe_once((
                 _WRAPPED_HANDLER_DEPRECATION,
-                cls.__module__,
-                cls.__qualname__,
-                name,
+                inner.fn.__module__,
+                inner.fn.__qualname__,
             )):
                 console.deprecate(
                     feature_name=_WRAPPED_HANDLER_DEPRECATION,
