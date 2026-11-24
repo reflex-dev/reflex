@@ -453,7 +453,7 @@ def test_session_rollout_mode(monkeypatch, mode):
         mode: The supported rollout mode to select.
     """
     monkeypatch.delenv("REFLEX_SESSION_TOKEN_MODE", raising=False)
-    assert environment.REFLEX_SESSION_TOKEN_MODE.get() == "warn"
+    assert environment.REFLEX_SESSION_TOKEN_MODE.get() == "enforce"
     monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", mode)
     assert environment.REFLEX_SESSION_TOKEN_MODE.get() == mode
     monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "invalid")
