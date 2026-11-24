@@ -132,6 +132,35 @@ def _call_js(module: str, function: str, args: list) -> None:
 _CALL_JS_SIGNATURE = inspect.signature(_call_js)
 
 
+def _js_argument(value: Any) -> Any:
+    """Convert an argument of a function to the value the function receives.
+
+    Args:
+        value: The argument.
+
+    Returns:
+        For an event handler, its full name; for a bound event, the event
+        ``{name, payload}``, with its ``event_actions`` if it has any; for a
+        list, tuple or dict, a list or dict of its items converted; else the
+        argument.
+    """
+    if isinstance(value, EventHandler):
+        return format_event_handler(value)
+    if isinstance(value, EventSpec):
+        event = {
+            "name": format_event_handler(value.handler),
+            "payload": {key._js_expr: arg for key, arg in value.args},
+        }
+        if value.event_actions:
+            event["event_actions"] = value.event_actions
+        return event
+    if type(value) in (list, tuple):
+        return [_js_argument(item) for item in value]
+    if type(value) is dict:
+        return {key: _js_argument(item) for key, item in value.items()}
+    return value
+
+
 @dataclasses.dataclass(frozen=True, slots=True)
 class _JsFunction:
     """An exported function of a JavaScript module imported from Python."""
@@ -145,11 +174,13 @@ class _JsFunction:
         """Build the event that calls the function in the browser.
 
         An event handler argument arrives as its full name, which the function
-        can dispatch with ``reflex.addEvents([reflex.event(name, payload)])``.
+        can dispatch with ``reflex.addEvents([reflex.event(name, payload)])``,
+        and a bound event as the event, which it can dispatch with
+        ``reflex.addEvents([event])``, also inside a list or a dict.
 
         Args:
-            *args: The arguments: values, Vars or event handlers. Values are
-                sent as JSON.
+            *args: The arguments: values, Vars, event handlers or bound events.
+                Values are sent as JSON.
 
         Returns:
             The event.
@@ -159,10 +190,7 @@ class _JsFunction:
             _CALL_JS_SIGNATURE,
             module=self.module,
             function=self.name,
-            args=[
-                format_event_handler(arg) if isinstance(arg, EventHandler) else arg
-                for arg in args
-            ],
+            args=[_js_argument(arg) for arg in args],
         )
 
 

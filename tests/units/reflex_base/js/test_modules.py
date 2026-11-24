@@ -1,15 +1,18 @@
 """Tests for the functions of JavaScript modules imported from Python."""
 
 import importlib
+import json
 from pathlib import Path
 
 import pytest
+from reflex_base.event import Event
 from reflex_base.js.modules import (
     _app_modules,
     _JsFunction,
     _package_imports,
     _render_stub,
 )
+from reflex_base.utils import format
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_base.vars.base import LiteralVar, Var
 
@@ -67,7 +70,7 @@ def test_calling_a_function_builds_the_call_js_event():
 
 
 def test_an_event_handler_argument_is_sent_as_its_name():
-    """An event handler argument arrives in JavaScript as its full name."""
+    """An event handler argument arrives in JavaScript as its full name, in a list or a dict too."""
 
     class JsHandlerState(rx.State):
         @rx.event
@@ -78,12 +81,50 @@ def test_an_event_handler_argument_is_sent_as_its_name():
                 value: The value.
             """
 
-    spec = _JsFunction("app.scripts.party", "report")(JsHandlerState.done, "x")
+    done = JsHandlerState.done
+    spec = _JsFunction("app.scripts.party", "report")(
+        done, "x", [done, (done,)], {"on": {"done": done}}
+    )
     name = f"{JsHandlerState.get_full_name()}.done"
     assert str(LiteralVar.create(spec)) == (
         '(ReflexEvent("_call_js", ({ ["module"] : "app.scripts.party", '
-        f'["function"] : "report", ["args"] : ["{name}", "x"] }}), ({{  }})))'
+        f'["function"] : "report", ["args"] : ["{name}", "x", ["{name}", '
+        f'["{name}"]], ({{ ["on"] : ({{ ["done"] : "{name}" }}) }})] }}), '
+        "({  })))"
     )
+
+
+def test_a_bound_event_argument_arrives_as_the_same_event_from_a_trigger_or_a_handler():
+    """A bound event arrives as the event ``{name, payload}``, however it is sent.
+
+    The event keeps its event actions, which ``addEvents`` applies.
+    """
+
+    class JsBoundEventState(rx.State):
+        @rx.event
+        def done(self, value: str):
+            """Receive a value.
+
+            Args:
+                value: The value.
+            """
+
+    spec = _JsFunction("app.scripts.party", "report")(
+        JsBoundEventState.done("v"), [JsBoundEventState.done("w").debounce(100)]
+    )
+    name = f"{JsBoundEventState.get_full_name()}.done"
+    assert str(LiteralVar.create(spec)) == (
+        '(ReflexEvent("_call_js", ({ ["module"] : "app.scripts.party", '
+        f'["function"] : "report", ["args"] : [({{ ["name"] : "{name}", '
+        '["payload"] : ({ ["value"] : "v" }) }), [({ ["name"] : '
+        f'"{name}", ["payload"] : ({{ ["value"] : "w" }}), ["event_actions"] : '
+        '({ ["debounce"] : 100 }) })]] }), ({  })))'
+    )
+    (event,) = Event.from_event_type(spec)
+    assert json.loads(format.json_dumps(event.payload["args"])) == [
+        {"name": name, "payload": {"value": "v"}},
+        [{"name": name, "payload": {"value": "w"}, "event_actions": {"debounce": 100}}],
+    ]
 
 
 def test_var_arguments_are_compiled_into_the_event():

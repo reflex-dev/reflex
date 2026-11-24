@@ -322,6 +322,10 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
 - Arguments are sent as JSON. A var is sent as its value in the browser. An
   event handler arrives as its full name, which the function dispatches with
   `reflex.addEvents([reflex.event(name, payload)])`, as `measure` does above.
+  An event handler called with its arguments, such as
+  `PartyState.set_width(100)`, arrives as the event `{name, payload}`, which
+  the function dispatches with `reflex.addEvents([event])`. Both arrive the
+  same way inside a list or a dict, from an event trigger or an event handler.
 - The function's return value is not sent back. To get a value back, pass an
   event handler and dispatch it with the value, as `measure` does.
 - The npm packages the module imports, such as `canvas-confetti`, are installed
