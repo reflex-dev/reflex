@@ -21,6 +21,7 @@ from reflex.istate.manager import (
     _dev_hot_reload_active,
     _drop_cached_var_values,
     _release_state_tree,
+    _save_after_failure,
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 from reflex.state import BaseState
@@ -473,6 +474,8 @@ class StateManagerDisk(StateManager):
     ) -> AsyncIterator[TOKEN_TYPE]:
         """Modify the state for a token while holding exclusive lock.
 
+        Saves the state also when the handler raises or is cancelled.
+
         Args:
             token: The token to modify the state for.
             context: The state modification context.
@@ -490,7 +493,12 @@ class StateManagerDisk(StateManager):
 
         async with self._states_locks[lock_key]:
             state = await self.get_state(token)
-            yield state
+            try:
+                yield state
+            except (Exception, asyncio.CancelledError):
+                # A handler may already have yielded these writes to the client.
+                await _save_after_failure(self.set_state(token, state, **context))
+                raise
             await self.set_state(token, state, **context)
 
     async def close(self):

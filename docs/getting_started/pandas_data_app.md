@@ -14,7 +14,7 @@ Try the live sample below: select a region or search for a product, then apply t
 Create a blank app using the [installation guide](/docs/getting-started/installation/), then install pandas and XY with Python 3.11 or newer:
 
 ```bash
-uv add pandas "xy[reflex]==0.0.7"
+uv add pandas "xy[reflex]==0.0.8"
 ```
 
 Register the XY plugin in `rxconfig.py`, keeping your app's existing name and other plugins:
