@@ -219,8 +219,10 @@ class BrowserCalls:
         same page keep waiting, in their grace period until the connect is
         accepted. A connect given a new token, because the token's old socket
         is still linked, moves the calls of its page to the new token, so the
-        old socket's disconnect does not fail them; another page load given a
-        new token is a duplicated tab, and leaves the calls with their tab.
+        old socket's disconnect does not fail them. Another page load given a
+        new token while the tab is connected is a duplicated tab, and leaves
+        the calls with their tab; once the tab disconnected, the token is
+        linked only until its unlinking completes, and the connect is a reload.
 
         Args:
             token: The client token the tab connects with.
@@ -230,7 +232,7 @@ class BrowserCalls:
         if (tab := self._tabs.get(token)) is None:
             return
         if tab.page != page:
-            if new_token is None:
+            if new_token is None or tab.grace_timer is not None:
                 self._fail(tab, _PAGE_REPLACED)
         elif new_token is not None:
             tab.token = new_token

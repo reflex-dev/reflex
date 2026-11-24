@@ -5815,13 +5815,11 @@ async def test_browser_calls_follow_their_page_across_socket_connects():
     async with processor:
         await namespace.on_connect("sid1", environ, {"page": "p1"})
         reconnected, rid = await _start_browser_call(namespace, processor)
-        cleanup = namespace.on_disconnect("sid1")
-        # Another tab connecting with the token before its socket is unlinked
-        # is a duplicate, given a new token: it does not fail the first tab's
-        # call.
+        # Another tab connecting with the token while its socket is live is a
+        # duplicate, given a new token: it does not fail the first tab's call.
         await namespace.on_connect("dup", environ, {"page": "p9"})
-        assert cleanup is not None
-        await cleanup
+        assert namespace.sid_to_token["dup"] != "tok"
+        await _disconnect(namespace, "sid1")
         await namespace.on_connect("sid2", environ, {"page": "p1"})
         await namespace.on_result("sid2", {"rid": rid, "json": "1"})
         assert await reconnected == 1
@@ -5832,6 +5830,19 @@ async def test_browser_calls_follow_their_page_across_socket_connects():
         with pytest.raises(exceptions.BrowserDisconnectedError) as exc_info:
             await reloaded
         assert str(exc_info.value) == PAGE_REPLACED
+
+        # A reload connecting before its dropped socket is unlinked from the
+        # token is given a new token, but its page is gone all the same.
+        reloaded_early, _ = await _start_browser_call(namespace, processor)
+        cleanup = namespace.on_disconnect("sid3")
+        await namespace.on_connect("sid4", environ, {"page": "p3"})
+        assert namespace.sid_to_token["sid4"] != "tok"
+        assert await _disconnected(reloaded_early) == (
+            exceptions.BrowserDisconnectedError,
+            PAGE_REPLACED,
+        )
+        assert cleanup is not None
+        await cleanup
     assert processor._browser_calls._tabs == {}
 
 

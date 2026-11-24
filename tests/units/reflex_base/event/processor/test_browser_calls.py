@@ -361,13 +361,25 @@ async def test_the_grace_period_runs_until_a_connect_of_the_page_is_accepted():
     _assert_forgotten(calls)
 
 
-async def test_a_connect_from_another_page_load_fails_the_calls_at_once():
-    """A reloaded page connecting under the token means the script stopped with the old one."""
+@pytest.mark.parametrize("new_token", [None, ClientToken("new")])
+async def test_a_connect_from_another_page_load_fails_the_calls_at_once(
+    new_token: ClientToken | None,
+):
+    """A reloaded page connecting under the token means the script stopped with the old one.
+
+    The disconnect unlinks the token from the old socket asynchronously, so a
+    reload that connects before then is given a new token. A duplicated tab is
+    too, but connects while the socket of the tab it copies is live, not after
+    it dropped.
+
+    Args:
+        new_token: The token the reload's connection was given instead, if any.
+    """
     calls = BrowserCalls()
     _, task, _ = await _start_call(calls)
     calls.disconnect(TOKEN, 5)
     timer = calls._tabs[TOKEN].grace_timer
-    calls.connecting(TOKEN, P2)
+    calls.connecting(TOKEN, P2, new_token)
     assert timer is not None
     assert timer.cancelled()
     assert await _raised(task) == (BrowserDisconnectedError, PAGE_REPLACED)
