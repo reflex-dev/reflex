@@ -147,11 +147,13 @@ class SessionToken:
         id: A non-secret hash suitable for correlation in logs.
         issued_at: Unix timestamp when this session credential was issued.
         expires_at: Unix timestamp when this session credential expires.
+        created_at: Unix timestamp when the session was first issued. Renewal keeps it.
         SYSTEM: Sentinel for trusted operations without a browser session.
     """
 
     issued_at: int
     expires_at: int
+    created_at: int
     _sid: str = field(repr=False)
     id: str = field(init=False)
     _authorized: set[str] = field(default_factory=set, repr=False, compare=False)
@@ -187,7 +189,7 @@ class SessionToken:
         return True
 
 
-SessionToken.SYSTEM = SessionToken(issued_at=0, expires_at=0, _sid="")
+SessionToken.SYSTEM = SessionToken(issued_at=0, expires_at=0, created_at=0, _sid="")
 
 
 def authorize(session: SessionToken | None, client_token: str) -> None:
@@ -229,6 +231,7 @@ class SessionTokenManager:
         ttl: int = 7 * 24 * 60 * 60,  # Seven days, in seconds.
         refresh_interval: int | None = None,
         secrets: tuple[bytes, ...] | None = None,
+        max_age: int = 7 * 24 * 60 * 60,  # Seven days, in seconds.
     ) -> None:
         """Configure the codec without reading secrets until first use.
 
@@ -237,10 +240,14 @@ class SessionTokenManager:
             ttl: Session lifetime in seconds.
             refresh_interval: Age in seconds to refresh, defaulting to half the TTL.
             secrets: Optional explicit key ring, primarily for isolated tests.
+            max_age: Seconds after first issue when renewal stops and the session ends.
 
         Raises:
-            ValueError: If the session lifetime or refresh interval is invalid.
+            ValueError: If a session lifetime or the refresh interval is invalid.
         """
+        if max_age <= 0:
+            msg = "Session maximum age must be positive"
+            raise ValueError(msg)
         if ttl <= 0 or (
             refresh_interval is not None and not 0 < refresh_interval < ttl
         ):
@@ -250,6 +257,7 @@ class SessionTokenManager:
             raise ValueError(msg)
         self._audience = app_name
         self.ttl = ttl
+        self.max_age = max_age
         self.refresh_interval = (
             ttl / 2 if refresh_interval is None else refresh_interval
         )
@@ -278,7 +286,9 @@ class SessionTokenManager:
             A new session with the configured lifetime.
         """
         now = int(time.time())
-        return SessionToken(now, now + self.ttl, secrets.token_hex(16))
+        return SessionToken(
+            now, now + min(self.ttl, self.max_age), now, secrets.token_hex(16)
+        )
 
     def encode(self, session: SessionToken, *, exchange: bool = False) -> str:
         """Encode a session as an HS256 JWT using the active signing key.
@@ -299,6 +309,7 @@ class SessionTokenManager:
             "sid": session._sid,
             "iat": session.issued_at,
             "exp": session.expires_at,
+            "oat": session.created_at,
         }
         if exchange:
             claims["use"] = "exchange"
@@ -347,10 +358,11 @@ class SessionTokenManager:
             claims = json.loads(_decode_base64url(payload))
             if not isinstance(claims, dict):
                 return None
-            sid, issued_at, expires_at = (
+            sid, issued_at, expires_at, created_at = (
                 claims.get("sid"),
                 claims.get("iat"),
                 claims.get("exp"),
+                claims.get("oat"),
             )
             if (
                 type(claims.get("v")) is not int
@@ -361,10 +373,13 @@ class SessionTokenManager:
                 or not _SID.fullmatch(sid)
                 or type(issued_at) is not int
                 or type(expires_at) is not int
+                or type(created_at) is not int
                 or not issued_at <= int(time.time()) < expires_at
+                or not created_at <= issued_at
+                or expires_at > created_at + self.max_age
             ):
                 return None
-            return SessionToken(issued_at, expires_at, sid)
+            return SessionToken(issued_at, expires_at, created_at, sid)
         except (ValueError, UnicodeError, binascii.Error, RecursionError):
             return None
 
@@ -378,7 +393,12 @@ class SessionTokenManager:
             The session with updated issuance and expiration times.
         """
         now = int(time.time())
-        return SessionToken(now, now + self.ttl, session._sid)
+        return SessionToken(
+            now,
+            min(now + self.ttl, session.created_at + self.max_age),
+            session.created_at,
+            session._sid,
+        )
 
     def client_token_for(self, session: SessionToken, client_token: str) -> str:
         """Get the client token that a tab uses with its session.
