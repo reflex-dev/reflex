@@ -19,7 +19,8 @@ const fixtures = fileURLToPath(
  * Run the script on fixture files.
  * @param {string[]} names The fixtures' file names.
  * @returns {Promise<{format: number, modules: Record<string, unknown>, files: Record<string, string[]>}>}
- * Its output, with file names in place of paths.
+ * Its output, with file names in place of paths, and an installed package's
+ * files by their path from node_modules.
  */
 const signatures = async (names) => {
   const argv = process.argv;
@@ -49,7 +50,11 @@ const signatures = async (names) => {
       files: Object.fromEntries(
         Object.entries(files).map(([file, read]) => [
           basename(file),
-          read.map((name) => basename(name)),
+          read.map((name) =>
+            name.includes("/node_modules/")
+              ? name.slice(name.lastIndexOf("node_modules/"))
+              : basename(name),
+          ),
         ]),
       ),
     };
@@ -70,9 +75,11 @@ test("lists the files each module's types are read from", async () => {
   // jsdoc.js reads a type of shapes.d.ts in a JSDoc `import("./shapes")`, which
   // the bundler never loads; types.ts, from shapes.d.ts and reexported.js.
   // referencing.ts reads a global type of a `/// <reference>`d file, and a
-  // missing one is listed too, so that adding it rewrites the stub; neither
-  // the npm package nor the import that resolves to no file is. No module
-  // lists another's files, nor TypeScript's libraries.
+  // missing one is listed too, so that adding it rewrites the stub; the import
+  // that resolves to no file is not. Its npm package, and the package that
+  // package's declarations import, are listed by their package.json, whose
+  // version changes with them. No module lists another's files, nor
+  // TypeScript's libraries.
   const { modules, files } = await signatures([
     "jsdoc.js",
     "types.ts",
@@ -83,9 +90,11 @@ test("lists the files each module's types are read from", async () => {
     "types.ts": ["types.ts", "shapes.d.ts", "reexported.js"],
     "referencing.ts": [
       "referencing.ts",
+      "node_modules/@types/react/package.json",
       "typed.ts",
       "greetings.d.ts",
       "missing.d.ts",
+      "node_modules/csstype/package.json",
     ],
   });
   expect(modules["referencing.ts"]).toEqual({

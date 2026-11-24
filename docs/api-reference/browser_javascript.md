@@ -399,11 +399,11 @@ import them in a type-checked file. An overloaded function gets one
 arguments: `def run(*args: Any)`.
 
 - Commit the stubs, so your editor and type checks in CI see them without
-  running the app. A stub only changes when the types do: Reflex rewrites it
+  running the app. A stub only changes when its types can: Reflex rewrites it
   when the module, a file it imports or reads types from (a `.d.ts` file,
-  `import type`, a JSDoc `import("./types")`), the app's frontend packages or
-  Reflex's stub generator changes. Writing a stub does not reload the backend.
-  Delete a stub to have the next compile write it again.
+  `import type`, a JSDoc `import("./types")`) or an npm package it reads types
+  from changes, or when you upgrade Reflex. Writing a stub does not reload the
+  backend. Delete a stub to have the next compile write it again.
 - A file the types name that does not exist yet, such as `./shapes` in a JSDoc
   `import("./shapes")` before you create `shapes.d.ts`, is not watched: after
   you add it, delete the stub so the next compile reads the types again.

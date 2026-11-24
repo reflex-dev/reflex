@@ -67,7 +67,7 @@ from reflex.istate.storage import (
     SessionStorage,
 )
 from reflex.state import BaseState, cache_initial_snapshot
-from reflex.utils import frontend_skeleton, path_ops
+from reflex.utils import path_ops
 from reflex.utils.exec import is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
 
@@ -712,26 +712,6 @@ def _write_stub(module: Path, code: str) -> None:
         )
 
 
-def _read_dependencies() -> bytes:
-    """Read what decides the packages installed in ``.web``.
-
-    A module's types can use their declarations, which a reinstall can change
-    with only the lockfile, within the ranges ``package.json`` allows.
-
-    Returns:
-        ``package.json``, then the name and content of each lockfile there is.
-    """
-    web_dir = get_web_dir()
-    dependencies = (web_dir / constants.PackageJson.PATH).read_bytes()
-    for name in frontend_skeleton.LOCKFILE_NAMES:
-        with contextlib.suppress(FileNotFoundError):
-            # A NUL, which no package.json or lockfile holds, ends each part.
-            dependencies += (
-                b"\0" + name.encode() + b"\0" + (web_dir / name).read_bytes()
-            )
-    return dependencies
-
-
 def write_script_stubs(modules: Mapping[Path, _ScriptExports]) -> None:
     """Write a type stub next to each JavaScript module the app imports.
 
@@ -763,11 +743,10 @@ def write_script_stubs(modules: Mapping[Path, _ScriptExports]) -> None:
     type_files = _parse_json(text, dict[str, list[str]]) or {}
     _remove_orphan_stubs(type_files.keys() - map(str, modules))
     type_files = {str(path): type_files.get(str(path), []) for path in modules}
-    dependencies = _read_dependencies() if modules else b""
 
     def digest(path: Path) -> str:
         files = [*modules[path]["files"], *type_files[str(path)]]
-        return _module_digest(Path(files[0]), files, dependencies)
+        return _module_digest(Path(files[0]), files)
 
     stale = [
         path

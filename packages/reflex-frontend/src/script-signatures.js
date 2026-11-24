@@ -23,9 +23,12 @@
  *     ]}, ...]}},                one signature per overload; none if it has
  *                                no known call signature
  *     "files": {"<module>": [file, ...]}
- *                                the files its types are read from: it and
- *                                the local files it reaches through imports,
- *                                JSDoc `import()` types and references
+ *                                the files its types are read from: it, the
+ *                                local files it reaches through imports,
+ *                                JSDoc `import()` types and references, and
+ *                                the package.json of each installed package
+ *                                they read; not Reflex's own files in .web,
+ *                                which `$/` imports
  *   } */
 
 import { createRequire } from "node:module";
@@ -243,37 +246,54 @@ for (const file of files) {
   );
 }
 /**
+ * Get the package.json of the installed package a file belongs to: its version
+ * changes with the package's declarations.
+ * @param {string} file The file.
+ * @returns {string | undefined} The package.json; undefined for a file outside
+ * node_modules.
+ */
+const packageJson = (file) => {
+  const at = file.lastIndexOf("/node_modules/");
+  if (at < 0) return undefined;
+  const root = at + "/node_modules/".length;
+  const [scope, name] = file.slice(root).split("/");
+  const directory = scope.startsWith("@") ? `${scope}/${name}` : scope;
+  return `${file.slice(0, root)}${directory}/package.json`;
+};
+
+/**
  * List the files a module's types are read from: the module and the local
- * files it reaches, each once. Per module, so that a change to one module's
- * files leaves the others' stubs current.
+ * files it reaches, each once, and the package.json of each installed package
+ * they read. Per module, so that a change to one module's files leaves the
+ * others' stubs current. Reflex's own files, which `$/` imports, are not
+ * followed: they change with Reflex, whose version the stub's digest holds.
  * @param {string} file The module.
  * @returns {string[]} The files, the module first. A referenced file that does
  * not exist is listed, so that adding it changes them.
  */
 const reach = (file) => {
   const reached = new Set([program.getSourceFile(file).fileName]);
+  const listed = new Set();
   for (const name of reached) {
+    listed.add(packageJson(name) ?? name);
     /** @type {any} `imports`, which holds JSDoc `import()` types too, is internal. */
     const source = program.getSourceFile(name);
     if (!source) continue;
     for (const specifier of source.imports) {
+      if (specifier.text.startsWith("$/")) continue;
       const resolved = ts.resolveModuleName(
         specifier.text,
         name,
         options,
         ts.sys,
       ).resolvedModule;
-      // An installed package, also when `paths` resolves it, changes with
-      // package.json or the lockfile, which the stub's digest covers.
-      if (resolved && !resolved.resolvedFileName.includes("/node_modules/")) {
-        reached.add(resolved.resolvedFileName);
-      }
+      if (resolved) reached.add(resolved.resolvedFileName);
     }
     for (const reference of source.referencedFiles) {
       reached.add(resolve(dirname(name), reference.fileName));
     }
   }
-  return [...reached];
+  return [...listed];
 };
 
 const read = Object.fromEntries(files.map((file) => [file, reach(file)]));

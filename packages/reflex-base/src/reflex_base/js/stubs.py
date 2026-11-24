@@ -106,8 +106,9 @@ class Signatures(TypedDict):
     format: Literal[1]
     # The call signatures of each module's exports, by module, then by name.
     modules: dict[str, dict[str, list[Signature]]]
-    # The files each module's types are read from, by module: it and the local
-    # files it reaches.
+    # The files each module's types are read from, by module: it, the local
+    # files it reaches, and the package.json of each installed package they
+    # read.
     files: dict[str, list[str]]
 
 
@@ -115,24 +116,32 @@ class Signatures(TypedDict):
 def _renderer_digest() -> bytes:
     """Hash the code that makes a stub, so a change to it rewrites every stub.
 
+    The Reflex version stands in for Reflex's own frontend files, which a
+    module's types can read through ``$/``.
+
     Returns:
-        The digest of this module and ``script-signatures.js``.
+        The digest of the Reflex version, this module and
+        ``script-signatures.js``.
     """
     script = constants.Templates.Dirs.WEB_TEMPLATE / _SIGNATURES_SCRIPT
-    return hashlib.sha256(Path(__file__).read_bytes() + script.read_bytes()).digest()
+    return hashlib.sha256(
+        constants.Reflex.VERSION.encode()
+        + b"\0"
+        + Path(__file__).read_bytes()
+        + script.read_bytes()
+    ).digest()
 
 
-def _module_digest(path: Path, files: Iterable[str], dependencies: bytes) -> str:
+def _module_digest(path: Path, files: Iterable[str]) -> str:
     """Hash what a module's stub is made from.
 
     That is the files the module reaches and those its types were read from,
-    what decides the installed packages, whose declarations it may use, and
-    the code that makes stubs.
+    among them the package.json of each installed package they read, and the
+    code that makes stubs.
 
     Args:
         path: The module.
         files: Those files; a file that no longer exists changes the digest.
-        dependencies: The app's ``package.json`` and lockfile.
 
     Returns:
         A short hex digest.
@@ -148,7 +157,6 @@ def _module_digest(path: Path, files: Iterable[str], dependencies: bytes) -> str
         digest.update(name.encode() + b"\0")
         digest.update(content)
         digest.update(b"\0")
-    digest.update(dependencies)
     return digest.hexdigest()[:16]
 
 

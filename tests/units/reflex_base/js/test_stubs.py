@@ -298,11 +298,17 @@ def test_render_stub_declares_the_importable_functions():
 
 
 def test_renderer_digest():
-    """The renderer's digest is that of this module and script-signatures.js."""
+    """The renderer's digest is that of the Reflex version, this module and script-signatures.js.
+
+    The version stands in for Reflex's own frontend files, which a module's
+    types can read through ``$/``.
+    """
     assert (
         _renderer_digest()
         == hashlib.sha256(
-            Path(stubs.__file__).read_bytes()
+            constants.Reflex.VERSION.encode()
+            + b"\0"
+            + Path(stubs.__file__).read_bytes()
             + (FRONTEND / "src" / "script-signatures.js").read_bytes()
         ).digest()
     )
@@ -312,7 +318,7 @@ def test_module_digest(tmp_path: Path):
     """The digest covers each file by its path from the module and its bytes.
 
     A file listed twice counts once, a missing file by its path alone, and the
-    app's packages and the renderer count too.
+    renderer counts too.
 
     Args:
         tmp_path: pytest tmp_path fixture.
@@ -329,8 +335,7 @@ def test_module_digest(tmp_path: Path):
     expected.update(shared.read_bytes() + b"\0")
     expected.update(b"gone.d.ts\1")
     expected.update(b"party.js\0" + module.read_bytes() + b"\0")
-    expected.update(b'{"a": "1"}')
-    assert _module_digest(module, files, b'{"a": "1"}') == expected.hexdigest()[:16]
+    assert _module_digest(module, files) == expected.hexdigest()[:16]
 
 
 def test_module_digest_is_the_same_on_every_machine(tmp_path: Path):
@@ -346,7 +351,7 @@ def test_module_digest_is_the_same_on_every_machine(tmp_path: Path):
         module.write_text('import "./helpers.js";\nexport function go() {}\n')
         module.with_name("helpers.js").write_text("export const help = 1;\n")
         files = [str(module), str(module.with_name("helpers.js"))]
-        digests.add(_module_digest(module, files, b""))
+        digests.add(_module_digest(module, files))
     assert len(digests) == 1
 
 
