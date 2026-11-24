@@ -757,11 +757,13 @@ def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
         loglevel: The log level.
     """
     import uvicorn
+    from uvicorn.supervisors.watchfilesreload import WatchFilesReload
+    from watchfiles import Change
 
     reset_dev_backend_reload_marker()
     environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.set(True)
 
-    uvicorn.run(
+    config = uvicorn.Config(
         app=f"{get_app_instance()}",
         factory=True,
         host=host,
@@ -771,6 +773,14 @@ def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
         reload_dirs=list(map(str, get_reload_paths())),
         reload_delay=0.1,
     )
+    reloader = WatchFilesReload(
+        config, target=uvicorn.Server(config).run, sockets=[config.bind_socket()]
+    )
+    # The files Granian reloads for, where Uvicorn's own filter takes only
+    # Python files.
+    reload_filter = _get_reload_filter()()
+    reloader.watch_filter = lambda path: reload_filter(Change.modified, str(path))  # pyright: ignore[reportAttributeAccessIssue]
+    reloader.run()
 
 
 HOTRELOAD_IGNORE_EXTENSIONS = (

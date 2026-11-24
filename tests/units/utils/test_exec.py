@@ -221,15 +221,22 @@ def test_run_uvicorn_backend_sets_reload_env_var_and_clears_marker(
 
     seen: dict[str, str | None] = {}
 
-    def fake_run(*_args, **_kwargs):
+    def fake_run(reloader):
+        for sock in reloader.sockets:
+            sock.close()
         seen["value"] = os.environ.get(DEV_BACKEND_RELOAD_ENV_NAME)
         assert not marker.exists()
 
-    uvicorn = pytest.importorskip("uvicorn")
-    mocker.patch.object(uvicorn, "run", side_effect=fake_run)
+    watchfilesreload = pytest.importorskip("uvicorn.supervisors.watchfilesreload")
+    mocker.patch.object(
+        watchfilesreload.WatchFilesReload,
+        "run",
+        autospec=True,
+        side_effect=fake_run,
+    )
 
     exec_utils.run_uvicorn_backend(
-        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
+        host="127.0.0.1", port=0, loglevel=exec_utils.LogLevel.INFO
     )
 
     assert seen["value"] == "True"
@@ -352,6 +359,42 @@ def test_run_granian_backend_reloads_for_a_data_file_a_javascript_module_reaches
     assert reloads(package / "scripts" / "party.ts")
     assert not reloads(package / "data.json")
     assert not reloads(package / "notes")
+
+
+def test_run_uvicorn_backend_reloads_for_the_files_granian_reloads_for(
+    tmp_path: Path, mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """Uvicorn reloads for JavaScript modules and the files they reach, as Granian does.
+
+    Args:
+        tmp_path: The directory that holds the app package.
+        mocker: Fixture for capturing the reloader instead of running it.
+        monkeypatch: Fixture restoring the reload environment variable.
+    """
+    watchfilesreload = pytest.importorskip("uvicorn.supervisors.watchfilesreload")
+    package = _script_module_app(tmp_path, mocker)
+    monkeypatch.delenv(DEV_BACKEND_RELOAD_ENV_NAME, raising=False)
+    mocker.patch.object(exec_utils, "get_app_instance", return_value="app:app")
+    reloaders = []
+    mocker.patch.object(
+        watchfilesreload.WatchFilesReload,
+        "run",
+        autospec=True,
+        side_effect=reloaders.append,
+    )
+
+    exec_utils.run_uvicorn_backend(
+        host="127.0.0.1", port=0, loglevel=exec_utils.LogLevel.ERROR
+    )
+
+    (reloader,) = reloaders
+    for sock in reloader.sockets:
+        sock.close()
+    assert reloader.watch_filter(package / "app.py")
+    assert reloader.watch_filter(package / "scripts" / "party.ts")
+    assert reloader.watch_filter(package / "scripts" / "config.json")
+    assert not reloader.watch_filter(package / "data.json")
+    assert not reloader.watch_filter(package / "notes")
 
 
 @pytest.mark.parametrize(
