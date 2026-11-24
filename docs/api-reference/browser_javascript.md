@@ -313,6 +313,10 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
 - Import each function by name, as in `from my_app.scripts.party import
   celebrate`, or use it on the module (`party.celebrate`).
   `from my_app.scripts.party import *` is not supported.
+- Import the module at the top of a Python module that the app imports when it
+  loads. The app bundles the modules imported when it compiles, so a module
+  first imported inside an event handler is not in the frontend: the import
+  raises an error that says so.
 - When the app compiles, Reflex reads the module with the bundler's parser, so
   any JavaScript, TypeScript or JSX the bundler accepts works, and checks that
   each name you use from Python is an exported function. An export that may
@@ -387,11 +391,12 @@ The compile stops with these errors:
   directory, and the next run writes it again.
 
 In the browser, a call fails with `Cannot call my_app.scripts.party.nope: the
-frontend has no function nope in the JavaScript module my_app.scripts.party.`
-when the module does not export a function of that name, which a name used only
-in an event handler can reach, or when the frontend was built before the
-backend imported it. Export the function, or restart `reflex run` to rebuild
-the frontend.
+JavaScript module my_app.scripts.party exports no function named nope.` when a
+name used only in an event handler is not exported as a function. Export the
+function, or correct the name in Python. A call fails with `Cannot call
+my_app.scripts.lazy.go: the frontend does not include the JavaScript module
+my_app.scripts.lazy` when the frontend was compiled without the module. Import
+the module at the top of a Python module that the app imports when it loads.
 
 ## Using React Hooks
 

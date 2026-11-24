@@ -639,7 +639,9 @@ const callModuleFunction = (payload) => {
     : undefined;
   if (typeof fn !== "function") {
     throw new TypeError(
-      `Cannot call ${module}.${name}: the frontend has no function ${name} in the JavaScript module ${module}. Either the module does not export a function of that name, or the frontend was built before the backend imported it. Export a function named ${name} from the module, or restart \`reflex run\` to rebuild the frontend.`,
+      Object.hasOwn(scriptModules, module)
+        ? `Cannot call ${module}.${name}: the JavaScript module ${module} exports no function named ${name}. Export a function named ${name} from it, or correct the name in Python.`
+        : `Cannot call ${module}.${name}: the frontend does not include the JavaScript module ${module}, as when Python first imports it inside an event handler, after the app compiled. Import it at the top of a Python module that the app imports when it loads.`,
     );
   }
   return fn(...args);

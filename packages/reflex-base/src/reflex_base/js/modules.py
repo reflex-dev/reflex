@@ -28,6 +28,7 @@ from types import ModuleType
 from typing import Any
 
 from reflex_base.event import EventHandler, EventSpec, server_side
+from reflex_base.event.context import EventContext
 from reflex_base.js.finder import _app_package
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_base.utils.format import format_event_handler
@@ -239,7 +240,24 @@ def _load_module(module: ModuleType, path: Path) -> None:
     Args:
         module: The module being imported.
         path: The JavaScript file.
+
+    Raises:
+        ReflexRuntimeError: If an event handler runs, which is after the app
+            compiled, so the frontend does not include the module.
     """
+    try:
+        in_event = bool(EventContext.get().txid)
+    except LookupError:
+        in_event = False
+    if in_event:
+        msg = (
+            f"The JavaScript module {module.__name__} is first imported while an "
+            "event handler runs, after the app compiled, so the frontend does not "
+            "include it. Import it at the top of a Python module that the app "
+            "imports when it loads, such as the module that defines the event "
+            "handler."
+        )
+        raise ReflexRuntimeError(msg)
     script = _ScriptModule(path)
     setattr(module, _SCRIPT_MODULE, script)
     setattr(  # noqa: B010

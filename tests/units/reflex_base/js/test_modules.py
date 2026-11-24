@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 from reflex_base.event import Event
+from reflex_base.event.context import EventContext
 from reflex_base.js.modules import (
     _app_modules,
     _JsFunction,
@@ -194,6 +195,46 @@ def test_an_uncalled_function_is_a_result_callback(app_package: Path):
         )
     )
     assert "args:[_result]" in uncalled
+
+
+def test_a_module_first_imported_while_an_event_runs_is_an_error(app_package: Path):
+    """A module first imported by an event handler was not imported when the app compiled.
+
+    The frontend does not include it, so the import fails with the fix. The
+    event processor's own context, which belongs to no event, does not count.
+
+    Args:
+        app_package: the app package, on sys.path.
+    """
+
+    def context(txid: str) -> EventContext:
+        """Build an event context that runs nothing.
+
+        Args:
+            txid: the transaction id, empty for no event.
+
+        Returns:
+            The context.
+        """
+        return EventContext(
+            token="t",
+            state_manager=None,  # pyright: ignore[reportArgumentType]
+            enqueue_impl=None,  # pyright: ignore[reportArgumentType]
+            txid=txid,
+        )
+
+    with context("event"), pytest.raises(ReflexRuntimeError) as error:
+        importlib.import_module("js_app.party")
+    assert str(error.value) == (
+        "The JavaScript module js_app.party is first imported while an event "
+        "handler runs, after the app compiled, so the frontend does not include "
+        "it. Import it at the top of a Python module that the app imports when "
+        "it loads, such as the module that defines the event handler."
+    )
+    with context(""):
+        assert importlib.import_module("js_app.party").celebrate == _JsFunction(
+            "js_app.party", "celebrate"
+        )
 
 
 def test_names_become_functions_on_first_use(app_package: Path):
