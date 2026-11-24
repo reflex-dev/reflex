@@ -1,5 +1,6 @@
 """Integration tests for all routes in Reflex."""
 
+import os
 import re
 import subprocess
 import sys
@@ -167,12 +168,8 @@ def test_custom_components_urls_redirect_to_wrapping_react():
     assert result.returncode == 0, result.stderr[-2000:]
 
 
-def test_unpublished_changelogs_redirect_to_the_changelog_index(
-    routes_fixture, monkeypatch
-):
+def test_unpublished_changelogs_redirect_to_the_changelog_index(routes_fixture):
     """Tooling package changelogs get no page; their old URLs reach the index."""
-    # Without a login, reflex-enterprise exits the import unless running in CI.
-    monkeypatch.setenv("CI", "true")
     paths = {route.path for route in routes_fixture if route.path}
     assert "/changelog/" in paths
     assert "/changelog/reflex-base/" in paths
@@ -187,6 +184,8 @@ def test_unpublished_changelogs_redirect_to_the_changelog_index(
             "print(sorted(r for r in redirects if r[0].startswith('/changelog/')))",
         ],
         cwd=Path(__file__).resolve().parents[1],
+        # reflex-enterprise exits before the app is built when not logged in.
+        env={**os.environ, "CI": "true"},
         capture_output=True,
         text=True,
         check=False,
@@ -198,6 +197,30 @@ def test_unpublished_changelogs_redirect_to_the_changelog_index(
         ("/changelog/reflex-docgen/", "/changelog/"),
         ("/changelog/reflex-release/", "/changelog/"),
     ])
+
+
+def test_cloud_overview_moved_under_hosting_with_a_redirect():
+    """The Cloud overview lives in the Cloud section; its old URL redirects there."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from reflex_docs.reflex_docs import app, redirects\n"
+            "print('hosting/overview' in app._unevaluated_pages, "
+            "[r for r in redirects if r[0] == '/overview/'])\n",
+        ],
+        cwd=Path(__file__).resolve().parents[1],
+        # reflex-enterprise exits before the app is built when not logged in.
+        env={**os.environ, "CI": "true"},
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=120,
+    )
+    assert result.returncode == 0, result.stderr[-2000:]
+    assert result.stdout.splitlines()[-1] == (
+        "True [('/overview/', '/hosting/overview/')]"
+    )
 
 
 def test_docs_route_descriptions_fit_search_snippet_length(routes_fixture):

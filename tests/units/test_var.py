@@ -1351,20 +1351,52 @@ def test_array_operations():
     assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].slice().reverse()"
     assert (
         str(ArrayVar.range(10))
-        == "Array.from({ length: Math.ceil((10 - 0) / 1) }, (_, i) => 0 + i * 1)"
+        == "Array.from({ length: Math.ceil((10 - 0) / (1 || 1)) }, (_, i) => 0 + i * (1 || 1))"
     )
     assert (
         str(ArrayVar.range(1, 10))
-        == "Array.from({ length: Math.ceil((10 - 1) / 1) }, (_, i) => 1 + i * 1)"
+        == "Array.from({ length: Math.ceil((10 - 1) / (1 || 1)) }, (_, i) => 1 + i * (1 || 1))"
     )
     assert (
         str(ArrayVar.range(1, 10, 2))
-        == "Array.from({ length: Math.ceil((10 - 1) / 2) }, (_, i) => 1 + i * 2)"
+        == "Array.from({ length: Math.ceil((10 - 1) / (2 || 1)) }, (_, i) => 1 + i * (2 || 1))"
     )
     assert (
         str(ArrayVar.range(1, 10, -1))
-        == "Array.from({ length: Math.ceil((10 - 1) / -1) }, (_, i) => 1 + i * -1)"
+        == "Array.from({ length: Math.ceil((10 - 1) / (-1 || 1)) }, (_, i) => 1 + i * (-1 || 1))"
     )
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
+def test_range_with_state_step():
+    """A range with a state step evaluates like Python range, with 1 for a zero step."""
+
+    class RangeState(BaseState):
+        start: int = 0
+        stop: int = 0
+        step: int = 1
+
+    fields = cast(
+        tuple[NumberVar, NumberVar, NumberVar],
+        (RangeState.start, RangeState.stop, RangeState.step),
+    )
+    iterable = rx.Var.range(*fields)
+    assert iterable._get_all_var_data() == VarData.merge(
+        *(field._get_all_var_data() for field in fields)
+    )
+
+    owner = str(RangeState.step).rsplit(".", 1)[0]
+    keys = [str(field).rsplit(".", 1)[1] for field in fields]
+    cases = [(0, 10, 2), (10, 0, -2), (4, 4, 2), (0, 5, 0), (5, 0, 0)]
+    statements = [f"const {owner} = {{}};"]
+    statements.extend(
+        f"Object.assign({owner}, {json.dumps(dict(zip(keys, case, strict=True)))}); "
+        f"console.log(JSON.stringify({iterable!s}));"
+        for case in cases
+    )
+    assert _eval_js_lines(statements) == [
+        list(range(start, stop, step or 1)) for start, stop, step in cases
+    ]
 
 
 def _assert_var_imports(var: Var, tag: str):
