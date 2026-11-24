@@ -934,10 +934,14 @@ def test_generic_typed_dict_var_item_access() -> None:
     """A var typed as a specialized generic TypedDict can be indexed by its keys."""
 
     class GenericTypedDictState(rx.State):
-        payload: _GenericPayload[int] = {"value": 1, "label": "a"}
+        payload: rx.Field[_GenericPayload[int]] = rx.field({"value": 1, "label": "a"})
 
-    value = GenericTypedDictState.payload["value"]
-    assert value._var_type is int
-    assert GenericTypedDictState.payload.label._var_type is str
-    with pytest.raises(VarAttributeError):
-        GenericTypedDictState.payload["missing"]
+    payload = GenericTypedDictState.payload
+    assert payload["value"]._var_type is int
+    assert payload["label"]._var_type is str
+    with pytest.raises(VarAttributeError) as raised:
+        payload["missing"]
+    assert str(raised.value) == (
+        f"The State var `{payload!s}` of type {_GenericPayload[int]} has no "
+        "attribute 'missing' or may have been annotated wrongly."
+    )
