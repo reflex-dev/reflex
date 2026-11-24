@@ -2459,6 +2459,14 @@ def test_install_frontend_packages_reads_modules_after_the_parser_is_installed(
     read = {tmp_path / "party.js": {"files": [str(tmp_path / "party.js")]}}
 
     def compile_script_modules(script_modules: dict[str, _ScriptModule]):
+        """Record the modules read, and return fixed outputs.
+
+        Args:
+            script_modules: The modules.
+
+        Returns:
+            The outputs, the imports and the copies.
+        """
         calls.append(("read", script_modules))
         return outputs, script_imports, copies, read
 

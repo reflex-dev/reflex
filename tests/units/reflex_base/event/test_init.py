@@ -114,10 +114,23 @@ def test_call_event_fn_passes_every_trigger_argument_to_varargs() -> None:
     received: list[tuple[str, ...]] = []
 
     def record(*args: Var) -> EventSpec:
+        """Record the arguments a trigger passes.
+
+        Args:
+            *args: The trigger's arguments.
+
+        Returns:
+            A no-op event.
+        """
         received.append(tuple(str(arg) for arg in args))
         return rx.noop()
 
     def no_args() -> list[Var]:
+        """Provide no arguments, as a trigger like on_mount does.
+
+        Returns:
+            No arguments.
+        """
         return []
 
     call_event_fn(record, no_args, key="on_mount")
@@ -130,10 +143,28 @@ def test_call_event_fn_passes_only_positional_arguments() -> None:
     received: list[tuple[str, ...]] = []
 
     def record_kwargs(key: Var, **kwargs: Any) -> EventSpec:
+        """Record the positional argument, and the names of any keyword arguments.
+
+        Args:
+            key: The first argument.
+            **kwargs: Keyword arguments, which a trigger never passes.
+
+        Returns:
+            A no-op event.
+        """
         received.append((str(key), *kwargs))
         return rx.noop()
 
     def record_keyword_only(key: Var, *, flag: int = 1) -> EventSpec:
+        """Record the positional argument and the keyword-only one, left at its default.
+
+        Args:
+            key: The first argument.
+            flag: A keyword-only argument, which a trigger never passes.
+
+        Returns:
+            A no-op event.
+        """
         received.append((str(key), str(flag)))
         return rx.noop()
 
@@ -179,6 +210,15 @@ def test_a_callable_with_a_required_keyword_only_parameter_is_rejected() -> None
     """
 
     def record(value: Var, *, required: str) -> EventSpec:
+        """Take a required keyword-only argument, which no trigger can pass.
+
+        Args:
+            value: The first argument.
+            required: A keyword-only argument without a default.
+
+        Returns:
+            A no-op event.
+        """
         return rx.noop()
 
     with pytest.raises(EventFnArgMismatchError) as error:

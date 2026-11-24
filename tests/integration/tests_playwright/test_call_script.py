@@ -223,10 +223,20 @@ def CallScript():
 
         @rx.event
         def js_module_backend(self):
+            """Call a JavaScript module's function from a backend event.
+
+            Returns:
+                The call.
+            """
             return page_script.setText("js_module_text", "from the backend")
 
         @rx.event
         def js_module_then_script(self):
+            """Call a module's function, then a script that reads what it did.
+
+            Yields:
+                The call, then the script.
+            """
             # Each yield is a message of its own, and the script must see what
             # the module's function did.
             yield page_script.setText("js_module_text", "written by the module")
