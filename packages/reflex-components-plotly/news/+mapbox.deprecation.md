@@ -1,0 +1,1 @@
+Deprecate `rx.plotly.mapbox` and Mapbox figures in Reflex 0.11.1 in favor of `rx.plotly.map` with MapLibre traces and `layout.map`. Until removal in Reflex 1.0, `rx.plotly`, `rx.plotly.map` and `rx.plotly.mapbox` render existing Mapbox figures on Plotly.js 4 by renaming their trace types, subplot references and `layout.mapbox` keys, and log a browser warning.

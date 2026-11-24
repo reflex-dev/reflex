@@ -270,7 +270,7 @@ The same pattern works for pie charts: place the `rx.foreach` of cells inside `r
 
 ## Example with Props
 
-Here's an example demonstrates how to customize the appearance and layout of bars using the `bar_category_gap`, `bar_gap`, `bar_size`, and `max_bar_size` props. These props accept values in pixels to control the spacing and size of the bars.
+This example demonstrates how to customize the appearance and layout of bars using the `bar_category_gap`, `bar_gap`, `bar_size`, and `max_bar_size` props. These props accept values in pixels to control the spacing and size of the bars.
 
 ```python demo graphing
 data = [

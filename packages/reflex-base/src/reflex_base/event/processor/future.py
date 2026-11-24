@@ -47,6 +47,11 @@ class EventFuture(asyncio.Future):
         default=frozenset(), repr=False
     )
 
+    # Whether a caller awaits this future as a function call (awaiting an event
+    # handler with no state lock held), so an exception the event raises is
+    # the caller's to handle rather than the backend exception handler's.
+    awaited: bool = dataclasses.field(default=False, repr=False)
+
     def __post_init__(self) -> None:
         """Call Future.__init__ for the EventFuture."""
         super(EventFuture, self).__init__(loop=self.loop)

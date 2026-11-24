@@ -9,11 +9,43 @@ from typing import TYPE_CHECKING
 
 from reflex_base.components.tags.tag import CommonTag
 from reflex_base.utils.types import GenericType
-from reflex_base.vars import LiteralArrayVar, Var, get_unique_variable_name
+from reflex_base.vars import (
+    LiteralArrayVar,
+    Var,
+    get_unique_variable_name,
+    scoped_var_data,
+)
 from reflex_base.vars.sequence import _determine_value_of_array_index
 
 if TYPE_CHECKING:
     from reflex_base.components.component import Component
+
+
+_POSITIONAL_KINDS = (
+    inspect.Parameter.POSITIONAL_ONLY,
+    inspect.Parameter.POSITIONAL_OR_KEYWORD,
+)
+
+
+def _render_fn_params(render_fn: Callable) -> list[inspect.Parameter]:
+    """Get the parameters a foreach render function takes its render arguments in.
+
+    The render arguments are the item and its index, passed positionally to the
+    positional parameters. A render function without any, like ``rx.text``, whose
+    ``create`` takes its children as ``*children``, gets the item only. Keyword-only
+    parameters, ``**kwargs`` and the cls/self of a bound method don't count.
+
+    Args:
+        render_fn: The render function.
+
+    Returns:
+        The parameters that take the render arguments.
+    """
+    params = inspect.signature(render_fn).parameters.values()
+    positional = [param for param in params if param.kind in _POSITIONAL_KINDS]
+    if positional:
+        return positional
+    return [param for param in params if param.kind is inspect.Parameter.VAR_POSITIONAL]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -53,6 +85,7 @@ class IterTag(CommonTag):
         return Var(
             _js_expr=self.index_var_name,
             _var_type=int,
+            _var_data=scoped_var_data(self.index_var_name),
         ).guess_type()
 
     def get_arg_var(self) -> Var:
@@ -66,6 +99,7 @@ class IterTag(CommonTag):
         return Var(
             _js_expr=self.arg_var_name,
             _var_type=self.get_iterable_var_type(),
+            _var_data=scoped_var_data(self.arg_var_name),
         ).guess_type()
 
     def render_component(self) -> Component:
@@ -86,7 +120,7 @@ class IterTag(CommonTag):
         from reflex.compiler.compiler import _into_component_once
 
         # Get the render function arguments.
-        args = inspect.getfullargspec(self.render_fn).args
+        args = _render_fn_params(self.render_fn)
         arg = self.get_arg_var()
         index = self.get_index_var()
 

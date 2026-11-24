@@ -7,7 +7,7 @@ import dataclasses
 import json
 import logging
 from collections.abc import Callable, Iterable, Sequence
-from inspect import getmodule
+from inspect import getattr_static, getmodule
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
@@ -50,7 +50,7 @@ from rich.progress import Progress
 
 from reflex.compiler import templates, utils
 from reflex.compiler.plugins import default_page_plugins
-from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
+from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin, scope_memo_body_hooks
 from reflex.state import BaseState, code_uses_state_contexts, state_snapshot_hashes
 from reflex.utils import console, frontend_skeleton, path_ops, prerequisites
 from reflex.utils.exec import get_compile_context, is_prod_mode
@@ -1194,6 +1194,61 @@ def _resolve_radix_themes_plugin(
     return plugin_chain, radix_plugin
 
 
+def _bundle_plugin_frontend_dependencies(plugins: Sequence[Plugin]) -> None:
+    """Register the frontend libraries required by compiler plugins.
+
+    Args:
+        plugins: The compiler plugins active for this app.
+    """
+    from reflex_base.components.dynamic import _bundle_library
+
+    for plugin in plugins:
+        for dependency in plugin.get_frontend_dependencies():
+            _bundle_library(dependency)
+
+
+def _walk_page_with_plugins(
+    compile_context: CompileContext,
+    page: UnevaluatedPage,
+    component: Component,
+) -> None:
+    """Run a page compile's plugin hooks over an evaluated page without rendering it.
+
+    The hooks register the libraries a frontend compile bundles for the page,
+    such as Radix Themes once implicit detection meets a Radix component. The
+    tree is only traversed while a plugin has component hooks that can still
+    bundle a library.
+
+    Args:
+        compile_context: The context holding the compiler plugin hooks.
+        page: The page definition.
+        component: The evaluated page component.
+    """
+    plugins = tuple(
+        plugin
+        for plugin in compile_context.hooks.plugins
+        # An enabled Radix plugin's ``enter_component`` bundles nothing more;
+        # a subclass keeps its own hooks.
+        if not (type(plugin) is RadixThemesPlugin and plugin.enabled)
+    )
+    if len(plugins) != len(compile_context.hooks.plugins):
+        compile_context.hooks = CompilerHooks(plugins=plugins)
+    hooks = compile_context.hooks
+    page_context = PageContext(
+        name=page.route, route=page.route, root_component=component
+    )
+    with compile_context, page_context:
+        if any(
+            getattr_static(type(plugin), hook) is not getattr_static(Plugin, hook)
+            for plugin in plugins
+            for hook in ("enter_component", "leave_component")
+        ):
+            page_context.root_component = hooks.compile_component(
+                component, page_context=page_context, compile_context=compile_context
+            )
+        hooks.compile_page(page_context, page=page, compile_context=compile_context)
+
+
 def _register_plugin_routes(app: App, plugins: Sequence[Plugin]) -> None:
     """Run plugin ``register_route`` hooks at their point in the compile lifecycle.
 
@@ -1236,17 +1291,23 @@ def compile_app(
     prerender_routes: bool = False,
     dry_run: bool = False,
     use_rich: bool = True,
+    compile_initial_state: bool = True,
 ) -> bool:
     """Compile an app using the compiler plugin pipeline.
+
+    Args:
+        app: The app to compile.
+        prerender_routes: Whether to prerender the routes.
+        dry_run: Whether to compile the app without saving it.
+        use_rich: Whether to use rich progress bars.
+        compile_initial_state: Whether a skipped compile still serializes the
+            initial state. The ``reflex db`` commands only need the pages evaluated.
 
     Returns:
         ``True`` when a real frontend compile ran, ``False`` when the call
         short-circuited (backend-only paths that only re-evaluate pages).
     """
-    from reflex_base.components.dynamic import (
-        _bundle_library,
-        _reset_bundled_libraries_for_compile,
-    )
+    from reflex_base.components.dynamic import _reset_bundled_libraries_for_compile
     from reflex_base.utils.exceptions import ReflexRuntimeError
 
     app._apply_decorated_pages()
@@ -1255,7 +1316,15 @@ def compile_app(
     app._pages = {}
 
     should_compile = app._should_compile()
-    if not dry_run and not should_compile:
+    # Without the registry a compile saves, the libraries the frontend bundles
+    # are derived from the compiler plugins' page hooks, which need every page.
+    derive_libraries = (
+        not should_compile
+        and compile_initial_state
+        and app._state is not None
+        and not utils._restore_bundled_libraries()
+    )
+    if not dry_run and not should_compile and not derive_libraries:
         stateful_pages = _read_stateful_pages_marker()
     else:
         stateful_pages = None
@@ -1263,8 +1332,7 @@ def compile_app(
         for route in stateful_pages:
             logger.debug(f"BE Evaluating stateful page: {route}")
             app._compile_page(route, save_page=False)
-        if app._state is not None:
-            utils._restore_bundled_libraries()
+        if compile_initial_state and app._state is not None:
             utils._compile_initial_state(app._state)
         app._add_optional_endpoints()
         return False
@@ -1274,24 +1342,41 @@ def compile_app(
 
     app.style = evaluate_style_namespaces(app.style)
 
-    if not should_compile and not dry_run:
+    # With compilation skipped, every page is evaluated but none is rendered. A
+    # dry run writes no marker either, so a later backend start evaluates afresh.
+    if not should_compile:
+        compiler_plugins = (
+            _resolve_radix_themes_plugin(app, config.plugins)[0]
+            if derive_libraries
+            else ()
+        )
+        compile_ctx = CompileContext(
+            app=app,
+            pages=tuple(app._unevaluated_pages.values()),
+            hooks=CompilerHooks(plugins=compiler_plugins),
+        )
         with (
             log.timing(logger, "Evaluate Pages (Backend)"),
             otel.span("reflex.compile.evaluate_pages"),
         ):
-            for route in app._unevaluated_pages:
+            for route, page in app._unevaluated_pages.items():
                 logger.debug(f"Evaluating page: {route}")
-                app._compile_page(route, save_page=False)
+                component = app._compile_page(route, save_page=False)
+                if derive_libraries and component is not None:
+                    _walk_page_with_plugins(compile_ctx, page, component)
+        _bundle_plugin_frontend_dependencies(compiler_plugins)
 
-        app._write_stateful_pages_marker()
-        if app._state is not None:
-            utils._restore_bundled_libraries()
+        if not dry_run:
+            app._write_stateful_pages_marker()
+        if compile_initial_state and app._state is not None:
             utils._compile_initial_state(app._state)
+            if derive_libraries and not dry_run:
+                utils._save_bundled_libraries()
         app._add_optional_endpoints()
         return False
 
     progress = console.progress() if use_rich else console.PoorProgress()
-    fixed_steps = 7
+    fixed_steps = 8
     compiler_plugins, radix_themes_plugin = _resolve_radix_themes_plugin(
         app,
         config.plugins,
@@ -1304,9 +1389,7 @@ def compile_app(
     # Page evaluation rebuilds every chain that is not interned by handler, so
     # entries from an earlier compile can only retain dead chains.
     RegistrationContext.ensure_context()._reset_compile_caches()
-    for plugin in compiler_plugins:
-        for dependency in plugin.get_frontend_dependencies():
-            _bundle_library(dependency)
+    _bundle_plugin_frontend_dependencies(compiler_plugins)
     base_total = (len(app._unevaluated_pages) * 2) + fixed_steps + len(config.plugins)
     progress.start()
     task = progress.add_task("Compiling:", total=base_total)
@@ -1314,7 +1397,11 @@ def compile_app(
         app=app,
         pages=list(app._unevaluated_pages.values()),
         hooks=CompilerHooks(
-            plugins=default_page_plugins(style=app.style, plugins=compiler_plugins)
+            plugins=default_page_plugins(
+                style=app.style,
+                plugins=compiler_plugins,
+                auto_memoize=config.auto_memoize,
+            )
         ),
     )
 
@@ -1402,9 +1489,16 @@ def compile_app(
         ] = hydrate_fallback_definition
         hydrate_fallback_export = hydrate_fallback_definition.export_name
 
+    # A snapshot: evaluating a memo body may register another memo.
+    memos = [
+        scope_memo_body_hooks(memo, compile_ctx)
+        if isinstance(memo, MemoComponentDefinition)
+        else memo
+        for memo in tuple(MEMOS.values())
+    ]
     memo_component_files, memo_components_imports = compile_memo_components(
         (
-            *MEMOS.values(),
+            *memos,
             *compile_ctx.auto_memo_components.values(),
         ),
     )
@@ -1428,13 +1522,9 @@ def compile_app(
     )
     progress.advance(task)
 
-    assets_src = Path.cwd() / constants.Dirs.APP_ASSETS
-    if assets_src.is_dir() and not dry_run:
+    if not dry_run:
         with log.timing(logger, "Copy assets"), otel.span("reflex.compile.copy_assets"):
-            path_ops.update_directory_tree(
-                src=assets_src,
-                dest=Path.cwd() / prerequisites.get_web_dir() / constants.Dirs.PUBLIC,
-            )
+            utils._sync_app_assets()
 
     save_tasks: list[
         tuple[

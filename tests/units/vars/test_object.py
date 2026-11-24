@@ -18,6 +18,7 @@ pytest.importorskip("sqlalchemy")
 pytest.importorskip("pydantic")
 
 import pydantic
+from sqlalchemy import JSON
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
 from reflex.experimental import hybrid_property
@@ -192,6 +193,40 @@ def test_hybrid_property_on_object_var(type_: GenericType) -> None:
     # The custom `.var` function is used for the frontend (not the getter), so the
     # result matches `obj.quantity > 0` rather than the getter's `obj.quantity != 0`.
     assert str(Var.create(obj_var.is_nonzero)) == str(Var.create(quantity > 0))
+
+
+class SqlaJsonModel(SqlaBase):
+    """A sqlalchemy dataclass model with JSON columns."""
+
+    __tablename__: str = "sqla_json_model"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, init=False)
+    profile: Mapped[dict] = mapped_column(JSON, default_factory=dict)
+    tags: Mapped[list[str]] = mapped_column(JSON, default_factory=list)
+
+
+class SqlaJsonState(rx.State):
+    """A reflex state with an optional sqlalchemy model holding JSON columns."""
+
+    model: rx.Field[SqlaJsonModel | None] = rx.field(None)
+
+
+def test_sqlalchemy_json_columns_on_state_var() -> None:
+    """JSON columns typed by their ``Mapped[...]`` annotation support item and array operations."""
+    profile = SqlaJsonState.model.profile
+    tags = SqlaJsonState.model.tags
+    assert profile._var_type is dict
+    assert tags._var_type == list[str]
+    assert isinstance(profile, ObjectVar)
+    assert isinstance(tags, ArrayVar)
+
+    city = str(profile["city"])
+    assert city.endswith('?.["profile"]?.["city"]')
+    assert city == str(profile.to(dict)["city"])
+    assert str(tags.length()) == str(tags.to(list[str]).length())
+    assert str(rx.foreach(tags, rx.text)) == str(
+        rx.foreach(tags.to(list[str]), rx.text)
+    )
 
 
 def test_hybrid_property_on_object_var_issue_6617() -> None:

@@ -29,6 +29,7 @@ from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.base.fragment import Fragment
 
+import reflex as rx
 from reflex.app import UnevaluatedPage
 from reflex.compiler import compiler
 from reflex.compiler.plugins import (
@@ -1287,3 +1288,166 @@ def test_compile_context_applies_style_before_shared_stateful_render() -> None:
 
     assert '["color"] : "red"' in (compile_ctx.compiled_pages["/a"].output_code or "")
     assert '["color"] : "red"' in (compile_ctx.compiled_pages["/b"].output_code or "")
+
+
+def test_default_page_plugins_keep_scope_wrappers_without_auto_memoization() -> None:
+    from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
+
+    plugins = default_page_plugins(style=page_style(), auto_memoize=False)
+
+    assert [type(plugin) for plugin in plugins] == [
+        DefaultPagePlugin,
+        ApplyStylePlugin,
+        ClientStateScopePlugin,
+        DefaultCollectorPlugin,
+        MemoizeStatefulPlugin,
+    ]
+    assert plugins[-1] == MemoizeStatefulPlugin(scope_only=True)
+
+
+def _compile_without_auto_memoize(
+    component: Callable[[], Component],
+) -> tuple[str, CompileContext]:
+    """Compile one page with ``auto_memoize=False``.
+
+    Args:
+        component: The page function.
+
+    Returns:
+        The page code and the compile context.
+    """
+    compile_ctx = CompileContext(
+        pages=[FakePage(route="/page", component=component)],
+        hooks=CompilerHooks(plugins=default_page_plugins(auto_memoize=False)),
+    )
+    with compile_ctx:
+        compile_ctx.compile()
+    return compile_ctx.compiled_pages["/page"].output_code or "", compile_ctx
+
+
+def test_lifecycle_stays_inside_cond_branch_without_auto_memoization() -> None:
+    """A branch's lifecycle hook compiles into a wrapper, not into the page."""
+    code, compile_ctx = _compile_without_auto_memoize(
+        lambda: rx.cond(
+            Var("flag", _var_type=bool),
+            rx.text(
+                "shown",
+                on_mount=rx.console_log("mounted"),
+                on_unmount=rx.console_log("unmounted"),
+            ),
+            rx.text("hidden"),
+        )
+    )
+
+    assert "useEffect(" not in code
+    (wrapper,) = compile_ctx.memoize_wrappers
+    assert code.index("?(") < code.index(f"jsx({wrapper},") < code.index('"hidden"')
+
+
+def test_cond_branches_get_distinct_lifecycle_wrappers_without_auto_memoization() -> (
+    None
+):
+    """Each branch has its own wrapper, so a branch switch remounts it."""
+    code, compile_ctx = _compile_without_auto_memoize(
+        lambda: rx.cond(
+            Var("flag", _var_type=bool),
+            rx.text("a", on_mount=rx.console_log("a")),
+            rx.text("b", on_mount=rx.console_log("b")),
+        )
+    )
+
+    first, second = compile_ctx.memoize_wrappers
+    assert first != second
+    assert code.index(f"jsx({first},") < code.index(f"jsx({second},")
+
+
+class SlotHolder(Component):
+    """A component that takes another component in a prop."""
+
+    tag = "SlotHolder"
+    library = "slot-holder-lib"
+
+    slot: Var[Component]
+
+
+def test_prop_component_lifecycle_stays_inside_cond_branch_without_auto_memoization() -> (
+    None
+):
+    """A lifecycle hook of a component held in a prop stays in its branch."""
+    code, compile_ctx = _compile_without_auto_memoize(
+        lambda: rx.cond(
+            Var("flag", _var_type=bool),
+            SlotHolder.create(slot=rx.text("x", on_mount=rx.console_log("mounted"))),
+            rx.text("hidden"),
+        )
+    )
+
+    assert "useEffect(" not in code
+    (wrapper,) = compile_ctx.memoize_wrappers
+    assert code.index("?(") < code.index(f"jsx({wrapper},") < code.index('"hidden"')
+
+
+def test_foreach_item_lifecycle_gets_loop_var_without_auto_memoization() -> None:
+    """An item's lifecycle hook compiles into a wrapper that gets the loop var."""
+    from reflex.compiler.compiler import compile_memo_components
+
+    _code, compile_ctx = _compile_without_auto_memoize(
+        lambda: rx.foreach(
+            Var("items", _var_type=list[str]),
+            lambda item: rx.text(item, on_mount=rx.console_log(item)),
+        )
+    )
+
+    memo_files, _imports = compile_memo_components(
+        memos=tuple(compile_ctx.auto_memo_components.values())
+    )
+    definitions = "".join(code for _path, code in memo_files).split("\nexport const ")
+    loop = next(d for d in definitions if d.startswith("Foreach_"))
+    item = next(d for d in definitions if d.startswith("Text_"))
+
+    before_loop, _, loop_body = loop.partition("Array.prototype.map.call(")
+    assert "item_rx_state_" not in before_loop
+    assert "itemRxState:item_rx_state_" in loop_body
+    signature, _, body = item.partition("memo((")[2].partition("=> {")
+    assert "itemRxState:item_rx_state_" in signature
+    assert "useEffect(" in body
+
+
+def test_stateful_component_without_hooks_is_not_wrapped_without_auto_memoization() -> (
+    None
+):
+    """Only components with hooks of their own keep a wrapper."""
+    _code, compile_ctx = _compile_without_auto_memoize(create_inline_stateful_component)
+
+    assert not compile_ctx.memoize_wrappers
+
+
+@pytest.mark.parametrize("auto_memoize", [True, False])
+def test_compile_app_passes_auto_memoize_config(
+    auto_memoize: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Page compilation follows the ``auto_memoize`` config."""
+
+    class _StopCompile(Exception):
+        pass
+
+    received: list[bool] = []
+
+    def recording_default_page_plugins(**kwargs):
+        received.append(kwargs["auto_memoize"])
+        raise _StopCompile
+
+    monkeypatch.setattr(
+        compiler, "default_page_plugins", recording_default_page_plugins
+    )
+    monkeypatch.setattr(
+        compiler,
+        "get_config",
+        lambda: rx.Config(app_name="testing", auto_memoize=auto_memoize),
+    )
+    app = rx.App()
+    app.add_page(lambda: rx.box("hi"), route="/")
+    with pytest.raises(_StopCompile):
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+
+    assert received == [auto_memoize]

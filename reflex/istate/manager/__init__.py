@@ -1,13 +1,14 @@
 """State manager for managing client states."""
 
+import asyncio
 import contextlib
 import dataclasses
 import logging
 import sys
 from abc import ABC, abstractmethod
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Coroutine
 from types import TracebackType
-from typing import TYPE_CHECKING, Generic, TypedDict, overload
+from typing import TYPE_CHECKING, Any, Generic, TypedDict, overload
 
 from reflex_base import constants
 from reflex_base.config import get_config
@@ -233,6 +234,12 @@ class StateManager(ABC):
     async def close(self):  # noqa: B027
         """Close the state manager."""
 
+    def _reset_instance_id(self) -> None:  # noqa: B027
+        """Assign a fresh instance identity when a server worker starts.
+
+        Managers that share state between workers tell them apart by it.
+        """
+
 
 class _ModifyStateWithLinks(Generic[TOKEN_TYPE]):
     """Async context manager behind `StateManager.modify_state_with_links`.
@@ -332,6 +339,22 @@ class _ModifyStateWithLinks(Generic[TOKEN_TYPE]):
                     return True
                 raise
         return await self._state_context.__aexit__(exc_type, exc, tb) or suppressed
+
+
+async def _save_after_failure(save: Coroutine[Any, Any, None]) -> None:
+    """Save a failed handler's state, also when the caller is cancelled again.
+
+    The save runs on its own task, so a second cancellation cannot abandon it
+    mid-write, and the caller keeps its state lock until the save finishes.
+
+    Args:
+        save: The coroutine that saves the state.
+    """
+    task = asyncio.create_task(save)
+    while not task.done():
+        with contextlib.suppress(asyncio.CancelledError):
+            await asyncio.shield(task)
+    task.result()
 
 
 def _release_state_tree(state: "BaseState"):

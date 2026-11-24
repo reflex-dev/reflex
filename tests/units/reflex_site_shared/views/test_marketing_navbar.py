@@ -1,5 +1,6 @@
 """Shared marketing navigation behavior across consuming applications."""
 
+import inspect
 from collections.abc import Iterator
 from typing import Any
 
@@ -72,3 +73,23 @@ def test_mobile_panel_is_positioned_against_full_navbar():
         header = next(node for node in _walk(navbar) if node.tag == "header")
         assert "[&_nav]:!static" in str(header.class_name)
         assert "[&_ul]:!static" in str(header.class_name)
+
+
+def test_navigation_does_not_link_the_retired_pricing_page():
+    """reflex.dev/pricing/ redirects to the demo form, so no menu offers it."""
+    from reflex_site_shared.views.footer import footer_index
+    from reflex_site_shared.views.sidebar import navbar_sidebar_drawer
+
+    for root in (
+        marketing_navbar(),
+        marketing_mobile_drawer(),
+        navbar_sidebar_drawer(rx.el.button()),
+        inspect.unwrap(footer_index)(),
+    ):
+        hrefs = [
+            str(node.href).strip('"')
+            for node in _walk(root)
+            if getattr(node, "href", None) is not None
+        ]
+        assert hrefs
+        assert [href for href in hrefs if "pricing" in href] == []

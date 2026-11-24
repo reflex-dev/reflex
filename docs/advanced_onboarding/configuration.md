@@ -27,7 +27,15 @@ See the [config reference](/docs/api-reference/config/) for all the parameters a
 
 ## Event Loop Blocking Detection
 
-In development, Reflex warns when an event handler blocks the asyncio event loop near or beyond `event_loop_blocking_threshold` seconds (default `0.2`). The warning appears as soon as the threshold is reached, so a handler that never returns is reported too. It names the handler and the innermost line of your app's code in the blocking stack, then shows the full stack. A blocking task that processes no event, such as a task your app starts, is reported by its task name. When the loop responds again, a second line reports the total duration, which includes the state updates after the handler, such as computed vars. It recommends moving blocking I/O to a thread pool or using a non-blocking async API. Background events still run on the event loop and do not make synchronous blocking code non-blocking. Detection is always off in production. Set the threshold to `0` to turn it off in development:
+In development, Reflex warns when an event handler blocks the asyncio event loop near or beyond `event_loop_blocking_threshold` seconds (default `0.2`). The warning appears as soon as the threshold is reached, so a handler that never returns is reported too. It names the handler and the innermost line of your app's code in the blocking stack, then shows the stack as it was when the threshold was reached, which is one sample and not necessarily the slowest part. It recommends moving blocking I/O to a thread pool or using a non-blocking async API. When the loop responds again, a second line reports the total duration, which includes the state updates after the handler, such as computed vars.
+
+Some blocking is reported differently:
+
+- **First import of a module.** The warning names the module that the import statement imports and the line of your app that imports it, and leaves Python's import machinery out of the stack. It suggests importing the module at the top of a module, or loading it in a thread first from an async handler.
+- **Task with no event.** A task that processes no event, such as a task your app starts, is reported by its task name.
+- **Handler from an installed package.** A handler from an installed package, with none of your app's code in the blocking stack, is reported once per process. The warning names the package and shows the stack from the handler on.
+
+Background events still run on the event loop and do not make synchronous blocking code non-blocking. Detection is always off in production. Set the threshold to `0` to turn it off in development:
 
 ```python
 config = rx.Config(
@@ -100,7 +108,11 @@ The imported module must still define `app` at module level.
 
 ## CORS
 
-The backend only accepts cross-origin requests from origins listed in `cors_allowed_origins`. By default any origin is allowed in dev mode. In prod mode the backend serves the frontend from its own origin, so by default no cross-origin requests are allowed at all and same-origin requests pass; when `deploy_url` is set, only that origin is allowed. Set `cors_allowed_origins` explicitly when the frontend is reachable from several origins, or to `["*"]` to allow any origin in production:
+For HTTP endpoints, the backend only accepts cross-origin requests from origins listed in `cors_allowed_origins`. By default any origin is allowed in dev mode. In prod mode the backend serves the frontend from its own origin, so by default it sends no CORS headers (same-origin requests need none) unless `deploy_url` is set, in which case that origin is allowed.
+
+The WebSocket connection follows the same settings, but because the backend must recognize its own origin itself, it checks WebSocket handshakes separately. In prod mode, unless `cors_allowed_origins` is set explicitly, it accepts the host named by the request's `Host` header, over http or https, plus the origin of `deploy_url` when set; a TLS-terminating proxy that keeps `Host` needs no further configuration. `X-Forwarded-Host` and `X-Forwarded-Proto` are honored only when [`trusted_proxy_hops`](#client-ip-behind-proxies) is set; a trusted `X-Forwarded-Proto: https` then also rejects pages served over plain http. A frontend served from a different origin than the backend therefore needs `REFLEX_DEPLOY_URL` set on the **backend** to the frontend's public URL, scheme included (e.g. `REFLEX_DEPLOY_URL=https://app.example.com`). So does a reverse proxy that rewrites `Host`, unless it sends the original host as `X-Forwarded-Host` and `trusted_proxy_hops` is set (e.g. Azure Front Door). The first time a worker refuses a WebSocket connection, it logs a warning naming the rejected origin.
+
+Set `cors_allowed_origins` explicitly when the frontend is reachable from several origins, or to `["*"]` to allow any origin in production:
 
 ```python
 config = rx.Config(
@@ -139,7 +151,7 @@ config = rx.Config(
 )
 ```
 
-For example, `trusted_proxy_hops=1` uses the rightmost `X-Forwarded-For` entry; `2` uses the second entry from the right. The default is `0`. Do not enable forwarded-header trust if untrusted clients can connect directly to the backend or bypass the trusted proxy chain. The setting can also be provided as `REFLEX_TRUSTED_PROXY_HOPS`.
+For example, `trusted_proxy_hops=1` uses the rightmost `X-Forwarded-For` entry; `2` uses the second entry from the right. The entry is normalized to an IP address after dropping any port and IPv6 brackets, and an IPv4-mapped IPv6 address such as `::ffff:203.0.113.7` becomes its IPv4 address; if it is not a valid address, it is ignored and the connection's peer address is used. The same entry of `X-Forwarded-Host` and `X-Forwarded-Proto` is used when the backend checks the origin of a WebSocket connection (see [CORS](#cors)). Proxies usually set these two headers instead of appending to them, so when one has fewer entries than `trusted_proxy_hops`, its leftmost entry is used. The default is `0`. Do not enable forwarded-header trust if untrusted clients can connect directly to the backend or bypass the trusted proxy chain. The setting can also be provided as `REFLEX_TRUSTED_PROXY_HOPS`.
 
 ## Plugins
 
@@ -191,6 +203,22 @@ This option targets Reflex's supported React 19 runtime and runs in both develop
 The compiler adds build time and memory overhead. Runtime performance depends on the workload: it can avoid repeated calculations during unrelated state updates, but list-heavy updates can become slower. Measure your application's interactions before enabling it in production.
 
 Restart `reflex run` after changing the flag, and rebuild production output. Disabling the flag removes the compiler transform and its optional build dependencies on the next frontend install, unless another component or plugin requires those dependencies.
+
+### Letting React Compiler replace auto-memoization
+
+By default, Reflex wraps each stateful component in a generated memo component. With `react_compiler=True`, you can turn this off and let React Compiler memoize whole pages instead:
+
+```python
+config = rx.Config(
+    app_name="my_app_name",
+    react_compiler=True,
+    auto_memoize=False,
+)
+```
+
+This also shortens Python compilation. React Compiler skips any component it cannot prove safe, such as a custom component whose hook code modifies values during render. Without auto-memoization, a skipped page re-renders completely on every state change, so measure your pages before turning `auto_memoize` off.
+
+Setting both `auto_memoize=False` and `react_compiler=False` logs a warning because page memoization is disabled. Enable one of these options for normal use.
 
 ## Customizable App Data Directory
 
