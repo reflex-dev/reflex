@@ -582,6 +582,8 @@ class DependencyTracker:
                 if not self._last_import_name:
                     msg = f"Cannot find package associated with import {instruction.argval} in {self.func!r}."
                     raise VarValueError(msg)
+                # The previous name of `from ... import a, b` went back to scanning.
+                self.scan_status = ScanStatus.GETTING_IMPORT
                 if instruction.argval in self._last_import_name.split("."):
                     # `import ... as ...` case:
                     # import from interim package, update tracked_locals for the last imported name.
@@ -608,3 +610,5 @@ class DependencyTracker:
                     self.top_of_stack
                 )
                 self.top_of_stack = None
+                # The name is bound, so the code after the import is scanned again.
+                self.scan_status = ScanStatus.SCANNING

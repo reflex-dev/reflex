@@ -181,6 +181,35 @@ def test_inline_imported_helper_gains_locale_dependency():
     assert deps.get(I18nState.get_full_name()) == {"locale"}
 
 
+def test_helper_after_an_inline_import_gains_locale_dependency():
+    from reflex_i18n import gettext as _
+    from reflex_i18n.state import I18nState
+
+    import reflex as rx
+
+    register_implicit_dependency((_,), lambda: I18nState.locale)
+
+    class ImportThenTranslateState(rx.State):
+        @rx.var
+        def today(self) -> str:
+            import datetime
+
+            return _("Today: {day}").format(day=datetime.date.today())
+
+        @rx.var
+        def code(self) -> str:
+            from string import ascii_letters as letters
+            from string import digits
+
+            return reflex_i18n.gettext("Code") + letters[0] + digits[0]
+
+    for name in ("today", "code"):
+        deps = ImportThenTranslateState.computed_vars[name]._deps(
+            objclass=ImportThenTranslateState
+        )
+        assert deps.get(I18nState.get_full_name()) == {"locale"}, name
+
+
 def test_combined_load_helper_gains_locale_dependency():
     # Python 3.13+ fuses consecutive LOAD_FASTs; a helper passed as a value
     # next to `self` (or any local) arrives in a combined opcode.
