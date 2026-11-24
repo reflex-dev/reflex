@@ -56,6 +56,10 @@ WebSocket events continue; waiting HTTP requests resume when the cookie is ready
 Disconnecting cancels the pending exchange. The credential is never
 stored in localStorage or sessionStorage.
 
+The credential that the socket sends is made for this one exchange. It is valid
+for one minute and only at `POST /_reflex/session`; the backend does not accept
+it as a cookie value, and it does not accept a cookie value for exchange.
+
 A `403` from the exchange means the backend does not trust the origin of the
 page (see [Origins, cookies, and embedding](#origins-cookies-and-embedding)).
 The frontend logs the origin to the browser console once, does not retry, and
