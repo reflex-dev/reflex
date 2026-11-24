@@ -6062,6 +6062,8 @@ async def test_socket_renews_expired_cookie_without_changing_state_owner(
     """A live connection can renew its own session after an idle browser's cookie expires."""
     namespace = event_namespace_with_processor_mock
     manager = namespace.app._session_token_manager
+    # A cookie lifetime below the maximum session age leaves room to renew.
+    mocker.patch.object(manager, "ttl", 100)
     session = manager.create()
     token = manager.create_client_token(session)
     environ = _connect_environ(token)
@@ -6197,6 +6199,32 @@ async def test_shared_state_link_to_client_token_needs_its_session(
     else:
         await link(victim)
     await asyncio.gather(*UPDATE_OTHER_CLIENT_TASKS)
+
+
+async def test_socket_does_not_renew_a_session_past_its_maximum_age(
+    event_namespace_with_processor_mock: EventNamespace,
+    mocker: MockerFixture,
+):
+    """A live socket gets no new credential once its session reached the maximum age.
+
+    Args:
+        event_namespace_with_processor_mock: The namespace fixture.
+        mocker: Mock fixture.
+    """
+    namespace = event_namespace_with_processor_mock
+    manager = namespace.app._session_token_manager
+    await namespace.on_connect("sid", _connect_environ(""))
+    session = namespace._sessions["sid"].session
+    emitted = cast(AsyncMock, namespace.emit)
+    emitted.reset_mock()
+    mocker.patch(
+        "reflex.app.time.time", return_value=session.created_at + manager.max_age
+    )
+
+    await namespace.on_session_refresh("sid")
+
+    emitted.assert_not_called()
+    assert namespace._sessions["sid"].session is session
 
 
 def _dropped_result_warning(label: str) -> str:
