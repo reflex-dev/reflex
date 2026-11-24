@@ -260,6 +260,7 @@ def _compile_contexts(
     disable_react_owner_stacks = (
         not is_prod_mode() and not environment.REFLEX_REACT_OWNER_STACKS.get()
     )
+    # Without state, no update reaches the frontend to decode.
     initial_state, initial_state_json = (
         utils._compile_initial_state(state, component_imports=component_imports)
         if state
