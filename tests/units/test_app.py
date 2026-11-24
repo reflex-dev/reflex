@@ -6196,6 +6196,14 @@ async def test_shared_state_link_to_client_token_needs_its_session(
         with pytest.raises(exceptions.SessionAuthorizationError) as error:
             await link(victim)
         assert str(error.value) == "The session does not authorize this client token."
+        # The rejected link leaves the earlier link in place.
+        async with app.modify_state(
+            BaseStateToken(ident=second_tab, cls=DraftState),
+            session_token=attacker_session,
+        ) as root_state:
+            linked = await root_state.get_state(DraftState)
+            # The test client has no socket, so its router token is empty.
+            assert linked._linked_from == {""}
     else:
         await link(victim)
     await asyncio.gather(*UPDATE_OTHER_CLIENT_TASKS)
@@ -6225,6 +6233,50 @@ async def test_socket_does_not_renew_a_session_past_its_maximum_age(
 
     emitted.assert_not_called()
     assert namespace._sessions["sid"].session is session
+
+
+async def test_failed_token_link_leaves_no_socket_session(
+    event_namespace_with_processor_mock: EventNamespace,
+    mocker: MockerFixture,
+):
+    """A connect that fails while linking its token keeps no session record.
+
+    A refused connect never reaches on_disconnect, so nothing else removes it.
+
+    Args:
+        event_namespace_with_processor_mock: The namespace fixture.
+        mocker: Mock fixture.
+    """
+    namespace = event_namespace_with_processor_mock
+    mocker.patch.object(
+        namespace, "link_token_to_sid", side_effect=RuntimeError("link failed")
+    )
+    with pytest.raises(RuntimeError) as error:
+        await namespace.on_connect("sid", _connect_environ(""))
+    assert str(error.value) == "link failed"
+    assert namespace._sessions == {}
+
+
+def test_session_manager_uses_the_configured_lifetimes(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """The app passes each session lifetime setting to its session manager.
+
+    Args:
+        monkeypatch: Config override fixture.
+    """
+    config = rx.Config(
+        app_name="lifetimes",
+        session_token_ttl=100,
+        session_token_refresh_interval=25,
+        session_token_max_age=300,
+    )
+    monkeypatch.setattr("reflex.app.get_config", lambda: config)
+    app = App()
+    app._api = Starlette()
+    app._add_default_endpoints()
+    manager = app._session_token_manager
+    assert (manager.ttl, manager.refresh_interval, manager.max_age) == (100, 25, 300)
 
 
 def _dropped_result_warning(label: str) -> str:
