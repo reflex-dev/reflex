@@ -1438,12 +1438,13 @@ def test_copy_files_skips_up_to_date_targets(tmp_path: Path):
     """
     source = tmp_path / "logo.png"
     source.write_bytes(b"\x89PNG\xff")
-    target = tmp_path / "out" / "nested" / "logo.png"
-    utils.copy_files([(source, target)])
+    out = tmp_path / "out"
+    target = out / "nested" / "logo.png"
+    utils.copy_files([(source, target)], out)
     assert target.read_bytes() == b"\x89PNG\xff"
     modified = target.stat().st_mtime_ns
-    utils.copy_files([(source, target)])
+    utils.copy_files([(source, target)], out)
     assert target.stat().st_mtime_ns == modified
     source.write_bytes(b"\x89PNG\x00")
-    utils.copy_files([(source, target)])
+    utils.copy_files([(source, target)], out)
     assert target.read_bytes() == b"\x89PNG\x00"
