@@ -236,8 +236,9 @@ def _trusted_origin(request: Request, allowed_origins: tuple[str, ...]) -> bool:
     """Check whether the page that sent a request may install a session credential.
 
     The frontend replaces a loopback API host with the host of its own page, so
-    a page on the host that this request reached is trusted. Cookies are not
-    scoped by port, so another port on that host gains nothing from the exchange.
+    a page on the host that this request reached is trusted when it uses the
+    scheme of the request. Development serves that page on another port.
+    Production trusts only the origin of the request itself.
 
     Args:
         request: The incoming session request.
@@ -252,10 +253,17 @@ def _trusted_origin(request: Request, allowed_origins: tuple[str, ...]) -> bool:
     if origin in allowed_origins:
         return True
     try:
-        hostname = urlsplit(origin).hostname
+        page = urlsplit(origin)
+        hostname = page.hostname
     except ValueError:
         return False
-    return hostname is not None and hostname == request.url.hostname
+    if page.scheme != request.url.scheme or hostname != request.url.hostname:
+        return False
+    # Development serves the frontend on another port of the backend host.
+    return (
+        environment.REFLEX_ENV_MODE.get() == constants.Env.DEV
+        or page.netloc == request.url.netloc
+    )
 
 
 async def session_endpoint(

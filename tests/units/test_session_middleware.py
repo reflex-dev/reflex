@@ -217,28 +217,40 @@ def test_exchange_rejects_untrusted_origin(
 
 
 @pytest.mark.parametrize(
-    ("origin", "status"),
+    ("mode", "origin", "status"),
     [
-        ("https://api.test:3000", 200),
-        ("http://api.test:3000", 200),
-        ("https://other.test:3000", 403),
-        ("https://sub.api.test", 403),
+        ("dev", "https://api.test:3000", 200),
+        ("dev", "http://api.test:3000", 403),
+        ("dev", "https://other.test:3000", 403),
+        ("dev", "https://sub.api.test", 403),
+        ("prod", "https://api.test", 200),
+        ("prod", "https://api.test:3000", 403),
+        ("prod", "http://api.test", 403),
     ],
 )
 def test_exchange_trusts_origins_on_the_backend_host(
-    manager: SessionTokenManager, origin: str, status: int
+    manager: SessionTokenManager,
+    monkeypatch: pytest.MonkeyPatch,
+    mode: str,
+    origin: str,
+    status: int,
 ):
     """A frontend on the host that serves the backend can exchange credentials.
 
     The frontend replaces a loopback API host with the host of its own page, so
-    the configured URLs do not list that origin. Cookies are not scoped by
-    port, so another port on that host gains nothing from the exchange.
+    the configured URLs do not list that origin. Development serves the
+    frontend on another port of that host. Production trusts only the origin
+    of the request itself. The scheme must match in both modes: a plain HTTP
+    page cannot set the secure cookie itself, so it must not get it here.
 
     Args:
         manager: The session manager.
+        monkeypatch: Environment fixture.
+        mode: The app runtime mode.
         origin: The request Origin.
         status: The expected response status.
     """
+    monkeypatch.setenv("REFLEX_ENV_MODE", mode)
     app = _app(manager, allowed_origins=())
     with TestClient(app, base_url="https://api.test") as client:
         response = client.post(

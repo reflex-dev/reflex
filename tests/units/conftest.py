@@ -61,20 +61,6 @@ def _isolate_app_in_context() -> Generator[None, None, None]:
 
 
 @pytest.fixture(autouse=True)
-def _session_token_compatibility_mode(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Run unit tests in the session mode that allows tokens without a session.
-
-    Most unit tests address state with a plain token and no browser session,
-    which the default enforce mode rejects. Tests of session ownership set the
-    mode that they cover.
-
-    Args:
-        monkeypatch: Environment fixture.
-    """
-    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "warn")
-
-
-@pytest.fixture(autouse=True)
 def _isolate_managed_logging() -> Generator[None, None, None]:
     """Run each test outside managed logging and detach the sinks it attached.
 
