@@ -1,0 +1,1 @@
+`rx.match` now matches a set case by set equality, so `rx.match(State.tags, ({"c", "d"}, ...))` no longer depends on the order in which the server sent the set. Matches without a set compile as before.
