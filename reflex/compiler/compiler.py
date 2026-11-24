@@ -28,6 +28,7 @@ from reflex_base.components.memo import (
     reset_memo_component_classes,
 )
 from reflex_base.config import get_config
+from reflex_base.constants.base import Javascript
 from reflex_base.constants.compiler import PageNames, ResetStylesheet
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
@@ -1305,7 +1306,8 @@ def _install_frontend_packages(
         The outputs of the modules: ``utils/scripts.js``.
     """
     script_modules = _app_modules()
-    if script_modules and not (get_web_dir() / "node_modules" / "vite").is_dir():
+    vite = get_web_dir() / Javascript.NODE_MODULES / "vite"
+    if script_modules and not vite.is_dir():
         app._get_frontend_packages(imports)
     outputs, script_imports, copies, modules = utils.compile_script_modules(
         script_modules

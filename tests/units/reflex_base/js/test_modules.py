@@ -1,10 +1,18 @@
 """Tests for the functions of JavaScript modules imported from Python."""
 
 import importlib
+import json
 from pathlib import Path
 
 import pytest
-from reflex_base.js.modules import _app_modules, _JsFunction, _package_imports
+from reflex_base.event import Event
+from reflex_base.event.context import EventContext
+from reflex_base.js.modules import (
+    _app_modules,
+    _JsFunction,
+    _package_imports,
+)
+from reflex_base.utils import format
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_base.vars.base import LiteralVar, Var
 
@@ -62,7 +70,7 @@ def test_calling_a_function_builds_the_call_js_event():
 
 
 def test_an_event_handler_argument_is_sent_as_its_name():
-    """An event handler argument arrives in JavaScript as its full name."""
+    """An event handler argument arrives in JavaScript as its full name, in a list or a dict too."""
 
     class JsHandlerState(rx.State):
         @rx.event
@@ -73,12 +81,50 @@ def test_an_event_handler_argument_is_sent_as_its_name():
                 value: The value.
             """
 
-    spec = _JsFunction("app.scripts.party", "report")(JsHandlerState.done, "x")
+    done = JsHandlerState.done
+    spec = _JsFunction("app.scripts.party", "report")(
+        done, "x", [done, (done,)], {"on": {"done": done}}
+    )
     name = f"{JsHandlerState.get_full_name()}.done"
     assert str(LiteralVar.create(spec)) == (
         '(ReflexEvent("_call_js", ({ ["module"] : "app.scripts.party", '
-        f'["function"] : "report", ["args"] : ["{name}", "x"] }}), ({{  }})))'
+        f'["function"] : "report", ["args"] : ["{name}", "x", ["{name}", '
+        f'["{name}"]], ({{ ["on"] : ({{ ["done"] : "{name}" }}) }})] }}), '
+        "({  })))"
     )
+
+
+def test_a_bound_event_argument_arrives_as_the_same_event_from_a_trigger_or_a_handler():
+    """A bound event arrives as the event ``{name, payload}``, however it is sent.
+
+    The event keeps its event actions, which ``addEvents`` applies.
+    """
+
+    class JsBoundEventState(rx.State):
+        @rx.event
+        def done(self, value: str):
+            """Receive a value.
+
+            Args:
+                value: The value.
+            """
+
+    spec = _JsFunction("app.scripts.party", "report")(
+        JsBoundEventState.done("v"), [JsBoundEventState.done("w").debounce(100)]
+    )
+    name = f"{JsBoundEventState.get_full_name()}.done"
+    assert str(LiteralVar.create(spec)) == (
+        '(ReflexEvent("_call_js", ({ ["module"] : "app.scripts.party", '
+        f'["function"] : "report", ["args"] : [({{ ["name"] : "{name}", '
+        '["payload"] : ({ ["value"] : "v" }) }), [({ ["name"] : '
+        f'"{name}", ["payload"] : ({{ ["value"] : "w" }}), ["event_actions"] : '
+        '({ ["debounce"] : 100 }) })]] }), ({  })))'
+    )
+    (event,) = Event.from_event_type(spec)
+    assert json.loads(format.json_dumps(event.payload["args"])) == [
+        {"name": name, "payload": {"value": "v"}},
+        [{"name": name, "payload": {"value": "w"}, "event_actions": {"debounce": 100}}],
+    ]
 
 
 def test_var_arguments_are_compiled_into_the_event():
@@ -119,6 +165,68 @@ def test_a_function_is_an_event_trigger(app_package: Path):
         '"js_app.party", ["function"] : "celebrate", '
         '["args"] : [_e?.["target"]?.["value"]] }), ({  })))], [_e], ({  }))))'
     )
+
+
+def test_an_uncalled_function_is_a_result_callback(app_package: Path):
+    """Passed uncalled as a callback, a function receives the result, as a lambda does.
+
+    Args:
+        app_package: the app package, on sys.path.
+    """
+    from js_app.party import celebrate  # pyright: ignore[reportMissingImports]
+
+    uncalled = str(LiteralVar.create(rx.call_script("[7, 8]", callback=celebrate)))
+    assert uncalled == str(
+        LiteralVar.create(
+            rx.call_script("[7, 8]", callback=lambda result: celebrate(result))
+        )
+    )
+    assert uncalled == (
+        '(ReflexEvent("_call_script", ({ ["javascript_code"] : "[7, 8]", '
+        '["callback"] : "(_result) => {addEvents([ReflexEvent(\\"_call_js\\", '
+        '{module:\\"js_app.party\\",function:\\"celebrate\\",args:[_result]})])}" '
+        "}), ({  })))"
+    )
+
+
+def test_a_module_first_imported_while_an_event_runs_is_an_error(app_package: Path):
+    """A module first imported by an event handler was not imported when the app compiled.
+
+    The frontend does not include it, so the import fails with the fix. The
+    event processor's own context, which belongs to no event, does not count.
+
+    Args:
+        app_package: the app package, on sys.path.
+    """
+
+    def context(txid: str) -> EventContext:
+        """Build an event context that runs nothing.
+
+        Args:
+            txid: the transaction id, empty for no event.
+
+        Returns:
+            The context.
+        """
+        return EventContext(
+            token="t",
+            state_manager=None,  # pyright: ignore[reportArgumentType]
+            enqueue_impl=None,  # pyright: ignore[reportArgumentType]
+            txid=txid,
+        )
+
+    with context("event"), pytest.raises(ReflexRuntimeError) as error:
+        importlib.import_module("js_app.party")
+    assert str(error.value) == (
+        "The JavaScript module js_app.party is first imported while an event "
+        "handler runs, after the app compiled, so the frontend does not include "
+        "it. Import it at the top of a Python module that the app imports when "
+        "it loads, such as the module that defines the event handler."
+    )
+    with context(""):
+        assert importlib.import_module("js_app.party").celebrate == _JsFunction(
+            "js_app.party", "celebrate"
+        )
 
 
 def test_names_become_functions_on_first_use(app_package: Path):

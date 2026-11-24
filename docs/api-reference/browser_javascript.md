@@ -305,11 +305,18 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
 
 - Only modules in your app's package import this way: the package that
   `app_name` in `rxconfig.py` names. A `.js` file in another package, such as
-  a library you installed, is never imported.
-- A Python module of the same name wins over a JavaScript one.
+  a library you installed, is never imported. Nor is a module imported while
+  `rxconfig.py` loads, directly or through another module: the app's package
+  is not known yet, so the import fails with `ModuleNotFoundError`.
+- A Python module or package of the same name wins over a JavaScript one. A
+  directory without `__init__.py`, such as a folder of images, does not.
 - Import each function by name, as in `from my_app.scripts.party import
   celebrate`, or use it on the module (`party.celebrate`).
   `from my_app.scripts.party import *` is not supported.
+- Import the module at the top of a Python module that the app imports when it
+  loads. The app bundles the modules imported when it compiles, so a module
+  first imported inside an event handler is not in the frontend: the import
+  raises an error that says so.
 - When the app compiles, Reflex reads the module with the bundler's parser, so
   any JavaScript, TypeScript or JSX the bundler accepts works, and checks that
   each name you use from Python is an exported function. An export that may
@@ -322,6 +329,10 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
 - Arguments are sent as JSON. A var is sent as its value in the browser. An
   event handler arrives as its full name, which the function dispatches with
   `reflex.addEvents([reflex.event(name, payload)])`, as `measure` does above.
+  An event handler called with its arguments, such as
+  `PartyState.set_width(100)`, arrives as the event `{name, payload}`, which
+  the function dispatches with `reflex.addEvents([event])`. Both arrive the
+  same way inside a list or a dict, from an event trigger or an event handler.
 - The function's return value is not sent back. To get a value back, pass an
   event handler and dispatch it with the value, as `measure` does.
 - The npm packages the module imports, such as `canvas-confetti`, are installed
@@ -490,11 +501,12 @@ The compile stops with these errors:
   directory, and the next run writes it again.
 
 In the browser, a call fails with `Cannot call my_app.scripts.party.nope: the
-frontend has no function nope in the JavaScript module my_app.scripts.party.`
-when the module does not export a function of that name, which a name used only
-in an event handler can reach, or when the frontend was built before the
-backend imported it. Export the function, or restart `reflex run` to rebuild
-the frontend.
+JavaScript module my_app.scripts.party exports no function named nope.` when a
+name used only in an event handler is not exported as a function. Export the
+function, or correct the name in Python. A call fails with `Cannot call
+my_app.scripts.lazy.go: the frontend does not include the JavaScript module
+my_app.scripts.lazy` when the frontend was compiled without the module. Import
+the module at the top of a Python module that the app imports when it loads.
 
 ## Using React Hooks
 

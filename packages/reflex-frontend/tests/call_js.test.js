@@ -301,14 +301,23 @@ test("reports a missing module, function or non-function export", async () => {
   await callJs("app.scripts.party", "missing", []);
   await callJs("app.scripts.party", "notAFunction", []);
   await callJs("app.other", "celebrate", []);
-  const reported = (module, name) => {
-    const message = `Cannot call ${module}.${name}: the frontend has no function ${name} in the JavaScript module ${module}. Either the module does not export a function of that name, or the frontend was built before the backend imported it. Export a function named ${name} from the module, or restart \`reflex run\` to rebuild the frontend.`;
-    return [message, null, null, null, new TypeError(message)];
-  };
+  const reported = (message) => [
+    message,
+    null,
+    null,
+    null,
+    new TypeError(message),
+  ];
+  const notExported = (name) =>
+    reported(
+      `Cannot call app.scripts.party.${name}: the JavaScript module app.scripts.party exports no function named ${name}. Export a function named ${name} from it, or correct the name in Python.`,
+    );
   expect(onerror.mock.calls).toEqual([
-    reported("app.scripts.party", "missing"),
-    reported("app.scripts.party", "notAFunction"),
-    reported("app.other", "celebrate"),
+    notExported("missing"),
+    notExported("notAFunction"),
+    reported(
+      "Cannot call app.other.celebrate: the frontend does not include the JavaScript module app.other, as when Python first imports it inside an event handler, after the app compiled. Import it at the top of a Python module that the app imports when it loads.",
+    ),
   ]);
   expect(modules.seen).toEqual([]);
 });

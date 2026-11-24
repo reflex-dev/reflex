@@ -569,7 +569,7 @@ def format_queue_events(
         specs: list[EventSpec] = []
         if isinstance(spec, (EventHandler, EventSpec)):
             specs = [call_event_handler(spec, args_spec or _default_args_spec)]
-        elif isinstance(spec, type(lambda: None)):
+        elif callable(spec):
             specs = call_event_fn(spec, args_spec or _default_args_spec)  # pyright: ignore [reportAssignmentType, reportArgumentType]
             if isinstance(specs, Var):
                 msg = f"Invalid event spec: {specs}. Expected a list of EventSpecs."
