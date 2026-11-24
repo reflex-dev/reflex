@@ -20,6 +20,7 @@ from reflex_base.session import (
 )
 from reflex_base.utils.exceptions import EnvironmentVarValueError
 
+GENERATED_KEY = environment.REFLEX_GENERATED_SECRET_KEY.name
 SECRET = b"a" * 32
 OTHER_SECRET = b"b" * 32
 
@@ -340,7 +341,7 @@ def test_environment_key_ring_derives_session_keys(tmp_path, monkeypatch):
     assert not list(tmp_path.iterdir())
 
 
-@pytest.mark.parametrize("value", ["short", "a" * 32 + ",", "," + "b" * 32, "", "  "])
+@pytest.mark.parametrize("value", ["short", "a" * 32 + ",", "," + "b" * 32])
 def test_invalid_secret_never_discloses_its_value(monkeypatch, value):
     """Reject invalid configured secrets without including them in errors.
 
@@ -396,11 +397,14 @@ def test_missing_secret_key_is_generated_once_and_exported(
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("REFLEX_SECRET_KEY", "unset")
     monkeypatch.delenv("REFLEX_SECRET_KEY")
+    monkeypatch.setenv(GENERATED_KEY, "unset")
+    monkeypatch.delenv(GENERATED_KEY)
     monkeypatch.setenv("REFLEX_ENV_MODE", env_mode)
 
     key = ensure_secret_key()
 
-    assert os.environ["REFLEX_SECRET_KEY"] == key
+    assert os.environ[GENERATED_KEY] == key
+    assert "REFLEX_SECRET_KEY" not in os.environ
     assert len(key.encode()) >= 32
     assert ensure_secret_key() == key
     assert _load_secrets() == (_session_key(key.encode()),)
@@ -462,3 +466,37 @@ def test_session_rollout_mode(monkeypatch, mode):
     monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "invalid")
     with pytest.raises(EnvironmentVarValueError):
         environment.REFLEX_SESSION_TOKEN_MODE.get()
+
+
+@pytest.mark.parametrize("blank", ["", "  "])
+def test_blank_secret_key_generates_one_key_for_all_workers(monkeypatch, caplog, blank):
+    """A blank key is treated as unset, and every worker gets the generated key.
+
+    An environment file with ``REFLEX_SECRET_KEY=`` restores the blank value
+    each time a process loads its config. The generated key is kept apart from
+    that variable, so a worker that starts later still finds it.
+
+    Args:
+        monkeypatch: The environment override fixture.
+        caplog: The captured log records.
+        blank: The blank configured value.
+    """
+    monkeypatch.setenv("REFLEX_SECRET_KEY", blank)
+    monkeypatch.setenv(GENERATED_KEY, "unset")
+    monkeypatch.delenv(GENERATED_KEY)
+    monkeypatch.setenv("REFLEX_ENV_MODE", "dev")
+
+    key = ensure_secret_key()
+
+    assert len(key.encode()) >= 32
+    assert caplog.messages == [
+        (
+            "REFLEX_SECRET_KEY is not set; browser sessions reset when "
+            "`reflex run` restarts."
+        )
+    ]
+    # A worker inherits the environment, then its config load restores the blank.
+    monkeypatch.setenv("REFLEX_SECRET_KEY", blank)
+    assert ensure_secret_key() == key
+    assert _load_secrets() == (_session_key(key.encode()),)
+    assert len(caplog.messages) == 1
