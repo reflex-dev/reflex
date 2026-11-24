@@ -414,7 +414,8 @@ arguments: `def run(*args: Any)`.
   running the app. A stub only changes when its text does: Reflex reads the
   types again when the module, a file it imports or reads types from (a `.d.ts`
   file, `import type`, a JSDoc `import("./types")`) or an npm package it reads
-  types from changes, or when you upgrade Reflex, and rewrites the stub only if
+  types from changes, when the stub itself changed, as when you restore an
+  older one from git, or when you upgrade Reflex, and rewrites the stub only if
   it comes out different. What each stub was made from is kept in
   `.web/script_stubs.json`, so a fresh clone reads the types once and leaves
   the committed stubs as they are. Writing a stub does not reload the backend.
