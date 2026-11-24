@@ -2,6 +2,7 @@
 
 from typing import Any, cast
 
+import pytest
 from reflex_base.client_state import client_state
 from reflex_base.event import (
     EventArgVar,
@@ -14,6 +15,7 @@ from reflex_base.event import (
     parse_args_spec,
     passthrough_event_spec,
 )
+from reflex_base.utils.exceptions import EventHandlerValueError
 from reflex_base.utils.types import Unset
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.number import NumberVar
@@ -136,3 +138,25 @@ def test_copies_of_a_script_event_keep_its_timeout():
     assert [(type(copy), copy.timeout) for copy in copies] == [
         (_BrowserCallSpec, 5)
     ] * 4
+
+
+@pytest.mark.parametrize(
+    "timeout", [0, -5, float("inf"), float("nan"), True, "30"], ids=repr
+)
+@pytest.mark.parametrize("script", [rx.call_script, rx.call_function, rx.run_script])
+def test_script_events_reject_a_timeout_that_is_not_positive_seconds(
+    script: Any, timeout: Any
+):
+    """A call's timeout follows the rule of browser_call_timeout, checked as the event is built.
+
+    Args:
+        script: The function building the script event.
+        timeout: The invalid timeout.
+    """
+    with pytest.raises(EventHandlerValueError) as err:
+        script("1", timeout=timeout)
+    assert str(err.value) == (
+        f"timeout is {timeout!r}, but awaited browser calls need a positive, "
+        "finite number of seconds to wait for a result. Set timeout to a number "
+        "of seconds such as 30, or to None to wait without a limit."
+    )

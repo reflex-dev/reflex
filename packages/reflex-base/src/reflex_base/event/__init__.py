@@ -38,6 +38,7 @@ from typing_extensions import (
 
 from reflex_base import constants
 from reflex_base.components.field import BaseField
+from reflex_base.config import _check_browser_call_timeout
 from reflex_base.constants.compiler import CompileVars, Imports
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import console, format
@@ -45,6 +46,7 @@ from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
     EventFnArgMismatchError,
     EventHandlerArgTypeMismatchError,
+    EventHandlerValueError,
     MissingAnnotationError,
 )
 from reflex_base.utils.types import (
@@ -2146,7 +2148,13 @@ def _browser_call_spec(
 
     Returns:
         The spec of the script event.
+
+    Raises:
+        EventHandlerValueError: If the timeout is not None or a positive,
+            finite number of seconds.
     """
+    if not isinstance(timeout, Unset):
+        _check_browser_call_timeout(timeout, "timeout", "", EventHandlerValueError)
     spec = server_side(
         name,
         _script_signature(fn),

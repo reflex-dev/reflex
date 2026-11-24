@@ -179,6 +179,11 @@ The rules:
   answer = await rx.call_script("askTheUser()", timeout=None)
   ```
 
+  Like `browser_call_timeout`, `timeout=` must be a positive, finite number of seconds or `None`; any other value
+  raises `EventHandlerValueError` when the event is built: ``timeout is 0, but awaited browser calls need a positive,
+  finite number of seconds to wait for a result. Set timeout to a number of seconds such as 30, or to None to wait
+  without a limit.``
+
 - The script keeps running while the tab's socket reconnects. A tab that reconnects within `browser_call_grace_period`
   seconds (5 by default) still delivers its result. A tab that is closed, reloaded or navigated away stops the script,
   and the call fails.
