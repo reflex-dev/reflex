@@ -8,7 +8,6 @@ import hashlib
 import hmac
 import json
 import logging
-import os
 import re
 import secrets
 import time
@@ -92,8 +91,10 @@ def is_client_token(value: str) -> bool:
 def ensure_secret_key() -> str:
     """Get REFLEX_SECRET_KEY, generating a temporary key when it is not set.
 
-    The generated key is set in the process environment, so processes started
-    after this call, such as backend workers and reloads, share it.
+    A blank value counts as not set. The generated key is kept in an internal
+    environment variable, so processes started after this call, such as
+    backend workers and reloads, share it, and an environment file that holds
+    a blank REFLEX_SECRET_KEY cannot replace it.
 
     Returns:
         The comma-separated secret key ring.
@@ -101,16 +102,15 @@ def ensure_secret_key() -> str:
     Raises:
         ValueError: If a configured key is shorter than 32 bytes.
     """
-    # A blank value reads as unset. An environment file would restore it after
-    # a key is generated here, and each worker would then generate its own key.
-    configured = os.environ.get(environment.REFLEX_SECRET_KEY.name)
-    if configured is not None:
+    if (configured := environment.REFLEX_SECRET_KEY.get()) is not None:
         if any(len(key.strip().encode()) < 32 for key in configured.split(",")):
             msg = "REFLEX_SECRET_KEY keys must each be at least 32 bytes"
             raise ValueError(msg)
         return configured
+    if (generated := environment.REFLEX_GENERATED_SECRET_KEY.get()) is not None:
+        return generated
     key = secrets.token_hex(32)
-    environment.REFLEX_SECRET_KEY.set(key)
+    environment.REFLEX_GENERATED_SECRET_KEY.set(key)
     if environment.REFLEX_ENV_MODE.get() == constants.Env.PROD:
         logger.warning(
             "REFLEX_SECRET_KEY is not set. Reflex generated a temporary key.\n"

@@ -802,6 +802,10 @@ class EnvironmentVariables:
     # one when unset; set it for any other launch, so all workers share keys.
     REFLEX_SECRET_KEY: EnvVar[str | None] = env_var(None)
 
+    # The key that `reflex run` generated because REFLEX_SECRET_KEY is not set.
+    # Workers inherit it; an environment file cannot replace it.
+    REFLEX_GENERATED_SECRET_KEY: EnvVar[str | None] = env_var(None, internal=True)
+
     # Rollout mode for session-bound client tokens.
     REFLEX_SESSION_TOKEN_MODE: EnvVar[Literal["off", "warn", "enforce"]] = env_var(
         "enforce"
