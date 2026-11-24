@@ -437,7 +437,7 @@ async def test_modify_exception_persists_state(
     state_manager = StateManagerDisk(_write_debounce_seconds=write_debounce_seconds)
     token = BaseStateToken(ident="client", cls=DiskPersistState)
 
-    with pytest.raises(RuntimeError, match="handler failed"):
+    with pytest.raises(RuntimeError, match=r"^handler failed$"):
         async with state_manager.modify_state(token) as state:
             assert isinstance(state, DiskPersistState)
             state.num = 1.5
@@ -488,7 +488,7 @@ async def test_modify_cancelled_persists_state(
     task = asyncio.create_task(modify())
     await asyncio.wait_for(started.wait(), timeout=5)
     task.cancel("superseded")
-    with pytest.raises(asyncio.CancelledError, match="superseded"):
+    with pytest.raises(asyncio.CancelledError, match=r"^superseded$"):
         await task
 
     await state_manager.close()
@@ -555,7 +555,7 @@ async def test_repeated_cancellation_waits_for_state_save(
         assert not task.done()
         assert state_manager._is_locked(token)
         release_save.set()
-        with pytest.raises(asyncio.CancelledError, match="superseded"):
+        with pytest.raises(asyncio.CancelledError, match=r"^superseded$"):
             await task
         assert not state_manager._is_locked(token)
     finally:
