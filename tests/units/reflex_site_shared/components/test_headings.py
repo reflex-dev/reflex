@@ -5,11 +5,10 @@ import re
 import shutil
 import subprocess
 from collections.abc import Iterator
-from pathlib import Path
 from typing import Any
 
 import pytest
-import reflex_base
+from reflex_base import constants
 from reflex_site_shared.components.blocks.headings import HeadingLink
 
 import reflex as rx
@@ -17,9 +16,7 @@ from reflex.istate.data import ReflexURL, _serialize_reflex_url
 
 NODE = shutil.which("node")
 ROUTER_URL = str(rx.State.router.url._original)
-STATE_JS = (
-    Path(reflex_base.__file__).parent / ".templates" / "web" / "utils" / "state.js"
-)
+STATE_JS = constants.Templates.Dirs.WEB_TEMPLATE / "utils" / "state.js"
 # The generated expression calls the frontend's isTrue helper; load the real one.
 IS_TRUE = re.search(
     r"^export (const isTrue = .*?^};)", STATE_JS.read_text(), re.DOTALL | re.MULTILINE
