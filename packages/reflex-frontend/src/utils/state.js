@@ -34,6 +34,7 @@ const EVENTURL = env.EVENT;
 // Socket event names (must match reflex_base/constants/event.py SocketEvent)
 const CLIENT_ERROR_EVENT = "client_error";
 const STATE_MISMATCH_EVENT = "state_mismatch";
+const SESSION_REFRESH_EVENT = "session_refresh";
 
 // sessionStorage key with the time of the last automatic reload (must match
 // LAST_RELOADED_KEY in reflex/state.py: the reload on a frontend error and the
@@ -1230,11 +1231,15 @@ export const connect = async (
   let resolveSession;
   let rejectSession;
   let sessionFailures = 0;
+  // Whether this tab already exchanged a credential for the cookie.
+  let sessionEstablished = false;
+  // Whether the backend denied the exchange for this page's origin.
+  let sessionRejected = false;
   const currentSocket = socket.current;
   const requestSessionRefresh = () => {
     window.clearTimeout(sessionTimer);
     if (socket.current === currentSocket && currentSocket.connected) {
-      currentSocket.emit("session_refresh");
+      currentSocket.emit(SESSION_REFRESH_EVENT);
     }
   };
   // Ask for a new credential once the wait has passed. A browser runs a timer
@@ -1244,6 +1249,8 @@ export const connect = async (
       Date.now(),
   ) => {
     window.clearTimeout(sessionTimer);
+    // A denied exchange gets the same answer until the backend reconnects.
+    if (sessionRejected) return;
     if (wait > 0) {
       sessionTimer = window.setTimeout(
         requestSessionRefresh,
@@ -1417,6 +1424,8 @@ export const connect = async (
     }
     if (!sessionController) {
       releaseBootstrap();
+      // The backend can trust this origin after a restart with new settings.
+      sessionRejected = false;
       scheduleSessionRefresh();
     }
     firstConnect = false;
@@ -1572,7 +1581,7 @@ export const connect = async (
   socket.current.on("new_token", async (new_token) => {
     setToken(new_token);
   });
-  socket.current.on("session_refresh", requestSessionRefresh);
+  socket.current.on(SESSION_REFRESH_EVENT, requestSessionRefresh);
   socket.current.on("session_token", async (sessionCredential) => {
     if (sessionController) return;
     const controller = new AbortController();
@@ -1580,7 +1589,7 @@ export const connect = async (
     window.clearTimeout(sessionTimer);
     // HTTP calls wait only while the browser has no cookie: the server sends
     // a credential in-band when the socket connected without a valid one.
-    if (!resolveSession && sessionCredential) {
+    if (!resolveSession && sessionCredential && !sessionEstablished) {
       initialSessionExchange = new Promise((resolve, reject) => {
         resolveSession = resolve;
         rejectSession = reject;
@@ -1595,10 +1604,15 @@ export const connect = async (
       setToken(session.client_token);
       const refreshDelay =
         (session.refresh_in ?? session.expires_in / 2) * 1000;
-      window.localStorage.setItem(
-        sessionRefreshStorageKey(),
-        String(Date.now() + refreshDelay),
-      );
+      sessionEstablished = true;
+      try {
+        window.localStorage.setItem(
+          sessionRefreshStorageKey(),
+          String(Date.now() + refreshDelay),
+        );
+      } catch {
+        // The cookie is set; the refresh time is only a hint for later loads.
+      }
       sessionFailures = 0;
       setConnectErrors([]);
       scheduleSessionRefresh(refreshDelay);
@@ -1620,6 +1634,7 @@ export const connect = async (
           `${error.message}. The backend does not trust the origin ${window.location.origin}; ` +
             "add it to deploy_url or cors_allowed_origins to persist the browser session.",
         );
+        sessionRejected = true;
         finishSessionExchange();
         return;
       }

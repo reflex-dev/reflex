@@ -1411,6 +1411,7 @@ class App(MiddlewareMixin, LifespanMixin):
             config.app_name,
             ttl=config.session_token_ttl,
             refresh_interval=config.session_token_refresh_interval,
+            max_age=config.session_token_max_age,
         )
         self._api.add_exception_handler(
             exceptions.SessionAuthorizationError, session_authorization_error
@@ -2852,42 +2853,45 @@ class EventNamespace(AsyncNamespace):
             if (bound_token := manager.client_token_for(session, token)) != token:
                 token = bound_token
                 await self.emit("new_token", token, to=sid)
-        if token:
-            # The boot event records the new sid and token under its state lock.
-            await self.link_token_to_sid(sid, token, update_state=boot_event is None)
-        else:
-            logger.warning(f"No token provided in connection for session {sid}")
-        if issued_session is not None:
-            await self.emit(
-                "session_token",
-                self.app._session_token_manager.encode(issued_session, exchange=True),
-                to=sid,
-            )
+        try:
+            if token:
+                # The boot event records the new sid and token under its state lock.
+                await self.link_token_to_sid(
+                    sid, token, update_state=boot_event is None
+                )
+            else:
+                logger.warning(f"No token provided in connection for session {sid}")
+            if issued_session is not None:
+                await self.emit(
+                    "session_token",
+                    self.app._session_token_manager.encode(
+                        issued_session, exchange=True
+                    ),
+                    to=sid,
+                )
 
-        subprotocol = environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL")
-        if subprotocol and subprotocol != constants.Reflex.VERSION:
-            logger.warning(
-                f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
-            )
-        if otel.enabled:
-            otel.record_connection(1)
+            subprotocol = environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL")
+            if subprotocol and subprotocol != constants.Reflex.VERSION:
+                logger.warning(
+                    f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
+                )
+            if otel.enabled:
+                otel.record_connection(1)
 
-        # Headers, client IP, and session id cannot change for the lifetime of
-        # the connection; compute them once instead of on every event.
-        self._static_router_data[sid] = self._build_static_router_data(sid, environ)
+            # Headers, client IP, and session id cannot change for the lifetime of
+            # the connection; compute them once instead of on every event.
+            self._static_router_data[sid] = self._build_static_router_data(sid, environ)
 
-        if boot_event is not None:
-            try:
+            if boot_event is not None:
                 await self.on_event(sid, boot_event)
-            except Exception:
-                # A refused connect never reaches on_disconnect, so drop the
-                # token link and connection data made above before the error
-                # refuses the connect.
-                self._static_router_data.pop(sid, None)
-                self._sessions.pop(sid, None)
-                if (linked_token := self.sid_to_token.get(sid)) is not None:
-                    await self._token_manager.disconnect_token(linked_token, sid)
-                raise
+        except Exception:
+            # A refused connect never reaches on_disconnect, so drop the token
+            # link and connection data made above before the error refuses it.
+            self._static_router_data.pop(sid, None)
+            self._sessions.pop(sid, None)
+            if (linked_token := self.sid_to_token.get(sid)) is not None:
+                await self._token_manager.disconnect_token(linked_token, sid)
+            raise
 
     async def on_session_refresh(self, sid: str) -> None:
         """Renew credentials for the session already authenticated by this socket.

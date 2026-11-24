@@ -1,6 +1,7 @@
 """Browser session transport against a real Granian ASGI server."""
 
 import asyncio
+import re
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -145,7 +146,15 @@ async def test_granian_session_roundtrip(
                 response = await exchange_task
                 assert response.status_code == 200, response.text
                 assert response.json()["client_token"] == token
-                assert "HttpOnly" in response.headers["set-cookie"]
+                # The remaining lifetime depends on how long the exchange was held.
+                attributes = re.sub(
+                    r"Max-Age=\d+",
+                    "Max-Age=N",
+                    response.headers["set-cookie"].partition("; ")[2],
+                )
+                assert attributes == (
+                    "Path=/; Max-Age=N; HttpOnly; SameSite=None; Secure; Partitioned"
+                )
                 cookie = response.headers["set-cookie"].partition(";")[0]
                 await client.disconnect()
                 assert app.event_namespace is not None

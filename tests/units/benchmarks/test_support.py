@@ -55,7 +55,9 @@ def test_socket_client_reconnects_with_the_bound_token_and_cookie():
 
     socket_client._connect(client, "http://localhost:8000", session, "/_event", 10)
 
-    assert client.connect.call_args.args[0].endswith("?token=bound-client")
+    assert (
+        client.connect.call_args.args[0] == "http://localhost:8000?token=bound-client"
+    )
     assert client.connect.call_args.kwargs["headers"]["Cookie"] == "session=signed"
 
 

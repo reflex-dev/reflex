@@ -1,1 +1,1 @@
-Use the same hostname for the development AppHarness frontend and backend so browser cookies remain same-site.
+AppHarness now points the development frontend at `localhost` for the backend API, so browser cookies remain same-site during tests.

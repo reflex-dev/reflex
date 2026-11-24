@@ -250,6 +250,10 @@ class SharedStateBaseInternal(State):
             raise ReflexRuntimeError(msg)
         if self._linked_to == token:
             return self  # already linked to this token
+        if is_client_token(token):
+            # A link to a client token reaches that client's own state. Check
+            # before the earlier link changes, so a rejected link keeps it.
+            authorize(EventContext.get().session_token, token)
         if self._linked_to and self._linked_to != token:
             # Disassociate from previous linked token since unlink will not be called.
             self._linked_from.discard(self.rx_router_session.client_token)
@@ -257,10 +261,6 @@ class SharedStateBaseInternal(State):
         if "_" in token:
             msg = f"Invalid token {token} for linking state {self.get_full_name()}, cannot use underscore (_) in the token name."
             raise ReflexRuntimeError(msg)
-
-        if is_client_token(token):
-            # A link to a client token reaches that client's own state.
-            authorize(EventContext.get().session_token, token)
 
         # Associate substate with the given link token.
         state_name = self.get_full_name()

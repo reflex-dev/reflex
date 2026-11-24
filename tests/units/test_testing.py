@@ -25,7 +25,13 @@ def test_testing_module_does_not_import_uvicorn_at_module_load():
 
 
 def test_prod_backend_restart_preserves_settings(tmp_path, monkeypatch, mocker):
-    """Rebinding a production backend preserves workers and compile suppression."""
+    """Rebinding a production backend preserves workers and compile suppression.
+
+    Args:
+        tmp_path: Temporary directory for the harness.
+        monkeypatch: Pytest fixture for temporary environment changes.
+        mocker: Fixture for mocking backend startup and worker settings.
+    """
     monkeypatch.setenv("REFLEX_SKIP_COMPILE", "false")
     harness = AppHarnessProd.create(root=tmp_path)
     harness.app_asgi = mock.AsyncMock()

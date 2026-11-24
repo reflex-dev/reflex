@@ -56,8 +56,8 @@ WebSocket events continue; waiting HTTP requests resume when the cookie is ready
 Disconnecting cancels the pending exchange. The credential is never
 stored in localStorage or sessionStorage.
 
-The credential that the socket sends is made for this one exchange. It is valid
-for one minute and only at `POST /_reflex/session`; the backend does not accept
+The credential that the socket sends is a short-lived bearer credential. It is valid
+for up to one minute and only at `POST /_reflex/session`; the backend does not accept
 it as a cookie value, and it does not accept a cookie value for exchange.
 
 A `403` from the exchange means the backend does not trust the origin of the
@@ -101,8 +101,9 @@ reconnections. Refresh retains the session ID and existing tab bindings.
 
 ## Origins, cookies, and embedding
 
-Cookies use `Secure; HttpOnly; SameSite=None; Partitioned; Path=/`, no Domain,
-and an app-specific `__Host-` name. Set `api_url` to the public backend URL,
+Secure cookies use `Secure; HttpOnly; SameSite=None; Partitioned; Path=/`, no Domain,
+and an app-specific `__Host-` name; non-loopback HTTP development uses an insecure
+cookie without the `__Host-` prefix. Set `api_url` to the public backend URL,
 including when TLS terminates at a reverse proxy. Cookies are not scoped by
 port, so applications sharing a host must have distinct `app_name` values.
 The signed audience also binds each credential to `app_name`, so one app cannot
@@ -134,10 +135,11 @@ app works as before.
 
 All ports of the backend host share the cookie, because cookies are not scoped
 by port. A page on another port of that host can therefore open a socket in
-the same session and get its own client token. It
-cannot read the state of another tab without that tab's client token. Do not
-treat the session alone as proof of who the user is, and list explicit
-`cors_allowed_origins` when other apps share the host.
+the same session and get its own client token, but only when the backend
+accepts its WebSocket origin. Production accepts the `deploy_url` origin by
+default; development and an explicit `cors_allowed_origins` can accept more.
+Such a page cannot read the state of another tab without that tab's client
+token. Do not treat the session alone as proof of who the user is.
 
 Cookie headers remain readable on the server through `self.router.headers`.
 They are omitted from frontend router data, and the session credential itself
@@ -171,7 +173,8 @@ If you replace the old key with the new key, every session resets at once.
 ```
 
 1. Put the new key first and keep the old key after it, separated by a comma:
-   `REFLEX_SECRET_KEY=<new key>,<old key>`. New cookies use the first key.
+   `REFLEX_SECRET_KEY=<new key>,<old key>`. Restart or redeploy every backend,
+   because a running backend reads the keys once. New cookies use the first key.
    Cookies signed with the old key stay valid.
 2. Wait at least the maximum session age (`session_token_max_age`, seven days by
    default). Active sessions move to the new key when their cookie refreshes.
@@ -203,7 +206,8 @@ server-side fan-out, pass it explicitly:
 from reflex_base.session import SessionToken
 
 async with app.modify_state(
-    client_token, session_token=SessionToken.SYSTEM
+    rx.BaseStateToken(ident=client_token, cls=MyState),
+    session_token=SessionToken.SYSTEM,
 ) as root_state:
     state = await root_state.get_state(MyState)
     state.message = "Server maintenance starts soon"

@@ -365,7 +365,7 @@ def test_environment_key_ring_derives_session_keys(tmp_path, monkeypatch):
     assert not list(tmp_path.iterdir())
 
 
-@pytest.mark.parametrize("value", ["short", "a" * 32 + ",", "," + "b" * 32])
+@pytest.mark.parametrize("value", ["short", "a" * 32 + ",", "," + "b" * 32, "", "  "])
 def test_invalid_secret_never_discloses_its_value(monkeypatch, value):
     """Reject invalid configured secrets without including them in errors.
 
