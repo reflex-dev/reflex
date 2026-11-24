@@ -18,6 +18,10 @@ CLIENT_TOKEN_KEY_JS = (
     "Object.keys(sessionStorage).find((key) => key.endsWith(':token'))"
 )
 CLIENT_TOKEN_JS = f"sessionStorage.getItem({CLIENT_TOKEN_KEY_JS})"
+# JavaScript for the localStorage key of the time when the session is next renewed.
+SESSION_REFRESH_KEY_JS = (
+    "Object.keys(localStorage).find((key) => key.endsWith(':expires_at'))"
+)
 
 
 def request_raw(

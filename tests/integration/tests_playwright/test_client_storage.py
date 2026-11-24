@@ -11,7 +11,7 @@ from playwright.sync_api import Page, expect
 from reflex_base.constants.state import FIELD_MARKER
 
 from reflex.testing import AppHarness
-from tests.integration.utils import CLIENT_TOKEN_KEY_JS
+from tests.integration.utils import CLIENT_TOKEN_KEY_JS, SESSION_REFRESH_KEY_JS
 
 
 def ClientSide():
@@ -35,7 +35,9 @@ def ClientSide():
         @rx.event
         def reset_token_no_hydrate(self):
             return rx.run_script(
-                f"window.sessionStorage.setItem({CLIENT_TOKEN_KEY_JS}, '{uuid.uuid4()}');"
+                "{window.sessionStorage.setItem("
+                "Object.keys(sessionStorage).find((key) => key.endsWith(':token')), "
+                f"'{uuid.uuid4()}');}}"
             )
 
     class ClientSideSubState(ClientSideState):
@@ -190,7 +192,9 @@ def _storage(page: Page, name: str) -> dict[str, str]:
 
 
 def _cookie_map(page: Page) -> dict[str, Any]:
-    """Return the cookies visible to the page's current URL, indexed by name.
+    """Return the app's cookies visible to the page's current URL, indexed by name.
+
+    The framework's own browser session cookie is left out.
 
     Args:
         page: Playwright page.
@@ -200,7 +204,7 @@ def _cookie_map(page: Page) -> dict[str, Any]:
     """
     cookies: dict[str, Any] = {}
     for cookie in page.context.cookies(page.url):
-        if name := cookie.get("name"):
+        if (name := cookie.get("name")) and "reflex_session_" not in name:
             cookies[name] = cookie
     return cookies
 
@@ -311,6 +315,7 @@ def test_client_side_state(client_side: AppHarness, opened_page: Page):
     assert not _cookie_map(page)
     local_storage = _storage(page, "localStorage")
     local_storage.pop("last_compiled_theme", None)
+    local_storage.pop(page.evaluate(SESSION_REFRESH_KEY_JS), None)
     local_storage.pop("theme", None)
     assert local_storage == {}
 
@@ -374,6 +379,7 @@ def test_client_side_state(client_side: AppHarness, opened_page: Page):
 
     local_storage = _storage(page, "localStorage")
     local_storage.pop("last_compiled_theme", None)
+    local_storage.pop(page.evaluate(SESSION_REFRESH_KEY_JS), None)
     local_storage.pop("theme", None)
     assert local_storage == {
         f"{sub_state}.l1{FIELD_MARKER}": "l1 value",
