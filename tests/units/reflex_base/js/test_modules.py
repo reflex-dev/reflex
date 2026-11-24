@@ -138,6 +138,23 @@ def test_a_function_is_an_event_trigger(app_package: Path):
     )
 
 
+def test_an_uncalled_function_is_a_result_callback(app_package: Path):
+    """Passed uncalled as a callback, a function receives the result, as a lambda does.
+
+    Args:
+        app_package: the app package, on sys.path.
+    """
+    from js_app.party import celebrate  # pyright: ignore[reportMissingImports]
+
+    uncalled = str(LiteralVar.create(rx.call_script("[7, 8]", callback=celebrate)))
+    assert uncalled == str(
+        LiteralVar.create(
+            rx.call_script("[7, 8]", callback=lambda result: celebrate(result))
+        )
+    )
+    assert "args:[_result]" in uncalled
+
+
 def test_names_become_functions_on_first_use(app_package: Path):
     """Any identifier is a function, recorded for the compiler and cached.
 

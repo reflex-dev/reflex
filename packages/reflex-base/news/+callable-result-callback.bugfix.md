@@ -1,0 +1,1 @@
+`rx.call_script` and `rx.call_function` now call a `callback` that is a callable object rather than a function, such as a `functools.partial` or a function imported from a JavaScript module, with the result, instead of dropping it.
