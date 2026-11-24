@@ -285,7 +285,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
         Args:
             first_endpoint: The end of the range if second_endpoint is not provided, otherwise the start of the range.
             second_endpoint: The end of the range.
-            step: The step of the range.
+            step: The step of the range. Omitted and zero steps use 1.
 
         Returns:
             The range of numbers.
@@ -305,7 +305,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
             start = first_endpoint
             end = second_endpoint
 
-        return array_range_operation(start, end, step or 1)
+        return array_range_operation(start, end, 1 if step is None else step)
 
     @overload
     def contains(self, other: Any) -> BooleanVar: ...
@@ -2166,7 +2166,7 @@ def array_range_operation(
         The range of numbers.
     """
     return var_operation_return(
-        js_expression=f"Array.from({{ length: Math.ceil(({stop!s} - {start!s}) / {step!s}) }}, (_, i) => {start!s} + i * {step!s})",
+        js_expression=f"Array.from({{ length: Math.ceil(({stop!s} - {start!s}) / ({step!s} || 1)) }}, (_, i) => {start!s} + i * ({step!s} || 1))",
         var_type=list[int],
     )
 
