@@ -196,7 +196,16 @@ def test_root_breadcrumb_has_one_location(path, monkeypatch):
             "/library/html/html/",
             ("HTML Elements", "HTML"),
             {"/library/html/html/"},
-            [("Library", None), ("HTML", None), ("HTML", "/library/html/html/")],
+            [("Components", None), ("HTML", None), ("HTML", "/library/html/html/")],
+        ),
+        (
+            "/hosting/custom-domains/",
+            ("Custom Domains",),
+            {"/hosting/overview/", "/hosting/custom-domains/"},
+            [
+                ("Cloud", "/hosting/overview/"),
+                ("Custom Domains", "/hosting/custom-domains/"),
+            ],
         ),
         (
             "/ai/organization/sso/",
