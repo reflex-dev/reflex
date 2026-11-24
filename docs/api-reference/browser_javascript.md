@@ -333,8 +333,9 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
   `PartyState.set_width(100)`, arrives as the event `{name, payload}`, which
   the function dispatches with `reflex.addEvents([event])`. Both arrive the
   same way inside a list or a dict, from an event trigger or an event handler.
-- The function's return value is not sent back. To get a value back, pass an
-  event handler and dispatch it with the value, as `measure` does.
+- The function's return value is not sent back, and the events after the call
+  do not wait for a promise it returns. To get a value back, pass an event
+  handler and dispatch it with the value, as `measure` does.
 - The npm packages the module imports, such as `canvas-confetti`, are installed
   with the app, and so are those its stylesheets `@import`, such as
   `normalize.css` when no such file is beside the stylesheet. Pin a version with `frontend_packages` in `rxconfig.py`. Path

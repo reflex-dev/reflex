@@ -37,6 +37,10 @@ const modules = vi.hoisted(() => {
   const answeredLate = new Promise((resolve) => {
     answerLate = resolve;
   });
+  let releaseHanging = () => {};
+  const hangingLoaded = new Promise((resolve) => {
+    releaseHanging = resolve;
+  });
   return {
     seen: [],
     answer,
@@ -45,6 +49,8 @@ const modules = vi.hoisted(() => {
     askingLoaded,
     answerLate,
     answeredLate,
+    releaseHanging,
+    hangingLoaded,
     releaseSlow,
     slowLoaded,
     releaseGated,
@@ -60,10 +66,6 @@ vi.mock("$/utils/scripts", () => ({
   default: {
     "app.scripts.party": async () => ({
       celebrate: (count, id) => modules.seen.push(["celebrate", count, id]),
-      later: async (value) => {
-        await Promise.resolve();
-        modules.seen.push(["later", value]);
-      },
       write: (value) => {
         globalThis.partyValue = value;
       },
@@ -107,6 +109,13 @@ vi.mock("$/utils/scripts", () => ({
           );
         },
       })),
+    "app.scripts.hanging": () =>
+      modules.hangingLoaded.then(() => ({
+        wait: () => {
+          modules.seen.push(["waiting"]);
+          return new Promise(() => {});
+        },
+      })),
     "app.scripts.broken": () =>
       Promise.reject(new Error("Failed to fetch the module.")),
   },
@@ -133,11 +142,6 @@ const callJs = (module, fn, args) =>
 test("calls the named function with the arguments", async () => {
   await callJs("app.scripts.party", "celebrate", [200, "results"]);
   expect(modules.seen).toEqual([["celebrate", 200, "results"]]);
-});
-
-test("waits for an async function before the next event", async () => {
-  await callJs("app.scripts.party", "later", ["done"]);
-  expect(modules.seen).toEqual([["later", "done"]]);
 });
 
 test("the next event sees what a function did, though events overlap", async () => {
@@ -170,18 +174,13 @@ test("the next event sees what a function did, though events overlap", async () 
 
 test("a function's promise does not hold back the events after it", async () => {
   // As a script's does not: it can wait on the user, as for the answer to a
-  // dialog, and the app keeps handling events meanwhile.
+  // dialog, and the app keeps handling events meanwhile, even those queued
+  // with the call.
   globalThis.reads = [];
   const socket = { connected: true, emit: vi.fn() };
-  const asking = queueEvents(
-    [callJsEvent("app.scripts.party", "ask", [])],
-    socket,
-    false,
-    null,
-    null,
-  );
   await queueEvents(
     [
+      callJsEvent("app.scripts.party", "ask", []),
       {
         name: "_call_script",
         payload: { javascript_code: "reads.push('next')" },
@@ -195,8 +194,29 @@ test("a function's promise does not hold back the events after it", async () => 
   expect(globalThis.reads).toEqual(["next"]);
   expect(modules.seen).toEqual([]);
   modules.answer("yes");
-  await asking;
-  expect(modules.seen).toEqual([["answered", "yes"]]);
+  await vi.waitFor(() => expect(modules.seen).toEqual([["answered", "yes"]]));
+});
+
+test("a promise that never settles does not hold back the events after it, though its module was loading", async () => {
+  globalThis.reads = [];
+  const socket = { connected: true, emit: vi.fn() };
+  const queued = queueEvents(
+    [
+      callJsEvent("app.scripts.hanging", "wait", []),
+      {
+        name: "_call_script",
+        payload: { javascript_code: "reads.push('next')" },
+      },
+    ],
+    socket,
+    false,
+    null,
+    null,
+  );
+  modules.releaseHanging();
+  await queued;
+  expect(globalThis.reads).toEqual(["next"]);
+  expect(modules.seen).toEqual([["waiting"]]);
 });
 
 test("an event queued while the modules load runs after the function before it", async () => {
@@ -287,7 +307,14 @@ test("an event waits for each module call before it, not only the first", async 
 });
 
 test("a function of a module still loading runs once it has loaded", async () => {
-  const call = callJs("app.scripts.slow", "ping", ["late"]);
+  const socket = { connected: true, emit: vi.fn() };
+  const call = queueEvents(
+    [callJsEvent("app.scripts.slow", "ping", ["late"])],
+    socket,
+    false,
+    null,
+    null,
+  );
   await Promise.resolve();
   expect(modules.seen).toEqual([]);
   modules.releaseSlow();
