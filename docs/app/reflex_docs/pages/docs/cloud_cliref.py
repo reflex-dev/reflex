@@ -53,6 +53,11 @@ class InlineCode(InlineText):
 @dataclasses.dataclass(frozen=True)
 class InlineStrong(InlineText):
     def into_text(self) -> str:
+        """Render the text in bold.
+
+        Returns:
+            The escaped text wrapped in markdown strong emphasis.
+        """
         return f"**{super().into_text()}**"
 
 

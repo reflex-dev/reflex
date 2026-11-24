@@ -58,6 +58,14 @@ def test_group_env_vars_uses_first_matching_prefix_and_general_fallback():
     from reflex_docs.pages.docs.env_vars import group_env_vars
 
     def field(name: str) -> FieldDocumentation:
+        """Build a minimal documented variable.
+
+        Args:
+            name: The variable's name.
+
+        Returns:
+            The variable's documentation with no type details.
+        """
         return FieldDocumentation(
             name=name, type=str, type_display="str", default=None, description=None
         )
