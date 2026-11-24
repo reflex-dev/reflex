@@ -386,7 +386,8 @@ def test_single_page_sidebar_link_has_selected_background(page: Page, width: int
 
 def test_sidebar_click_preserves_scroll_position(page: Page):
     """Selecting a visible page must not recenter the scrollable sidebar."""
-    page.set_viewport_size({"width": 1440, "height": 700})
+    # Tall enough that Webhooks is visible with the sidebar scrolled to the top.
+    page.set_viewport_size({"width": 1440, "height": 1000})
     page.goto(f"{PREVIEW_URL}/docs/ai/files/", wait_until="networkidle")
     sidebar = page.locator("#sidebar-container")
     target = sidebar.get_by_role("link", name="Webhooks", exact=True)

@@ -238,12 +238,14 @@ def test_navbar_controls_fit_and_search_opens(page: Page, width: int):
             ("Overview", "/docs/"),
             ("Build with AI", "/docs/ai/"),
             ("Framework", "/docs/getting-started/introduction/"),
-            ("Cloud", "/docs/hosting/deploy-quick-start/"),
+            ("Cloud", "/docs/hosting/overview/"),
             ("XY", "/docs/xy/"),
         ):
             link = navigation.get_by_role("link", name=label, exact=True)
             expect(link).to_be_visible()
             expect(link).to_have_attribute("href", href)
+        # The menu marks the same build-time tab as the desktop links.
+        expect(navigation.locator('a[aria-current="page"]')).to_have_text("Overview")
         menu.click()
     else:
         expect(overview).to_be_visible()
@@ -415,4 +417,5 @@ def test_navbar_announces_selected_section(page: Page):
     ):
         header.get_by_role("link", name=label, exact=True).click()
         expect(page).to_have_url(f"{PREVIEW_URL}{path}")
-        expect(header.locator('a[aria-current="page"]')).to_have_text(label)
+        # The closed mobile menu carries the same mark; only the visible tab counts.
+        expect(header.locator('a[aria-current="page"]:visible')).to_have_text(label)
