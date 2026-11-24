@@ -332,7 +332,8 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
 - The function's return value is not sent back. To get a value back, pass an
   event handler and dispatch it with the value, as `measure` does.
 - The npm packages the module imports, such as `canvas-confetti`, are installed
-  with the app. Pin a version with `frontend_packages` in `rxconfig.py`. Path
+  with the app, and so are those its stylesheets `@import`, such as
+  `normalize.css` when no such file is beside the stylesheet. Pin a version with `frontend_packages` in `rxconfig.py`. Path
   aliases (`@/...`), subpath imports (`#...`) and specifiers with a scheme
   (`virtual:...`, `https://...`) are left to the bundler and not installed.
 - Local files the module imports with relative paths, such as `./helpers.js`,
@@ -341,7 +342,10 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
   must be inside your app's package directory, which is all of your project
   that is copied into the compiled app. A file imported as text
   (`./example.js?raw`), or a script imported as a URL (`./worklet.js?url`), is
-  copied as it is, without the files it imports. A file that is a symbolic link
+  copied as it is, without the files it imports. So is a file the module names
+  with `new URL("./logo.png", import.meta.url)`, unless it starts a worker, as
+  in `new Worker(new URL("./worker.js", import.meta.url))`: a worker is bundled
+  with the files it imports. A file that is a symbolic link
   is copied where the import names it, so the files it imports are found from
   there.
 - Reflex writes a type stub (`party.pyi`) next to the module when it compiles

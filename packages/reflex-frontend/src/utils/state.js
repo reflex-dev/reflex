@@ -598,10 +598,11 @@ if (typeof window !== "undefined") {
   }
 }
 
-// The call of a `_call_js` whose module is still loading, until it has run.
-// `processEvent` starts an event that arrives while another awaits, so the
-// events after this call wait for it, in the order they arrived, to see what
-// its function did.
+// The call of a `_call_js` whose module is still loading, until its function
+// has run. `processEvent` starts an event that arrives while another awaits, so
+// the events after this call wait for it, in the order they arrived, to see
+// what its function did. They do not wait for a promise the function returns,
+// as they do not when the module has loaded: it can wait on the user.
 let pendingModuleCall;
 
 /**
@@ -621,15 +622,17 @@ const callModuleFunction = (payload) => {
     !Object.hasOwn(loadedScriptModules, module) &&
     Object.hasOwn(scriptModules, module)
   ) {
-    const call = loadScriptModule(module).then(() =>
-      callModuleFunction(payload),
-    );
+    // Wrapped, so that the call settles when the function returns rather than
+    // adopting the promise it may return.
+    const call = loadScriptModule(module).then(() => ({
+      result: callModuleFunction(payload),
+    }));
     pendingModuleCall = call;
     const clear = () => {
       pendingModuleCall = undefined;
     };
     call.then(clear, clear);
-    return call;
+    return call.then(({ result }) => result);
   }
   const fn = Object.hasOwn(loadedScriptModules, module)
     ? loadedScriptModules[module][name]
