@@ -9,6 +9,7 @@ import dataclasses
 import functools
 import importlib
 import inspect
+import ipaddress
 import json
 import logging
 import operator
@@ -656,6 +657,50 @@ def _trusted_forwarded_value(
     if len(entries) >= trusted_proxy_hops:
         return entries[-trusted_proxy_hops]
     return None if appended or not entries else entries[0]
+
+
+def _is_port(text: str) -> bool:
+    """Return whether text is a port number.
+
+    Args:
+        text: The text after the ``:`` of an address.
+
+    Returns:
+        Whether the text is ASCII digits for a number from 0 to 65535.
+    """
+    return len(text) <= 5 and text.isascii() and text.isdigit() and int(text) < 65536
+
+
+def _forwarded_client_ip(entry: str) -> str | None:
+    """Normalize an ``X-Forwarded-For`` entry to an IP address.
+
+    Args:
+        entry: The entry, an IP address with an optional port and IPv6 brackets.
+
+    Returns:
+        The normalized address, or None when the entry is not an IP address.
+    """
+    if entry.startswith("["):
+        entry, closed, rest = entry[1:].partition("]")
+        port_ok = not rest or (rest.startswith(":") and _is_port(rest[1:]))
+        if not closed or not port_ok:
+            return None
+    elif entry.count(":") == 1:
+        entry, _, port = entry.partition(":")
+        if not _is_port(port):
+            return None
+    if "%" in entry:
+        # A zone index only means something on the proxy's own host, and
+        # ``ipaddress`` keeps it without validating it.
+        return None
+    try:
+        ip = ipaddress.ip_address(entry)
+    except ValueError:
+        return None
+    # A dual-stack proxy writes an IPv4 client as ``::ffff:a.b.c.d``.
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped:
+        ip = ip.ipv4_mapped
+    return str(ip)
 
 
 def _origin_matches_request(
@@ -1827,12 +1872,15 @@ class App(MiddlewareMixin, LifespanMixin):
 
         self._plugin_routes_registered = True
 
-    def _compile_page(self, route: str, save_page: bool = True):
+    def _compile_page(self, route: str, save_page: bool = True) -> Component | None:
         """Compile a page.
 
         Args:
             route: The route of the page to compile.
             save_page: If True, the compiled page is saved to self._pages.
+
+        Returns:
+            The evaluated page, or None if it was evaluated earlier in this process.
         """
         # Evaluating a page has global side effects (dynamic state creation), so
         # skip routes already evaluated in this process to avoid duplicating them.
@@ -1840,7 +1888,7 @@ class App(MiddlewareMixin, LifespanMixin):
         # page saved, or it is already saved. Otherwise fall through to build and
         # store the component so ``save_page=True`` still populates ``_pages``.
         if route in self._evaluated_pages and (not save_page or route in self._pages):
-            return
+            return None
 
         n_states_before = len(all_base_state_classes)
         component = compiler.compile_unevaluated_page(
@@ -1860,6 +1908,7 @@ class App(MiddlewareMixin, LifespanMixin):
         self._check_routes_conflict(route)
         if save_page:
             self._pages[route] = component
+        return component
 
     @property
     def _page_routes(self) -> list[str]:
@@ -2375,6 +2424,7 @@ class App(MiddlewareMixin, LifespanMixin):
                     await self.event_namespace.emit_update(
                         update=StateUpdate(delta=delta),
                         token=token.ident,
+                        suppress_warnings=True,
                     )
 
     def _validate_exception_handlers(self):
@@ -2676,7 +2726,7 @@ class EventNamespace(AsyncNamespace):
         """
         if isinstance(self._token_manager, RedisTokenManager):
             # Make sure this instance is watching for updates from other instances.
-            self._token_manager.ensure_lost_and_found_task(self.emit_update)
+            await self._token_manager.ensure_lost_and_found_subscribed(self.emit_update)
         boot_event = frontend_schema = None
         if isinstance(auth, dict):
             boot_event = auth.get(constants.CompileVars.CONNECT_AUTH_EVENT)
@@ -2769,7 +2819,13 @@ class EventNamespace(AsyncNamespace):
             headers.get("x-forwarded-for", ""), get_config().trusted_proxy_hops
         )
         if forwarded_ip is not None:
-            client_ip = forwarded_ip
+            if (normalized_ip := _forwarded_client_ip(forwarded_ip)) is not None:
+                client_ip = normalized_ip
+            else:
+                logger.debug(
+                    f"Ignoring X-Forwarded-For entry {_clip(forwarded_ip)}: "
+                    "not an IP address."
+                )
         return {
             constants.RouteVar.SESSION_ID: sid,
             constants.RouteVar.HEADERS: headers,
@@ -2815,12 +2871,16 @@ class EventNamespace(AsyncNamespace):
             return task
         return None
 
-    async def emit_update(self, update: StateUpdate, token: str) -> None:
+    async def emit_update(
+        self, update: StateUpdate, token: str, suppress_warnings: bool = False
+    ) -> None:
         """Emit an update to the client.
 
         Args:
             update: The state update to send.
             token: The client token (tab) associated with the event.
+            suppress_warnings: Whether to skip the warning when no client is
+                connected with the token.
         """
         socket_record = self._token_manager.token_to_socket.get(token)
         if (
@@ -2830,7 +2890,7 @@ class EventNamespace(AsyncNamespace):
             if isinstance(self._token_manager, RedisTokenManager):
                 # The socket belongs to another instance of the app, send it to the lost and found.
                 await self._token_manager.emit_lost_and_found(token, update)
-            else:
+            elif not suppress_warnings:
                 # If the socket record is None, we are not connected to a client. Prevent sending
                 # updates to all clients.
                 logger.warning(

@@ -1,6 +1,7 @@
 """Unit tests for TokenManager implementations."""
 
 import asyncio
+import functools
 import pickle
 import time
 from collections.abc import Callable, Generator
@@ -9,11 +10,13 @@ from typing import cast
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from redis.asyncio.client import PubSub
 
 from reflex import config
 from reflex.app import EventNamespace
 from reflex.istate.data import RouterData
 from reflex.state import StateUpdate
+from reflex.utils.tasks import ensure_task
 from reflex.utils.token_manager import (
     LocalTokenManager,
     RedisTokenManager,
@@ -948,6 +951,151 @@ async def test_redis_token_manager_lost_and_found(
     emit2_mock.assert_not_called()
     emit1_mock.assert_called_once()
     emit1_mock.reset_mock()
+
+
+@pytest.mark.asyncio
+async def test_redis_token_manager_waits_for_an_unconfirmed_subscription_once(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """Connects stop waiting once redis has had its time to confirm the subscription.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest log capture fixture.
+    """
+
+    async def listen():
+        """Never confirm the subscription."""
+        await asyncio.Event().wait()
+        if False:
+            yield
+
+    @asynccontextmanager
+    async def pubsub():
+        yield Mock(psubscribe=AsyncMock(), listen=listen)
+
+    monkeypatch.setattr(
+        "reflex.utils.token_manager.LOST_AND_FOUND_SUBSCRIBE_TIMEOUT", 0.05
+    )
+    manager = RedisTokenManager(Mock(pubsub=pubsub, aclose=AsyncMock()))
+    try:
+        await manager.ensure_lost_and_found_subscribed(AsyncMock())
+        started = time.monotonic()
+        await manager.ensure_lost_and_found_subscribed(AsyncMock())
+        assert time.monotonic() - started < 0.05
+
+        assert manager._lost_and_found_task is not None
+        assert not manager._lost_and_found_task.done()
+        assert [record.getMessage() for record in caplog.records] == [
+            (
+                "Redis did not confirm the lost and found subscription in time; "
+                "updates from other instances may be lost until it does."
+            )
+        ]
+    finally:
+        await manager.close()
+
+
+@pytest.mark.asyncio
+async def test_redis_token_manager_waits_again_while_resubscribing(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """A subscriber that fails and subscribes again makes connects wait again.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest log capture fixture.
+    """
+    fail = asyncio.Event()
+    attempts = 0
+
+    async def listen():
+        """Confirm and then fail the first subscription, never confirm the next.
+
+        Yields:
+            The confirmation of the first subscription.
+
+        Raises:
+            ConnectionError: When the first subscription fails.
+        """
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            yield {"type": "psubscribe"}
+            await fail.wait()
+            msg = "connection lost"
+            raise ConnectionError(msg)
+        await asyncio.Event().wait()
+
+    @asynccontextmanager
+    async def pubsub():
+        yield Mock(psubscribe=AsyncMock(), listen=listen)
+
+    monkeypatch.setattr(
+        "reflex.utils.token_manager.LOST_AND_FOUND_SUBSCRIBE_TIMEOUT", 0.05
+    )
+    # Retry the failed subscription at once instead of after a second.
+    monkeypatch.setattr(
+        "reflex.utils.token_manager.ensure_task",
+        functools.partial(ensure_task, exception_delay=0),
+    )
+    manager = RedisTokenManager(Mock(pubsub=pubsub, aclose=AsyncMock()))
+    try:
+        await manager.ensure_lost_and_found_subscribed(AsyncMock())
+        # Outlast the first subscription's wait before it fails.
+        await asyncio.sleep(0.1)
+        fail.set()
+        while attempts < 2:  # noqa: ASYNC110
+            await asyncio.sleep(0)
+
+        await manager.ensure_lost_and_found_subscribed(AsyncMock())
+
+        assert [
+            record.getMessage()
+            for record in caplog.records
+            if record.name == "reflex.utils.token_manager"
+        ] == [
+            (
+                "Redis did not confirm the lost and found subscription in time; "
+                "updates from other instances may be lost until it does."
+            )
+        ]
+    finally:
+        await manager.close()
+
+
+@pytest.mark.usefixtures("redis_url")
+@pytest.mark.asyncio
+async def test_redis_token_manager_lost_and_found_subscribes_before_connecting(
+    event_namespace_factory: Callable[[], EventNamespace],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A connect waits for the lost and found subscription, so no update is lost.
+
+    Redis drops a message published before its subscriber is subscribed, and
+    the socket record tells other instances to publish as soon as it is stored.
+
+    Args:
+        event_namespace_factory: Factory fixture for EventNamespace instances.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    psubscribe = PubSub.psubscribe
+
+    async def slow_psubscribe(self: PubSub, *args, **kwargs):
+        if any("lost_and_found" in str(arg) for arg in args):
+            await asyncio.sleep(0.5)
+        return await psubscribe(self, *args, **kwargs)
+
+    monkeypatch.setattr(PubSub, "psubscribe", slow_psubscribe)
+    event_namespace1 = event_namespace_factory()
+    emit1_mock: Mock = event_namespace1.emit  # pyright: ignore[reportAssignmentType]
+    event_namespace2 = event_namespace_factory()
+
+    await event_namespace1.on_connect(sid="sid1", environ=query_string_for("token1"))
+    await event_namespace2.emit_update(StateUpdate(), token="token1")
+    await _wait_for_call_count_positive(emit1_mock)
+
+    emit1_mock.assert_called_once()
 
 
 @pytest.mark.usefixtures("redis_url")
