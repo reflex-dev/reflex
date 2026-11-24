@@ -20,8 +20,8 @@ class JsState(rx.State):
 
 def test_rx_js_is_reflex_base_js():
     """rx.js exposes exactly the public functions of reflex_base.js."""
-    assert js.__all__ == ["library", "ref"]
-    assert [rx.js.library, rx.js.ref] == [js.library, js.ref]
+    assert js.__all__ == ["ref"]
+    assert rx.js.ref is js.ref
 
 
 def test_ref():
@@ -37,13 +37,6 @@ def test_ref():
     assert ref._get_all_var_data() == VarData.merge(
         REFLEX_VAR_DATA, target._get_all_var_data()
     )
-
-
-def test_library():
-    """library() calls reflex.library."""
-    react = js.library("react")
-    assert str(react) == '(reflex.library("react"))'
-    assert react._get_all_var_data() == REFLEX_VAR_DATA
 
 
 def test_run_script_carries_the_import_into_the_page():

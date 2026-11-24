@@ -151,11 +151,14 @@ whose members stay the same across Reflex versions:
 | `reflex.ref(id)` | The ref of the component with that `id`. `undefined` until a component with that `id` renders; its `current` is `null` until React attaches the element, then the element. |
 | `reflex.addEvents(events)` | Dispatch events, as an event trigger does. |
 | `reflex.event(name, payload)` | Build an event for `reflex.addEvents`: `name` is the event handler's full name, `payload` its arguments by name. |
-| `reflex.library(name)` | A promise of an npm library bundled for dynamic components, such as `"react"`. |
 
 Prefer `reflex` over the other names a script can see, such as `refs`,
 `ReflexEvent` or `addEvents`: those are internals of the frontend and may change
 between Reflex versions.
+
+In a script, `reflex` and `env` (the app's config, which `rx.get_upload_url`
+reads) name these values, so a global of the same name on your page is
+reachable only as `window.reflex` or `window.env`.
 
 ### From a Script
 
@@ -175,22 +178,9 @@ def reflex_api_demo():
         rx.input(id="reflex_api_search", placeholder="Type something"),
         rx.hstack(
             rx.button(
-                "Focus",
-                on_click=rx.call_script(
-                    "reflex.ref('reflex_api_search').current.focus()"
-                ),
-            ),
-            rx.button(
                 "Read",
                 on_click=rx.call_script(
                     "reflex.ref('reflex_api_search').current.value",
-                    callback=ReflexApiState.set_result,
-                ),
-            ),
-            rx.button(
-                "React version",
-                on_click=rx.call_script(
-                    "reflex.library('react').then((react) => react.version)",
                     callback=ReflexApiState.set_result,
                 ),
             ),
@@ -198,6 +188,10 @@ def reflex_api_demo():
         rx.text(f"Result: {ReflexApiState.result}"),
     )
 ```
+
+To focus, blur, set or scroll to a component, use the events that already do
+it: `rx.set_focus(id)`, `rx.blur_focus(id)`, `rx.set_value(id, value)` and
+`rx.scroll_to(id)`.
 
 ### From a JavaScript Module
 
@@ -215,14 +209,9 @@ export function saveSearch(handlerName) {
 
 ### From Python
 
-`rx.js` builds the same calls from Python. Each function returns a var, which
+`rx.js.ref(id)` builds `reflex.ref(id)` from Python. It returns a var, which
 `rx.run_script` runs whether an event trigger uses it or an event handler
 returns it:
-
-| Python | JavaScript |
-| --- | --- |
-| `rx.js.ref(id)` | `reflex.ref(id)` |
-| `rx.js.library(name)` | `reflex.library(name)` |
 
 ```python
 class SearchState(rx.State):
@@ -251,23 +240,6 @@ def search():
 Python has no `reflex.addEvents`: dispatch events from Python as usual, with an
 event trigger or by returning them from an event handler. `reflex.addEvents` is
 for JavaScript that sends a value it computed back to Python.
-
-### Errors
-
-Each error says what went wrong and how to fix it. The messages, with example
-names:
-
-```text
-reflex.library("left-pad") cannot load "left-pad": the app does not bundle it for dynamic components. Bundle it by calling bundle_library("left-pad") from reflex.components.dynamic in your app's Python code.
-```
-
-```text
-reflex.library("react") cannot load "react" yet: the app registers its bundled libraries when it first mounts, and it has not mounted. Call reflex.library from an event, such as on_mount or on_click, rather than while a module loads.
-```
-
-```text
-reflex.library("$/utils/state") cannot load "$/utils/state": a name starting with "$/" is a module of the app's frontend, not a bundled npm library. Use reflex.ref, reflex.addEvents and reflex.event instead of Reflex internals, and import your own modules from a JavaScript module.
-```
 
 ## JavaScript Modules
 
