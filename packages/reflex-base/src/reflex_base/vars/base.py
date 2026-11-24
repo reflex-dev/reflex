@@ -5379,6 +5379,9 @@ class BaseStateMeta(ABCMeta):
 
         Returns:
             The new class.
+
+        Raises:
+            StateValueError: If a class attribute is a dataclasses.field(...).
         """
         lookup_order = _linearize_bases(bases)
         state_bases = [
@@ -5406,6 +5409,13 @@ class BaseStateMeta(ABCMeta):
                     ).items()
                     if key.startswith("_")
                 )
+        for key, value in namespace.items():
+            if isinstance(value, dataclasses.Field):
+                msg = (
+                    f"{name}.{key} uses dataclasses.field(...), which state "
+                    "classes do not support. Use rx.field(...) instead."
+                )
+                raise StateValueError(msg)
         private = _private_prefixes(name)
         own_fields = _unannotated_fields(namespace, private) | _annotated_fields(
             namespace, lookup_order, private, strict=True
