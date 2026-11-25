@@ -1,5 +1,6 @@
 """Integration tests for the code block component."""
 
+import time
 from collections.abc import Generator
 
 import pytest
@@ -14,6 +15,8 @@ URL_COPY_CONTENT = "copied from a fetched URL"
 
 def CodeBlockApp():
     """App exercising code block rendering options."""
+    from pathlib import Path
+
     import reflex as rx
 
     primary_code = "def add(x, y):\n    return x + y"
@@ -82,16 +85,22 @@ def CodeBlockApp():
             rx.button(
                 "Copy from URL",
                 id="url-copy",
-                on_click=rx.set_clipboard(url=rx.get_upload_url("hello.txt")),
+                on_click=rx.set_clipboard(url="/hello.txt"),
             ),
             align_items="stretch",
             spacing="4",
             width="480px",
         )
 
-    upload_dir = rx.get_upload_dir()
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    (upload_dir / "hello.txt").write_text(URL_COPY_CONTENT)
+    # Serve the fetch target through the frontend's public directory: the
+    # upload StaticFiles mount resolves its relative directory against the
+    # harness host process cwd, which is not the app directory, so the
+    # backend upload route cannot serve the file under AppHarness.
+    public_dir = Path(".web") / "public"
+    public_dir.mkdir(parents=True, exist_ok=True)
+    # The app source is serialized into the harness module; keep the literal
+    # local, mirroring the copy-code constants above.
+    (public_dir / "hello.txt").write_text("copied from a fetched URL")
 
     app = rx.App(enable_state=False)
     app.add_page(index)
@@ -233,7 +242,9 @@ def test_code_block_custom_copy_button(code_block_app: AppHarness, page: Page) -
     )
 
 
-def test_code_block_set_clipboard_from_url(code_block_app: AppHarness, page: Page) -> None:
+def test_code_block_set_clipboard_from_url(
+    code_block_app: AppHarness, page: Page
+) -> None:
     """rx.set_clipboard(url=...) copies fetched text, with zero error reports.
 
     Grants clipboard-read and clipboard-write (CI headless-shell denies
@@ -253,9 +264,11 @@ def test_code_block_set_clipboard_from_url(code_block_app: AppHarness, page: Pag
     served_types: list[str] = []
     page.on(
         "response",
-        lambda response: served_types.append(response.headers.get("content-type", ""))
-        if "hello.txt" in response.url
-        else None,
+        lambda response: (
+            served_types.append(response.headers.get("content-type", ""))
+            if "hello.txt" in response.url
+            else None
+        ),
     )
     page.add_init_script("""
         window.__clipboardTagCount = 0;
@@ -278,10 +291,14 @@ def test_code_block_set_clipboard_from_url(code_block_app: AppHarness, page: Pag
     _goto_code_block_app(code_block_app, page)
     page.evaluate("navigator.clipboard.writeText('')")
     page.click("#url-copy")
-    expect.poll(
-        lambda: page.evaluate("navigator.clipboard.readText()"),
-        message="expected the fetched hello.txt content on the clipboard",
-    ).to_equal(URL_COPY_CONTENT)
+    copied = ""
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline:
+        copied = page.evaluate("navigator.clipboard.readText()")
+        if copied == URL_COPY_CONTENT:
+            break
+        time.sleep(0.2)
+    assert copied == URL_COPY_CONTENT
     assert served_types, "no response captured for hello.txt"
     assert all(
         content_type.split(";")[0].strip().lower().startswith("text/")
