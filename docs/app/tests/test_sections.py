@@ -1,31 +1,34 @@
 """Tests for assigning docs routes to navbar tabs and sidebar sections."""
 
+import json
+import subprocess
+
 import pytest
+import reflex as rx
 
 from reflex_docs import sections
 
+ROUTE_SECTIONS = [
+    ("/", "overview", "overview"),
+    ("/ai/", "ai", "ai"),
+    ("/ai/integrations/mcp-overview/", "ai", "ai"),
+    ("/getting-started/introduction/", "framework", "framework"),
+    ("/wrapping-react/library-and-tags/", "framework", "framework"),
+    ("/utility-methods/exception-handlers/", "framework", "framework"),
+    ("/library/", "components", "framework"),
+    ("/library/forms/button/", "components", "framework"),
+    ("/api-reference/app/", "api-reference", "framework"),
+    ("/changelog/", "api-reference", "framework"),
+    ("/changelog/reflex-hosting-cli/", "api-reference", "framework"),
+    ("/changelog/reflex-enterprise/", "api-reference", "framework"),
+    ("/enterprise/overview/", "enterprise", "framework"),
+    ("/hosting/overview/", "cloud", "cloud"),
+    ("/hosting/cli/deploy/", "cloud", "cloud"),
+    ("/xy/", "xy", "xy"),
+]
 
-@pytest.mark.parametrize(
-    ("path", "section", "tab"),
-    [
-        ("/", "overview", "overview"),
-        ("/ai/", "ai", "ai"),
-        ("/ai/integrations/mcp-overview/", "ai", "ai"),
-        ("/getting-started/introduction/", "framework", "framework"),
-        ("/wrapping-react/library-and-tags/", "framework", "framework"),
-        ("/utility-methods/exception-handlers/", "framework", "framework"),
-        ("/library/", "components", "framework"),
-        ("/library/forms/button/", "components", "framework"),
-        ("/api-reference/app/", "api-reference", "framework"),
-        ("/changelog/", "api-reference", "framework"),
-        ("/changelog/reflex-hosting-cli/", "api-reference", "framework"),
-        ("/changelog/reflex-enterprise/", "api-reference", "framework"),
-        ("/enterprise/overview/", "enterprise", "framework"),
-        ("/hosting/overview/", "cloud", "cloud"),
-        ("/hosting/cli/deploy/", "cloud", "cloud"),
-        ("/xy/", "xy", "xy"),
-    ],
-)
+
+@pytest.mark.parametrize(("path", "section", "tab"), ROUTE_SECTIONS)
 def test_route_section_comes_from_its_first_segment(path, section, tab):
     """Only the first path segment picks a section, never a substring of the route.
 
@@ -100,3 +103,24 @@ def test_every_sidebar_page_belongs_to_the_section_that_lists_it():
     }
     # User Interface > Components links to the component library's landing page.
     assert misplaced == {"/library/": (sections.FRAMEWORK, sections.COMPONENTS)}
+
+
+def test_client_section_matches_build_time_section():
+    """The persistent sidebar picks the same section in the browser as the build does."""
+    from reflex_docs.templates.docpage.sidebar.sidebar import flat_items
+
+    # "/constructor/" must not resolve to an inherited Object property.
+    paths = sorted(
+        {path for path, _, _ in ROUTE_SECTIONS}
+        | {item.link for item in flat_items}
+        | {"/constructor/"}
+    )
+    expression = str(sections.docs_section_var(rx.Var("path", _var_type=str).to(str)))
+    script = (
+        f"const paths = {json.dumps(paths)};"
+        "process.stdout.write(JSON.stringify(paths.map((path) => " + expression + ")));"
+    )
+    result = subprocess.run(
+        ["node", "-e", script], capture_output=True, text=True, check=True
+    )
+    assert json.loads(result.stdout) == [sections.docs_section(p) for p in paths]

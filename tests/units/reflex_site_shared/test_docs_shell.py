@@ -97,7 +97,8 @@ def test_sidebar_active_pill_stays_inside_indented_row() -> None:
     )
     assert (label.get("props") or []) == [
         'as:"p"',
-        'className:(isTrue(activeRxMemo) ? "relative m-0 pl-4 text-sm font-[475] text-foreground transition-color" : "m-0 w-full text-sm font-[475] text-foreground transition-color")',
+        'className:(isTrue(activeRxMemo) ? "relative m-0 min-w-0 truncate pl-4 text-sm font-[475] text-foreground transition-color" : "m-0 min-w-0 w-full truncate text-sm font-[475] text-foreground transition-color")',
+        "title:titleRxMemo",
     ]
 
     pill_top = next(n for n in reversed(parents) if n in flex.get("children", []))
