@@ -826,11 +826,10 @@ class EventHandler(EventActionsMixin):
             return self.fn(*args, **kwargs)
 
         # Get the function args.
-        if self.state is not None:
-            # Skip the `self` arg for state-bound event handlers.
-            fn_args = _named_parameters(self._parameters)[1:]
-        else:
-            fn_args = _named_parameters(self._parameters)
+        # Skip the `self` arg for state-bound event handlers.
+        fn_args = _named_parameters(
+            self._parameters, 1 if self.state is not None else 0
+        )
 
         if not isinstance(
             repeated_arg := next(
@@ -1046,8 +1045,8 @@ class EventSpec(EventActionsMixin):
         n_self_args = 1 if self.handler.state is not None else 0
 
         # Get the remaining unfilled function args.
-        fn_args = _named_parameters(self.handler._parameters)[
-            n_self_args + len(self.args) :
+        fn_args = _named_parameters(self.handler._parameters, n_self_args)[
+            len(self.args) :
         ]
         fn_args = (Var(_js_expr=arg) for arg in fn_args)
 
@@ -2399,18 +2398,14 @@ def call_event_handler(
             event_callback.handler.fn.__qualname__,
         )
 
-        event_callback_spec_args = _named_parameters(parameters)
+        event_callback_spec_args = _named_parameters(parameters, n_self_args)
 
         type_hints_of_provided_callback = event_callback.handler._get_type_hints()
 
         argument_names = [str(arg) for arg, value in event_callback.args]
 
         _check_event_args_subclass_of_callback(
-            [
-                arg
-                for arg in event_callback_spec_args[n_self_args:]
-                if arg not in argument_names
-            ],
+            [arg for arg in event_callback_spec_args if arg not in argument_names],
             event_spec_return_types,
             type_hints_of_provided_callback,
             event_callback.handler.fn.__qualname__,
@@ -2434,12 +2429,12 @@ def call_event_handler(
     )
 
     if event_spec_return_types:
-        event_callback_spec_args = _named_parameters(parameters)
+        event_callback_spec_args = _named_parameters(parameters, n_self_args)
 
         type_hints_of_provided_callback = event_callback._get_type_hints()
 
         _check_event_args_subclass_of_callback(
-            event_callback_spec_args[n_self_args:],
+            event_callback_spec_args,
             event_spec_return_types,
             type_hints_of_provided_callback,
             event_callback.fn.__qualname__,
@@ -2633,20 +2628,24 @@ _VARIADIC_PARAMETER_KINDS = (
 )
 
 
-def _named_parameters(parameters: Mapping[str, inspect.Parameter]) -> list[str]:
+def _named_parameters(
+    parameters: Mapping[str, inspect.Parameter], n_self_args: int = 0
+) -> list[str]:
     """Get the names an event handler's arguments are sent by.
 
     ``*args`` and ``**kwargs`` take no argument by their own name.
 
     Args:
         parameters: The parameters of the event handler's function.
+        n_self_args: How many leading parameters take the state, which is
+            not sent.
 
     Returns:
         The names of its other parameters, in order.
     """
     return [
-        name
-        for name, parameter in parameters.items()
+        parameter.name
+        for parameter in list(parameters.values())[n_self_args:]
         if parameter.kind not in _VARIADIC_PARAMETER_KINDS
     ]
 
