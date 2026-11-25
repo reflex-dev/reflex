@@ -2,14 +2,20 @@
 
 from __future__ import annotations
 
+import functools
 from typing import TYPE_CHECKING, Any
 
+from reflex_base.utils.imports import ImportVar
+from reflex_base.vars.base import LiteralVar, Var, VarData
+
 from .component import LanguageSwitcher
-from .config import source_locale
+from .config import check_configured_locale, get_active_i18n_config, source_locale
 from .runtime import get_locale
 
 if TYPE_CHECKING:
     from reflex_base.components.component import Component
+    from reflex_base.vars.object import ObjectVar
+    from reflex_base.vars.sequence import StringVar
 
 
 def _base_path(route: str) -> str:
@@ -64,6 +70,43 @@ def localized_url(route: str) -> str:
         The localized URL path (unchanged if URL routing is off).
     """
     return locale_url(get_locale() or source_locale(), route)
+
+
+@functools.cache
+def _alternate_urls() -> ObjectVar[dict[str, str]]:
+    """The current page's address in each locale, as a client-side var.
+
+    Returns:
+        The ``useAlternateUrls`` hook's locale to URL map.
+    """
+    return Var(
+        _js_expr="i18nAlternateUrls",
+        _var_data=VarData(
+            imports={"$/utils/i18n": [ImportVar(tag="useAlternateUrls")]},
+            hooks={"const i18nAlternateUrls = useAlternateUrls()": None},
+        ),
+    ).to(dict[str, str])
+
+
+def alternate_url(locale: str | Var[str]) -> StringVar:
+    """The current page's URL in a locale, for a language switcher of your own.
+
+    With URL routing it is the page's address in that locale; without it, the
+    page itself (switch with ``rx.i18n.set_locale`` there). The query string
+    and fragment are kept, as in :func:`language_switcher`.
+
+    Args:
+        locale: A configured locale.
+
+    Returns:
+        The URL as a client-side var.
+    """
+    if get_active_i18n_config() is None:
+        # Without an I18nPlugin the app has a single locale and URL.
+        return LiteralVar.create("").to(str)
+    if isinstance(locale, str):
+        check_configured_locale(locale)
+    return _alternate_urls()[locale].to(str)
 
 
 def language_switcher(**props: Any) -> Component:

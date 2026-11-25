@@ -2,7 +2,15 @@
 
 import pytest
 from reflex_base.config import get_config
-from reflex_i18n import I18nPlugin, PathPrefixRouting, locale_url, localized_url
+from reflex_base.utils.imports import ImportVar
+from reflex_base.vars.base import VarData
+from reflex_i18n import (
+    I18nPlugin,
+    PathPrefixRouting,
+    alternate_url,
+    locale_url,
+    localized_url,
+)
 from reflex_i18n.config import set_active_i18n_config
 from reflex_i18n.runtime import use_locale
 
@@ -65,3 +73,23 @@ def test_localized_url_leaves_the_route_alone_without_routing(
     monkeypatch.setattr(get_config(), "plugins", [plugin])
     with use_locale("en"):
         assert localized_url("/help/terminal") == "/help/terminal"
+
+
+@pytest.mark.usefixtures("url_routing")
+def test_alternate_url_reads_the_current_page_in_a_locale():
+    var = alternate_url("en")
+    assert str(var) == 'i18nAlternateUrls?.["en"]'
+    assert var._get_all_var_data() == VarData(
+        imports={"$/utils/i18n": [ImportVar(tag="useAlternateUrls")]},
+        hooks={"const i18nAlternateUrls = useAlternateUrls()": None},
+    )
+
+
+@pytest.mark.usefixtures("url_routing")
+def test_alternate_url_rejects_an_unconfigured_locale():
+    with pytest.raises(ValueError, match=r"^Locale 'fr' is not configured\. "):
+        alternate_url("fr")
+
+
+def test_alternate_url_is_the_page_itself_without_i18n():
+    assert str(alternate_url("de")) == '""'

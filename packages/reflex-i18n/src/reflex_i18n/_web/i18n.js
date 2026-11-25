@@ -623,19 +623,33 @@ export function HreflangLinks({ children }) {
   return createElement(Fragment, null, ...links, children);
 }
 
-// A language switcher: one <a> per locale, labelled with the language's own name. With URL routing these are real
-// links to the current page in each locale, so crawlers follow them and the
-// URL stays the source of truth; without it there is only one URL per page, so
-// they set the locale through the provider (and cookie) instead.
-export function LanguageSwitcher(props) {
+// The current page's address in each locale. With URL routing these are the
+// page's real per-locale URLs; without it there is only one URL per page, and
+// the locale is switched through the provider (and cookie) instead.
+export function useAlternateUrls() {
   const { pathname, search, hash } = useLocation();
   const basename = useBasename();
-  const { locale: active, setLocale } = useContext(I18nContext);
   const base = delocalizePath(pathname);
   // Keep the query string and fragment: switching language must not drop the
   // filters or the anchor the visitor is on. The clean canonical URL for each
   // locale is emitted by HreflangLinks, so crawlers still see one per page.
   const rest = search + hash;
+  return Object.fromEntries(
+    locales.map((locale) => [
+      locale,
+      basename +
+        (urlRouting ? localizePath(base, locale) : sitePath(pathname)) +
+        rest,
+    ]),
+  );
+}
+
+// A language switcher: one <a> per locale, labelled with the language's own
+// name. With URL routing these are real links to the current page in each
+// locale, so crawlers follow them and the URL stays the source of truth.
+export function LanguageSwitcher(props) {
+  const urls = useAlternateUrls();
+  const { locale: active, setLocale } = useContext(I18nContext);
   return createElement(
     "nav",
     props,
@@ -644,10 +658,7 @@ export function LanguageSwitcher(props) {
         "a",
         {
           key: locale,
-          href:
-            basename +
-            (urlRouting ? localizePath(base, locale) : sitePath(pathname)) +
-            rest,
+          href: urls[locale],
           hrefLang: locale,
           // Each language is named in itself, so a visitor finds their own
           // whatever the page's language is.

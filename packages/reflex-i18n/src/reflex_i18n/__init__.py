@@ -24,7 +24,7 @@ from .format import currency, language_name, number, percent, weekday
 from .format import date as date
 from .format import datetime as datetime
 from .format import time as time
-from .nav import language_switcher, locale_url, localized_url
+from .nav import alternate_url, language_switcher, locale_url, localized_url
 from .plugin import I18nPlugin
 from .routing import PathPrefixRouting
 from .runtime import (
@@ -74,6 +74,7 @@ __all__ = [
     "I18nPlugin",
     "I18nState",
     "PathPrefixRouting",
+    "alternate_url",
     "configured_locales",
     "currency",
     "fallback_chain",

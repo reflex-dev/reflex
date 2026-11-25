@@ -401,6 +401,20 @@ rx.i18n.language_switcher()  # prebuilt <a> links
 rx.link("Deutsch", href=rx.i18n.locale_url("de", "/pricing"))
 ```
 
+For a switcher with markup of your own, `rx.i18n.alternate_url(locale)` is the
+current page's URL in a locale, kept in step with the page the visitor is on:
+
+```python
+def language_menu():
+    return rx.el.ul(
+        *(
+            rx.el.li(rx.el.a(label, href=rx.i18n.alternate_url(locale)))
+            for locale, label in (("en", "English"), ("de", "Deutsch"))
+        ),
+        class_name="language-menu",
+    )
+```
+
 Links between your pages should stay in the visitor's language.
 `rx.i18n.localized_url` builds a route's URL in the locale the current page is
 built in (see below), so one layout serves every locale:

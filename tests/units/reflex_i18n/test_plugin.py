@@ -786,6 +786,33 @@ def test_language_switcher_links_stay_on_site(
 
 @requires_node
 @pytest.mark.parametrize(
+    ("url_routing", "expected"),
+    [
+        (True, {"en": "/help/terminal", "de": "/de/help/terminal"}),
+        (False, {"en": "/de/help/terminal", "de": "/de/help/terminal"}),
+    ],
+)
+def test_alternate_urls_name_the_current_page_in_each_locale(
+    tmp_path: Path, url_routing: bool, expected: dict[str, str]
+):
+    """The hook behind rx.i18n.alternate_url gives the switcher's link targets."""
+    rendered = _render_runtime(
+        tmp_path,
+        "useAlternateUrls",
+        locales=["en", "de"],
+        default_locale="en",
+        url_routing=url_routing,
+        pathname="/de/help/terminal/",
+        action=(
+            "return [rendered, mod.LanguageSwitcher({}).children"
+            ".map((link) => link.props.href)];"
+        ),
+    )
+    assert rendered["result"] == [expected, list(expected.values())]
+
+
+@requires_node
+@pytest.mark.parametrize(
     ("pathname", "expected"),
     [
         ("/de/pricing", ["/pricing", "/de/pricing", "/pricing", "/de/pricing"]),
