@@ -6305,24 +6305,32 @@ def test_session_manager_uses_the_configured_lifetimes(
     assert (manager.ttl, manager.refresh_interval, manager.max_age) == (100, 25, 300)
 
 
-async def test_link_token_to_sid_needs_no_event_context(
-    monkeypatch: pytest.MonkeyPatch,
+@pytest.mark.parametrize("mode", ["off", "warn", "enforce"])
+async def test_connect_needs_no_event_context(
+    monkeypatch: pytest.MonkeyPatch, mode: str
 ):
-    """A token is linked to its socket when no event context is set.
+    """A socket connects when no event context is set.
+
+    A harness that drives the namespace directly, such as the benchmarks, has
+    no request scope.
 
     Args:
         monkeypatch: Environment fixture.
+        mode: The session token mode.
     """
-    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "off")
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", mode)
     app = App(_state=State)
     app._state_manager = StateManagerMemory()
+    app._session_token_manager = SessionTokenManager("connect", secrets=(b"s" * 32,))
     namespace = EventNamespace("/event", app)
     namespace._token_manager = LocalTokenManager()
     namespace.emit = AsyncMock()
 
-    await namespace.link_token_to_sid("sid", "token")
+    await namespace.on_connect("sid", _connect_environ(""))
 
-    assert namespace.sid_to_token == {"sid": "token"}
+    token = namespace.sid_to_token["sid"]
+    assert namespace.token_to_sid == {token: "sid"}
+    assert ("sid" in namespace._sessions) is (mode != "off")
 
 
 def _dropped_result_warning(label: str) -> str:
