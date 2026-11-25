@@ -14,6 +14,7 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    ClassVar,
     Generic,
     Literal,
     NoReturn,
@@ -572,6 +573,11 @@ class EventHandler(EventActionsMixin):
 
     state: "type[BaseState] | None" = dataclasses.field(default=None, repr=False)
 
+    # The StateProxy type, installed by reflex.istate.proxy, which binds the
+    # handlers `super()` reaches from a background task. Until then nothing is one:
+    # isinstance against () is always false.
+    _state_proxy: ClassVar[Any] = ()
+
     _type_hints: dict[str, Any] | None = dataclasses.field(
         default=None, repr=False, compare=False
     )
@@ -784,11 +790,22 @@ class EventHandler(EventActionsMixin):
         if not isinstance(instance, self.state):
             # Held by a class that is not its state, nor a substate of it.
             return self
-        state = (
-            instance
-            if type(instance) is self.state
-            else _owner_state(instance, self.state)
-        )
+        instance_type = type(instance)
+        if instance_type is self.state:
+            state = instance
+        elif instance_type is not owner and issubclass(
+            instance_type, EventHandler._state_proxy
+        ):
+            # Only `super()` hands a background task's proxy to the descriptor
+            # (the proxy binds its own attributes), to run the overridden
+            # handler in the same task. Attribute access passes the instance's
+            # own type as `owner`, so the check stays off that path; `super()`
+            # passes the wrapped state's class.
+            return EventHandler._state_proxy._bind_overridden_handler(
+                instance, self.fn, self.state
+            )
+        else:
+            state = _owner_state(instance, self.state)
         if self.is_background:
             return _no_chain_background_task(state, self.fn)
         return types.MethodType(self.fn, state)
@@ -1492,6 +1509,20 @@ def passthrough_event_spec(  # pyright: ignore [reportOverlappingOverload]
 def passthrough_event_spec(
     event_type_1: type[T], event_type2: type[U], /
 ) -> Callable[[Var[T], Var[U]], tuple[Var[T], Var[U]]]: ...
+
+
+@overload
+def passthrough_event_spec(
+    event_type: types.UnionType, /
+) -> Callable[[Var[Any]], tuple[Var[Any]]]: ...
+
+
+@overload
+def passthrough_event_spec(
+    event_type_1: types.UnionType | type[T],
+    event_type2: types.UnionType | type[U],
+    /,
+) -> Callable[[Var[Any], Var[Any]], tuple[Var[Any], Var[Any]]]: ...
 
 
 @overload
@@ -3538,8 +3569,17 @@ if TYPE_CHECKING:
 class EventDecorator(Protocol):
     """The decorator ``rx.event(...)`` returns."""
 
+    # A repeated @rx.event decorates the handler the inner one returned.
+    @overload
+    def __call__(self, func: EventCallback[*P]) -> EventCallback[*P]: ...
+
+    @overload
     def __call__(
         self, func: "Callable[[BASE_STATE, Unpack[P]], Any]"
+    ) -> EventCallback[*P]: ...
+
+    def __call__(
+        self, func: "EventCallback[*P] | Callable[[BASE_STATE, Unpack[P]], Any]"
     ) -> EventCallback[*P]:
         """Wrap a function to be used as an event.
 
@@ -3637,6 +3677,20 @@ class EventNamespace:
         debounce: int | None = None,
         temporal: bool | None = None,
     ) -> EventDecorator: ...
+
+    @overload
+    def __new__(
+        cls,
+        func: EventCallback[*P],
+        *,
+        background: bool | None = None,
+        supersedes: bool | None = None,
+        stop_propagation: bool | None = None,
+        prevent_default: bool | None = None,
+        throttle: int | None = None,
+        debounce: int | None = None,
+        temporal: bool | None = None,
+    ) -> EventCallback[*P]: ...
 
     @overload
     def __new__(
