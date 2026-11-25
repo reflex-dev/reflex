@@ -655,32 +655,6 @@ test("a full localStorage does not hold HTTP readiness after the cookie is set",
   assert.equal(tab.requests.length, 1);
 });
 
-test("a failed renewal after the first exchange does not hold HTTP readiness", async () => {
-  let fail = false;
-  const tab = await browserSession({
-    fetch: async () =>
-      fail
-        ? { ok: false, status: 503 }
-        : {
-            ok: true,
-            json: async () => ({ client_token: "bound-tab", expires_in: 100 }),
-          },
-  });
-  await tab.connect();
-  await (await tab.accept("bound-tab", "credential")).exchange;
-  // This socket connected without a cookie, so later renewals still carry a
-  // credential. The browser has the cookie from the first exchange.
-  fail = true;
-  await tab.callbacks.get("session_token")("renewed-credential");
-  await tab.runtime.waitForSession();
-  await tab.runtime.applyRestEvent(
-    { name: "upload", handler: "uploadFiles", payload: { files: [] } },
-    tab.socket.current,
-  );
-  await tick();
-  assert.equal(tab.uploads.length, 1);
-});
-
 test("a tab that becomes visible does not repeat an exchange the backend denied", async () => {
   const tab = await browserSession({
     fetch: async () => ({ ok: false, status: 403 }),

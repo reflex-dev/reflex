@@ -1232,8 +1232,6 @@ export const connect = async (
   let resolveSession;
   let rejectSession;
   let sessionFailures = 0;
-  // Whether this tab already exchanged a credential for the cookie.
-  let sessionEstablished = false;
   // Whether the backend denied the exchange for this page's origin.
   let sessionRejected = false;
   const currentSocket = socket.current;
@@ -1588,15 +1586,10 @@ export const connect = async (
     const controller = new AbortController();
     sessionController = controller;
     window.clearTimeout(sessionTimer);
-    // HTTP calls wait only while the browser has no cookie: the server sends
-    // a credential in-band when the socket connected without a valid one.
-    // After a lasting failure the retries go on, but they hold nothing.
-    if (
-      !resolveSession &&
-      sessionCredential &&
-      !sessionEstablished &&
-      sessionFailures < 3
-    ) {
+    // HTTP calls wait while a credential from the socket is exchanged for
+    // the cookie. After a lasting failure the retries go on, but they hold
+    // nothing.
+    if (!resolveSession && sessionCredential && sessionFailures < 3) {
       initialSessionExchange = new Promise((resolve, reject) => {
         resolveSession = resolve;
         rejectSession = reject;
@@ -1611,7 +1604,6 @@ export const connect = async (
       setToken(session.client_token);
       const refreshDelay =
         (session.refresh_in ?? session.expires_in / 2) * 1000;
-      sessionEstablished = true;
       sessionRejected = false;
       try {
         window.localStorage.setItem(
