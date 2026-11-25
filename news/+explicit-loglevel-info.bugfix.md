@@ -1,0 +1,1 @@
+An explicit `--loglevel info` is no longer ignored when INFO is already the current level. Like any other `--loglevel` value, it now reaches `REFLEX_LOGLEVEL` and overrides a `loglevel` set in `rxconfig.py`.

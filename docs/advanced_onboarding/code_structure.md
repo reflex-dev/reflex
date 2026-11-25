@@ -136,20 +136,23 @@ def settings_dialog():
 ### A Post Page: `example_big_app/pages/posts.py`
 
 This page loads the `SettingsState` to determine how many posts to display per page
-and how often to refresh.
+and how often to refresh. `Session` is the async session factory from
+[Database Overview](/docs/database/overview/#connecting), kept in `example_big_app/db.py`.
 
 ```python
 import reflex as rx
+from sqlalchemy import select
 
+from ..db import Session
 from ..models import Post
 from ..template import template
 from ..components.settings import SettingsState
 
 
 class PostsState(rx.State):
-    refresh_tick: int
-    page: int
-    posts: list[Post]
+    refresh_tick: int = 0
+    page: int = 0
+    posts: list[Post] = []
 
     @rx.event
     async def on_load(self):
@@ -162,14 +165,13 @@ class PostsState(rx.State):
     @rx.event
     async def tick(self, _):
         settings = await self.get_state(SettingsState)
-        with rx.session() as session:
-            q = (
-                Post
-                .select()
+        async with Session() as session:
+            result = await session.scalars(
+                select(Post)
                 .offset(self.page * settings.posts_per_page)
                 .limit(settings.posts_per_page)
             )
-            self.posts = q.all()
+            self.posts = result.all()
 
     @rx.event
     def go_to_previous(self):
@@ -331,7 +333,7 @@ Uploaded files are served from the backend (default port 8000) via
 
 ## Putting it all together
 
-Based on the previous discussion, the recommended project layout look like this.
+Based on the previous discussion, the recommended project layout looks like this.
 
 ```text
 example-big-app/
@@ -353,6 +355,7 @@ example-big-app/
 │  │  ├─ schedule.py
 │  ├─ __init__.py
 │  ├─ example_big_app.py
+│  ├─ db.py
 │  ├─ models.py
 │  ├─ state.py
 │  ├─ template.py

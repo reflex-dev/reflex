@@ -1,0 +1,1 @@
+`reflex deploy --loglevel info` now shows the deployment progress and success messages after the export step, as `REFLEX_LOGLEVEL=info reflex deploy` does. The flag was ignored because INFO was already the current level.
