@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import contextvars
+import dataclasses
 import functools
 import io
 import json
@@ -41,6 +42,7 @@ from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.event.processor.event_processor import QueueShutDown
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
 from reflex_base.registry import RegistrationContext
+from reflex_base.session import SessionToken, SessionTokenManager
 from reflex_base.style import Style
 from reflex_base.utils import exceptions, format, memo_paths
 from reflex_base.utils.imports import ImportVar
@@ -77,6 +79,7 @@ from reflex.app import (
     _RootMiddleware,
     _sio_dumps,
     _sio_loads,
+    _SocketSession,
     default_overlay_component,
 )
 from reflex.compiler.compiler import (
@@ -95,6 +98,7 @@ from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.shared import UPDATE_OTHER_CLIENT_TASKS
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.model import Model
+from reflex.session_middleware import SessionMiddleware
 from reflex.state import (
     BaseState,
     OnLoadInternalState,
@@ -1594,6 +1598,7 @@ async def test_upload_file_closes_form_if_response_cancelled_before_stream_start
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("attached_mock_event_context")
 async def test_upload_file_raises_client_disconnect_when_stream_send_fails(
     token: str,
 ):
@@ -1622,7 +1627,8 @@ async def test_upload_file_raises_client_disconnect_when_stream_send_fails(
 
     stream_closed = asyncio.Event()
 
-    async def enqueue_stream_delta(_token, _event):
+    async def enqueue_stream_delta(_token, _event, *, session_token):
+        assert session_token is request_mock.scope.get("reflex.session")
         try:
             yield {"state": {"ok": True}}
             await asyncio.Event().wait()
@@ -1662,6 +1668,7 @@ async def test_upload_file_raises_client_disconnect_when_stream_send_fails(
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("attached_mock_event_context")
 @pytest.mark.parametrize(
     "state",
     [FileUploadState, ChildFileUploadState, GrandChildFileUploadState],
@@ -1705,6 +1712,7 @@ async def test_upload_file_without_annotation(
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("attached_mock_event_context")
 async def test_upload_file_unknown_handler_returns_400(
     token: str,
 ):
@@ -1832,13 +1840,14 @@ async def test_upload_handler_error_after_update_ends_stream_with_error_frame(
 
 
 async def _raise_queue_shut_down(  # noqa: RUF029
-    token: str, event: Event
+    token: str, event: Event, session_token: SessionToken | None = None
 ) -> AsyncGenerator[Any]:
     """Fail like enqueue_stream_delta on a processor that is not running.
 
     Args:
         token: The client token.
         event: The upload event.
+        session_token: The browser session of the upload.
 
     Yields:
         Nothing.
@@ -1910,6 +1919,7 @@ async def test_upload_error_the_event_processor_did_not_report_reaches_the_serve
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("attached_mock_event_context")
 @pytest.mark.parametrize(
     "state",
     [FileUploadState, ChildFileUploadState, GrandChildFileUploadState],
@@ -3796,7 +3806,8 @@ def test_call_app():
     api = app()
     assert isinstance(api, _RootMiddleware)
     assert isinstance(api.app, CORSMiddleware)
-    assert api.app.app is app._api
+    assert isinstance(api.app.app, SessionMiddleware)
+    assert api.app.app.app is app._api
 
 
 def _probe_worker_token_identity(app: App, redis: AsyncMock, sender: Connection):
@@ -4643,6 +4654,69 @@ async def test_modify_state_rebinds_event_context_to_token(
         EventContext.reset(actor_token)
 
 
+@pytest.mark.parametrize(
+    "authorization", ["inherited", "explicit", "system", "anonymous", "foreign"]
+)
+async def test_modify_state_session_authorization(
+    app_with_processor: App,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    authorization: str,
+):
+    """Out-of-band state access validates inherited and explicit sessions before reads.
+
+    Args:
+        app_with_processor: The application fixture.
+        monkeypatch: Environment fixture.
+        mocker: Mock fixture.
+        authorization: How the caller supplies its session.
+    """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "enforce")
+    app_with_processor._state_manager = StateManagerMemory()
+    app_with_processor._event_namespace = AsyncMock()
+    manager = SessionTokenManager("modify", secrets=(b"s" * 32,))
+    session = manager.create()
+    token = manager.create_client_token(session)
+    assert app_with_processor._event_processor is not None
+    root = app_with_processor._event_processor._root_context
+    assert root is not None
+    root = dataclasses.replace(
+        root,
+        session_token=session if authorization == "inherited" else SessionToken.SYSTEM,
+    )
+    kwargs = (
+        {}
+        if authorization == "inherited"
+        else {
+            "session_token": {
+                "explicit": session,
+                "system": SessionToken.SYSTEM,
+                "anonymous": None,
+                "foreign": manager.create(),
+            }[authorization],
+        }
+    )
+    modify = mocker.spy(app_with_processor.state_manager, "modify_state_with_links")
+    with root:
+        if authorization in {"anonymous", "foreign"}:
+            with pytest.raises(exceptions.SessionAuthorizationError):
+                async with app_with_processor.modify_state(
+                    BaseStateToken(ident=token, cls=EmptyState), **kwargs
+                ):
+                    pytest.fail("Unauthorized state access was permitted")
+            modify.assert_not_called()
+        else:
+            async with app_with_processor.modify_state(
+                BaseStateToken(ident=token, cls=EmptyState), **kwargs
+            ):
+                assert EventContext.get().session_token is (
+                    SessionToken.SYSTEM if authorization == "system" else session
+                )
+                assert EventContext.get().token == token
+            modify.assert_called_once()
+        assert EventContext.get() is root
+
+
 async def test_modify_state_emits_only_to_connected_tokens(
     monkeypatch: pytest.MonkeyPatch,
     clean_registration_context: RegistrationContext,
@@ -4681,8 +4755,9 @@ async def test_modify_state_emits_only_to_connected_tokens(
     event_namespace = app._event_namespace = EventNamespace("/event", app)
     event_namespace._token_manager = LocalTokenManager()
     emit = event_namespace.emit = AsyncMock()
-    for token in ("client", "target", "expired", "gone"):
-        await event_namespace.link_token_to_sid(f"{token}-sid", token)
+    with app.set_contexts():
+        for token in ("client", "target", "expired", "gone"):
+            await event_namespace.link_token_to_sid(f"{token}-sid", token)
     await event_namespace._token_manager.disconnect_token("gone", "gone-sid")
 
     async def modify(token: str, count: int | None = None, link: str = "") -> list:
@@ -5538,21 +5613,29 @@ def test_client_error_constants_match_frontend():
 
 
 @pytest_asyncio.fixture
-async def event_namespace_with_processor_mock() -> AsyncGenerator[EventNamespace, None]:
+async def event_namespace_with_processor_mock(
+    attached_mock_event_context: EventContext,
+) -> AsyncGenerator[EventNamespace, None]:
     """An EventNamespace whose app has a mocked event processor.
+
+    Args:
+        attached_mock_event_context: The active event context.
 
     Yields:
         The EventNamespace instance.
     """
     app = App()
     app._event_processor = Mock(enqueue=AsyncMock())
+    app._session_token_manager = SessionTokenManager("test", secrets=(b"s" * 32,))
     event_namespace = EventNamespace("/event", app)
+    event_namespace.emit = AsyncMock()
+    token_manager = event_namespace._token_manager
     yield event_namespace
     # The token manager is backed by redis when one is configured; drop the
     # tokens these tests link so they do not show up in another test's
     # enumeration of the shared instance. Awaited rather than run in a fresh
     # loop via asyncio.run: the redis client is bound to the test's loop.
-    await event_namespace._token_manager.disconnect_all()
+    await token_manager.disconnect_all()
 
 
 @pytest.mark.parametrize("owner", ["current", "replacement", "remote", "missing"])
@@ -5633,6 +5716,10 @@ async def test_on_event_uses_connect_time_router_data(
 
     enqueue_mock = cast(AsyncMock, event_namespace.app.event_processor.enqueue)
     enqueue_mock.assert_called_once()
+    assert (
+        enqueue_mock.call_args.kwargs["session_token"]
+        is event_namespace._sessions["sid1"].session
+    )
     enqueued_token, event = enqueue_mock.call_args[0]
     assert enqueued_token == token
     assert event.router_data[constants.RouteVar.CLIENT_TOKEN] == token
@@ -5765,11 +5852,485 @@ async def test_on_event_falls_back_to_environ_without_connect(
     enqueue_mock = cast(AsyncMock, event_namespace.app.event_processor.enqueue)
     assert enqueue_mock.call_count == 2
     for call in enqueue_mock.call_args_list:
+        assert call.kwargs["session_token"] is None
         _, event = call[0]
         assert event.router_data[constants.RouteVar.SESSION_ID] == "sid1"
         assert (
             event.router_data[constants.RouteVar.HEADERS]["user-agent"] == "test-agent"
         )
+
+
+@pytest.mark.parametrize("mode", ["off", "warn", "enforce"])
+@pytest.mark.parametrize("cookie", ["missing", "invalid", "valid"])
+@pytest.mark.parametrize("client", ["missing", "bound", "foreign"])
+async def test_connect_session_authorization(
+    event_namespace_with_processor_mock: EventNamespace,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    mode: str,
+    cookie: str,
+    client: str,
+):
+    """Connection tokens are replaced before state access when enforcement requires it.
+
+    Args:
+        event_namespace_with_processor_mock: The connected namespace fixture.
+        monkeypatch: Environment fixture.
+        mocker: Mock fixture.
+        mode: The authorization policy.
+        cookie: The cookie validity.
+        client: The incoming client token's binding.
+    """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", mode)
+    namespace = event_namespace_with_processor_mock
+    manager = namespace.app._session_token_manager
+    browser_session = manager.create()
+    incoming = (
+        ""
+        if client == "missing"
+        else manager.create_client_token(
+            browser_session if client == "bound" else manager.create()
+        )
+    )
+    state = Mock(router_data={})
+    accesses = []
+
+    @contextlib.asynccontextmanager
+    async def modify_state(token):
+        """Check authorization at the first state access.
+
+        Args:
+            token: The requested state token.
+
+        Yields:
+            A minimal mutable state.
+        """
+        context = EventContext.get()
+        assert context.token == token.ident
+        socket_session = namespace._sessions.get("sid")
+        assert context.session_token is (
+            socket_session.session if socket_session is not None else None
+        )
+        if mode == "enforce":
+            assert context.session_token is not None
+            assert context.session_token.authorizes(token.ident)
+        accesses.append(token.ident)
+        yield state
+
+    mocker.patch.object(namespace.app.state_manager, "modify_state", modify_state)
+    scope = _connect_environ(incoming)["asgi.scope"]
+    scope["type"] = "websocket"
+    if cookie != "missing":
+        credential = manager.encode(browser_session) if cookie == "valid" else "invalid"
+        scope["headers"].append((
+            b"cookie",
+            f"__Host-{manager.cookie_name}={credential}".encode(),
+        ))
+
+    async def connect(scope, receive, send):
+        """Pass the validated handshake into Socket.IO."""
+        await namespace.on_connect(
+            "sid", {"QUERY_STRING": f"token={incoming}", "asgi.scope": scope}
+        )
+
+    await SessionMiddleware(connect, manager, "https://api.test")(
+        scope, AsyncMock(), AsyncMock()
+    )
+    emitted = {
+        call.args[0]: call.args[1]
+        for call in cast(AsyncMock, namespace.emit).call_args_list
+    }
+    replacement_expected = not incoming or (
+        mode == "enforce" and (cookie != "valid" or client != "bound")
+    )
+    assert ("new_token" in emitted) is replacement_expected
+    assert ("session_token" in emitted) is (mode != "off" and cookie != "valid")
+    if mode != "off":
+        session = namespace._sessions["sid"].session
+        if cookie == "valid":
+            assert session.id == browser_session.id
+        if "session_token" in emitted:
+            issued = manager.decode(emitted["session_token"], exchange=True)
+            assert issued is not None
+            assert issued.id == session.id
+    else:
+        assert not namespace._sessions
+    token = emitted.get("new_token", incoming)
+    assert accesses == ([token] if token else [])
+    if token:
+        assert namespace.sid_to_token["sid"] == token
+
+
+async def test_link_rejects_foreign_client_before_state_access(
+    event_namespace_with_processor_mock: EventNamespace,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+):
+    """Direct token linking must not load or register an unauthorized client.
+
+    Args:
+        event_namespace_with_processor_mock: The namespace fixture.
+        monkeypatch: Environment fixture.
+        mocker: Mock fixture.
+    """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "enforce")
+    namespace = event_namespace_with_processor_mock
+    manager = namespace.app._session_token_manager
+    namespace._sessions["sid"] = _SocketSession(manager.create(), 0, False)
+    foreign_token = manager.create_client_token(manager.create())
+    link = mocker.patch.object(
+        namespace._token_manager, "link_token_to_sid", new_callable=AsyncMock
+    )
+    modify = mocker.patch.object(namespace.app.state_manager, "modify_state")
+    with pytest.raises(exceptions.SessionAuthorizationError):
+        await namespace.link_token_to_sid("sid", foreign_token)
+    link.assert_not_called()
+    modify.assert_not_called()
+
+
+async def test_duplicate_client_stays_bound_to_session(
+    event_namespace_with_processor_mock: EventNamespace,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Duplicate-tab replacement tokens retain the requesting session's binding.
+
+    Args:
+        event_namespace_with_processor_mock: The namespace fixture.
+        monkeypatch: Environment fixture.
+    """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "enforce")
+    namespace = event_namespace_with_processor_mock
+    manager = namespace.app._session_token_manager
+    session = manager.create()
+    token = manager.create_client_token(session)
+    environ = _connect_environ(token)
+    environ["asgi.scope"]["reflex.session"] = session
+    await namespace.on_connect("sid1", environ)
+    await namespace.on_connect("sid2", environ)
+    replacement = namespace.sid_to_token["sid2"]
+    assert replacement != token
+    assert session.authorizes(replacement)
+    assert namespace.sid_to_token["sid1"] == token
+    cast(AsyncMock, namespace.emit).assert_awaited_once_with(
+        "new_token", replacement, to="sid2"
+    )
+
+
+async def test_session_refresh_notice_is_throttled(
+    event_namespace_with_processor_mock: EventNamespace,
+    mocker: MockerFixture,
+):
+    """A connection requests cookie refresh at the interval, preserving event context.
+
+    Args:
+        event_namespace_with_processor_mock: The namespace fixture.
+        mocker: Mock fixture.
+    """
+    namespace = event_namespace_with_processor_mock
+    manager = namespace.app._session_token_manager
+    session = manager.create()
+    token = manager.create_client_token(session)
+    environ = _connect_environ(token)
+    environ["asgi.scope"]["reflex.session"] = session
+    await namespace.on_connect("sid", environ)
+    now = mocker.patch(
+        "reflex.app.time.time",
+        return_value=session.issued_at + manager.refresh_interval - 1,
+    )
+    await namespace.on_event("sid", _client_event_payload())
+    cast(AsyncMock, namespace.emit).assert_not_called()
+    now.return_value += 2
+    await namespace.on_event("sid", _client_event_payload())
+    await namespace.on_event("sid", _client_event_payload())
+    cast(AsyncMock, namespace.emit).assert_awaited_once_with(
+        "session_refresh", to="sid"
+    )
+    enqueue = cast(AsyncMock, namespace.app.event_processor.enqueue)
+    assert all(
+        call.kwargs["session_token"] is session for call in enqueue.call_args_list
+    )
+    task = namespace.on_disconnect("sid")
+    if task is not None:
+        await task
+    assert "sid" not in namespace._sessions
+
+
+async def test_socket_without_cookie_renews_its_session_in_band(
+    event_namespace_with_processor_mock,
+    mocker,
+):
+    """A socket that connected without a cookie renews through an exchange credential."""
+    namespace = event_namespace_with_processor_mock
+    manager = namespace.app._session_token_manager
+    # A cookie lifetime below the maximum session age leaves room to renew.
+    mocker.patch.object(manager, "ttl", 100)
+    await namespace.on_connect("sid", _connect_environ(""))
+    session = namespace._sessions["sid"].session
+    token = namespace.sid_to_token["sid"]
+    emitted = cast(AsyncMock, namespace.emit)
+    mocker.patch("reflex_base.session.time.time", return_value=session.expires_at + 1)
+    assert manager.decode(manager.encode(session)) is None
+    await namespace.on_session_refresh("sid")
+    credential = emitted.call_args.args[1]
+    # The socket credential is for one exchange and is not valid as a cookie.
+    assert manager.decode(credential) is None
+    renewed = manager.decode(credential, exchange=True)
+    assert renewed is not None
+    assert renewed.id == session.id
+    assert renewed.authorizes(token)
+    # The stored session has the full lifetime; the credential has one minute.
+    stored = namespace._sessions["sid"].session
+    assert stored.id == renewed.id
+    assert stored.expires_at > renewed.expires_at
+    emitted.reset_mock()
+    task = namespace.on_disconnect("sid")
+    if task is not None:
+        await task
+    await namespace.on_session_refresh("sid")
+    emitted.assert_not_called()
+
+
+async def test_socket_with_cookie_never_gets_a_credential(
+    event_namespace_with_processor_mock,
+    mocker,
+):
+    """A socket that connected with a cookie renews over HTTP, also after expiry.
+
+    The backend keeps the session as it was at connect and cannot see later
+    renewals of the cookie. The session endpoint can: it renews a valid cookie
+    and issues a new session for an expired one.
+    """
+    namespace = event_namespace_with_processor_mock
+    manager = namespace.app._session_token_manager
+    mocker.patch.object(manager, "ttl", 100)
+    session = manager.create()
+    environ = _connect_environ(manager.create_client_token(session))
+    environ["asgi.scope"]["reflex.session"] = session
+    await namespace.on_connect("sid", environ)
+    emitted = cast(AsyncMock, namespace.emit)
+    emitted.reset_mock()
+    mocker.patch("reflex.app.time.time", return_value=session.expires_at + 1)
+
+    await namespace.on_session_refresh("sid")
+
+    emitted.assert_awaited_once_with("session_token", None, to="sid")
+    assert namespace._sessions["sid"].session is session
+
+
+@pytest.mark.parametrize("cookie", [True, False])
+async def test_session_refresh_sends_credential_only_without_a_valid_cookie(
+    event_namespace_with_processor_mock: EventNamespace,
+    cookie: bool,
+):
+    """A socket that connected with a valid cookie renews it over HTTP.
+
+    The browser holds that credential in an HttpOnly cookie, so the socket does
+    not send it to page scripts. A socket that connected without a cookie gets
+    the credential in-band, because the browser has no other copy.
+
+    Args:
+        event_namespace_with_processor_mock: The namespace fixture.
+        cookie: Whether the socket connected with a valid session cookie.
+    """
+    namespace = event_namespace_with_processor_mock
+    manager = namespace.app._session_token_manager
+    environ = _connect_environ("")
+    session = manager.create() if cookie else None
+    environ["asgi.scope"]["reflex.session"] = session
+    await namespace.on_connect("sid", environ)
+    emitted = cast(AsyncMock, namespace.emit)
+    emitted.reset_mock()
+
+    await namespace.on_session_refresh("sid")
+
+    emitted.assert_awaited_once()
+    event, credential = emitted.call_args.args
+    assert event == "session_token"
+    if cookie:
+        assert credential is None
+        assert namespace._sessions["sid"].session is session
+    else:
+        renewed = manager.decode(credential, exchange=True)
+        assert renewed is not None
+        assert renewed.id == namespace._sessions["sid"].session.id
+    task = namespace.on_disconnect("sid")
+    if task is not None:
+        await task
+    assert "sid" not in namespace._sessions
+
+
+@pytest.mark.parametrize("mode", ["warn", "enforce"])
+async def test_shared_state_link_to_client_token_needs_its_session(
+    monkeypatch: pytest.MonkeyPatch,
+    clean_registration_context: RegistrationContext,
+    mode: str,
+):
+    """A shared state link cannot reach the state of another session's client.
+
+    A link to a client token reads and writes that client's instance of the
+    shared state, so enforcement applies the session check to the link.
+
+    Args:
+        monkeypatch: Environment fixture; restores root metadata.
+        clean_registration_context: Isolate the temporary shared state class.
+        mode: The session token mode.
+    """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", mode)
+    links = State.get_fields()["_reflex_internal_links"]
+    monkeypatch.setattr(links, "default", links.default)
+    monkeypatch.setattr(links, "default_factory", links.default_factory)
+    monkeypatch.setattr(
+        State, "_always_dirty_substates", State._always_dirty_substates.copy()
+    )
+
+    class DraftState(rx.SharedState):
+        draft: str = ""
+
+    app = App(_state=State)
+    state_manager = app._state_manager = StateManagerMemory()
+    app._event_processor = Mock(
+        _root_context=EventContext(
+            token="",
+            session_token=SessionToken.SYSTEM,
+            state_manager=state_manager,
+            enqueue_impl=AsyncMock(),
+        )
+    )
+    app._event_namespace = AsyncMock()
+    manager = SessionTokenManager("link", secrets=(b"s" * 32,))
+    victim_session, attacker_session = manager.create(), manager.create()
+    victim = manager.create_client_token(victim_session)
+    attacker = manager.create_client_token(attacker_session)
+    second_tab = manager.create_client_token(attacker_session)
+
+    async def link(target: str) -> None:
+        """Link the attacker's shared state to a target, as its own session.
+
+        Args:
+            target: The token to link to.
+        """
+        async with app.modify_state(
+            BaseStateToken(ident=attacker, cls=DraftState),
+            session_token=attacker_session,
+        ) as root_state:
+            await (await root_state.get_state(DraftState))._link_to(target)
+
+    await link("room")
+    await link(second_tab)
+    if mode == "enforce":
+        with pytest.raises(exceptions.SessionAuthorizationError) as error:
+            await link(victim)
+        assert str(error.value) == "The session does not authorize this client token."
+        # The rejected link leaves the earlier link in place.
+        async with app.modify_state(
+            BaseStateToken(ident=second_tab, cls=DraftState),
+            session_token=attacker_session,
+        ) as root_state:
+            linked = await root_state.get_state(DraftState)
+            # The test client has no socket, so its router token is empty.
+            assert linked._linked_from == {""}
+    else:
+        await link(victim)
+    await asyncio.gather(*UPDATE_OTHER_CLIENT_TASKS)
+
+
+async def test_socket_sends_a_session_past_its_maximum_age_to_the_endpoint(
+    event_namespace_with_processor_mock: EventNamespace,
+    mocker: MockerFixture,
+):
+    """A socket whose session reached the maximum age renews at the session endpoint.
+
+    Args:
+        event_namespace_with_processor_mock: The namespace fixture.
+        mocker: Mock fixture.
+    """
+    namespace = event_namespace_with_processor_mock
+    manager = namespace.app._session_token_manager
+    await namespace.on_connect("sid", _connect_environ(""))
+    session = namespace._sessions["sid"].session
+    emitted = cast(AsyncMock, namespace.emit)
+    emitted.reset_mock()
+    mocker.patch(
+        "reflex.app.time.time", return_value=session.created_at + manager.max_age
+    )
+
+    await namespace.on_session_refresh("sid")
+
+    # The session endpoint issues the new session; the socket sends no credential.
+    emitted.assert_awaited_once_with("session_token", None, to="sid")
+    assert namespace._sessions["sid"].session is session
+
+
+async def test_failed_token_link_leaves_no_socket_session(
+    event_namespace_with_processor_mock: EventNamespace,
+    mocker: MockerFixture,
+):
+    """A connect that fails while linking its token keeps no session record.
+
+    A refused connect never reaches on_disconnect, so nothing else removes it.
+
+    Args:
+        event_namespace_with_processor_mock: The namespace fixture.
+        mocker: Mock fixture.
+    """
+    namespace = event_namespace_with_processor_mock
+    mocker.patch.object(
+        namespace, "link_token_to_sid", side_effect=RuntimeError("link failed")
+    )
+    with pytest.raises(RuntimeError) as error:
+        await namespace.on_connect("sid", _connect_environ(""))
+    assert str(error.value) == "link failed"
+    assert namespace._sessions == {}
+
+
+def test_session_manager_uses_the_configured_lifetimes(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """The app passes each session lifetime setting to its session manager.
+
+    Args:
+        monkeypatch: Config override fixture.
+    """
+    config = rx.Config(
+        app_name="lifetimes",
+        session_token_ttl=100,
+        session_token_refresh_interval=25,
+        session_token_max_age=300,
+    )
+    monkeypatch.setattr("reflex.app.get_config", lambda: config)
+    app = App()
+    app._api = Starlette()
+    app._add_default_endpoints()
+    manager = app._session_token_manager
+    assert (manager.ttl, manager.refresh_interval, manager.max_age) == (100, 25, 300)
+
+
+@pytest.mark.parametrize("mode", ["off", "warn", "enforce"])
+async def test_connect_needs_no_event_context(
+    monkeypatch: pytest.MonkeyPatch, mode: str
+):
+    """A socket connects when no event context is set.
+
+    A harness that drives the namespace directly, such as the benchmarks, has
+    no request scope.
+
+    Args:
+        monkeypatch: Environment fixture.
+        mode: The session token mode.
+    """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", mode)
+    app = App(_state=State)
+    app._state_manager = StateManagerMemory()
+    app._session_token_manager = SessionTokenManager("connect", secrets=(b"s" * 32,))
+    namespace = EventNamespace("/event", app)
+    namespace._token_manager = LocalTokenManager()
+    namespace.emit = AsyncMock()
+
+    await namespace.on_connect("sid", _connect_environ(""))
+
+    token = namespace.sid_to_token["sid"]
+    assert namespace.token_to_sid == {token: "sid"}
+    assert ("sid" in namespace._sessions) is (mode != "off")
 
 
 def _dropped_result_warning(label: str) -> str:
@@ -5953,7 +6514,7 @@ def test_compile_releases_memo_naming_caches(
 
 @pytest.mark.asyncio
 async def test_on_connect_processes_boot_event_from_auth(
-    event_namespace: EventNamespace,
+    event_namespace_with_processor_mock: EventNamespace,
 ):
     """The hydrate event carried in the socket.io CONNECT packet is processed on connect.
 
@@ -5962,8 +6523,9 @@ async def test_on_connect_processes_boot_event_from_auth(
     first; a connect without a boot event still does.
 
     Args:
-        event_namespace: The event namespace.
+        event_namespace_with_processor_mock: The event namespace with session support.
     """
+    event_namespace = event_namespace_with_processor_mock
     event_namespace._token_manager = Mock()
     event_namespace._token_manager.link_token_to_sid = AsyncMock(return_value=None)
     event_namespace.on_event = AsyncMock()
@@ -5977,7 +6539,7 @@ async def test_on_connect_processes_boot_event_from_auth(
         "new_sid", {"QUERY_STRING": "token=abc"}, {"event": boot_event}
     )
     event_namespace._token_manager.link_token_to_sid.assert_awaited_once_with(
-        "abc", "new_sid"
+        "abc", "new_sid", token_factory=unittest.mock.ANY
     )
     event_namespace.on_event.assert_awaited_once_with("new_sid", boot_event)
     modify_state.assert_not_called()
@@ -5995,13 +6557,15 @@ async def test_on_connect_processes_boot_event_from_auth(
 
 @pytest.mark.asyncio
 async def test_on_connect_accepts_non_utf8_header_value(
-    event_namespace: EventNamespace,
+    event_namespace: EventNamespace, monkeypatch: pytest.MonkeyPatch
 ):
     """A non-UTF-8 request header value does not abort websocket connect.
 
     Args:
         event_namespace: The event namespace.
+        monkeypatch: Pytest monkeypatch fixture.
     """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "off")
     event_namespace._token_manager = Mock()
     event_namespace._token_manager.link_token_to_sid = AsyncMock(return_value=None)
     event_namespace.on_event = AsyncMock()
@@ -6047,14 +6611,18 @@ def _schema_checking_namespace(
 
 @pytest.mark.asyncio
 async def test_on_connect_reports_state_schema_mismatch(
-    event_namespace: EventNamespace, caplog: pytest.LogCaptureFixture
+    event_namespace: EventNamespace,
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     """A frontend compiled for another state tree is told once, and still hydrates.
 
     Args:
         event_namespace: The event namespace.
         caplog: pytest fixture capturing backend log records.
+        monkeypatch: Environment fixture.
     """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "off")
     on_event, emit = _schema_checking_namespace(event_namespace, "backend-schema")
     boot_event = {"name": "state.hydrate_and_load", "payload": {}, "router_data": {}}
 
@@ -6112,15 +6680,20 @@ async def test_on_connect_reports_state_schema_mismatch(
         pytest.param(None, id="no-auth"),
     ],
 )
+@pytest.mark.usefixtures("attached_mock_event_context")
 async def test_on_connect_sends_no_mismatch_without_one(
-    event_namespace: EventNamespace, auth: dict[str, Any] | None
+    event_namespace: EventNamespace,
+    auth: dict[str, Any] | None,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     """A matching or missing frontend schema sends nothing to the client.
 
     Args:
         event_namespace: The event namespace.
         auth: The CONNECT auth payload.
+        monkeypatch: Environment fixture.
     """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "off")
     on_event, emit = _schema_checking_namespace(event_namespace, "same")
     state = Mock(router_data={})
     event_namespace.app.state_manager.modify_state = Mock(
@@ -6135,13 +6708,14 @@ async def test_on_connect_sends_no_mismatch_without_one(
 
 @pytest.mark.asyncio
 async def test_on_connect_unlinks_token_when_boot_event_fails(
-    event_namespace: EventNamespace,
+    event_namespace_with_processor_mock: EventNamespace,
 ):
     """A boot event that fails to process drops the sid/token link before refusing the connect.
 
     Args:
-        event_namespace: The event namespace.
+        event_namespace_with_processor_mock: The event namespace with session support.
     """
+    event_namespace = event_namespace_with_processor_mock
     event_namespace._token_manager = Mock()
     event_namespace._token_manager.link_token_to_sid = AsyncMock(return_value=None)
     event_namespace._token_manager.disconnect_token = AsyncMock()
@@ -6157,6 +6731,7 @@ async def test_on_connect_unlinks_token_when_boot_event_fails(
     )
     # The connection-scoped router data cached for the refused sid goes too.
     assert "new_sid" not in event_namespace._static_router_data
+    assert "new_sid" not in event_namespace._sessions
 
 
 def test_call_app_wraps_with_otel_asgi_middleware():
@@ -6203,7 +6778,8 @@ async def test_on_event_uses_frontend_traceparent(otel_exporter):
     }
     seen: list = []
 
-    async def enqueue(token, event):
+    async def enqueue(token, event, *, session_token):
+        assert session_token is None
         await asyncio.sleep(0)
         seen.append(trace.get_current_span().get_span_context())
         return Mock()
@@ -6323,10 +6899,14 @@ async def test_upload_handler_span_joins_the_request_trace(
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("attached_mock_event_context")
 async def test_connect_disconnect_counts_connections(otel_metrics):
     """Connect and disconnect adjust the open connection gauge."""
     mock_app = unittest.mock.Mock()
     mock_app._state = None
+    mock_app._session_token_manager = SessionTokenManager(
+        "metrics", secrets=(b"s" * 32,)
+    )
     ns = EventNamespace(namespace="/", app=mock_app)
     ns.emit = unittest.mock.AsyncMock()
     await ns.on_connect("sid1", {"QUERY_STRING": "token=t1"})
@@ -7081,6 +7661,14 @@ def test_socketio_origins_with_deploy_url_or_explicit_list(
             ("X-Forwarded-Host: app.example.com",),
             "X-Forwarded-Host 'app.example.com' trusted",
         ),
+        # A trusted proxy reports https for a page loaded over http.
+        (
+            {"trusted_proxy_hops": 1},
+            "http://app.example.com",
+            "app.example.com",
+            (_XFP_HTTPS,),
+            "serve the page over https",
+        ),
         (
             {"cors_allowed_origins": ["https://a.com"]},
             "https://cdn.example.com",
@@ -7129,6 +7717,37 @@ def test_socketio_rejection_warns_once_with_fix(
     assert f"={origin}" not in warnings[0]
     if not config_kwargs:
         assert repr(host) in warnings[0]
+
+
+def test_socketio_rejection_names_forwarded_proto_mismatch(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+):
+    """An http origin rejected only for a trusted https X-Forwarded-Proto is named as such.
+
+    Args:
+        mocker: The pytest mocker fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest log capture fixture.
+    """
+    app = _socket_app(mocker, monkeypatch, trusted_proxy_hops=1)
+    with caplog.at_level(logging.WARNING, logger="reflex.app"):
+        assert not _socket_accepts(
+            app, "http://app.test:3341", "app.test:3341", _XFP_HTTPS
+        )
+    warnings = [r.getMessage() for r in caplog.records if r.name == "reflex.app"]
+    assert warnings == [
+        (
+            "Rejected an event websocket from origin 'http://app.test:3341': in prod "
+            "mode the backend accepts only its own origin (request Host "
+            "'app.test:3341', X-Forwarded-Host None trusted, X-Forwarded-Proto "
+            "'https' trusted); the page was loaded over http but the trusted "
+            "X-Forwarded-Proto says https, so fix the reverse proxy's "
+            "X-Forwarded-Proto or serve the page over https. This warning is logged "
+            "once per worker."
+        )
+    ]
 
 
 @pytest.mark.parametrize(

@@ -104,6 +104,26 @@ def has_default_factory(op: ops.AddColumnOp) -> bool:
     return False
 
 
+def missing_value_error(
+    op: ops.AddColumnOp, cause: str, remedy: str
+) -> util.CommandError:
+    """The error for a NOT NULL column that the migration cannot fill in existing rows.
+
+    Args:
+        op: The add-column operation.
+        cause: Why the column has no value, after the column's name.
+        remedy: The sentence that says how to give it one.
+
+    Returns:
+        The error to raise.
+    """
+    name = ".".join(filter(None, (op.schema, op.table_name, op.column.name)))
+    return util.CommandError(
+        f"Cannot add the NOT NULL column {name!r} {cause}: the migration has no "
+        f"value for rows that a database already holds. {remedy}"
+    )
+
+
 @writer.rewrites(ops.AddColumnOp)
 def add_column_with_server_default(
     context: MigrationContext, revision: str | Iterable[str | None], op: ops.AddColumnOp
@@ -112,9 +132,12 @@ def add_column_with_server_default(
 
     Existing rows then get that value when the column is added, so a NOT NULL
     column can be added to a table that already holds data. A callable default
-    is evaluated once, when the migration script is generated. A dataclass
-    ``default_factory`` is not on the column, so a NOT NULL column with one and
-    no other default is refused rather than added without a value.
+    is evaluated once, when the migration script is generated. A NOT NULL
+    column is refused rather than added without a value when its default has no
+    SQL literal form, like a JSON list, or when its only default is a dataclass
+    ``default_factory``, which is not on the column. A nullable column whose
+    default has no SQL literal form is added without one, with a warning that
+    existing rows will hold NULL.
 
     Args:
         context: The migration context.
@@ -122,11 +145,12 @@ def add_column_with_server_default(
         op: The add-column operation to rewrite.
 
     Returns:
-        The same operation, with ``server_default`` filled in.
+        The same operation, with ``server_default`` filled in when the default
+        has a SQL literal form.
 
     Raises:
-        CommandError: If the column is NOT NULL and its only default is a
-            dataclass ``default_factory``.
+        CommandError: If the column is NOT NULL and its default has no SQL
+            literal form, or its only default is a dataclass ``default_factory``.
     """
     column = op.column
     if column.server_default is not None:
@@ -134,16 +158,43 @@ def add_column_with_server_default(
     default = column.default
     if default is not None:
         value = default.arg(None) if default.is_callable else default.arg
-        column.server_default = sqlalchemy.DefaultClause(sqlalchemy.literal(value))
+        # The column's type renders values like an Enum member as the column
+        # stores them; the untyped literal keeps working where the type rejects one.
+        for literal in (
+            sqlalchemy.literal(value, type_=column.type),
+            sqlalchemy.literal(value),
+        ):
+            try:
+                literal.compile(
+                    dialect=context.dialect, compile_kwargs={"literal_binds": True}
+                )
+            except sqlalchemy.exc.CompileError:
+                continue
+            column.server_default = sqlalchemy.DefaultClause(literal)
+            return op
+        if not column.nullable:
+            raise missing_value_error(
+                op,
+                f"with the default {value!r}, which has no SQL literal form",
+                "Set server_default=... or make the column nullable.",
+            )
+        # `reflex db makemigrations` runs `alembic check` first: warn once, when
+        # the revision is written.
+        if getattr(config.cmd_opts, "autogenerate", False):
+            name = ".".join(filter(None, (op.schema, op.table_name, column.name)))
+            logger.warning(
+                f"The column {name!r} is added without a server default, since "
+                f"its default {value!r} has no SQL literal form: existing rows "
+                "will hold NULL. Review the revision before running reflex db "
+                "migrate."
+            )
     elif not column.nullable and has_default_factory(op):
-        name = ".".join(filter(None, (op.schema, op.table_name, column.name)))
-        msg = (
-            f"Cannot add the NOT NULL column {name!r} with only a default_factory: "
-            "the migration has no value for rows that a database already holds. "
+        raise missing_value_error(
+            op,
+            "with only a default_factory",
             "Set server_default=..., a literal default= or insert_default=, or "
-            "make the column nullable."
+            "make the column nullable.",
         )
-        raise util.CommandError(msg)
     return op
 
 

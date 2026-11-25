@@ -14,7 +14,8 @@ const brotliAsync =
 const zstdAsync =
   typeof zlib.zstdCompress === "function" ? promisify(zlib.zstdCompress) : null;
 
-const COMPRESSIBLE_EXTENSIONS = /\.(js|css|html|json|svg|xml|txt|map|mjs)$/;
+const COMPRESSIBLE_EXTENSIONS =
+  /\.(js|css|html|json|svg|xml|txt|map|mjs|wasm)$/;
 const MIN_SIZE = 256;
 const CONCURRENCY = 16;
 

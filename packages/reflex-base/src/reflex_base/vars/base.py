@@ -1150,10 +1150,12 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     ) -> ObjectVar[VAR_TYPE]: ...
 
     @overload
-    def to(self, output: VAR_SUBCLASS, var_type: None = None) -> VAR_SUBCLASS: ...
+    def to(
+        self, output: type[VAR_SUBCLASS], var_type: types.GenericType | None = None
+    ) -> VAR_SUBCLASS: ...
 
     @overload
-    def to(
+    def to(  # pyright: ignore[reportOverlappingOverload]
         self,
         output: type[OUTPUT] | types.GenericType,
         var_type: types.GenericType | None = None,
