@@ -38,6 +38,7 @@ from reflex_base.event import (
 from reflex_base.style import Style, format_as_emotion
 from reflex_base.utils import format, imports, types
 from reflex_base.utils.compat import MISSING_TYPE
+from reflex_base.utils.exceptions import BackendVarFormatError
 from reflex_base.utils.imports import ImportDict, ImportVar, ParsedImportDict
 from reflex_base.vars import VarData
 from reflex_base.vars.base import (
@@ -992,8 +993,6 @@ class Component(BaseComponent, ABC):
 
             # Check whether the key is a component prop.
             if is_var:
-                if isinstance(value, Field):
-                    raise value._no_frontend_var_error()
                 try:
                     kwargs[key] = LiteralVar.create(value)
 
@@ -1002,6 +1001,8 @@ class Component(BaseComponent, ABC):
                     expected_type = typing.get_args(
                         types.get_field_type(type(self), key)
                     )[0]
+                except BackendVarFormatError:
+                    raise
                 except TypeError:
                     # If it is not a valid var, check the base types.
                     passed_type = type(value)
@@ -1289,11 +1290,10 @@ class Component(BaseComponent, ABC):
             if isinstance(child, (tuple, list)):
                 cls._validate_children(child)
 
-            if isinstance(child, Field):
-                raise child._no_frontend_var_error()
-
             # Make sure the child is a valid type.
             if isinstance(child, dict) or not isinstance(child, ComponentChildTypes):
+                if isinstance(child, Field):
+                    raise child._no_frontend_var_error()
                 error = ChildrenTypeError(component=cls.__name__, child=child)
                 if isinstance(child, (EventSpec, EventHandler, EventChain)):
                     error.add_note(
