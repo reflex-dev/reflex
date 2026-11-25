@@ -494,6 +494,8 @@ Notes:
 - App routes must not start with a configured locale (e.g. a `/de/...` page of
   your own while `de` is configured): those URLs are reserved for the generated
   locale routes, and compilation fails with a clear error.
+- The sitemap (`SitemapPlugin`) lists every locale's URL of a page, each
+  naming all of them as `xhtml:link` alternates, as its `hreflang` links do.
 - Each locale route prerenders that language's content, `hreflang`,
   `canonical` and `<html lang>`/`dir`. Unprefixed pages of the default locale
   keep the app-wide `rx.App(html_lang=...)`, which defaults to `default_locale`.

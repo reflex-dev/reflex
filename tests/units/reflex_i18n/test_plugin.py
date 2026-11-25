@@ -827,6 +827,13 @@ def test_client_follows_a_pages_translated_paths(
         ),
     )
     assert rendered["result"] == [expected, expected[:2]]
+    # The server names the same alternates, e.g. in the sitemap.
+    plugin = I18nPlugin(
+        locales=["de", "en"], default_locale="de", routing=PathPrefixRouting()
+    )
+    plugin._page_paths = {"/neuigkeiten": {"en": "/news"}}
+    plugin._base_paths = {("en", "/news"): "/neuigkeiten"}
+    assert list(plugin._alternates(pathname).values()) == expected[:3]
 
 
 @requires_node

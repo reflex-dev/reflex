@@ -9,6 +9,8 @@ import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, get_args
+from urllib.parse import urlsplit, urlunsplit
+from xml.etree import ElementTree as ET
 
 from reflex_base.plugins.base import (
     CommonContext,
@@ -16,7 +18,10 @@ from reflex_base.plugins.base import (
     Plugin,
     PostBuildContext,
     PreCompileContext,
+    get_plugin,
 )
+from reflex_base.plugins.sitemap import Constants as SitemapConstants
+from reflex_base.plugins.sitemap import SitemapPlugin
 from reflex_base.utils.exceptions import RouteValueError
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import Var, VarData
@@ -85,6 +90,9 @@ _RTL_LANGUAGES = frozenset({
 })
 
 _HTML_TAG = re.compile(r"<html\b[^>]*>", re.IGNORECASE)
+
+# The namespace of a sitemap's hreflang alternates.
+_XHTML_NAMESPACE = "http://www.w3.org/1999/xhtml"
 
 # The page context key naming the locale a fanned-out route renders in.
 _PAGE_LOCALE_KEY = "i18n_locale"
@@ -275,6 +283,10 @@ class I18nPlugin(Plugin):
     _page_paths: dict[str, dict[str, str]] = dataclasses.field(
         default_factory=dict, init=False, repr=False, compare=False
     )
+    # The other way round: (locale, translated path) -> base path.
+    _base_paths: dict[tuple[str, str], str] = dataclasses.field(
+        default_factory=dict, init=False, repr=False, compare=False
+    )
 
     def _config(self) -> I18nConfig:
         """Build the i18n configuration from the plugin's fields.
@@ -352,6 +364,7 @@ class I18nPlugin(Plugin):
             return
         add_page = context["add_page"]
         self._page_paths = {}
+        self._base_paths = {}
         for page in context["pages"]:
             base_path = "/" if page.route == "index" else f"/{page.route}"
             head = base_path.lstrip("/").partition("/")[0]
@@ -366,6 +379,8 @@ class I18nPlugin(Plugin):
                 raise RouteValueError(msg)
             if paths := self._translated_paths(base_path, page.context or {}):
                 self._page_paths[base_path] = paths
+                for locale, path in paths.items():
+                    self._base_paths[locale, path] = base_path
             for locale in self.locales:
                 localized = self._localize(base_path, locale)
                 if localized == base_path:
@@ -437,6 +452,68 @@ class I18nPlugin(Plugin):
         assert self.routing is not None
         translated = self._page_paths.get(path, {}).get(locale, path)
         return self.routing.localize(translated, locale, self.default_locale)
+
+    def _alternates(self, path: str) -> dict[str, str]:
+        """The URL path of the page at a path in each locale, as hreflang names it.
+
+        Args:
+            path: A URL path, relative to ``frontend_path``.
+
+        Returns:
+            Each locale's path for the page, then ``x-default``'s.
+        """
+        assert self.routing is not None
+        locale = self.routing.locale_of(path, self.locales, self.default_locale)
+        rest = self.routing.delocalize(path, self.locales)
+        base_path = self._base_paths.get((locale, rest), rest)
+        alternates = {loc: self._localize(base_path, loc) for loc in self.locales}
+        alternates["x-default"] = alternates[self.default_locale]
+        return alternates
+
+    def _add_sitemap_alternates(self, sitemap: str) -> str:
+        """Name each sitemap URL's page in every locale, as its hreflang links do.
+
+        Args:
+            sitemap: The sitemap XML the SitemapPlugin generated.
+
+        Returns:
+            The sitemap with an ``xhtml:link`` alternate per locale on each URL.
+        """
+        from reflex_base.config import get_config
+
+        frontend_path = get_config().frontend_path.strip("/")
+        prefix = f"/{frontend_path}" if frontend_path else ""
+        urlset = ET.fromstring(sitemap)
+        namespace = urlset.tag.partition("}")[0].removeprefix("{")
+        # Written back with the literal names the SitemapPlugin writes.
+        for element in urlset.iter():
+            element.tag = element.tag.rpartition("}")[2]
+        urlset.set("xmlns", namespace)
+        urlset.set("xmlns:xhtml", _XHTML_NAMESPACE)
+        for url in urlset.iter("url"):
+            loc = urlsplit(url.findtext("loc", ""))
+            path = loc.path.removeprefix(prefix) or "/"
+            slash = "/" if path != "/" and path.endswith("/") else ""
+            for locale, alternate in self._alternates(path).items():
+                if alternate != "/":
+                    alternate += slash
+                ET.SubElement(
+                    url,
+                    "xhtml:link",
+                    rel="alternate",
+                    hreflang=locale,
+                    href=urlunsplit((
+                        loc.scheme,
+                        loc.netloc,
+                        prefix + alternate,
+                        "",
+                        "",
+                    )),
+                )
+        ET.indent(urlset, "  ")
+        return ET.tostring(urlset, encoding="utf-8", xml_declaration=True).decode(
+            "utf-8"
+        )
 
     def _path_redirects(self) -> dict[str, str]:
         """Map each translated page's path in one locale under another to its own.
@@ -517,6 +594,10 @@ class I18nPlugin(Plugin):
                 "Build them inside a page or component function instead."
             )
         context["add_save_task"](self._compile_catalogs)
+        if self.routing is not None and get_plugin(SitemapPlugin) is not None:
+            context["add_modify_task"](
+                str(SitemapConstants.FILE_PATH), self._add_sitemap_alternates
+            )
 
     def post_build(self, **context: Unpack[PostBuildContext]) -> None:
         """Give the prerendered pages of each prefixed locale its ``lang``/``dir``.

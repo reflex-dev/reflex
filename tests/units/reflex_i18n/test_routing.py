@@ -506,6 +506,88 @@ def test_expand_routes_rejects_unusable_translated_paths(
     assert str(error.value) == expected
 
 
+@pytest.mark.parametrize(("frontend_path", "prefix"), [("", ""), ("/app", "/app")])
+def test_sitemap_names_each_page_in_every_locale(
+    monkeypatch: pytest.MonkeyPatch, frontend_path: str, prefix: str
+):
+    from reflex_base.config import get_config
+    from reflex_base.plugins.sitemap import generate_xml
+
+    plugin, _ = _translated_news_plugin()
+    monkeypatch.setattr(get_config(), "frontend_path", frontend_path)
+    site = f"https://example.com{prefix}"
+    sitemap = generate_xml([
+        {"loc": f"{site}/"},
+        {"loc": f"{site}/fr/blog/neuigkeiten/", "priority": 0.5},
+    ])
+
+    def links(path: str, slash: str = "") -> str:
+        """The expected alternates of a page.
+
+        Args:
+            path: The page's German path.
+            slash: The trailing slash its sitemap URL has, if any.
+
+        Returns:
+            The xhtml:link elements.
+        """
+        hrefs = {
+            "de": path,
+            "en": "/en" + ("/blog/news" if path != "/" else ""),
+            "fr": "/fr" + (path if path != "/" else ""),
+        }
+        hrefs["x-default"] = path
+        return "".join(
+            f'    <xhtml:link rel="alternate" hreflang="{locale}" '
+            f'href="{site}{href}{slash if href != "/" else ""}" />\n'
+            for locale, href in hrefs.items()
+        )
+
+    assert plugin._add_sitemap_alternates(sitemap) == (
+        "<?xml version='1.0' encoding='utf-8'?>\n"
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
+        'xmlns:xhtml="http://www.w3.org/1999/xhtml">\n'
+        "  <url>\n"
+        f"    <loc>{site}/</loc>\n"
+        f"{links('/')}"
+        "  </url>\n"
+        "  <url>\n"
+        f"    <loc>{site}/fr/blog/neuigkeiten/</loc>\n"
+        "    <priority>0.5</priority>\n"
+        f"{links('/blog/neuigkeiten', '/')}"
+        "  </url>\n"
+        "</urlset>"
+    )
+
+
+@pytest.mark.parametrize(
+    ("routing", "sitemap", "expected"),
+    [
+        (PathPrefixRouting(), True, ["public/sitemap.xml"]),
+        (PathPrefixRouting(), False, []),
+        (None, True, []),
+    ],
+)
+def test_pre_compile_adds_alternates_to_a_sitemap(
+    monkeypatch: pytest.MonkeyPatch,
+    routing: PathPrefixRouting | None,
+    sitemap: bool,
+    expected: list[str],
+):
+    from reflex_base.config import get_config
+    from reflex_base.plugins.sitemap import SitemapPlugin
+
+    plugin = I18nPlugin(locales=["de", "en"], default_locale="de", routing=routing)
+    plugins = [plugin, SitemapPlugin()] if sitemap else [plugin]
+    monkeypatch.setattr(get_config(), "plugins", plugins)
+    modified: list[str] = []
+    plugin.pre_compile(
+        add_save_task=lambda *args, **kwargs: None,
+        add_modify_task=lambda path, _: modified.append(path),
+    )  # pyright: ignore[reportCallIssue]
+    assert modified == expected
+
+
 def test_index_module_exports_translated_paths():
     js = compile_index_module(
         I18nConfig(locales=["de", "en"], default_locale="de"),
