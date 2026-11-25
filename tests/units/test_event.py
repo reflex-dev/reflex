@@ -32,7 +32,6 @@ from reflex_base.utils import console, format, log
 from reflex_base.utils.exceptions import (
     BackendVarFormatError,
     EventHandlerArgTypeMismatchError,
-    EventHandlerTypeError,
     EventHandlerValueError,
 )
 from reflex_base.utils.form import FormData
@@ -42,6 +41,7 @@ from typing_extensions import TypeAliasType
 
 import reflex as rx
 from reflex.state import BaseState
+from tests.units.field_errors import backend_var_error
 
 
 def make_var(value) -> Var:
@@ -266,20 +266,25 @@ def test_state_event_handler_type_hints_are_stable_after_class_patch():
     assert handler.prevent_default._type_hints is handler._type_hints
 
 
-def test_backend_var_event_arg_reports_repr():
-    """A backend var passed as an event arg reports its repr, not a format error."""
+def test_backend_var_event_arg_raises_format_error():
+    """A backend var passed as an event arg raises the backend var format error."""
 
-    class S(BaseState):
+    class BackendEventArgState(BaseState):
         _secret: int = 42
 
         @event
         def on_event(self, value: int):
             pass
 
-    with pytest.raises(EventHandlerTypeError, match=r"Got Field\(default=42"):
-        S.on_event(S._secret)
-    with pytest.raises(EventHandlerTypeError, match=r"Got Field\(default=42"):
-        cast(EventSpec, S.on_event()).add_args(S._secret)  # pyright: ignore[reportArgumentType]
+    expected = backend_var_error("BackendEventArgState._secret")
+    with pytest.raises(BackendVarFormatError) as call_info:
+        BackendEventArgState.on_event(BackendEventArgState._secret)
+    with pytest.raises(BackendVarFormatError) as add_args_info:
+        cast(EventSpec, BackendEventArgState.on_event()).add_args(
+            BackendEventArgState._secret  # pyright: ignore[reportArgumentType]
+        )
+    assert str(call_info.value) == expected
+    assert str(add_args_info.value) == expected
 
 
 class BackendTriggerState(BaseState):

@@ -305,10 +305,10 @@ def default_error_boundary(*children: Component, **props) -> Component:
 
 
 def _reject_page_meta_fields(*values: Any) -> None:
-    """Reject page metadata given as a field with no frontend var.
+    """Reject page metadata or on_load events given as a field with no frontend var.
 
     Args:
-        *values: The page metadata values.
+        *values: The page metadata values or on_load events.
 
     Raises:
         BackendVarFormatError: If a value is a field with no frontend var.
@@ -1598,7 +1598,7 @@ class App(MiddlewareMixin, LifespanMixin):
             context: Values passed to page for custom page-specific logic.
 
         Raises:
-            BackendVarFormatError: When title, description or image is a field with no frontend var.
+            BackendVarFormatError: When title, description, image or on_load is a field with no frontend var.
             PageValueError: When the component is not set for a non-404 page.
             RouteValueError: When the specified route name already exists.
             ValueError: When the route syntax is invalid.
@@ -1647,11 +1647,15 @@ class App(MiddlewareMixin, LifespanMixin):
             The validated page descriptor and its dynamic route arguments.
 
         Raises:
+            BackendVarFormatError: When title, description, image or on_load is a field with no frontend var.
             PageValueError: When the component is not set for a non-404 page.
             RouteValueError: When a route cannot be derived.
             ValueError: When the route syntax is invalid.
         """
         _reject_page_meta_fields(title, description, image)
+        _reject_page_meta_fields(
+            *(on_load if is_non_string_sequence(on_load) else [on_load])
+        )
         route = self._page_route_key(component, route)
         if route is None:
             msg = "Route must be set if component is not a callable."

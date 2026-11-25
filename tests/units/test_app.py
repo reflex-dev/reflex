@@ -114,6 +114,7 @@ from reflex.utils.token_manager import (
     SocketRecord,
 )
 from tests.units.exception_handler_helpers import logged
+from tests.units.field_errors import backend_var_error
 
 from .conftest import active_tracer, chdir, metric_points
 from .mock_redis import mock_redis
@@ -343,6 +344,42 @@ def test_add_page_backend_var_meta_raises_format_error(
         match=r"Backend var 'BackendMetaState\._meta' exists only",
     ):
         app.add_page(index_page, route="/meta", **{key: BackendMetaState._meta})  # pyright: ignore[reportArgumentType]
+
+
+def test_add_page_backend_var_meta_content_raises_format_error(
+    app: App, index_page: ComponentCallable
+):
+    """A backend var in a meta tag's content raises when the page is compiled.
+
+    Args:
+        app: The app to test.
+        index_page: The index page.
+    """
+    app.add_page(
+        index_page,
+        route="/meta",
+        meta=[{"name": "x", "content": BackendMetaState._meta}],
+    )
+    with pytest.raises(exceptions.BackendVarFormatError) as exc_info:
+        app._compile_page("meta")
+    assert str(exc_info.value) == backend_var_error("BackendMetaState._meta")
+
+
+@pytest.mark.parametrize("as_list", [False, True])
+def test_add_page_backend_var_on_load_raises_format_error(
+    app: App, index_page: ComponentCallable, as_list: bool
+):
+    """A backend var passed as on_load raises when the page is added.
+
+    Args:
+        app: The app to test.
+        index_page: The index page.
+        as_list: Whether on_load is given as a list.
+    """
+    on_load = [BackendMetaState._meta] if as_list else BackendMetaState._meta
+    with pytest.raises(exceptions.BackendVarFormatError) as exc_info:
+        app.add_page(index_page, route="/meta", on_load=on_load)  # pyright: ignore[reportArgumentType]
+    assert str(exc_info.value) == backend_var_error("BackendMetaState._meta")
 
 
 def test_add_page_set_route(app: App, index_page: ComponentCallable):
