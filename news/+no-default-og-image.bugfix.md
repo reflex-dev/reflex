@@ -1,0 +1,1 @@
+A page added without `image=` no longer gets an `og:image` meta tag pointing at the relative `favicon.ico`, which link previews could not resolve. Pass an absolute URL as `image=` to set a page's preview image.

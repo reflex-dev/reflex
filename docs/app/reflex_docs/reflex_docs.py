@@ -201,10 +201,9 @@ for route in routes:
             )
         meta.append({"name": "theme-color", "content": route.background_color})
 
-        # Reflex's compiler always renders exactly one og:image from add_page's
-        # `image` kwarg (defaulting to the favicon). Pass the real preview as
-        # `image` and drop og:image from the meta list, so the page has a single
-        # og:image (the preview) rather than the favicon default + the preview.
+        # Reflex's compiler renders the og:image from add_page's `image` kwarg.
+        # Pass the real preview as `image` and drop og:image from the meta list,
+        # so the page has a single og:image (the preview).
         meta = [
             m
             for m in meta

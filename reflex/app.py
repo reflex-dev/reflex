@@ -1533,7 +1533,7 @@ class App(MiddlewareMixin, LifespanMixin):
             route: The route to display the component at.
             title: The title of the page.
             description: The description of the page.
-            image: The image to display on the page.
+            image: The URL of the page's og:image preview, none if empty.
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
             context: Values passed to page for custom page-specific logic.
@@ -1579,7 +1579,7 @@ class App(MiddlewareMixin, LifespanMixin):
             route: The route to display the component at.
             title: The title of the page.
             description: The description of the page.
-            image: The image to display on the page.
+            image: The URL of the page's og:image preview, none if empty.
             on_load: The event handler(s) called each time the page loads.
             meta: The metadata of the page.
             context: Values passed to page for custom page-specific logic.
@@ -1607,7 +1607,6 @@ class App(MiddlewareMixin, LifespanMixin):
                 title = constants.Page404.TITLE
             if not is_page_meta_set(description):
                 description = constants.Page404.DESCRIPTION
-            image = image or constants.Page404.IMAGE
         else:
             if component is None:
                 msg = "Component must be set for a non-404 page."

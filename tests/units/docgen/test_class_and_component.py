@@ -590,7 +590,7 @@ def test_method_signatures_are_readable():
     assert "on_load: Optional[EventType[()]] = None" in add_page
     assert "meta: Sequence[Mapping[str, Any] | Component] = []" in add_page
     # ...while genuine string-literal defaults keep their quotes.
-    assert "image: str = 'favicon.ico'" in add_page
+    assert "image: str = ''" in add_page
 
 
 @pytest.mark.parametrize(

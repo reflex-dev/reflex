@@ -1115,7 +1115,7 @@ def add_meta(
     Args:
         page: The component for the page.
         title: The title of the page.
-        image: The image for the page.
+        image: The URL of the page's og:image preview, none if empty.
         meta: The metadata list.
         description: The description of the page.
 
@@ -1131,7 +1131,8 @@ def add_meta(
     children: list[Any] = [Title.create(title)]
     if is_page_meta_set(description):
         children.append(Description.create(content=description))
-    children.append(Image.create(content=image))
+    if image:
+        children.append(Image.create(content=image))
 
     page.children.extend(children)
     page.children.extend(meta_tags)
