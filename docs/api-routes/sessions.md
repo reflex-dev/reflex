@@ -86,9 +86,10 @@ defaults to seven days. `session_token_max_age` is the maximum age of the
 session and also defaults to seven days. It counts from the first issue of the
 session, and renewal cannot extend a session past it. At that age the session
 ends: the next renewal gets a new session from `POST /_reflex/session`, and
-under `enforce` the tab gets a new token and fresh state. Until then, uploads
-from that tab return 403, and the page shows "Your session has expired. Reload
-the page and try again." (development shows the status and the reason). With both defaults, a session lasts seven days.
+under `enforce` the tab gets a new token and fresh state. Until then, under
+`enforce`, uploads from that tab return 403, and the page shows "Your session
+has expired. Reload the page and try again." (development shows the status and
+the reason). `warn` and `off` accept those uploads. With both defaults, a session lasts seven days.
 Set `session_token_ttl` below `session_token_max_age` to end an idle session
 sooner while an active one renews up to the maximum age.
 `session_token_refresh_interval` defaults to half that lifetime. Only
@@ -99,7 +100,7 @@ once, so a suspended timer does not require a new session while the socket
 survives. A socket that connected with a valid cookie always renews it over
 HTTP and never receives a credential, so page scripts cannot read a credential
 that is in the cookie. If that cookie expired in the meantime, the endpoint
-issues a new session. Only a socket that connected without a cookie receives a
+issues a new session. Only a socket that connected without a valid cookie receives a
 credential over the socket.
 A socket retains its validated session for its
 connected lifetime. Cookie expiry is checked on subsequent HTTP requests and
