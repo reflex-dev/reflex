@@ -15,6 +15,7 @@ import { parseJson } from "$/utils/helpers/json";
  * @param getBackendURL Function to get the backend URL.
  * @param getToken Function to get the Reflex token.
  * @param waitForSession Wait for the session cookie before starting HTTP traffic.
+ * @param devMode Whether the app runs in development mode.
  *
  * @returns The response from posting to the UPLOADURL endpoint.
  */
@@ -30,6 +31,7 @@ export const uploadFiles = async (
   getBackendURL,
   getToken,
   waitForSession,
+  devMode,
 ) => {
   files = files ?? [];
 
@@ -145,8 +147,16 @@ export const uploadFiles = async (
         const error = new Error(`HTTP error! status: ${xhr.status}`);
         if (xhr.status >= 400 && xhr.status < 500) {
           // The server refused the request before the event handler ran, so
-          // no backend error reaches the page for it.
-          error.rejection = `The server rejected the upload (${xhr.status}): ${xhr.responseText.slice(0, 200)}`;
+          // no backend error reaches the page for it. Only development shows
+          // the server's own words, as for a failed event handler.
+          if (devMode) {
+            error.rejection = `The server rejected the upload (${xhr.status}): ${xhr.responseText.slice(0, 200)}`;
+          } else if (xhr.status === 403) {
+            error.rejection =
+              "Your session has expired. Reload the page and try again.";
+          } else {
+            error.rejection = "The server rejected the upload.";
+          }
         }
         reject(error);
       }

@@ -51,7 +51,7 @@ async function pendingUpload() {
   });
   const refs = {};
   const socket = { connected: true, _callbacks: { $event: [] } };
-  const start = () =>
+  const start = (devMode = false) =>
     module.namespace.uploadFiles(
       "handler",
       [],
@@ -64,6 +64,7 @@ async function pendingUpload() {
       (value) => value,
       () => "token",
       () => readiness,
+      devMode,
     );
   return { start, finish, refs, requests, socket };
 }
@@ -116,32 +117,53 @@ test("a ready upload starts once and cleans up its controller", async () => {
   assert.equal(upload.refs.__upload_controllers_test, undefined);
 });
 
-test("an upload that the server rejects shows the user an error", async (t) => {
-  t.mock.method(console, "log", () => {});
-  const upload = await pendingUpload();
-  const shown = [];
-  upload.refs.__toast = { error: (...args) => shown.push(args) };
-  const pending = upload.start();
-  upload.finish();
-  await new Promise((resolve) => setImmediate(resolve));
-  const request = upload.requests[0];
-  request.status = 403;
-  request.responseText = "The session does not authorize this client token.";
-  request.onload();
-  assert.equal(await pending, false);
-  // The options object comes from the module's own realm, so compare by value.
-  assert.deepEqual(JSON.parse(JSON.stringify(shown)), [
-    [
-      "Upload failed.",
-      {
-        description:
-          "The server rejected the upload (403): The session does not authorize this client token.",
-        position: "top-center",
-        id: "upload_error",
-      },
-    ],
-  ]);
-});
+const SESSION_REASON = "The session does not authorize this client token.";
+
+for (const [name, devMode, status, reason, description] of [
+  [
+    "production tells the user that the session expired",
+    false,
+    403,
+    SESSION_REASON,
+    "Your session has expired. Reload the page and try again.",
+  ],
+  [
+    "production gives no server detail for another rejection",
+    false,
+    413,
+    "Request body too large",
+    "The server rejected the upload.",
+  ],
+  [
+    "development shows the status and the server's reason",
+    true,
+    403,
+    SESSION_REASON,
+    `The server rejected the upload (403): ${SESSION_REASON}`,
+  ],
+]) {
+  test(`a rejected upload shows an error: ${name}`, async (t) => {
+    t.mock.method(console, "log", () => {});
+    const upload = await pendingUpload();
+    const shown = [];
+    upload.refs.__toast = { error: (...args) => shown.push(args) };
+    const pending = upload.start(devMode);
+    upload.finish();
+    await new Promise((resolve) => setImmediate(resolve));
+    const request = upload.requests[0];
+    request.status = status;
+    request.responseText = reason;
+    request.onload();
+    assert.equal(await pending, false);
+    // The options object comes from the module's own realm, so compare by value.
+    assert.deepEqual(JSON.parse(JSON.stringify(shown)), [
+      [
+        "Upload failed.",
+        { description, position: "top-center", id: "upload_error" },
+      ],
+    ]);
+  });
+}
 
 test("a cancelled upload shows no error", async (t) => {
   t.mock.method(console, "log", () => {});
