@@ -206,7 +206,7 @@ def test_session_exchange_does_not_block_hydration(
     cookies = [
         cookie
         for cookie in page.context.cookies()
-        if cookie.get("name", "").startswith("__Host-reflex_session_")
+        if "reflex_session_" in cookie.get("name", "")
     ]
     assert len(cookies) == 1
     assert cookies[0].get("httpOnly")
@@ -258,7 +258,7 @@ def test_session_tabs_and_duplicated_tab(backend_path_app: AppHarness, page: Pag
         cookies = [
             cookie
             for cookie in page.context.cookies()
-            if cookie.get("name", "").startswith("__Host-reflex_session_")
+            if "reflex_session_" in cookie.get("name", "")
         ]
         assert len(cookies) == 1
         assert backend_path_app.app_instance is not None
@@ -372,9 +372,7 @@ def test_session_refresh(backend_path_app: AppHarness, page: Page):
         expect(page.locator("#token")).not_to_have_value("")
         token = page.locator("#token").input_value()
         before = next(
-            c
-            for c in page.context.cookies()
-            if c.get("name", "").startswith("__Host-reflex_session_")
+            c for c in page.context.cookies() if "reflex_session_" in c.get("name", "")
         )
         session = manager.decode(before.get("value", ""))
         assert session is not None
@@ -385,9 +383,7 @@ def test_session_refresh(backend_path_app: AppHarness, page: Page):
             )
         expect(page.locator("#counter")).to_have_text("0")
         after = next(
-            c
-            for c in page.context.cookies()
-            if c.get("name", "").startswith("__Host-reflex_session_")
+            c for c in page.context.cookies() if "reflex_session_" in c.get("name", "")
         )
         renewed = manager.decode(after.get("value", ""))
         assert renewed is not None

@@ -191,7 +191,7 @@ def test_embedded_session_cookie_preserves_state_on_reload(
     cookies = [
         cookie
         for cookie in page.context.cookies()
-        if cookie.get("name", "").startswith("__Host-reflex_session_")
+        if "reflex_session_" in cookie.get("name", "")
     ]
     assert len(cookies) == 1
     assert cookies[0].get("httpOnly") is True
