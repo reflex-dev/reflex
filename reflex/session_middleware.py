@@ -65,6 +65,27 @@ def trusted_session_origins(config: Config) -> tuple[str, ...]:
     return tuple(dict.fromkeys(origin for url in urls if (origin := _origin(url))))
 
 
+def _loopback_http(api_url: str) -> bool:
+    """Check whether a URL is plain HTTP on a loopback host.
+
+    Args:
+        api_url: The configured externally reachable backend URL.
+
+    Returns:
+        Whether the URL uses HTTP and names this machine.
+    """
+    url = urlsplit(api_url)
+    if url.scheme != "http":
+        return False
+    hostname = url.hostname or ""
+    if hostname == "localhost" or hostname.endswith(".localhost"):
+        return True
+    try:
+        return ip_address(hostname).is_loopback
+    except ValueError:
+        return False
+
+
 def _secure_cookie(api_url: str) -> bool:
     """Choose cookie security from the public API URL, including behind proxies.
 
@@ -74,16 +95,30 @@ def _secure_cookie(api_url: str) -> bool:
     Returns:
         False only for development HTTP on a non-loopback host.
     """
-    url = urlsplit(api_url)
-    if url.scheme != "http" or environment.REFLEX_ENV_MODE.get() != constants.Env.DEV:
+    if (
+        urlsplit(api_url).scheme != "http"
+        or environment.REFLEX_ENV_MODE.get() != constants.Env.DEV
+    ):
         return True
-    hostname = url.hostname or ""
-    if hostname == "localhost" or hostname.endswith(".localhost"):
-        return True
-    try:
-        return ip_address(hostname).is_loopback
-    except ValueError:
-        return False
+    return _loopback_http(api_url)
+
+
+def _plain_cookie_fallback(api_url: str) -> bool:
+    """Check whether the plain cookie goes out next to the secure one.
+
+    Chrome and Firefox store a Secure cookie from plain HTTP on a loopback
+    host. WebKit does not, so local development sends both forms and each
+    browser keeps the one that it accepts.
+
+    Args:
+        api_url: The configured externally reachable backend URL.
+
+    Returns:
+        Whether this is local development over plain HTTP.
+    """
+    return environment.REFLEX_ENV_MODE.get() == constants.Env.DEV and _loopback_http(
+        api_url
+    )
 
 
 def _cookie_name(manager: SessionTokenManager, secure: bool) -> str:
@@ -120,6 +155,25 @@ def _session_cookie(
     ).encode("ascii")
 
 
+def _session_cookies(
+    manager: SessionTokenManager, session: SessionToken, api_url: str
+) -> list[bytes]:
+    """Serialize every cookie form that this deployment sends for a session.
+
+    Args:
+        manager: The app's session manager.
+        session: The session to encode.
+        api_url: The configured externally reachable backend URL.
+
+    Returns:
+        The Set-Cookie header values.
+    """
+    cookies = [_session_cookie(manager, session, _secure_cookie(api_url))]
+    if _plain_cookie_fallback(api_url):
+        cookies.append(_session_cookie(manager, session, secure=False))
+    return cookies
+
+
 class SessionMiddleware:
     """Validate sessions, hide their credentials, and scope request state access."""
 
@@ -136,6 +190,10 @@ class SessionMiddleware:
         self.secure = _secure_cookie(api_url)
         self.cookie_name = _cookie_name(manager, self.secure)
         self._cookie_names = {manager.cookie_name, f"__Host-{manager.cookie_name}"}
+        # The plain cookie counts only where it goes out next to the secure one.
+        self._fallback_name = (
+            manager.cookie_name if _plain_cookie_fallback(api_url) else None
+        )
         if not self.secure:
             logger.warning(
                 "Session cookies use insecure SameSite=Lax on this development HTTP "
@@ -158,6 +216,7 @@ class SessionMiddleware:
             return
 
         credentials = []
+        fallback = []
         headers = []
         for name, value in scope.get("headers", []):
             if name.lower() != b"cookie":
@@ -169,12 +228,15 @@ class SessionMiddleware:
                 if cookie_name in self._cookie_names:
                     if cookie_name == self.cookie_name:
                         credentials.append(cookie_value)
+                    elif cookie_name == self._fallback_name:
+                        fallback.append(cookie_value)
                 else:
                     remaining.append(part)
             if remaining:
                 headers.append((name, ";".join(remaining).strip().encode("latin-1")))
 
         scope["headers"] = headers
+        credentials = credentials or fallback
         session = self.manager.decode(credentials[0]) if len(credentials) == 1 else None
         scope["reflex.session"] = session
         response_started = False
@@ -342,8 +404,8 @@ async def session_endpoint(
         },
         headers={"Cache-Control": "no-store"},
     )
-    response.raw_headers.append((
-        b"set-cookie",
-        _session_cookie(manager, session, _secure_cookie(api_url)),
-    ))
+    response.raw_headers.extend(
+        (b"set-cookie", cookie)
+        for cookie in _session_cookies(manager, session, api_url)
+    )
     return response
