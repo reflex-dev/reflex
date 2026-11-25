@@ -67,8 +67,10 @@ Run these from `docs/app/`.
 | Repository hooks (from the repo root) | `uv run pre-commit run --all-files` |
 
 The app is built on `reflex_enterprise.App`, which exits at startup unless you
-are logged in (`reflex login`) or `CI` is set. `reflex run --env prod` is also
-restricted to paid tiers; the CI jobs set `APP_HARNESS_FLAG=true` to build it.
+are logged in (`reflex login`) or `CI` is set. `reflex export` and
+`reflex run --env prod` also need a paid tier, or the "Built with Reflex" badge,
+which this app turns off (`show_built_with_reflex=False`); the CI jobs set
+`APP_HARNESS_FLAG=true` to skip that check.
 
 ## Dev mode: page whitelist
 

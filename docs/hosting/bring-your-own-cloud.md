@@ -32,7 +32,7 @@ reflex cloud gcp-standalone --gcp --gcp-project <GCP_PROJECT_ID>
 
 The CLI:
 
-1. Checks for `bash`, `gcloud`, and `docker` and authenticates with Reflex.
+1. Authenticates with Reflex, checks for `bash`, `gcloud`, and `docker`, then checks for an active `gcloud` account.
 2. Fetches the Dockerfile and deploy script and generates a temporary `cloudbuild.yaml`.
 3. Shows the commands for confirmation.
 4. Builds the image with Cloud Build, pushes it to Artifact Registry, and deploys the Cloud Run service.

@@ -497,6 +497,18 @@ def ag_grid_simple_with_state():
 
 In this example, the grid reads its rows from a database table and writes cell edits back to it. It follows the SQLAlchemy models and async sessions described in the [database overview](/docs/database/overview/); create the `country` table with the [`reflex db` migration commands](/docs/database/tables/) before running it.
 
+The example reads `async_db_url` from the config, which defaults to `None`, so set both database URLs in `rxconfig.py`: `db_url` for the migration commands and `async_db_url` for the app.
+
+```python
+import reflex as rx
+
+config = rx.Config(
+    app_name="my_app",
+    db_url="sqlite:///reflex.db",
+    async_db_url="sqlite+aiosqlite:///reflex.db",
+)
+```
+
 When the page loads, the `load_countries` event handler fills the table from a CSV file if it is empty, then loads the rows into state.
 
 When a cell value is changed, the `cell_value_changed` event handler updates that row in the database and in state.
