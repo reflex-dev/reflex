@@ -5720,6 +5720,16 @@ def test_backend_var_inherits_field_default_and_surfaces_factory_errors():
         _ = FactoryState()._n  # pyright: ignore [reportCallIssue]
 
 
+def test_state_var_dataclasses_field_default_raises():
+    """A state var default of dataclasses.field(...) raises a clear error (#7017)."""
+    with pytest.raises(
+        StateValueError, match=r"DataclassesFieldState\.model.*rx\.field"
+    ):
+
+        class DataclassesFieldState(BaseState):
+            model: ModelDC = dataclasses.field(default_factory=ModelDC)
+
+
 def test_assignment_through_property_setter():
     """A property's setter runs instead of the undeclared-var guard."""
 
