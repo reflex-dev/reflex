@@ -5,18 +5,40 @@
 // empty set.
 
 /**
+ * The JSON value a structured element is keyed by: strings get a prefix,
+ * booleans become the numbers they equal in Python, non-finite numbers are
+ * spelled out (JSON writes them as null), and objects are tagged so they never
+ * equal an array.
+ * @param {*} x A structured element or one of its parts.
+ * @returns {*} The JSON value of x.
+ */
+const pySetKeyValue = (x) => {
+  if (typeof x === "string") return "s" + x;
+  if (typeof x === "boolean") return +x;
+  if (typeof x === "number" && !Number.isFinite(x)) return "n" + x;
+  if (Array.isArray(x)) return x.map(pySetKeyValue);
+  if (x !== null && typeof x === "object") {
+    return ["o", Object.entries(x).map(([k, v]) => [k, pySetKeyValue(v)])];
+  }
+  return x;
+};
+
+/**
  * Key a set element by value, so structured elements (tuples, dataclasses)
  * compare the way Python compares them rather than by object identity.
  * Numbers and null are their own key, booleans are keyed as the numbers
- * they equal in Python (True == 1, False == 0), and strings and objects get
- * distinct prefixes so a string can never share a key with an object's JSON.
+ * they equal in Python (True == 1, False == 0), also inside structured
+ * elements, and strings and structured elements get distinct prefixes so a
+ * string can never share a key with an element's JSON.
  * @param {*} x The set element.
  * @returns {*} The key of the element.
  */
 export const pySetKey = (x) => {
   if (typeof x === "string") return "s" + x;
   if (typeof x === "boolean") return +x;
-  if (x !== null && typeof x === "object") return "o" + JSON.stringify(x);
+  if (x !== null && typeof x === "object") {
+    return "o" + JSON.stringify(pySetKeyValue(x));
+  }
   return x;
 };
 
@@ -114,4 +136,26 @@ export const pySetIsDisjoint = (a, b) => {
   if (a == null || b == null) return true;
   const keys = new Set(b.map(pySetKey));
   return !a.some((x) => keys.has(pySetKey(x)));
+};
+
+/**
+ * The match subject in the form of the first set case it equals, so the
+ * `JSON.stringify` comparison of `rx.match` treats a set case as Python's `==`
+ * does, whatever order the subject's elements arrive in. Any other subject,
+ * including an array with repeated elements, is returned as is.
+ * @param {*} x The match subject.
+ * @param {Array} cases The set cases, each an array or null.
+ * @returns {*} The set case equal to x, or x.
+ */
+export const pySetMatch = (x, cases) => {
+  if (!Array.isArray(x)) return x;
+  const keys = new Set(x.map(pySetKey));
+  if (keys.size !== x.length) return x;
+  return (
+    cases.find((c) => {
+      if (c == null) return false;
+      const other = new Set(c.map(pySetKey));
+      return other.size === keys.size && [...other].every((k) => keys.has(k));
+    }) ?? x
+  );
 };

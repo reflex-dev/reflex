@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def _httpx_verify_kwarg() -> bool:
-    """Get the value of the HTTPX verify keyword argument.
+    """Get the value of the HTTPX2 verify keyword argument.
 
     Returns:
         True if SSL verification is enabled, False otherwise
@@ -41,14 +41,14 @@ def _wrap_https_func(
 
     @functools.wraps(func)
     def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _T:
-        import httpx
+        import httpx2
 
         url = args[0]
         logger.debug(f"Sending HTTPS request to {args[0]}")
         initial_time = time.time()
         try:
             response = func(*args, **kwargs)
-        except httpx.ConnectError as err:
+        except httpx2.ConnectError as err:
             if "CERTIFICATE_VERIFY_FAILED" in str(err):
                 # If the error is a certificate verification error, recommend mitigating steps.
                 logger.error(
@@ -95,11 +95,11 @@ def _is_ipv4_supported() -> bool:
     Returns:
         True if the system supports IPv4, False otherwise.
     """
-    import httpx
+    import httpx2
 
     try:
-        httpx.head("http://1.1.1.1", timeout=3)
-    except httpx.RequestError:
+        httpx2.head("http://1.1.1.1", timeout=3)
+    except httpx2.RequestError:
         return False
     else:
         return True
@@ -111,11 +111,11 @@ def _is_ipv6_supported() -> bool:
     Returns:
         True if the system supports IPv6, False otherwise.
     """
-    import httpx
+    import httpx2
 
     try:
-        httpx.head("http://[2606:4700:4700::1111]", timeout=3)
-    except httpx.RequestError:
+        httpx2.head("http://[2606:4700:4700::1111]", timeout=3)
+    except httpx2.RequestError:
         return False
     else:
         return True
@@ -131,7 +131,7 @@ def _should_use_ipv6() -> bool:
 
 
 def _httpx_local_address_kwarg() -> str:
-    """Get the value of the HTTPX local_address keyword argument.
+    """Get the value of the HTTPX2 local_address keyword argument.
 
     Returns:
         The local address to bind to
@@ -145,17 +145,17 @@ def _httpx_local_address_kwarg() -> str:
 
 @once
 def _httpx_client():
-    """Get an HTTPX client.
+    """Get an HTTPX2 client.
 
     Returns:
-        An HTTPX client.
+        An HTTPX2 client.
     """
-    import httpx
-    from httpx._utils import get_environment_proxies
+    import httpx2
+    from httpx2._utils import get_environment_proxies
 
     verify_setting = _httpx_verify_kwarg()
-    return httpx.Client(
-        transport=httpx.HTTPTransport(
+    return httpx2.Client(
+        transport=httpx2.HTTPTransport(
             local_address=_httpx_local_address_kwarg(),
             verify=verify_setting,
         ),
@@ -163,8 +163,8 @@ def _httpx_client():
             key: (
                 None
                 if url is None
-                else httpx.HTTPTransport(
-                    proxy=httpx.Proxy(url=url), verify=verify_setting
+                else httpx2.HTTPTransport(
+                    proxy=httpx2.Proxy(url=url), verify=verify_setting
                 )
             )
             for key, url in get_environment_proxies().items()

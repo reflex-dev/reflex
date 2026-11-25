@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import NoReturn
 from urllib.parse import urljoin
 
-import httpx
+import httpx2
 import pytest
 from packaging import version
 from reflex_base import constants
@@ -150,12 +150,12 @@ def test_dev_frontend_serves(
         assert isinstance(args, list)
         assert args[:2] == [str(bun_runtime), _DEV_CONDITION_FLAG]
         assert harness.frontend_url is not None
-        document = httpx.get(harness.frontend_url, timeout=60)
+        document = httpx2.get(harness.frontend_url, timeout=60)
         assert document.status_code == 200
         assert "window.__reactRouterContext" in document.text
         # The page renders client-side, so check the route module the dev
         # server compiles for it.
-        route = httpx.get(
+        route = httpx2.get(
             urljoin(harness.frontend_url, "/app/routes/_index.jsx"), timeout=60
         )
         assert route.status_code == 200
@@ -171,6 +171,6 @@ def test_prod_frontend_serves(tmp_path_factory: pytest.TempPathFactory):
     """
     with _started(AppHarnessProd, tmp_path_factory.mktemp("nodeless_app")) as harness:
         assert harness.frontend_url is not None
-        response = httpx.get(harness.frontend_url, timeout=60)
+        response = httpx2.get(harness.frontend_url, timeout=60)
         assert response.status_code == 200
         assert _APP_TEXT in response.text
