@@ -114,7 +114,7 @@ WELCOME = FakeStep(Onboarding.welcome)
 
 def test_the_pinned_wire_format_parses():
     delivery = triggers.parse_delivery(
-        WIRE_BODY, WIRE_HEADERS, public_key=PUBLIC_KEY, now=NOW
+        WIRE_BODY, WIRE_HEADERS, public_keys=PUBLIC_KEY, now=NOW
     )
     assert delivery == triggers.Delivery(
         id="dlv_7b1f0c1e",
@@ -146,7 +146,7 @@ def test_sign_produces_the_pinned_headers():
 
 def test_headers_are_matched_without_case():
     headers = {name.upper(): value for name, value in WIRE_HEADERS.items()}
-    assert triggers.verify(WIRE_BODY, headers, public_key=PUBLIC_KEY, now=NOW) == (
+    assert triggers.verify(WIRE_BODY, headers, public_keys=PUBLIC_KEY, now=NOW) == (
         "dlv_7b1f0c1e",
         NOW,
     )
@@ -157,8 +157,10 @@ def test_a_delivery_signed_by_old_and_new_keys_verifies_with_either():
         WIRE_BODY, f"{OLD_SIGNING_KEY} {SIGNING_KEY}", msg_id="dlv_1", timestamp=NOW
     )
     assert len(headers["webhook-signature"].split(" ")) == 2
-    for public_key in (OLD_PUBLIC_KEY, PUBLIC_KEY, [OLD_PUBLIC_KEY, PUBLIC_KEY]):
-        assert triggers.verify(WIRE_BODY, headers, public_key=public_key, now=NOW) == (
+    for public_keys in (OLD_PUBLIC_KEY, PUBLIC_KEY, [OLD_PUBLIC_KEY, PUBLIC_KEY]):
+        assert triggers.verify(
+            WIRE_BODY, headers, public_keys=public_keys, now=NOW
+        ) == (
             "dlv_1",
             NOW,
         )
@@ -199,7 +201,7 @@ def test_nothing_the_app_holds_signs_a_delivery_it_accepts(
 
 
 @pytest.mark.parametrize(
-    ("body", "headers", "public_key", "reason"),
+    ("body", "headers", "public_keys", "reason"),
     [
         (WIRE_BODY, WIRE_HEADERS, OLD_PUBLIC_KEY, "no signature matches"),
         (WIRE_BODY + b" ", WIRE_HEADERS, PUBLIC_KEY, "no signature matches"),
@@ -292,10 +294,11 @@ def test_nothing_the_app_holds_signs_a_delivery_it_accepts(
     ],
 )
 def test_a_request_the_platforms_key_did_not_sign_is_refused(
-    body, headers, public_key, reason
+    body, headers, public_keys, reason
 ):
     assert (
-        _refusal(body, headers, public_key=public_key) == f"InvalidSignature: {reason}"
+        _refusal(body, headers, public_keys=public_keys)
+        == f"InvalidSignature: {reason}"
     )
 
 
@@ -333,7 +336,7 @@ def test_without_cryptography_the_error_names_the_extra(monkeypatch):
         " reflex-build-sdk[triggers]"
     )
     with pytest.raises(ImportError) as raised:
-        triggers.verify(WIRE_BODY, WIRE_HEADERS, public_key=PUBLIC_KEY, now=NOW)
+        triggers.verify(WIRE_BODY, WIRE_HEADERS, public_keys=PUBLIC_KEY, now=NOW)
     assert str(raised.value) == extra
     with pytest.raises(ImportError) as raised:
         triggers.sign(WIRE_BODY, SIGNING_KEY, msg_id="x")
@@ -350,23 +353,23 @@ def _refusal(body: bytes, headers: dict[str, str], **kwargs) -> str:
 def test_the_tolerance_holds_both_ways(direction):
     edge = NOW + direction * triggers.TOLERANCE_SECONDS
     assert triggers.verify(
-        WIRE_BODY, WIRE_HEADERS, public_key=PUBLIC_KEY, now=edge
+        WIRE_BODY, WIRE_HEADERS, public_keys=PUBLIC_KEY, now=edge
     ) == ("dlv_7b1f0c1e", NOW)
     with pytest.raises(triggers.InvalidSignature) as raised:
         triggers.verify(
-            WIRE_BODY, WIRE_HEADERS, public_key=PUBLIC_KEY, now=edge + direction
+            WIRE_BODY, WIRE_HEADERS, public_keys=PUBLIC_KEY, now=edge + direction
         )
     assert str(raised.value) == "webhook-timestamp is outside the allowed tolerance"
 
 
 def test_an_empty_body_is_signed_for_the_manifest():
     headers = triggers.sign(b"", SIGNING_KEY, msg_id="manifest", timestamp=NOW)
-    assert triggers.verify(b"", headers, public_key=PUBLIC_KEY, now=NOW) == (
+    assert triggers.verify(b"", headers, public_keys=PUBLIC_KEY, now=NOW) == (
         "manifest",
         NOW,
     )
     with pytest.raises(triggers.InvalidSignature) as raised:
-        triggers.verify(b"{}", headers, public_key=PUBLIC_KEY, now=NOW)
+        triggers.verify(b"{}", headers, public_keys=PUBLIC_KEY, now=NOW)
     assert str(raised.value) == "no signature matches"
 
 
@@ -415,7 +418,7 @@ def test_an_empty_body_is_signed_for_the_manifest():
 def test_a_signed_body_this_version_cannot_read_is_refused(body, reason):
     headers = triggers.sign(body, SIGNING_KEY, msg_id="dlv", timestamp=NOW)
     assert (
-        _refusal(body, headers, public_key=PUBLIC_KEY) == f"InvalidDelivery: {reason}"
+        _refusal(body, headers, public_keys=PUBLIC_KEY) == f"InvalidDelivery: {reason}"
     )
 
 
@@ -524,5 +527,5 @@ def test_reply_maps_each_event_to_its_result():
 def test_a_huge_timestamp_is_out_of_tolerance_on_the_real_clock():
     headers = {**WIRE_HEADERS, "webhook-timestamp": "9" * 400}
     with pytest.raises(triggers.InvalidSignature) as raised:
-        triggers.verify(WIRE_BODY, headers, public_key=PUBLIC_KEY)
+        triggers.verify(WIRE_BODY, headers, public_keys=PUBLIC_KEY)
     assert str(raised.value) == "webhook-timestamp is outside the allowed tolerance"

@@ -45,7 +45,14 @@ import json
 import os
 import time
 from collections.abc import Callable, Iterable, Iterator, Mapping
-from typing import Any, Generic, Protocol, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Protocol, TypeVar
+
+if TYPE_CHECKING:
+    from cryptography.exceptions import InvalidSignature as BadSignature
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+        Ed25519PrivateKey,
+        Ed25519PublicKey,
+    )
 
 __all__ = [
     "PUBLIC_KEY_ENV",
@@ -165,16 +172,29 @@ def _keys(value: str | Iterable[str]) -> list[str]:
     return value.split() if isinstance(value, str) else [v for v in value if v]
 
 
-def _ed25519() -> Any:
-    """Import cryptography's Ed25519.
+@dataclasses.dataclass(frozen=True, slots=True)
+class _Ed25519:
+    """What signing and verifying use from cryptography."""
+
+    private_key: type[Ed25519PrivateKey]
+    public_key: type[Ed25519PublicKey]
+    bad_signature: type[BadSignature]
+
+
+def _ed25519() -> _Ed25519:
+    """Import cryptography's Ed25519 keys and its signature error.
+
+    Every use of cryptography goes through here, so it is imported only when a
+    key is first used, and its absence is reported the same way everywhere.
 
     Returns:
-        The ``cryptography.hazmat.primitives.asymmetric.ed25519`` module.
+        The key classes and the error a failed verification raises.
 
     Raises:
         ImportError: If cryptography is not installed.
     """
     try:
+        from cryptography.exceptions import InvalidSignature as BadSignature
         from cryptography.hazmat.primitives.asymmetric import ed25519
     except ImportError as error:
         msg = (
@@ -182,7 +202,7 @@ def _ed25519() -> Any:
             " reflex-build-sdk[triggers]"
         )
         raise ImportError(msg) from error
-    return ed25519
+    return _Ed25519(ed25519.Ed25519PrivateKey, ed25519.Ed25519PublicKey, BadSignature)
 
 
 def _ed25519_key(value: str, prefix: str) -> bytes:
@@ -210,7 +230,7 @@ def _ed25519_key(value: str, prefix: str) -> bytes:
     return raw
 
 
-def _private_key(signing_key: str) -> Any:
+def _private_key(signing_key: str) -> Ed25519PrivateKey:
     """Load a ``whsk_`` signing key.
 
     Args:
@@ -219,7 +239,7 @@ def _private_key(signing_key: str) -> Any:
     Returns:
         The ``Ed25519PrivateKey``.
     """
-    return _ed25519().Ed25519PrivateKey.from_private_bytes(
+    return _ed25519().private_key.from_private_bytes(
         _ed25519_key(signing_key, _SIGNING_KEY_PREFIX)
     )
 
@@ -295,11 +315,11 @@ def sign(
     }
 
 
-def _matches(key: Any, content: bytes, offered: str) -> bool:
+def _matches(key: Ed25519PublicKey, content: bytes, offered: str) -> bool:
     """Check one offered ``v1a`` signature value against one public key.
 
     Args:
-        key: An ``Ed25519PublicKey``.
+        key: The public key.
         content: The signed content, from ``_signed_content``.
         offered: The base64 value after the version in ``webhook-signature``.
 
@@ -312,11 +332,9 @@ def _matches(key: Any, content: bytes, offered: str) -> bool:
         return False
     if len(signature) != _ED25519_SIGNATURE_BYTES:
         return False
-    from cryptography.exceptions import InvalidSignature as BadSignature
-
     try:
         key.verify(signature, content)
-    except BadSignature:
+    except _ed25519().bad_signature:
         return False
     return True
 
@@ -325,7 +343,7 @@ def verify(
     body: bytes,
     headers: Mapping[str, str],
     *,
-    public_key: str | Iterable[str] | None = None,
+    public_keys: str | Iterable[str] | None = None,
     tolerance: int = TOLERANCE_SECONDS,
     now: float | None = None,
 ) -> tuple[str, int]:
@@ -341,8 +359,8 @@ def verify(
     Args:
         body: The raw request body.
         headers: The request headers; any mapping, matched without case.
-        public_key: The ``whpk_`` public key to check against, or several
-            separated by spaces while one is rotated out.
+        public_keys: The ``whpk_`` public key to check against, or several
+            while one is rotated out, separated by spaces or as an iterable.
         tolerance: Seconds the timestamp may be off the clock by, either way.
         now: The clock, for tests.
 
@@ -355,17 +373,16 @@ def verify(
             signature matches.
         ImportError: If cryptography is not installed.
     """
-    if public_key is None:
-        public_key = os.environ.get(PUBLIC_KEY_ENV, "")
-    values = _keys(public_key)
+    if public_keys is None:
+        public_keys = os.environ.get(PUBLIC_KEY_ENV, "")
+    values = _keys(public_keys)
     if not values:
         msg = f"no trigger key: {PUBLIC_KEY_ENV} is not set"
         raise InvalidSignature(msg)
+    public_key_type = _ed25519().public_key
     try:
         keys = [
-            _ed25519().Ed25519PublicKey.from_public_bytes(
-                _ed25519_key(value, _PUBLIC_KEY_PREFIX)
-            )
+            public_key_type.from_public_bytes(_ed25519_key(value, _PUBLIC_KEY_PREFIX))
             for value in values
         ]
     except ValueError as error:
@@ -445,7 +462,7 @@ def parse_delivery(
     body: bytes,
     headers: Mapping[str, str],
     *,
-    public_key: str | Iterable[str] | None = None,
+    public_keys: str | Iterable[str] | None = None,
     tolerance: int = TOLERANCE_SECONDS,
     now: float | None = None,
 ) -> Delivery:
@@ -458,7 +475,7 @@ def parse_delivery(
     Args:
         body: The raw request body.
         headers: The request headers.
-        public_key: The public key to check against, as ``verify`` takes it.
+        public_keys: The public keys to check against, as ``verify`` takes them.
         tolerance: Seconds the timestamp may be off the clock by, either way.
         now: The clock, for tests.
 
@@ -472,7 +489,7 @@ def parse_delivery(
     msg_id, timestamp = verify(
         body,
         headers,
-        public_key=public_key,
+        public_keys=public_keys,
         tolerance=tolerance,
         now=now,
     )
