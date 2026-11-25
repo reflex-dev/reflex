@@ -762,33 +762,73 @@ type-check noise while exercising the namespace and module-level paths.
 """
 
 
-def _set_clipboard_arrow() -> str:
-    """Get the URL-route arrow from the module constant.
+# Frozen verbatim transcription of the documented url-route arrow contract.
+# The compile tests derive expectations ONLY from this literal, never from
+# the implementation constant, so implementation changes must break these
+# tests.
+_SET_CLIPBOARD_URL_ARROW_EXPECTED = """\
+(url) => {
+  const TAG = "_set_clipboard_from_url";
+  const report = (e) => { console.error(TAG, e); throw e; };
+  const syncFail = (m) => { const e = new Error(m); console.error(TAG, e); throw e; };
+  const canItem = window.ClipboardItem !== undefined && !!navigator.clipboard &&
+    typeof navigator.clipboard.write === "function";
+  const canText = !!navigator.clipboard &&
+    typeof navigator.clipboard.writeText === "function";
+  if (typeof url !== "string" || url.length === 0) syncFail("set_clipboard: url must be a non-empty string");
+  if (!canItem && !canText) syncFail("set_clipboard: clipboard API unavailable");
+  const OK = (ct) => {
+    if (ct === null || ct === "") return true;
+    const t = ct.toLowerCase().split(";")[0].trim();
+    if (t === "text/html" || t === "application/xhtml+xml") return false;
+    return t.startsWith("text/") ||
+      ["application/json", "application/javascript", "application/xml",
+       "application/yaml", "application/x-yaml",
+       "application/x-www-form-urlencoded"].includes(t) ||
+      t.endsWith("+json") || t.endsWith("+xml") || t.endsWith("+yaml");
+  };
+  const textPromise = fetch(url).then((r) => {
+    if (!r.ok) throw new Error("set_clipboard: HTTP " + r.status);
+    if (!OK(r.headers.get("content-type"))) throw new Error("set_clipboard: unsupported content type");
+    return r.text();
+  });
+  if (canItem) {
+    let reported = null;
+    const blobPromise = textPromise.then((t) => new Blob([t], { type: "text/plain" }));
+    blobPromise.catch((e) => { reported = e; report(e); });
+    try {
+      const item = new ClipboardItem({ "text/plain": blobPromise });
+      navigator.clipboard.write([item]).catch((e) => { if (e !== reported) report(e); });
+    } catch (e) {
+      console.error(TAG, e);
+      throw e;
+    }
+  } else {
+    textPromise.then((t) => navigator.clipboard.writeText(t)).catch(report);
+  }
+}"""
 
-    Returns:
-        The verbatim _SET_CLIPBOARD_FROM_URL_JS expression.
-    """
-    return event.set_clipboard.__globals__["_SET_CLIPBOARD_FROM_URL_JS"]
 
+def _expected_url_event(arg_rendering: str) -> str:
+    """Build the full expected compiled url= event.
 
-def _compiled_url_event(url: str | Var) -> str:
-    """Build the exact expected compiled event for the url= route.
+    The expectation is the shared wrapper plus the frozen EXPECTED arrow
+    literal plus the rendered argument: json.dumps for literal strings,
+    the raw _js_expr for Vars.
 
     Args:
-        url: A literal URL (JSON-escaped into the call) or a Var (raw expr).
+        arg_rendering: The rendered argument (JSON-escaped literal or raw
+            Var expression).
 
     Returns:
-        The expected format_event output.
+        The complete expected format_event output.
     """
-    arg = url._js_expr if isinstance(url, Var) else json.dumps(url)
     return (
-        'ReflexEvent("_call_function", {function:(() => ('
-        + "("
-        + _set_clipboard_arrow()
+        'ReflexEvent("_call_function", {function:(() => (('
+        + _SET_CLIPBOARD_URL_ARROW_EXPECTED
         + ")("
-        + arg
-        + "))"
-        + "),callback:null})"
+        + arg_rendering
+        + "))),callback:null})"
     )
 
 
@@ -882,15 +922,32 @@ def test_set_clipboard_url_literal_compiles_full_event():
     for set_clipboard_fn in _SET_CLIPBOARD_ENTRY_POINTS:
         spec = set_clipboard_fn(url="/some/page.md")
         assert isinstance(spec, EventSpec)
-        assert format.format_event(spec) == _compiled_url_event("/some/page.md")
+        expected = _expected_url_event(json.dumps("/some/page.md"))
+        assert format.format_event(spec) == expected
+
+
+def test_set_clipboard_url_literal_compiles_verbatim_event():
+    """Pin the complete verbatim compiled event for one literal URL.
+
+    Cross-validates the shared wrapper formula used by the full-equality
+    tests: the wrapper and argument here are a single hardcoded string, so a
+    systematic error in the formula cannot pass unnoticed.
+    """
+    expected = (
+        'ReflexEvent("_call_function", {function:(() => (('
+        + _SET_CLIPBOARD_URL_ARROW_EXPECTED
+        + ')("/some/page.md"))),callback:null})'
+    )
+    spec = event.set_clipboard(url="/some/page.md")
+    assert format.format_event(spec) == expected
 
 
 def test_set_clipboard_url_var_compiles_full_event():
-    """A Var url compiles to the arrow call with the raw Var expression."""
+    """A Var url compiles to the arrow call with the raw Var expression, unquoted."""
     url_var = Var(_js_expr="state.u", _var_type=str)
     for set_clipboard_fn in _SET_CLIPBOARD_ENTRY_POINTS:
         spec = set_clipboard_fn(url=url_var)
-        assert format.format_event(spec) == _compiled_url_event(url_var)
+        assert format.format_event(spec) == _expected_url_event("state.u")
 
 
 def test_set_clipboard_url_hostile_arg_escaping():
@@ -898,8 +955,7 @@ def test_set_clipboard_url_hostile_arg_escaping():
     hostile = 'a"b`c${evil}/f.txt\nnewline'
     for set_clipboard_fn in _SET_CLIPBOARD_ENTRY_POINTS:
         compiled = format.format_event(set_clipboard_fn(url=hostile))
-        assert json.dumps(hostile) in compiled
-        assert compiled == _compiled_url_event(hostile)
+        assert compiled == _expected_url_event(json.dumps(hostile))
 
 
 def test_set_clipboard_overload_positive_forms():
@@ -923,18 +979,6 @@ def test_set_clipboard_sentinel_never_serialized():
         _module_level_set_clipboard()(url="/x.txt"),
     ):
         assert "Unset" not in format.format_event(spec)
-
-
-def test_set_clipboard_arrow_constant_shape():
-    """The embedded arrow is the verbatim 1881-byte expression, LF newlines only."""
-    arrow = _set_clipboard_arrow()
-    assert len(arrow.encode()) == 1881
-    assert arrow.startswith("(url) => {")
-    assert arrow.endswith("}")
-    assert "\r" not in arrow
-    assert not arrow.startswith("\n")
-    assert not arrow.endswith("\n")
-    assert "_set_clipboard_from_url" in arrow
 
 
 def _download_var_data_url() -> Var:
