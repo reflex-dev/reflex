@@ -235,6 +235,31 @@ def test_a_handler_gets_the_trigger_arguments_by_its_named_parameters() -> None:
     ]
 
 
+class SelfInVarargsState(rx.State):
+    """A state whose handler takes its state in ``*args``."""
+
+    def handle(*args, required: str):  # pyright: ignore[reportSelfClsParameterName]
+        """Take the trigger's value by the name of the one named parameter.
+
+        Args:
+            *args: Takes the state.
+            required: The trigger's value.
+        """
+
+
+def test_a_handler_taking_its_state_in_varargs_gets_the_trigger_argument() -> None:
+    """The state is the first parameter, ``*args`` here, not the first named one."""
+    spec = call_event_handler(
+        cast(EventHandler, SelfInVarargsState.handle),
+        lambda value: [value],
+        key="on_change",
+    )
+
+    assert [(str(name), str(value)) for name, value in spec.args] == [
+        ("required", "_value")
+    ]
+
+
 def test_a_callable_with_a_required_keyword_only_parameter_is_rejected() -> None:
     """A callable gets the trigger's arguments by position, so it never gets one.
 
