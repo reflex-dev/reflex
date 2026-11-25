@@ -13,7 +13,7 @@ Events are composed of two parts: Event Triggers and Event Handlers.
 
 ## Example
 
-Lets take a look at an example below. Try mousing over the heading to change the word.
+Let's take a look at an example below. Try mousing over the heading to change the word.
 
 ```python demo exec
 class WordCycleState(rx.State):

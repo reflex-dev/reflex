@@ -8,6 +8,7 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
+from tests.integration.utils import CLIENT_TOKEN_JS
 
 
 def CallScript():
@@ -387,7 +388,7 @@ def call_script_page(call_script: AppHarness, page: Page) -> Page:
     """
     assert call_script.frontend_url is not None
     page.goto(call_script.frontend_url)
-    page.wait_for_function("() => sessionStorage.getItem('token') !== null")
+    page.wait_for_function(f"() => {CLIENT_TOKEN_JS} !== null")
     page.wait_for_function("() => typeof external4 !== 'undefined'")
     return page
 

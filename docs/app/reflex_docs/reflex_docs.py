@@ -253,6 +253,7 @@ redirects.extend([
     ("/ai-builder/features/ide/", "/ai/features/editor-modes/"),
     ("/ai/features/customization/", "/ai/features/design-systems/"),
     ("/ai-builder/features/customization/", "/ai/features/design-systems/"),
+    ("/overview/", "/hosting/overview/"),
     ("/hosting/adding-members/", "/hosting/project-members/"),
     ("/hosting/projects/", "/hosting/project-members/"),
     ("/authentication/authentication-overview/", "/enterprise/auth/overview/"),
