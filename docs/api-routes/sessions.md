@@ -87,7 +87,8 @@ session and also defaults to seven days. It counts from the first issue of the
 session, and renewal cannot extend a session past it. At that age the session
 ends: the next renewal gets a new session from `POST /_reflex/session`, and
 under `enforce` the tab gets a new token and fresh state. Until then, uploads
-from that tab return 403. With both defaults, a session lasts seven days.
+from that tab return 403, and the page shows "Your session has expired. Reload
+the page and try again." (development shows the status and the reason). With both defaults, a session lasts seven days.
 Set `session_token_ttl` below `session_token_max_age` to end an idle session
 sooner while an active one renews up to the maximum age.
 `session_token_refresh_interval` defaults to half that lifetime. Only
