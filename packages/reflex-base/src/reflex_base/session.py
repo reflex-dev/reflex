@@ -8,12 +8,13 @@ import hashlib
 import hmac
 import json
 import logging
+import os
 import re
 import secrets
 import time
 from dataclasses import dataclass, field
-from functools import cached_property
-from typing import ClassVar
+from functools import cache, cached_property
+from typing import ClassVar, Literal
 
 from reflex_base import constants
 from reflex_base.environment import environment
@@ -196,6 +197,31 @@ class SessionToken:
 SessionToken.SYSTEM = SessionToken(issued_at=0, expires_at=0, created_at=0, _sid="")
 
 
+_MODE = environment.REFLEX_SESSION_TOKEN_MODE
+
+
+@cache
+def _mode_for(raw: str | None) -> Literal["off", "warn", "enforce"]:
+    """Interpret the session token mode once per raw environment value.
+
+    Args:
+        raw: The raw environment value, which is the cache key.
+
+    Returns:
+        The mode that the environment selects.
+    """
+    return _MODE.get()
+
+
+def session_token_mode() -> Literal["off", "warn", "enforce"]:
+    """Read the session token mode, following changes to the environment.
+
+    Returns:
+        The current mode.
+    """
+    return _mode_for(os.environ.get(_MODE.name))
+
+
 def authorize(session: SessionToken | None, client_token: str) -> None:
     """Check that a session may access the state of a client token.
 
@@ -208,7 +234,7 @@ def authorize(session: SessionToken | None, client_token: str) -> None:
     """
     if not client_token or (session is not None and session.authorizes(client_token)):
         return
-    mode = environment.REFLEX_SESSION_TOKEN_MODE.get()
+    mode = session_token_mode()
     if mode == "off":
         return
     if mode == "enforce":
@@ -418,8 +444,7 @@ class SessionTokenManager:
             The presented token, or a new token bound to the session.
         """
         if client_token and (
-            session.authorizes(client_token)
-            or environment.REFLEX_SESSION_TOKEN_MODE.get() != "enforce"
+            session.authorizes(client_token) or session_token_mode() != "enforce"
         ):
             return client_token
         return self.create_client_token(session)
