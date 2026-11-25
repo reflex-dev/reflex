@@ -1239,6 +1239,8 @@ export const connect = async (
   const currentSocket = socket.current;
   const requestSessionRefresh = () => {
     window.clearTimeout(sessionTimer);
+    // A denied exchange gets the same answer until the backend reconnects.
+    if (sessionRejected) return;
     if (socket.current === currentSocket && currentSocket.connected) {
       currentSocket.emit(SESSION_REFRESH_EVENT);
     }
@@ -1250,8 +1252,6 @@ export const connect = async (
       Date.now(),
   ) => {
     window.clearTimeout(sessionTimer);
-    // A denied exchange gets the same answer until the backend reconnects.
-    if (sessionRejected) return;
     if (wait > 0) {
       sessionTimer = window.setTimeout(
         requestSessionRefresh,
@@ -1590,7 +1590,13 @@ export const connect = async (
     window.clearTimeout(sessionTimer);
     // HTTP calls wait only while the browser has no cookie: the server sends
     // a credential in-band when the socket connected without a valid one.
-    if (!resolveSession && sessionCredential && !sessionEstablished) {
+    // After a lasting failure the retries go on, but they hold nothing.
+    if (
+      !resolveSession &&
+      sessionCredential &&
+      !sessionEstablished &&
+      sessionFailures < 3
+    ) {
       initialSessionExchange = new Promise((resolve, reject) => {
         resolveSession = resolve;
         rejectSession = reject;
