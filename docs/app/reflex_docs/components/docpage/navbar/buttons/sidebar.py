@@ -33,10 +33,17 @@ def navbar_sidebar_button(active_tab: rx.Var[str] | str = "") -> rx.Component:
             *[
                 rx.el.elements.a(
                     label,
-                    ui.icon(
-                        "ArrowUpRight01Icon",
-                        aria_hidden=True,
-                        class_name="size-4 shrink-0",
+                    # Only a destination off the docs earns the external-link arrow.
+                    *(
+                        [
+                            ui.icon(
+                                "ArrowUpRight01Icon",
+                                aria_hidden=True,
+                                class_name="size-4 shrink-0",
+                            )
+                        ]
+                        if tab is None
+                        else []
                     ),
                     href=href,
                     aria_current=rx.cond(active_tab == tab, "page", None),
