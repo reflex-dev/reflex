@@ -6457,6 +6457,50 @@ def test_dict_and_get_delta():
     }
 
 
+def test_dict_reads_stored_fields_from_instance_dict(monkeypatch: pytest.MonkeyPatch):
+    """Stored fields skip get_value; unread fields and computed vars go through it."""
+
+    class StoredFieldsState(rx.State):
+        count: int = 0
+        items: list[int] = []
+
+        @rx.var
+        def doubled(self) -> int:
+            return self.count * 2
+
+    state = StoredFieldsState()
+    state.count = 2
+    get_value = StoredFieldsState.get_value
+    read = []
+
+    def spy(self: StoredFieldsState, key: str) -> Any:
+        read.append(key)
+        return get_value(self, key)
+
+    monkeypatch.setattr(StoredFieldsState, "get_value", spy)
+    expected = {
+        StoredFieldsState.get_full_name(): {
+            "count" + FIELD_MARKER: 2,
+            "doubled" + FIELD_MARKER: 4,
+            "items" + FIELD_MARKER: [],
+        }
+    }
+
+    assert state.dict() == expected
+    assert read == ["items", "doubled"]
+
+    read.clear()
+    state.items.append(1)
+    expected[StoredFieldsState.get_full_name()]["items" + FIELD_MARKER] = [1]
+    snapshot = state.dict()
+
+    assert snapshot == expected
+    assert read == ["doubled"]
+    items = snapshot[StoredFieldsState.get_full_name()]["items" + FIELD_MARKER]
+    assert not isinstance(items, MutableProxy)
+    assert items is state.__dict__["items"]
+
+
 @pytest.mark.parametrize(
     ("key_factory", "expected_result", "should_raise"),
     [
