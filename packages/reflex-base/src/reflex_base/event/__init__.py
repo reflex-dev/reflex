@@ -1996,14 +1996,61 @@ def remove_session_storage(key: str) -> EventSpec:
     )
 
 
-def set_clipboard(content: str | Var[str]) -> EventSpec:
-    """Set the text in content in the clipboard.
+_SET_CLIPBOARD_FROM_URL_JS = """\
+(url) => {
+  const TAG = "_set_clipboard_from_url";
+  const report = (e) => { console.error(TAG, e); throw e; };
+  const syncFail = (m) => { const e = new Error(m); console.error(TAG, e); throw e; };
+  const canItem = window.ClipboardItem !== undefined && !!navigator.clipboard &&
+    typeof navigator.clipboard.write === "function";
+  const canText = !!navigator.clipboard &&
+    typeof navigator.clipboard.writeText === "function";
+  if (typeof url !== "string" || url.length === 0) syncFail("set_clipboard: url must be a non-empty string");
+  if (!canItem && !canText) syncFail("set_clipboard: clipboard API unavailable");
+  const OK = (ct) => {
+    if (ct === null || ct === "") return true;
+    const t = ct.toLowerCase().split(";")[0].trim();
+    if (t === "text/html" || t === "application/xhtml+xml") return false;
+    return t.startsWith("text/") ||
+      ["application/json", "application/javascript", "application/xml",
+       "application/yaml", "application/x-yaml",
+       "application/x-www-form-urlencoded"].includes(t) ||
+      t.endsWith("+json") || t.endsWith("+xml") || t.endsWith("+yaml");
+  };
+  const textPromise = fetch(url).then((r) => {
+    if (!r.ok) throw new Error("set_clipboard: HTTP " + r.status);
+    if (!OK(r.headers.get("content-type"))) throw new Error("set_clipboard: unsupported content type");
+    return r.text();
+  });
+  if (canItem) {
+    let reported = null;
+    const blobPromise = textPromise.then((t) => new Blob([t], { type: "text/plain" }));
+    blobPromise.catch((e) => { reported = e; report(e); });
+    try {
+      const item = new ClipboardItem({ "text/plain": blobPromise });
+      navigator.clipboard.write([item]).catch((e) => { if (e !== reported) report(e); });
+    } catch (e) {
+      console.error(TAG, e);
+      throw e;
+    }
+  } else {
+    textPromise.then((t) => navigator.clipboard.writeText(t)).catch(report);
+  }
+}"""
+
+
+def _set_clipboard_content_spec(content: str | Var[str]) -> EventSpec:
+    """Build the base clipboard-write event spec.
+
+    This body is the base implementation's old body VERBATIM: the old
+    route, byte-identical, including explicit content=None behavior
+    (compiles to writeText(null)).
 
     Args:
-        content: The text to add to clipboard.
+        content: The text to copy.
 
     Returns:
-        EventSpec: An event to set some content in the clipboard.
+        The event spec for the clipboard write.
     """
     return run_script(
         Var("navigator")
@@ -2012,6 +2059,86 @@ def set_clipboard(content: str | Var[str]) -> EventSpec:
         .writeText.to(FunctionVar)
         .call(content)
     )
+
+
+def _set_clipboard_url_spec(url: str | Var[str]) -> EventSpec:
+    """Build the URL-fetch clipboard-write event spec (new url= route).
+
+    The URL travels as a typed LiteralStringVar argument to the compiled
+    call; the arrow body lives in _SET_CLIPBOARD_FROM_URL_JS above.
+
+    Args:
+        url: A URL whose text content is fetched and copied.
+
+    Returns:
+        The event spec for the clipboard write.
+    """
+    return run_script(FunctionStringVar.create(_SET_CLIPBOARD_FROM_URL_JS).call(url))
+
+
+@overload
+def set_clipboard(content: str | Var[str]) -> EventSpec: ...
+
+
+@overload
+def set_clipboard(*, url: str | Var[str]) -> EventSpec: ...
+
+
+def set_clipboard(
+    content: str | Var[str] | Unset = Unset(),
+    *,
+    url: str | Var[str] | Unset = Unset(),
+) -> EventSpec:
+    """Set the clipboard to the given text, or to text fetched from a URL.
+
+    Args:
+        content: The text to copy. Base behavior; explicit None is accepted
+            (compiles to writeText(null)).
+        url: A URL whose text content is fetched and copied.
+
+    Returns:
+        The event spec for the clipboard write.
+
+    Raises:
+        TypeError: If neither content nor url is supplied.
+        ValueError: If both are supplied, or url is None or empty.
+    """
+    return _set_clipboard_impl(content, url=url)
+
+
+def _set_clipboard_impl(
+    content: str | Var[str] | Unset = Unset(),
+    *,
+    url: str | Var[str] | Unset = Unset(),
+) -> EventSpec:
+    """Dispatch set_clipboard on the Unset sentinel.
+
+    Omission is resolved before spec construction because None event args
+    serialize as null; the sentinel is never serialized.
+
+    Args:
+        content: Positional text content, or Unset when omitted.
+        url: Keyword URL source, or Unset when omitted.
+
+    Returns:
+        The event spec for the clipboard write.
+
+    Raises:
+        TypeError: If neither content nor url is supplied (base message).
+        ValueError: If both are supplied, or url is None or empty.
+    """
+    if isinstance(url, Unset):
+        if isinstance(content, Unset):
+            msg = "set_clipboard() missing 1 required positional argument: 'content'"
+            raise TypeError(msg)
+        return _set_clipboard_content_spec(content)  # OLD path, byte-identical
+    if isinstance(content, Unset):
+        if url is None or (isinstance(url, str) and not url):
+            msg = "set_clipboard: url must not be None or empty"
+            raise ValueError(msg)
+        return _set_clipboard_url_spec(url)  # NEW url= path
+    msg = "set_clipboard: pass either content or url, not both"
+    raise ValueError(msg)
 
 
 def download(
@@ -3864,7 +3991,38 @@ class EventNamespace:
     remove_local_storage = staticmethod(remove_local_storage)
     clear_session_storage = staticmethod(clear_session_storage)
     remove_session_storage = staticmethod(remove_session_storage)
-    set_clipboard = staticmethod(set_clipboard)
+
+    @overload
+    @staticmethod
+    def set_clipboard(content: str | Var[str]) -> EventSpec: ...
+
+    @overload
+    @staticmethod
+    def set_clipboard(*, url: str | Var[str]) -> EventSpec: ...
+
+    @staticmethod
+    def set_clipboard(
+        content: str | Var[str] | Unset = Unset(),
+        *,
+        url: str | Var[str] | Unset = Unset(),
+    ) -> EventSpec:
+        """Set the clipboard to the given text, or to text fetched from a URL.
+
+        Delegates to the module-level implementation; see its docstring.
+
+        Args:
+            content: The text to copy. Base behavior; explicit None accepted.
+            url: A URL whose text content is fetched and copied.
+
+        Returns:
+            The event spec for the clipboard write.
+
+        Raises:
+            TypeError: If neither content nor url is supplied.
+            ValueError: If both are supplied, or url is None or empty.
+        """
+        return _set_clipboard_impl(content, url=url)
+
     download = staticmethod(download)
     call_script = staticmethod(call_script)
     call_function = staticmethod(call_function)

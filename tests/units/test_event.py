@@ -736,6 +736,181 @@ def test_remove_local_storage():
     )
 
 
+def _module_level_set_clipboard() -> Callable:
+    """Recover the module-level set_clipboard through a public function's globals.
+
+    The sys.modules swap binds the EventNamespace class, so a from-import of
+    set_clipboard binds the namespace attribute; the module-level def is only
+    reachable distinctly through __globals__. Documented probe, not a new
+    runtime surface.
+
+    Returns:
+        The module-level set_clipboard function.
+    """
+    return event.set_clipboard.__globals__["set_clipboard"]
+
+
+def _set_clipboard_arrow() -> str:
+    """Get the URL-route arrow from the module constant.
+
+    Returns:
+        The verbatim _SET_CLIPBOARD_FROM_URL_JS expression.
+    """
+    return event.set_clipboard.__globals__["_SET_CLIPBOARD_FROM_URL_JS"]
+
+
+def _compiled_url_event(url: str | Var) -> str:
+    """Build the exact expected compiled event for the url= route.
+
+    Args:
+        url: A literal URL (JSON-escaped into the call) or a Var (raw expr).
+
+    Returns:
+        The expected format_event output.
+    """
+    arg = url._js_expr if isinstance(url, Var) else json.dumps(url)
+    return (
+        'ReflexEvent("_call_function", {function:(() => ('
+        + "("
+        + _set_clipboard_arrow()
+        + ")("
+        + arg
+        + "))"
+        + "),callback:null})"
+    )
+
+
+def test_set_clipboard_content_compiles_to_write_text():
+    """Positional content compiles to the base writeText call, byte-identical."""
+    for set_clipboard_fn in (event.set_clipboard, _module_level_set_clipboard()):
+        spec = set_clipboard_fn("hello")
+        assert isinstance(spec, EventSpec)
+        assert (
+            format.format_event(spec)
+            == 'ReflexEvent("_call_function", {function:(() => (navigator?.["clipboard"]?.["writeText"]("hello"))),callback:null})'
+        )
+
+
+def test_set_clipboard_content_none_compiles_to_null():
+    """Explicit content=None keeps the base behavior (writeText(null))."""
+    for set_clipboard_fn in (event.set_clipboard, _module_level_set_clipboard()):
+        spec = set_clipboard_fn(None)  # pyright: ignore[reportArgumentType]  # base accepts explicit None (compiles to writeText(null))
+        assert (
+            format.format_event(spec)
+            == 'ReflexEvent("_call_function", {function:(() => (navigator?.["clipboard"]?.["writeText"](null))),callback:null})'
+        )
+
+
+def test_set_clipboard_content_empty_string():
+    """Empty-string content compiles to writeText("")."""
+    for set_clipboard_fn in (event.set_clipboard, _module_level_set_clipboard()):
+        spec = set_clipboard_fn("")
+        assert (
+            format.format_event(spec)
+            == 'ReflexEvent("_call_function", {function:(() => (navigator?.["clipboard"]?.["writeText"](""))),callback:null})'
+        )
+
+
+def test_set_clipboard_content_var():
+    """A Var content is passed through as the writeText argument expression."""
+    for set_clipboard_fn in (event.set_clipboard, _module_level_set_clipboard()):
+        spec = set_clipboard_fn(Var(_js_expr="state.txt", _var_type=str))
+        assert (
+            format.format_event(spec)
+            == 'ReflexEvent("_call_function", {function:(() => (navigator?.["clipboard"]?.["writeText"](state.txt))),callback:null})'
+        )
+
+
+def test_set_clipboard_no_arg_raises_base_type_error():
+    """No arguments raises the base TypeError with the exact base message."""
+    for set_clipboard_fn in (event.set_clipboard, _module_level_set_clipboard()):
+        with pytest.raises(TypeError) as excinfo:
+            set_clipboard_fn()
+        assert (
+            str(excinfo.value)
+            == "set_clipboard() missing 1 required positional argument: 'content'"
+        )
+
+
+def test_set_clipboard_positional_url_raises_type_error():
+    """A positional second argument is rejected by the keyword-only signature."""
+    for set_clipboard_fn in (event.set_clipboard, _module_level_set_clipboard()):
+        with pytest.raises(TypeError):
+            set_clipboard_fn("text", "https://example.com/x.txt")  # pyright: ignore[reportCallIssue]  # negative test: positional url is not admitted
+
+
+def test_set_clipboard_url_none_raises_value_error():
+    """Explicit url=None raises ValueError (None is not a usable URL)."""
+    for set_clipboard_fn in (event.set_clipboard, _module_level_set_clipboard()):
+        with pytest.raises(ValueError) as excinfo:
+            set_clipboard_fn(url=None)  # pyright: ignore[reportArgumentType]  # negative test: None is rejected at runtime
+        assert str(excinfo.value) == "set_clipboard: url must not be None or empty"
+
+
+def test_set_clipboard_url_empty_raises_value_error():
+    """A literal empty url raises ValueError before any spec is built."""
+    for set_clipboard_fn in (event.set_clipboard, _module_level_set_clipboard()):
+        with pytest.raises(ValueError) as excinfo:
+            set_clipboard_fn(url="")
+        assert str(excinfo.value) == "set_clipboard: url must not be None or empty"
+
+
+def test_set_clipboard_content_and_url_raises_value_error():
+    """Passing both content and url raises ValueError (new call form)."""
+    for set_clipboard_fn in (event.set_clipboard, _module_level_set_clipboard()):
+        with pytest.raises(ValueError) as excinfo:
+            set_clipboard_fn("hello", url="/page.md")
+        assert str(excinfo.value) == "set_clipboard: pass either content or url, not both"
+
+
+def test_set_clipboard_url_literal_compiles_full_event():
+    """A literal url compiles to the full arrow call with a JSON-escaped argument."""
+    for set_clipboard_fn in (event.set_clipboard, _module_level_set_clipboard()):
+        spec = set_clipboard_fn(url="/some/page.md")
+        assert isinstance(spec, EventSpec)
+        assert format.format_event(spec) == _compiled_url_event("/some/page.md")
+
+
+def test_set_clipboard_url_var_compiles_full_event():
+    """A Var url compiles to the arrow call with the raw Var expression."""
+    url_var = Var(_js_expr="state.u", _var_type=str)
+    for set_clipboard_fn in (event.set_clipboard, _module_level_set_clipboard()):
+        spec = set_clipboard_fn(url=url_var)
+        assert format.format_event(spec) == _compiled_url_event(url_var)
+
+
+def test_set_clipboard_url_hostile_arg_escaping():
+    """A hostile URL is JSON-escaped; backtick and ${} survive inertly inside the literal."""
+    hostile = 'a"b`c${evil}/f.txt\nnewline'
+    for set_clipboard_fn in (event.set_clipboard, _module_level_set_clipboard()):
+        compiled = format.format_event(set_clipboard_fn(url=hostile))
+        assert json.dumps(hostile) in compiled
+        assert compiled == _compiled_url_event(hostile)
+
+
+def test_set_clipboard_sentinel_never_serialized():
+    """The Unset dispatch sentinel never appears in any compiled payload."""
+    for spec in (
+        event.set_clipboard("hello"),
+        event.set_clipboard(url="/x.txt"),
+        _module_level_set_clipboard()("hello"),
+        _module_level_set_clipboard()(url="/x.txt"),
+    ):
+        assert "Unset" not in format.format_event(spec)
+
+
+def test_set_clipboard_arrow_constant_shape():
+    """The embedded arrow is the verbatim 1881-byte expression, LF newlines only."""
+    arrow = _set_clipboard_arrow()
+    assert len(arrow.encode()) == 1881
+    assert arrow.startswith("(url) => {")
+    assert arrow.endswith("}")
+    assert "\r" not in arrow
+    assert not arrow.startswith("\n")
+    assert not arrow.endswith("\n")
+    assert "_set_clipboard_from_url" in arrow
+
+
 def _download_var_data_url() -> Var:
     """Build the data: URL an ``rx.download`` of a list-typed Var produces.
 
