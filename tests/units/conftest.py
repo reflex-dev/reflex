@@ -567,13 +567,29 @@ def forked_registration_context() -> Generator[RegistrationContext, None, None]:
     """Fork the registration context and attach it.
 
     Sets the forked context as the current registration context for the duration
-    of the test, then resets it afterwards.
+    of the test, then resets it afterwards. A state defined in the fork also
+    registers its dependencies on the classes of the states it reads, which
+    outlive the fork, so their dependency tracking is restored as well.
 
     Yields:
         The forked RegistrationContext.
     """
-    with RegistrationContext.get().fork() as ctx:
+    context = RegistrationContext.get()
+    tracking = [
+        (
+            state,
+            {var: set(deps) for var, deps in state._var_dependencies.items()},
+            set(state._potentially_dirty_states),
+            set(state._always_dirty_substates),
+        )
+        for state in context.base_states.values()
+    ]
+    with context.fork() as ctx:
         yield ctx
+    for state, var_dependencies, potentially_dirty, always_dirty in tracking:
+        state._var_dependencies = var_dependencies
+        state._potentially_dirty_states = potentially_dirty
+        state._always_dirty_substates = always_dirty
 
 
 @pytest.fixture
