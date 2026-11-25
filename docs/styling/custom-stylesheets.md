@@ -41,7 +41,7 @@ A stylesheet that only one page needs can be passed to `add_page` (or `@rx.page`
 app.add_page(
     pricing,
     route="/pricing",
-    stylesheets=["/pages/pricing.css"],  # This path is relative to assets/
+    stylesheets=["/pricing.css"],  # This path is relative to assets/
 )
 ```
 
