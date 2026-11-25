@@ -392,3 +392,30 @@ def test_editorial_footer_product_links_skip_the_retired_pricing_page():
         ("Enterprise", "/docs/enterprise/overview/"),
         ("App Management", "/hosting/"),
     )
+
+
+def test_mobile_menu_marks_only_off_docs_links_as_external(navbar):
+    """Only a link that leaves the docs carries the external-link arrow.
+
+    Regression test: every mobile menu link showed the arrow, so in-docs
+    sections looked like they opened another site.
+    """
+    from reflex_docs.components.docpage.navbar.buttons.sidebar import (
+        navbar_sidebar_button,
+    )
+
+    panel = navbar_sidebar_button().children[1]
+    assert [
+        (
+            str(link.children[0].contents).strip('"'),
+            [child.tag for child in link.children[1:]],
+        )
+        for link in panel.children
+    ] == [
+        ("Overview", []),
+        ("Build with AI", []),
+        ("Framework", []),
+        ("Cloud", []),
+        ("XY", []),
+        ("Book a Demo", ["HugeiconsIcon"]),
+    ]
