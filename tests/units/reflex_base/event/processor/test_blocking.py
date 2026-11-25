@@ -534,17 +534,17 @@ async def test_garbage_collection_is_not_reported(
     # probe and starting the collection cannot add to the blocked time.
     now = 0.0
     collected = False
-    read_after_collection = threading.Event()
+    reads_after_collection = threading.Semaphore(0)
     loop_thread_id = threading.get_ident()
 
     def perf_counter() -> float:
-        """Read the fake clock and record a monitor read after the collection.
+        """Read the fake clock and count a monitor read after the collection.
 
         Returns:
             The seconds the finalizer has spent.
         """
         if collected and threading.get_ident() != loop_thread_id:
-            read_after_collection.set()
+            reads_after_collection.release()
         return now
 
     monkeypatch.setattr(blocking, "time", SimpleNamespace(perf_counter=perf_counter))
@@ -566,8 +566,10 @@ async def test_garbage_collection_is_not_reported(
         assert probe_pending.wait(timeout=1)
         gc.collect()
         collected = True
-        # Hold the probe until the monitor times it past the collection.
-        assert read_after_collection.wait(timeout=1)
+        # Hold the loop until the monitor reads the clock twice after the
+        # collection: it checks the first read before it takes the second.
+        assert reads_after_collection.acquire(timeout=1)
+        assert reads_after_collection.acquire(timeout=1)
 
     await _run_monitored(
         collecting_handler, f"{EVENT_TASK_PREFIX}state.collecting|token|txid"
