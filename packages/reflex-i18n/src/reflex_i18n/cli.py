@@ -8,8 +8,10 @@ from __future__ import annotations
 
 import ast
 import dataclasses
+import io
 import logging
 import os
+import re
 import sys
 from collections.abc import Collection, Iterator, Sequence
 from pathlib import Path
@@ -67,6 +69,9 @@ _T_PATHS = {
 }
 
 _POT_FILENAME = "messages.pot"
+
+# Babel stamps each extraction's catalogs with the time it ran.
+_CREATION_DATE_RE = re.compile(rb'^"POT-Creation-Date: [^"]*"$', re.MULTILINE)
 
 _PACKAGE_OPTION = click.option(
     "--package",
@@ -371,6 +376,9 @@ def _read_or_new_catalog(po_path: Path, locale: str) -> Catalog:
 def _write_catalog(catalog: Catalog, path: Path) -> None:
     """Write a catalog to a ``.po``/``.pot`` file, formatted as the app configures.
 
+    A file the catalog would only restamp with a new creation date is left
+    alone, so an extraction that changes no message changes no file.
+
     Args:
         catalog: The catalog to write.
         path: The destination path.
@@ -379,15 +387,22 @@ def _write_catalog(catalog: Catalog, path: Path) -> None:
 
     # Without a plugin, e.g. for a package's catalogs, its defaults apply.
     plugin = get_plugin(I18nPlugin) or I18nPlugin
+    buffer = io.BytesIO()
+    write_po(
+        buffer,
+        catalog,
+        width=plugin.catalog_width,
+        no_location=plugin.catalog_locations == "none",
+        include_lineno=plugin.catalog_locations == "line",
+    )
+    content = buffer.getvalue()
+    if path.exists() and _CREATION_DATE_RE.sub(b"", path.read_bytes()) == (
+        _CREATION_DATE_RE.sub(b"", content)
+    ):
+        # Nothing but the date would change.
+        return
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("wb") as f:
-        write_po(
-            f,
-            catalog,
-            width=plugin.catalog_width,
-            no_location=plugin.catalog_locations == "none",
-            include_lineno=plugin.catalog_locations == "line",
-        )
+    path.write_bytes(content)
 
 
 def merge_into_locale(template: Catalog, po_path: Path, locale: str) -> LocaleStats:

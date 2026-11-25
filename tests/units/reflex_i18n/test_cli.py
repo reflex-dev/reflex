@@ -623,3 +623,35 @@ def test_plugin_rejects_unknown_catalog_locations():
         "I18nPlugin.catalog_locations must be one of ('line', 'file', 'none'); "
         "got 'lines'."
     )
+
+
+def test_extraction_leaves_a_catalog_alone_when_no_message_changes(tmp_path: Path):
+    import datetime
+
+    app_dir = tmp_path / "myapp"
+    _write_app_source(app_dir)
+    po_path = tmp_path / "de.po"
+
+    def extract(day: int) -> str:
+        """Extract into the catalog on a given day.
+
+        Args:
+            day: The day of November 2026 the extraction runs on.
+
+        Returns:
+            The catalog's creation date header.
+        """
+        template = extract_catalog(app_dir, ())
+        template.creation_date = datetime.datetime(2026, 11, day, tzinfo=datetime.UTC)
+        merge_into_locale(template, po_path, "de")
+        [header] = [
+            line
+            for line in po_path.read_text(encoding="utf-8").splitlines()
+            if line.startswith('"POT-Creation-Date')
+        ]
+        return header
+
+    assert extract(1) == '"POT-Creation-Date: 2026-11-01 00:00+0000\\n"'
+    assert extract(2) == '"POT-Creation-Date: 2026-11-01 00:00+0000\\n"'
+    (app_dir / "app.py").write_text('x = _("Server hello again")\n', encoding="utf-8")
+    assert extract(3) == '"POT-Creation-Date: 2026-11-03 00:00+0000\\n"'

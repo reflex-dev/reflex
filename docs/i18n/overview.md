@@ -507,7 +507,8 @@ Once the plugin is configured, three commands manage your catalogs:
 
 ```bash
 # Scan the app for rx.t and gettext calls and update every locale's .po file
-# (new messages added, translations preserved, removed ones marked obsolete).
+# (new messages added, translations preserved, removed ones marked obsolete;
+# a file with no changed message is left as it is).
 reflex i18n extract
 
 # Create a fresh catalog for a new locale.
