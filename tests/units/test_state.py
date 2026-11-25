@@ -4383,6 +4383,7 @@ def test_potentially_dirty_states():
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("forked_registration_context")
 async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
     """Test that router var dependencies are correctly tracked.
 
@@ -4429,16 +4430,6 @@ async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
     assert state.dirty_vars == {"foo"}
     assert parent_state.dirty_substates == {RouterVarDepState.get_name()}
 
-    # The locally-defined states above registered themselves in the class-level
-    # dependency maps on State, which outlive this test. Left behind, a later
-    # test that dirties a router var on a fresh State tree resolves the stale
-    # entry and raises on the missing substate. Drop them.
-    for dep_set in State._var_dependencies.values():
-        dep_set.difference_update({
-            (RouterVarDepState.get_full_name(), "foo"),
-        })
-    State._potentially_dirty_states.discard(RouterVarDepState.get_full_name())
-
 
 @pytest.mark.parametrize("name", constants.ROUTER_VARS)
 def test_router_field_names_are_reserved(name):
@@ -4455,6 +4446,7 @@ def test_router_field_names_are_reserved(name):
         )
 
 
+@pytest.mark.usefixtures("forked_registration_context")
 def test_router_var_dep_legacy_string() -> None:
     """An explicit deps=["router"] still fires when any router var changes.
 
@@ -4476,13 +4468,8 @@ def test_router_var_dep_legacy_string() -> None:
         ) in State._var_dependencies[router_var]
     assert "router" not in State._var_dependencies
 
-    # Drop the class-level registrations this locally-defined state made; see
-    # the note in test_router_var_dep.
-    for dep_set in State._var_dependencies.values():
-        dep_set.discard((LegacyRouterDepState.get_full_name(), "foo"))
-    State._potentially_dirty_states.discard(LegacyRouterDepState.get_full_name())
 
-
+@pytest.mark.usefixtures("forked_registration_context")
 def test_router_var_dep_legacy_string_still_compiles() -> None:
     """An app declaring deps=["router"] must still pass dependency validation.
 
@@ -4501,10 +4488,6 @@ def test_router_var_dep_legacy_string_still_compiles() -> None:
     assert constants.ROUTER in State.vars
     # Raises VarDependencyError if the dependency does not resolve to a var.
     App()._validate_var_dependencies()
-
-    for dep_set in State._var_dependencies.values():
-        dep_set.discard((LegacyRouterCompileState.get_full_name(), "foo"))
-    State._potentially_dirty_states.discard(LegacyRouterCompileState.get_full_name())
 
 
 @pytest.mark.asyncio
@@ -4528,6 +4511,7 @@ async def test_get_var_value_of_the_whole_router() -> None:
     ).client_token == router.session.client_token
 
 
+@pytest.mark.usefixtures("forked_registration_context")
 def test_router_var_dep_does_not_warn_for_the_var_form(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -4566,13 +4550,8 @@ def test_router_var_dep_does_not_warn_for_the_var_form(
     assert len(deprecations) == 1
     assert "StringFormRouterDepState.from_string" in deprecations[0]
 
-    for dep_set in State._var_dependencies.values():
-        dep_set.discard((VarFormRouterDepState.get_full_name(), "from_var"))
-        dep_set.discard((StringFormRouterDepState.get_full_name(), "from_string"))
-    State._potentially_dirty_states.discard(VarFormRouterDepState.get_full_name())
-    State._potentially_dirty_states.discard(StringFormRouterDepState.get_full_name())
 
-
+@pytest.mark.usefixtures("forked_registration_context")
 def test_router_var_dep_whole_router() -> None:
     """deps=[State.router] must track every per-field router var.
 
@@ -4606,11 +4585,6 @@ def test_router_var_dep_whole_router() -> None:
         WholeRouterDepState.get_full_name(),
         "summary",
     ) not in State._var_dependencies.get(constants.ROUTER, set())
-
-    # Drop the class-level registrations; see the note in test_router_var_dep.
-    for dep_set in State._var_dependencies.values():
-        dep_set.discard((WholeRouterDepState.get_full_name(), "summary"))
-    State._potentially_dirty_states.discard(WholeRouterDepState.get_full_name())
 
 
 def test_router_is_listed_as_a_var_and_inherited_by_substates() -> None:
@@ -4886,6 +4860,7 @@ def test_setvar_async_setter():
         ),
     ],
 )
+@pytest.mark.usefixtures("forked_registration_context")
 def test_redis_state_manager_config_knobs(tmp_path, expiration_kwargs, expected_values):
     proj_root = tmp_path / "project1"
     proj_root.mkdir()
@@ -4922,6 +4897,7 @@ config = rx.Config(
         (20000, 30000),
     ],
 )
+@pytest.mark.usefixtures("forked_registration_context")
 def test_redis_state_manager_config_knobs_invalid_lock_warning_threshold(
     tmp_path, redis_lock_expiration, redis_lock_warning_threshold
 ):
@@ -6915,6 +6891,7 @@ async def test_async_computed_var_get_var_value(mock_app: rx.App, token: str):
     assert "foo" in comp_state.dirty_vars
 
 
+@pytest.mark.usefixtures("forked_registration_context")
 def test_computed_var_mutability() -> None:
     class CvMixin(rx.State, mixin=True):
         @rx.var(cache=True, deps=["hi"])
@@ -7406,6 +7383,7 @@ def test_base_var_bare_reannotation_does_not_raise() -> None:
     assert isinstance(ReannotatingChild.reannotated_value, Var)
 
 
+@pytest.mark.usefixtures("forked_registration_context")
 def test_composite_var_dep_tracks_fields_in_every_state():
     """A dependency on a var spanning two states must track both states' fields.
 
@@ -7446,16 +7424,6 @@ def test_composite_var_dep_tracks_fields_in_every_state():
     static_deps = _CompositeDepConsumer.__dict__["combined"]._static_deps
     assert "a_field" in static_deps.get(a_name, set())
     assert "b_field" in static_deps.get(b_name, set())
-
-    # The consumer registered itself in both source states' class-level
-    # dependency maps, which outlive this test. Left behind, a later test that
-    # dirties a_field or b_field resolves the stale entry and raises on the
-    # missing substate. Drop them.
-    consumer_name = _CompositeDepConsumer.get_full_name()
-    for state_cls in (_CompositeDepStateA, _CompositeDepStateB):
-        for dep_set in state_cls._var_dependencies.values():
-            dep_set.difference_update({(consumer_name, "combined")})
-        state_cls._potentially_dirty_states.discard(consumer_name)
 
 
 def test_getstate_holds_only_the_fields_of_the_state():
