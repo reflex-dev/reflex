@@ -6,6 +6,17 @@ from reflex_site_shared.views.sidebar import docs_sidebar_drawer
 
 from reflex_docs import sections
 
+# A native disclosure ignores Escape; close it and return focus to the toggle,
+# since the focused link would otherwise be hidden.
+_CLOSE_ON_ESCAPE = rx.vars.FunctionStringVar.create(
+    "(event) => {"
+    " const menu = event.currentTarget;"
+    ' if (event.key !== "Escape" || !menu.open) return;'
+    " menu.open = false;"
+    ' menu.querySelector("summary").focus();'
+    " }"
+)
+
 
 def navbar_sidebar_button(active_tab: rx.Var[str] | str = "") -> rx.Component:
     """Render a native disclosure with the same destinations as desktop docs.
@@ -63,6 +74,7 @@ def navbar_sidebar_button(active_tab: rx.Var[str] | str = "") -> rx.Component:
             class_name="docs-navbar-mobile-panel fixed inset-x-0 top-[var(--docs-header-height)] max-h-[calc(100dvh-var(--docs-header-height))] overflow-y-auto border-b border-border-subtle bg-background px-6 py-4 shadow-small",
         ),
         class_name="docs-navbar-menu group/docs-menu",
+        custom_attrs={"onKeyDown": _CLOSE_ON_ESCAPE},
     )
 
 
