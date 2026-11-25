@@ -10,6 +10,7 @@ from reflex_i18n import (
     alternate_url,
     locale_url,
     localized_url,
+    path_redirects,
 )
 from reflex_i18n.config import set_active_i18n_config
 from reflex_i18n.runtime import use_locale
@@ -93,3 +94,43 @@ def test_alternate_url_rejects_an_unconfigured_locale():
 
 def test_alternate_url_is_the_page_itself_without_i18n():
     assert str(alternate_url("de")) == '""'
+
+
+@pytest.fixture
+def translated_news(monkeypatch: pytest.MonkeyPatch):
+    """Configure URL routing with a news page whose English path is translated.
+
+    Args:
+        monkeypatch: Sets the config's plugins and frontend path for the test.
+    """
+    plugin = I18nPlugin(
+        locales=["de", "en"], default_locale="de", routing=PathPrefixRouting()
+    )
+    plugin._page_paths = {"/neuigkeiten": {"en": "/news"}}
+    monkeypatch.setattr(get_config(), "plugins", [plugin])
+
+
+@pytest.mark.usefixtures("translated_news")
+def test_links_lead_to_a_pages_translated_path():
+    assert locale_url("en", "/neuigkeiten") == "/en/news"
+    assert locale_url("de", "/neuigkeiten") == "/neuigkeiten"
+    with use_locale("en"):
+        assert localized_url("neuigkeiten") == "/en/news"
+
+
+@pytest.mark.usefixtures("translated_news")
+@pytest.mark.parametrize(("frontend_path", "prefix"), [("", ""), ("/app/", "/app")])
+def test_path_redirects_name_server_paths(
+    monkeypatch: pytest.MonkeyPatch, frontend_path: str, prefix: str
+):
+    monkeypatch.setattr(get_config(), "frontend_path", frontend_path)
+    assert path_redirects() == {
+        f"{prefix}/news": f"{prefix}/neuigkeiten",
+        f"{prefix}/en/neuigkeiten": f"{prefix}/en/news",
+    }
+
+
+def test_path_redirects_are_empty_without_routing(monkeypatch: pytest.MonkeyPatch):
+    plugin = I18nPlugin(locales=["de", "en"], default_locale="de")
+    monkeypatch.setattr(get_config(), "plugins", [plugin])
+    assert path_redirects() == {}

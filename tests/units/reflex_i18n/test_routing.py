@@ -95,6 +95,7 @@ def test_index_module_exports_routing_config():
         "export const defaultAtRoot = true;\n"
         'export const deployUrl = "https://site.com";\n'
         "export const defaultPlural = (n) => Number(n != 1);\n"
+        "export const localizedPaths = {};\n"
         "export const loaders = {\n"
         '  "en": () => import("$/i18n/en.js"),\n'
         '  "de": () => import("$/i18n/de.js"),\n'
@@ -406,6 +407,114 @@ def test_eval_page_scope_leaves_pages_alone_without_routing(tmp_path: Path):
     plugin, _, index = _evaluate_in_locale_pages(tmp_path, None)
     assert (
         plugin.eval_page_scope(UnevaluatedPage(component=index, route="index")) is None
+    )
+
+
+def _translated_news_plugin() -> tuple[I18nPlugin, list]:
+    """Fan out a German news page whose English path is translated.
+
+    Returns:
+        The plugin and the recorded add_page calls.
+    """
+    from reflex.app import UnevaluatedPage
+
+    plugin = I18nPlugin(
+        locales=["de", "en", "fr"], default_locale="de", routing=PathPrefixRouting()
+    )
+    ctx = _fake_context([
+        UnevaluatedPage(
+            component=lambda: rx.text("News"),
+            route="blog/neuigkeiten",
+            context={"i18n_paths": {"en": "blog/news/"}},
+        ),
+        UnevaluatedPage(component=lambda: rx.text("Home"), route="index"),
+    ])
+    plugin.expand_routes(add_page=ctx["add_page"], pages=ctx["pages"])  # pyright: ignore[reportCallIssue]
+    return plugin, ctx["calls"]
+
+
+def test_expand_routes_serves_a_translated_path():
+    plugin, calls = _translated_news_plugin()
+    assert [route for route, _ in calls] == [
+        "/en/blog/news",
+        "/fr/blog/neuigkeiten",
+        "/en",
+        "/fr",
+    ]
+    assert plugin._page_paths == {"/blog/neuigkeiten": {"en": "/blog/news"}}
+
+
+def test_translated_paths_redirect_to_each_locales_own():
+    plugin, _ = _translated_news_plugin()
+    assert plugin._path_redirects() == {
+        "/blog/news": "/blog/neuigkeiten",
+        "/en/blog/neuigkeiten": "/en/blog/news",
+        "/fr/blog/news": "/fr/blog/neuigkeiten",
+    }
+
+
+@pytest.mark.parametrize(
+    ("route", "paths", "expected"),
+    [
+        (
+            "news",
+            {"de": "/neuigkeiten"},
+            (
+                "Page '/news' gives a path for 'de', which is not one of the "
+                "other locales ['en']; the page's own route is its "
+                "default-locale path."
+            ),
+        ),
+        (
+            "news",
+            {"fr": "/nouvelles"},
+            (
+                "Page '/news' gives a path for 'fr', which is not one of the "
+                "other locales ['en']; the page's own route is its "
+                "default-locale path."
+            ),
+        ),
+        (
+            "news/[slug]",
+            {"en": "/news/[slug]"},
+            (
+                "Page '/news/[slug]' cannot have the 'en' path '/news/[slug]': "
+                "only static routes have translated paths."
+            ),
+        ),
+    ],
+)
+def test_expand_routes_rejects_unusable_translated_paths(
+    route: str, paths: dict[str, str], expected: str
+):
+    from reflex_base.utils.exceptions import RouteValueError
+
+    from reflex.app import UnevaluatedPage
+
+    plugin = I18nPlugin(
+        locales=["de", "en"], default_locale="de", routing=PathPrefixRouting()
+    )
+    ctx = _fake_context([
+        UnevaluatedPage(
+            component=lambda: rx.text("News"),
+            route=route,
+            context={"i18n_paths": paths},
+        )
+    ])
+    with pytest.raises(RouteValueError) as error:
+        plugin.expand_routes(add_page=ctx["add_page"], pages=ctx["pages"])  # pyright: ignore[reportCallIssue]
+    assert str(error.value) == expected
+
+
+def test_index_module_exports_translated_paths():
+    js = compile_index_module(
+        I18nConfig(locales=["de", "en"], default_locale="de"),
+        url_routing=True,
+        page_paths={"/blog/neuigkeiten": {"en": "/blog/news"}},
+    )
+    [line] = [line for line in js.splitlines() if "localizedPaths" in line]
+    assert line == (
+        'export const localizedPaths = {"/blog/neuigkeiten": {"en": "/blog/news"}};'
     )
 
 

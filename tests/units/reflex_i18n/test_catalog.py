@@ -61,6 +61,7 @@ def test_compile_index_module():
         "export const defaultAtRoot = true;\n"
         'export const deployUrl = "";\n'
         "export const defaultPlural = (n) => Number(n != 1);\n"
+        "export const localizedPaths = {};\n"
         "export const loaders = {\n"
         '  "en": () => import("$/i18n/en.js"),\n'
         '  "de": () => import("$/i18n/de.js"),\n'
@@ -212,6 +213,7 @@ def test_compile_index_emits_default_plural_expr():
         "export const defaultAtRoot = true;\n"
         'export const deployUrl = "";\n'
         "export const defaultPlural = (n) => Number((n > 1));\n"
+        "export const localizedPaths = {};\n"
         "export const loaders = {\n"
         '  "en": () => import("$/i18n/en.js"),\n'
         '  "de": () => import("$/i18n/de.js"),\n'

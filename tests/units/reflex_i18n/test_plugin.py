@@ -147,6 +147,7 @@ def _render_runtime(
     fallback_locale: str | None = None,
     url_routing: bool = False,
     default_at_root: bool = True,
+    localized_paths: dict[str, dict[str, str]] | None = None,
     pathname: str = "/",
     languages: tuple[str, ...] = ("en",),
     props: dict[str, Any] | None = None,
@@ -165,6 +166,8 @@ def _render_runtime(
             locale).
         url_routing: Whether locales are routed through the URL.
         default_at_root: Whether the default locale is served unprefixed.
+        localized_paths: The translated paths of pages, base path ->
+            {locale: path}.
         pathname: The router location's path.
         languages: The browser's preferred languages.
         props: Extra props for the component.
@@ -185,6 +188,7 @@ def _render_runtime(
         "fallbackLocale": fallback_locale or default_locale,
         "urlRouting": url_routing,
         "defaultAtRoot": default_at_root,
+        "localizedPaths": localized_paths or {},
         "cookieName": "reflex_locale",
         "deployUrl": "",
     }
@@ -289,6 +293,7 @@ def test_plugin_emits_index_and_locale_modules(tmp_path: Path, monkeypatch):
             "export const defaultAtRoot = true;\n"
             'export const deployUrl = "";\n'
             "export const defaultPlural = (n) => Number((n != 1));\n"
+            "export const localizedPaths = {};\n"
             "export const loaders = {\n"
             '  "en": () => import("$/i18n/en.js"),\n'
             '  "de": () => import("$/i18n/de.js"),\n'
@@ -373,6 +378,7 @@ def test_plugin_emits_default_plural_in_index(tmp_path: Path, monkeypatch):
         "export const defaultAtRoot = true;\n"
         'export const deployUrl = "";\n'
         "export const defaultPlural = (n) => Number((n > 1));\n"
+        "export const localizedPaths = {};\n"
         "export const loaders = {\n"
         '  "fr": () => import("$/i18n/fr.js"),\n'
         "};\n"
@@ -782,6 +788,45 @@ def test_language_switcher_links_stay_on_site(
         action="return rendered.children.map((link) => link.props.href);",
     )
     assert rendered["result"] == expected
+
+
+@requires_node
+@pytest.mark.parametrize(
+    ("pathname", "expected"),
+    [
+        (
+            "/en/news",
+            ["/neuigkeiten", "/en/news", "/neuigkeiten", "/en/news"],
+        ),
+        (
+            "/neuigkeiten/",
+            ["/neuigkeiten", "/en/news", "/neuigkeiten", "/neuigkeiten"],
+        ),
+        # The German path under /en has no page of its own to translate.
+        (
+            "/en/neuigkeiten",
+            ["/neuigkeiten", "/en/news", "/neuigkeiten", "/en/news"],
+        ),
+    ],
+)
+def test_client_follows_a_pages_translated_paths(
+    tmp_path: Path, pathname: str, expected: list[str]
+):
+    """Alternates, canonical and switcher links use each locale's own path."""
+    rendered = _render_runtime(
+        tmp_path,
+        "HreflangLinks",
+        locales=["de", "en"],
+        default_locale="de",
+        url_routing=True,
+        localized_paths={"/neuigkeiten": {"en": "/news"}},
+        pathname=pathname,
+        action=(
+            "return [rendered.children.slice(0, -1).map((link) => link.props.href),"
+            " Object.values(mod.useAlternateUrls())];"
+        ),
+    )
+    assert rendered["result"] == [expected, expected[:2]]
 
 
 @requires_node

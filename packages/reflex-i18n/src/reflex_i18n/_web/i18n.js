@@ -19,6 +19,7 @@ import {
   deployUrl,
   fallbackLocale,
   loaders,
+  localizedPaths,
   locales,
   urlRouting,
 } from "$/i18n/index.js";
@@ -546,18 +547,31 @@ const pathLocale = (pathname) =>
 // trailing one: a nested page is prerendered at "/a/b/" but addressed as "/a/b".
 const sitePath = (path) => "/" + path.replace(/^\/+|\/+$/g, "");
 
+// A translated page path's base path, by locale and path.
+const basePaths = new Map(locales.map((locale) => [locale, new Map()]));
+for (const [base, paths] of Object.entries(localizedPaths)) {
+  for (const [locale, path] of Object.entries(paths)) {
+    basePaths.get(locale).set(path, base);
+  }
+}
+
 const delocalizePath = (pathname) => {
   const [head, ...rest] = pathname.replace(/^\/+/, "").split("/");
-  return sitePath(
-    segmentLocale(head) === undefined ? pathname : rest.join("/"),
-  );
+  const locale = segmentLocale(head);
+  if (locale === undefined) {
+    return sitePath(pathname);
+  }
+  const path = sitePath(rest.join("/"));
+  return basePaths.get(locale).get(path) ?? path;
 };
 
+// Paths start with "/", so no key names an Object prototype member.
 const localizePath = (base, locale) => {
+  const path = localizedPaths[base]?.[locale] ?? base;
   if (locale === defaultLocale && defaultAtRoot) {
-    return base;
+    return path;
   }
-  return base === "/" ? "/" + locale : "/" + locale + base;
+  return path === "/" ? "/" + locale : "/" + locale + path;
 };
 
 const absoluteUrl = (path) => {

@@ -24,7 +24,13 @@ from .format import currency, language_name, number, percent, weekday
 from .format import date as date
 from .format import datetime as datetime
 from .format import time as time
-from .nav import alternate_url, language_switcher, locale_url, localized_url
+from .nav import (
+    alternate_url,
+    language_switcher,
+    locale_url,
+    localized_url,
+    path_redirects,
+)
 from .plugin import I18nPlugin
 from .routing import PathPrefixRouting
 from .runtime import (
@@ -98,6 +104,7 @@ __all__ = [
     "ngettext",
     "normalize_locale",
     "number",
+    "path_redirects",
     "percent",
     "pgettext",
     "pick",

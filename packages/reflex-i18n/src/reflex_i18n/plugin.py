@@ -89,6 +89,9 @@ _HTML_TAG = re.compile(r"<html\b[^>]*>", re.IGNORECASE)
 # The page context key naming the locale a fanned-out route renders in.
 _PAGE_LOCALE_KEY = "i18n_locale"
 
+# The page context key mapping locales to the page's own path in them.
+PAGE_PATHS_KEY = "i18n_paths"
+
 # What the ``#:`` comments of a written catalog entry name: each source line,
 # each source file, or nothing.
 CatalogLocations = Literal["line", "file", "none"]
@@ -268,6 +271,10 @@ class I18nPlugin(Plugin):
     # The width ``reflex i18n`` wraps catalog lines at; 0 keeps each on one line.
     catalog_width: int = 76
     catalog_locations: CatalogLocations = "line"
+    # The translated paths of the app's pages: base path -> {locale: path}.
+    _page_paths: dict[str, dict[str, str]] = dataclasses.field(
+        default_factory=dict, init=False, repr=False, compare=False
+    )
 
     def _config(self) -> I18nConfig:
         """Build the i18n configuration from the plugin's fields.
@@ -344,6 +351,7 @@ class I18nPlugin(Plugin):
         if self.routing is None:
             return
         add_page = context["add_page"]
+        self._page_paths = {}
         for page in context["pages"]:
             base_path = "/" if page.route == "index" else f"/{page.route}"
             head = base_path.lstrip("/").partition("/")[0]
@@ -356,10 +364,10 @@ class I18nPlugin(Plugin):
                     f"I18nPlugin routing. Rename the route or drop the locale."
                 )
                 raise RouteValueError(msg)
+            if paths := self._translated_paths(base_path, page.context or {}):
+                self._page_paths[base_path] = paths
             for locale in self.locales:
-                localized = self.routing.localize(
-                    base_path, locale, self.default_locale
-                )
+                localized = self._localize(base_path, locale)
                 if localized == base_path:
                     # Default-at-root: the app's own page already serves this.
                     continue
@@ -378,6 +386,74 @@ class I18nPlugin(Plugin):
                     meta=meta,
                     context={**(page.context or {}), _PAGE_LOCALE_KEY: locale},
                 )
+
+    def _translated_paths(
+        self, base_path: str, page_context: Mapping[str, Any]
+    ) -> dict[str, str]:
+        """Read and check the paths a page has in other locales.
+
+        Args:
+            base_path: The page's own path, which its default locale serves.
+            page_context: The page's context, mapping ``i18n_paths`` to them.
+
+        Returns:
+            Each locale's path for the page, with one leading slash.
+
+        Raises:
+            RouteValueError: If a path is given for the default or an
+                unconfigured locale, or for or as a dynamic route.
+        """
+        paths = page_context.get(PAGE_PATHS_KEY) or {}
+        result: dict[str, str] = {}
+        for locale, path in paths.items():
+            normalized = "/" + path.strip("/")
+            if locale not in self.locales or locale == self.default_locale:
+                msg = (
+                    f"Page {base_path!r} gives a path for {locale!r}, which is "
+                    "not one of the other locales "
+                    f"{[loc for loc in self.locales if loc != self.default_locale]}; "
+                    "the page's own route is its default-locale path."
+                )
+                raise RouteValueError(msg)
+            if "[" in base_path or "[" in normalized:
+                msg = (
+                    f"Page {base_path!r} cannot have the {locale!r} path "
+                    f"{normalized!r}: only static routes have translated paths."
+                )
+                raise RouteValueError(msg)
+            result[locale] = normalized
+        return result
+
+    def _localize(self, path: str, locale: str) -> str:
+        """The URL path of a page in a locale, under its translated path if any.
+
+        Args:
+            path: The page's base path.
+            locale: The locale.
+
+        Returns:
+            The localized URL path.
+        """
+        assert self.routing is not None
+        translated = self._page_paths.get(path, {}).get(locale, path)
+        return self.routing.localize(translated, locale, self.default_locale)
+
+    def _path_redirects(self) -> dict[str, str]:
+        """Map each translated page's path in one locale under another to its own.
+
+        Returns:
+            Source path -> target path, both relative to ``frontend_path``.
+        """
+        assert self.routing is not None
+        redirects: dict[str, str] = {}
+        for base_path, paths in self._page_paths.items():
+            for locale in self.locales:
+                target = self._localize(base_path, locale)
+                for path in (base_path, *paths.values()):
+                    source = self.routing.localize(path, locale, self.default_locale)
+                    if source != target:
+                        redirects[source] = target
+        return redirects
 
     def eval_page_scope(
         self, page: PageDefinition, /, **kwargs: Any
@@ -504,6 +580,7 @@ class I18nPlugin(Plugin):
                     default_plural_expr=default_plural_expr_js(
                         default_catalog, config.default_locale
                     ),
+                    page_paths=self._page_paths,
                 ),
             )
         ]

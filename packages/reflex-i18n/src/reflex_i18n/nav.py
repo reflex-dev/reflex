@@ -53,7 +53,35 @@ def locale_url(locale: str, route: str) -> str:
     plugin = get_plugin(I18nPlugin)
     if plugin is None or plugin.routing is None:
         return path
-    return plugin.routing.localize(path, locale, plugin.default_locale)
+    return plugin._localize(path, locale)
+
+
+def path_redirects() -> dict[str, str]:
+    """Redirects for a page with translated paths, e.g. for the web server.
+
+    Each of the page's paths under a locale's prefix leads to its own path in
+    that locale: with an English path ``/en/news`` for ``/neuigkeiten``,
+    ``/en/neuigkeiten`` leads to ``/en/news`` and ``/news`` to
+    ``/neuigkeiten``. Known once the app's routes are registered, e.g. in a
+    plugin's ``post_build``.
+
+    Returns:
+        Source path -> target path, both including ``frontend_path``.
+    """
+    from reflex_base.config import get_config
+    from reflex_base.plugins.base import get_plugin
+
+    from .plugin import I18nPlugin
+
+    plugin = get_plugin(I18nPlugin)
+    if plugin is None or plugin.routing is None:
+        return {}
+    frontend_path = get_config().frontend_path.strip("/")
+    prefix = f"/{frontend_path}" if frontend_path else ""
+    return {
+        prefix + source: prefix + target
+        for source, target in plugin._path_redirects().items()
+    }
 
 
 def localized_url(route: str) -> str:

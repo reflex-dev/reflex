@@ -6,7 +6,7 @@ import gettext
 import json
 import logging
 import re
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -256,6 +256,7 @@ def compile_index_module(
     default_at_root: bool = True,
     deploy_url: str = "",
     default_plural_expr: str = _FALLBACK_PLURAL_EXPR,
+    page_paths: Mapping[str, Mapping[str, str]] | None = None,
 ) -> str:
     """Render the JS module describing the app's locales and catalog loaders.
 
@@ -273,6 +274,8 @@ def compile_index_module(
         default_plural_expr: The default locale's plural expression, used
             client-side to pick between the two source strings of a plural
             message that has no catalog entry.
+        page_paths: The translated paths of pages, base path -> {locale:
+            path}, for the client to localize and delocalize URLs.
 
     Returns:
         The JS module source code.
@@ -291,5 +294,6 @@ def compile_index_module(
         f"export const defaultAtRoot = {json.dumps(default_at_root)};\n"
         f"export const deployUrl = {json.dumps(deploy_url)};\n"
         f"export const defaultPlural = (n) => Number({default_plural_expr});\n"
+        f"export const localizedPaths = {json.dumps(page_paths or {})};\n"
         f"export const loaders = {{\n{loaders}\n}};\n"
     )

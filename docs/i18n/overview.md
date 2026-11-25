@@ -424,6 +424,29 @@ built in (see below), so one layout serves every locale:
 rx.link(_("Pricing"), href=rx.i18n.localized_url("/pricing"))
 ```
 
+### Translated paths
+
+A page can have a path of its own in another locale, e.g. a blog post whose
+slug is translated. Give the paths in the page's context; its route stays the
+default locale's path:
+
+```python
+app.add_page(
+    news,
+    route="/neuigkeiten",
+    context={"i18n_paths": {"en": "/news"}},  # served at /en/news
+)
+```
+
+The `hreflang` links, the language switcher, `alternate_url`, `locale_url` and
+`localized_url` all use the translated path. Only static routes can have one.
+
+A visitor or crawler may still ask for a page's path in another locale, e.g. an
+old link to `/en/neuigkeiten`. `rx.i18n.path_redirects()` lists such paths
+with the address each should redirect to, for your web server's permanent
+redirects (`/en/neuigkeiten` to `/en/news`, `/news` to `/neuigkeiten`). It is
+filled once the app's routes are registered, e.g. in a plugin's `post_build`.
+
 ### Translating while a page is built
 
 With URL routing every route serves exactly one locale, and its page function
