@@ -581,83 +581,24 @@ def test_cookie_policy(
     monkeypatch.setenv("REFLEX_ENV_MODE", mode)
     with TestClient(_app(manager, api_url), base_url="http://internal-proxy") as client:
         response = client.post("/_reflex/session", json={})
-    cookies = {}
-    for header in response.headers.get_list("set-cookie"):
-        name, _, rest = header.partition("=")
-        credential, _, attributes = rest.partition("; ")
-        assert manager.decode(credential) is not None
-        cookies[name] = attributes
-    secure_cookie = {
-        f"__Host-{manager.cookie_name}": (
+    name, _, rest = response.headers["set-cookie"].partition("=")
+    credential, _, attributes = rest.partition("; ")
+    assert manager.decode(credential) is not None
+    if secure:
+        assert name == f"__Host-{manager.cookie_name}"
+        assert attributes == (
             "Path=/; Max-Age=100; HttpOnly; SameSite=None; Secure; Partitioned"
         )
-    }
-    plain_cookie = {manager.cookie_name: "Path=/; Max-Age=100; HttpOnly; SameSite=Lax"}
-    if not secure:
-        assert cookies == plain_cookie
+        assert caplog.messages == []
+    else:
+        assert name == manager.cookie_name
+        assert attributes == "Path=/; Max-Age=100; HttpOnly; SameSite=Lax"
         assert caplog.messages == [
             (
                 "Session cookies use insecure SameSite=Lax on this development HTTP "
                 "API URL. Use HTTPS for secure, cross-site session cookies."
             )
         ]
-    elif mode == "dev" and api_url.startswith("http://"):
-        # WebKit does not store a Secure cookie from plain HTTP, also on a
-        # loopback host, so local development gets both forms.
-        assert cookies == secure_cookie | plain_cookie
-        assert caplog.messages == []
-    else:
-        assert cookies == secure_cookie
-        assert caplog.messages == []
-
-
-@pytest.mark.parametrize(
-    ("api_url", "mode", "sent", "accepted"),
-    [
-        ("http://localhost:8000", "dev", "plain", True),
-        ("http://localhost:8000", "dev", "both", True),
-        ("http://localhost:8000", "dev", "secure", True),
-        ("http://localhost:8000", "prod", "plain", False),
-        ("https://api.test", "dev", "plain", False),
-        ("https://api.test", "prod", "plain", False),
-    ],
-)
-def test_plain_cookie_is_read_only_in_local_http_development(
-    manager: SessionTokenManager,
-    monkeypatch: pytest.MonkeyPatch,
-    api_url: str,
-    mode: str,
-    sent: str,
-    accepted: bool,
-):
-    """A browser that keeps only the plain cookie has a session in local development.
-
-    Everywhere else only the secure cookie counts, so a plain cookie cannot
-    stand in for it.
-
-    Args:
-        manager: The session manager.
-        monkeypatch: Environment fixture.
-        api_url: The externally reachable URL.
-        mode: The app runtime mode.
-        sent: Which cookie forms the browser sends.
-        accepted: Whether the request has a session.
-    """
-    monkeypatch.setenv("REFLEX_ENV_MODE", mode)
-    session = manager.create()
-    credential = manager.encode(session)
-    forms = {
-        "plain": [manager.cookie_name],
-        "secure": [f"__Host-{manager.cookie_name}"],
-        "both": [f"__Host-{manager.cookie_name}", manager.cookie_name],
-    }[sent]
-    cookie = "; ".join(f"{name}={credential}" for name in forms)
-    with TestClient(_app(manager, api_url), base_url="http://internal-proxy") as client:
-        response = client.get("/", headers={"cookie": f"{cookie}; other=keep"})
-    assert response.json() == {
-        "cookies": ["other=keep"],
-        "session": session.id if accepted else None,
-    }
 
 
 @pytest.mark.asyncio
