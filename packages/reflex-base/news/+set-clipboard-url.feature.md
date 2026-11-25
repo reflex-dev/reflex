@@ -1,0 +1,1 @@
+Add a `url` keyword to `rx.set_clipboard` that copies text fetched from a URL in the browser, arming the clipboard write with a promise-backed `ClipboardItem` where supported so it stays bound to the user gesture, with a `writeText` fallback elsewhere. Failures are reported as tagged console errors and unhandled rejections that surface as backend frontend-exception reports.

@@ -6,12 +6,14 @@ from typing import Any, ClassVar, assert_type
 from reflex_base.event import (
     EventCallback,
     EventHandler,
+    EventNamespace,
     EventSpec,
     EventType,
     IdentityEventReturn,
     LambdaEventCallback,
     event,
     passthrough_event_spec,
+    set_clipboard,
 )
 from reflex_base.vars.base import Var
 
@@ -178,3 +180,18 @@ def _namespace_annotations(
     assert_type(event_type, EventType[str])
     assert_type(spec, EventSpec)
     _event_prop(_HandlerState.one(1))
+
+
+def _set_clipboard_forms(text_var: Var[str]) -> None:
+    # Module-level overloads: positional content and keyword-only url=.
+    assert_type(set_clipboard("copied text"), EventSpec)
+    assert_type(set_clipboard(text_var), EventSpec)
+    assert_type(set_clipboard(url="/page.md"), EventSpec)
+    assert_type(set_clipboard(url=text_var), EventSpec)
+    # The event namespace (`rx.event.set_clipboard`) resolves both overloads.
+    assert_type(event.set_clipboard("copied text"), EventSpec)
+    assert_type(event.set_clipboard(text_var), EventSpec)
+    assert_type(event.set_clipboard(url="/page.md"), EventSpec)
+    assert_type(event.set_clipboard(url=text_var), EventSpec)
+    assert_type(EventNamespace.set_clipboard("copied text"), EventSpec)
+    assert_type(EventNamespace.set_clipboard(url="/page.md"), EventSpec)
