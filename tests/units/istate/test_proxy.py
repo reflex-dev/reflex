@@ -560,6 +560,89 @@ async def test_inherited_handler_runs_on_its_state(
         assert substate.count == 10  # pyright: ignore [reportAttributeAccessIssue]
 
 
+class SuperBackgroundMixin(BaseState, mixin=True):
+    """A mixin whose background handler a state overrides."""
+
+    steps: list[str] = []
+
+    @rx.event(background=True)
+    async def save(self):
+        """Record the mixin's step."""
+        async with self:
+            self.steps.append("mixin")
+
+
+class SuperBackgroundMixinUser(SuperBackgroundMixin, BaseState):
+    """A state extending the mixin's background handler through super()."""
+
+    @rx.event(background=True)
+    async def save(self):
+        """Record this state's step, then the mixin's."""
+        async with self:
+            self.steps.append("user")
+        await super().save()
+
+
+class SuperBackgroundParent(BaseState):
+    """A state whose background handler its substate overrides."""
+
+    steps: list[str] = []
+
+    @rx.event(background=True)
+    async def save(self):
+        """Record the parent's step."""
+        async with self:
+            self.steps.append("parent")
+
+
+class SuperBackgroundChild(SuperBackgroundParent):
+    """A substate extending its parent's background handler through super()."""
+
+    @rx.event(background=True)
+    async def save(self):
+        """Record this state's step, then the parent's."""
+        async with self:
+            self.steps.append("child")
+        await super().save()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("state_cls", "steps_owner", "steps"),
+    [
+        (SuperBackgroundMixinUser, SuperBackgroundMixinUser, ["user", "mixin"]),
+        (SuperBackgroundChild, SuperBackgroundParent, ["child", "parent"]),
+    ],
+)
+async def test_background_handler_extends_its_base_through_super(
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+    state_cls: type[BaseState],
+    steps_owner: type[BaseState],
+    steps: list[str],
+) -> None:
+    """A background handler calling super() runs the overridden handler in the same task.
+
+    Args:
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+        state_cls: The state overriding the background handler.
+        steps_owner: The state storing the recorded steps.
+        steps: The steps both handlers record, in order.
+    """
+    state_token = BaseStateToken(ident=token, cls=state_cls)
+    async with state_manager.modify_state(state_token) as root:
+        proxy = StateProxy(root.get_substate(state_cls.get_full_name().split(".")))
+
+    await state_cls.save.fn(proxy)  # pyright: ignore [reportAttributeAccessIssue]
+
+    async with state_manager.modify_state(state_token) as root:
+        owner = root.get_substate(steps_owner.get_full_name().split("."))
+        assert owner.steps == steps  # pyright: ignore [reportAttributeAccessIssue]
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("proxy_cls", [StateProxy, ReadOnlyStateProxy])
 @pytest.mark.parametrize("state_cls", [RouterProxyState, RouterProxySubState])

@@ -174,7 +174,7 @@
   justify-content: space-between;
   gap: 16px;
   margin-top: 32px;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 .docs-page-navigation > a {
   gap: 2px;
@@ -240,7 +240,7 @@
 }
 @media (max-width: 1023px) {
   .docs-reading-column { max-width: 800px; padding-inline: 24px; }
-  .docs-reading-column .docs-breadcrumb { margin-bottom: 28px; }
+  .docs-reading-column .docs-breadcrumb { margin-bottom: 16px; }
 }
 @media (max-width: 639px) {
   .docs-reading-column { padding-inline: 20px; }
@@ -257,7 +257,6 @@
 
 /* Documentation surfaces only: never select controls inside live examples. */
 .docs-demo-header { align-items: center; gap: 12px; margin-bottom: 12px; }
-.docs-demo-header > a { margin: 0; font-family: var(--font-sans); font-weight: 400; font-size: 13px; }
 .docs-article .doc-demo-tab-card {
   border-radius: var(--radius-card);
   border-color: var(--border);

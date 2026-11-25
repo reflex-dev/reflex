@@ -38,7 +38,7 @@ from typing import (
 
 import wrapt
 from reflex_base import constants
-from reflex_base.event import Event
+from reflex_base.event import Event, EventHandler
 from reflex_base.event.context import EventContext
 from reflex_base.utils.exceptions import ImmutableStateError
 from reflex_base.utils.serializers import (
@@ -455,6 +455,26 @@ class StateProxy(wrapt.ObjectProxy):
                     _call_on_ancestor, self, value.__func__, type(value.__self__)
                 )
         return value
+
+    def _bind_overridden_handler(
+        self, fn: Callable, owner: type[BaseState]
+    ) -> Callable:
+        """Bind the function of a handler that `super()` reached through this proxy.
+
+        Bound like the handlers `__getattr__` returns, but without the guard
+        against calling a background task directly: an overriding background
+        handler runs the one it extends in its own task.
+
+        Args:
+            fn: The function of the overridden handler.
+            owner: The state class or mixin declaring the overridden handler.
+
+        Returns:
+            The function bound to this proxy, or to the ancestor declaring it.
+        """
+        if owner._mixin or type(self.__wrapped__) is owner:
+            return MethodType(fn, self)
+        return functools.partial(_call_on_ancestor, self, fn, owner)
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Set the attribute on the underlying state instance.
@@ -1396,3 +1416,4 @@ class ImmutableMutableProxy(MutableProxy):
 
 
 Field._proxy = MutableProxy
+EventHandler._state_proxy = StateProxy
