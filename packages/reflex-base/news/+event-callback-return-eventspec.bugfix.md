@@ -1,0 +1,1 @@
+Calling an `@rx.event` handler with all of its arguments—including zero-argument and upload handlers—now resolves statically to `EventSpec` instead of `EventCallback[()]`, matching runtime behavior. Event handlers annotated to return `EventSpec` or `list[EventSpec]` when chaining calls such as `State.increment(1)` now type-check without `# type: ignore`.

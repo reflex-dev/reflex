@@ -3261,6 +3261,11 @@ class EventCallback(Generic[*P], EventActionsMixin):
         self.func = func
 
     @overload
+    def __call__(  # pyright: ignore [reportOverlappingOverload]
+        self: "EventCallback[()]",
+    ) -> "EventSpec": ...
+
+    @overload
     def __call__(
         self: "EventCallback[*Q]",
     ) -> "EventCallback[*Q]": ...
@@ -3271,21 +3276,19 @@ class EventCallback(Generic[*P], EventActionsMixin):
     # cover longer handlers, so that each receiver matches one overload per number of
     # values, and a wrong value is reported as such rather than as no overload matching.
     @overload
-    def __call__(
-        self: "EventCallback[V]", value: V | Var[V]
-    ) -> "EventCallback[()]": ...
+    def __call__(self: "EventCallback[V]", value: V | Var[V]) -> "EventSpec": ...
 
     # An upload spec stands in for the files, or the chunks, that reflex uploads to the
     # handler. Only as the handler's sole argument: bound args next to it aren't typed.
     @overload
     def __call__(
         self: "EventCallback[list[UploadFile]]", value: FileUpload
-    ) -> "EventCallback[()]": ...
+    ) -> "EventSpec": ...
 
     @overload
     def __call__(
         self: "EventCallback[UploadChunkIterator]", value: UploadFilesChunk
-    ) -> "EventCallback[()]": ...
+    ) -> "EventSpec": ...
 
     @overload
     def __call__(
@@ -3295,7 +3298,7 @@ class EventCallback(Generic[*P], EventActionsMixin):
     @overload
     def __call__(
         self: "EventCallback[V, V2]", value: V | Var[V], value2: V2 | Var[V2]
-    ) -> "EventCallback[()]": ...
+    ) -> "EventSpec": ...
 
     @overload
     def __call__(
@@ -3313,7 +3316,7 @@ class EventCallback(Generic[*P], EventActionsMixin):
         value: V | Var[V],
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
-    ) -> "EventCallback[()]": ...
+    ) -> "EventSpec": ...
 
     @overload
     def __call__(
@@ -3340,7 +3343,7 @@ class EventCallback(Generic[*P], EventActionsMixin):
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
         value4: V4 | Var[V4],
-    ) -> "EventCallback[()]": ...
+    ) -> "EventSpec": ...
 
     @overload
     def __call__(
@@ -3382,7 +3385,7 @@ class EventCallback(Generic[*P], EventActionsMixin):
         value3: V3 | Var[V3],
         value4: V4 | Var[V4],
         value5: V5 | Var[V5],
-    ) -> "EventCallback[()]": ...
+    ) -> "EventSpec": ...
 
     @overload
     def __call__(
@@ -3403,7 +3406,7 @@ class EventCallback(Generic[*P], EventActionsMixin):
         value4: V4 | Var[V4],
         value5: V5 | Var[V5],
         value6: V6 | Var[V6],
-    ) -> "EventCallback[()]": ...
+    ) -> "EventSpec": ...
 
     @overload
     def __call__(
@@ -3426,7 +3429,7 @@ class EventCallback(Generic[*P], EventActionsMixin):
         value5: V5 | Var[V5],
         value6: V6 | Var[V6],
         value7: V7 | Var[V7],
-    ) -> "EventCallback[()]": ...
+    ) -> "EventSpec": ...
 
     @overload
     def __call__(
@@ -3451,7 +3454,7 @@ class EventCallback(Generic[*P], EventActionsMixin):
         value6: V6 | Var[V6],
         value7: V7 | Var[V7],
         value8: V8 | Var[V8],
-    ) -> "EventCallback[()]": ...
+    ) -> "EventSpec": ...
 
     @overload
     def __call__(
@@ -3466,7 +3469,7 @@ class EventCallback(Generic[*P], EventActionsMixin):
         value8: V8 | Var[V8],
     ) -> "EventCallback[V9, *Q]": ...
 
-    def __call__(self, *values) -> "EventCallback":  # pyright: ignore [reportInconsistentOverload]
+    def __call__(self, *values) -> "EventCallback | EventSpec":  # pyright: ignore [reportInconsistentOverload]
         """Call the function with the values.
 
         Args:

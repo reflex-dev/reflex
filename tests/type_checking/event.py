@@ -1,6 +1,6 @@
 """Inferred types for `reflex_base.event` that are part of the public contract."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Any, ClassVar, assert_type
 
 from reflex_base.event import (
@@ -15,6 +15,7 @@ from reflex_base.event import (
 )
 from reflex_base.vars.base import Var
 
+import reflex as rx
 from reflex.state import State
 
 
@@ -68,18 +69,20 @@ class _HandlerState(State):
 _index: Var[int] = Var("index")
 
 # A handler called with all of its arguments, plain or as Vars, is a complete event.
-assert_type(_HandlerState.no_args(), EventCallback[()])
-assert_type(_HandlerState.one(1), EventCallback[()])
-assert_type(_HandlerState.one(_index), EventCallback[()])
-assert_type(_HandlerState.two(_index, "a"), EventCallback[()])
-assert_type(_HandlerState.three(1, "a", True), EventCallback[()])
-assert_type(_HandlerState.four(1, "a", True, 1.5), EventCallback[()])
-assert_type(_HandlerState.five(_index, "a", True, 1.5, b""), EventCallback[()])
-assert_type(_HandlerState.six(1, "a", True, 1.5, b"", _index), EventCallback[()])
-assert_type(_HandlerState.seven(1, "a", True, 1.5, b"", _index, "b"), EventCallback[()])
-assert_type(
-    _HandlerState.eight(_index, "a", True, 1.5, b"", 2, "b", False), EventCallback[()]
-)
+assert_type(_HandlerState.no_args(), EventSpec)
+assert_type(_HandlerState.one(1), EventSpec)
+assert_type(_HandlerState.one(_index), EventSpec)
+assert_type(_HandlerState.two(_index, "a"), EventSpec)
+assert_type(_HandlerState.three(1, "a", True), EventSpec)
+assert_type(_HandlerState.four(1, "a", True, 1.5), EventSpec)
+assert_type(_HandlerState.five(_index, "a", True, 1.5, b""), EventSpec)
+assert_type(_HandlerState.six(1, "a", True, 1.5, b"", _index), EventSpec)
+assert_type(_HandlerState.seven(1, "a", True, 1.5, b"", _index, "b"), EventSpec)
+assert_type(_HandlerState.eight(_index, "a", True, 1.5, b"", 2, "b", False), EventSpec)
+
+# Called with no arguments when parameters remain, it still takes all of them.
+assert_type(_HandlerState.one(), EventCallback[int])
+assert_type(_HandlerState.two(), EventCallback[int, str])
 
 # Called with the leading arguments, it still takes the rest, e.g. from the event.
 assert_type(_HandlerState.two(_index), EventCallback[str])
@@ -198,3 +201,70 @@ class _RepeatedState(State):
 assert_type(_RepeatedState.configured_twice, EventCallback[int])
 assert_type(_RepeatedState.bare_over_configured, EventCallback[int, str])
 assert_type(_RepeatedState.configured_over_bare, EventCallback[()])
+
+# Event actions keep the EventSpec return type on complete calls and the
+# EventCallback return type on partial calls.
+assert_type(_HandlerState.no_args().stop_propagation, EventSpec)
+assert_type(_HandlerState.no_args.stop_propagation(), EventSpec)
+assert_type(
+    _HandlerState.one(1).prevent_default.throttle(300).debounce(100).temporal,
+    EventSpec,
+)
+assert_type(_HandlerState.one.prevent_default(1), EventSpec)
+assert_type(_HandlerState.two(1).stop_propagation, EventCallback[str])
+
+
+@event
+def _decentralized(state: _HandlerState, count: int) -> None: ...
+
+
+assert_type(_decentralized(1), EventSpec)
+
+
+class _ChainedState(State):
+    @event
+    def reset_count(self) -> None: ...
+
+    @event
+    def increment(self, by: int) -> None: ...
+
+    @event
+    def pair(self, index: int, label: str) -> None: ...
+
+    @event
+    def chain_zero(self) -> EventSpec:
+        return _ChainedState.reset_count()
+
+    @event
+    def chain_one(self) -> EventSpec:
+        return _ChainedState.increment(1)
+
+    @event
+    def chain_actions(self) -> EventSpec:
+        return _ChainedState.pair(1, "a").stop_propagation
+
+    @event
+    def chain_optional(self, send: bool) -> EventSpec | None:
+        return _ChainedState.increment(1) if send else None
+
+    @event
+    def chain_list(self) -> list[EventSpec]:
+        return [_ChainedState.reset_count(), _ChainedState.increment(1)]
+
+    @event
+    def chain_sequence(self) -> Sequence[EventSpec]:
+        return (_ChainedState.reset_count(), _ChainedState.pair(1, "a"))
+
+    @event
+    async def await_chained(self) -> None:
+        await _ChainedState.reset_count()
+        await _ChainedState.increment(1)
+
+
+_event_prop(_ChainedState.reset_count())
+_event_prop(_ChainedState.increment(1).stop_propagation)
+rx.button("Click", on_click=_ChainedState.increment(1))
+rx.button(
+    "Click both", on_click=[_ChainedState.reset_count, _ChainedState.increment(1)]
+)
+rx.input(on_blur=_ChainedState.pair(1))

@@ -2046,3 +2046,69 @@ def test_repeated_rx_event_on_a_decentralized_handler_in_main():
     assert twice.fn is once.fn
     assert twice.event_actions == {"stopPropagation": True}
     assert S.event_handlers[twice.fn.__name__] is twice
+
+
+def test_calling_event_handler_with_all_args_returns_eventspec() -> None:
+    """Calling a handler with all its arguments returns an EventSpec that chains."""
+
+    class ChainState(BaseState):
+        @event
+        def no_args(self) -> None:
+            pass
+
+        @event
+        def one(self, count: int) -> None:
+            pass
+
+        @event
+        def two(self, count: int, label: str) -> None:
+            pass
+
+        @event
+        def chain_no_args(self) -> EventSpec:
+            return ChainState.no_args()
+
+        @event
+        def chain_one(self) -> EventSpec:
+            return ChainState.one(1).stop_propagation
+
+        @event
+        def chain_many(self) -> list[EventSpec]:
+            return [
+                ChainState.no_args(),
+                ChainState.one(2),
+                ChainState.two(3, "ok"),
+            ]
+
+    @event
+    def decentralized(state: ChainState, count: int) -> None:
+        pass
+
+    no_args_spec = ChainState.no_args()
+    one_spec = ChainState.one(1)
+    two_spec = ChainState.two(2, "ok")
+    decentralized_spec = decentralized(5)
+
+    for spec in (no_args_spec, one_spec, two_spec, decentralized_spec):
+        assert isinstance(spec, EventSpec)
+
+    assert one_spec.stop_propagation.event_actions == {"stopPropagation": True}
+
+    state_name = ChainState.get_full_name()
+    assert Event.from_event_type(ChainState.chain_no_args.fn(ChainState())) == [
+        Event(name=f"{state_name}.no_args", payload={}),
+    ]
+    assert Event.from_event_type(ChainState.chain_one.fn(ChainState())) == [
+        Event(name=f"{state_name}.one", payload={"count": 1}),
+    ]
+    assert Event.from_event_type(ChainState.chain_many.fn(ChainState())) == [
+        Event(name=f"{state_name}.no_args", payload={}),
+        Event(name=f"{state_name}.one", payload={"count": 2}),
+        Event(name=f"{state_name}.two", payload={"count": 3, "label": "ok"}),
+    ]
+    assert Event.from_event_type(decentralized_spec) == [
+        Event(
+            name=format.format_event_handler(cast(EventHandler, decentralized)),
+            payload={"count": 5},
+        ),
+    ]

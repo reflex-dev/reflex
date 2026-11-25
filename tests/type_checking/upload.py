@@ -2,7 +2,7 @@
 
 from typing import assert_type
 
-from reflex_base.event import EventCallback, event
+from reflex_base.event import EventSpec, event
 
 import reflex as rx
 from reflex.state import State
@@ -17,8 +17,8 @@ class _UploadState(State):
 
 
 # The upload spec stands in for the files, or the chunks, the handler receives.
-assert_type(_UploadState.files(rx.upload_files(upload_id="upload")), EventCallback[()])
+assert_type(_UploadState.files(rx.upload_files(upload_id="upload")), EventSpec)
 assert_type(
     _UploadState.chunks(rx.upload_files_chunk(upload_id="upload")),
-    EventCallback[()],
+    EventSpec,
 )
