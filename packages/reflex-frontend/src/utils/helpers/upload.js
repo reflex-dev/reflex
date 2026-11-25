@@ -14,6 +14,8 @@ import { parseJson } from "$/utils/helpers/json";
  * @param refs The refs object to store the abort controller in.
  * @param getBackendURL Function to get the backend URL.
  * @param getToken Function to get the Reflex token.
+ * @param waitForSession Wait for the session cookie before starting HTTP traffic.
+ * @param devMode Whether the app runs in development mode.
  *
  * @returns The response from posting to the UPLOADURL endpoint.
  */
@@ -28,6 +30,8 @@ export const uploadFiles = async (
   refs,
   getBackendURL,
   getToken,
+  waitForSession,
+  devMode,
 ) => {
   files = files ?? [];
 
@@ -35,6 +39,29 @@ export const uploadFiles = async (
 
   if (refs[upload_ref_name]) {
     console.log("Upload already in progress for ", upload_id);
+    return false;
+  }
+
+  const controller = new AbortController();
+  refs[upload_ref_name] = controller;
+  if (waitForSession) {
+    let abortWaiting;
+    const cancelled = new Promise((resolve) => {
+      abortWaiting = resolve;
+      controller.signal.addEventListener("abort", abortWaiting, { once: true });
+    });
+    try {
+      await Promise.race([waitForSession(), cancelled]);
+    } catch (error) {
+      console.log("Upload session error:", error.message);
+      delete refs[upload_ref_name];
+      return false;
+    } finally {
+      controller.signal.removeEventListener("abort", abortWaiting);
+    }
+  }
+  if (controller.signal.aborted || !socket.connected) {
+    delete refs[upload_ref_name];
     return false;
   }
 
@@ -79,7 +106,6 @@ export const uploadFiles = async (
     }
   };
 
-  const controller = new AbortController();
   const formdata = new FormData();
 
   // Bound handler args are sent as a JSON form field that must precede the
@@ -95,7 +121,6 @@ export const uploadFiles = async (
   });
 
   // Send the file to the server.
-  refs[upload_ref_name] = controller;
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -118,7 +143,22 @@ export const uploadFiles = async (
           },
         });
       } else {
-        reject(new Error(`HTTP error! status: ${xhr.status}`));
+        /** @type {Error & { rejection?: string }} */
+        const error = new Error(`HTTP error! status: ${xhr.status}`);
+        if (xhr.status >= 400 && xhr.status < 500) {
+          // The server refused the request before the event handler ran, so
+          // no backend error reaches the page for it. Only development shows
+          // the server's own words, as for a failed event handler.
+          if (devMode) {
+            error.rejection = `The server rejected the upload (${xhr.status}): ${xhr.responseText.slice(0, 200)}`;
+          } else if (xhr.status === 403) {
+            error.rejection =
+              "Your session has expired. Reload the page and try again.";
+          } else {
+            error.rejection = "The server rejected the upload.";
+          }
+        }
+        reject(error);
       }
     };
 
@@ -158,6 +198,7 @@ export const uploadFiles = async (
 
     // Configure and send request
     xhr.open("POST", getBackendURL(env.UPLOAD));
+    xhr.withCredentials = true;
     xhr.setRequestHeader("Reflex-Client-Token", getToken());
     xhr.setRequestHeader("Reflex-Event-Handler", handler);
     // Instrumentation hook (installed by reflex-otel): may add trace headers.
@@ -179,6 +220,19 @@ export const uploadFiles = async (
   })
     .catch((error) => {
       console.log("Upload error:", error.message);
+      if (error.rejection) {
+        // Show it as a failed event handler is shown: a toast, or an alert
+        // when the app has no toast provider.
+        if (refs.__toast) {
+          refs.__toast.error("Upload failed.", {
+            description: error.rejection,
+            position: "top-center",
+            id: "upload_error",
+          });
+        } else {
+          window.alert(`Upload failed. ${error.rejection}`);
+        }
+      }
       return false;
     })
     .finally(() => {

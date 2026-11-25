@@ -554,7 +554,7 @@ def docpage(
                                 ],
                             ),
                             class_name=(
-                                "docs-breadcrumb px-0 pt-0 mb-[2rem]"
+                                "docs-breadcrumb px-0 pt-0 mb-4"
                                 + ("" if show_breadcrumb else " lg:hidden")
                             ),
                         ),

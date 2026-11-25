@@ -6,6 +6,7 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness, AppHarnessProd
+from tests.integration.utils import CLIENT_TOKEN_JS
 
 
 def ComponentStateApp():
@@ -187,7 +188,7 @@ def test_component_state_app(component_state_app: AppHarness, page: Page) -> Non
     assert component_state_app.app_instance is not None, "app is not running"
     assert component_state_app.frontend_url is not None
     page.goto(component_state_app.frontend_url)
-    page.wait_for_function("() => sessionStorage.getItem('token') !== null")
+    page.wait_for_function(f"() => {CLIENT_TOKEN_JS} !== null")
 
     count_a = page.locator("#count-a")
     count_b = page.locator("#count-b")
