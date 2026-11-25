@@ -1007,6 +1007,7 @@ export const applyRestEvent = async (event, socket, navigate, params) => {
       getBackendURL,
       getToken,
       waitForSession,
+      app.isDevMode,
     );
   }
 };
