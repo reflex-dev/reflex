@@ -9,6 +9,7 @@ from reflex.testing import AppHarness
 
 DEFAULT_COPY_CODE = "print('copied from default button')"
 CUSTOM_COPY_CODE = "print('copied from custom button')"
+URL_COPY_CONTENT = "copied from a fetched URL"
 
 
 def CodeBlockApp():
@@ -78,10 +79,19 @@ def CodeBlockApp():
                 ),
                 id="custom-copy-block",
             ),
+            rx.button(
+                "Copy from URL",
+                id="url-copy",
+                on_click=rx.set_clipboard(url=rx.get_upload_url("hello.txt")),
+            ),
             align_items="stretch",
             spacing="4",
             width="480px",
         )
+
+    upload_dir = rx.get_upload_dir()
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    (upload_dir / "hello.txt").write_text(URL_COPY_CONTENT)
 
     app = rx.App(enable_state=False)
     app.add_page(index)
@@ -221,3 +231,62 @@ def test_code_block_custom_copy_button(code_block_app: AppHarness, page: Page) -
         "expected => navigator.clipboard.readText().then(text => text === expected)",
         arg=CUSTOM_COPY_CODE,
     )
+
+
+def test_code_block_set_clipboard_from_url(code_block_app: AppHarness, page: Page) -> None:
+    """rx.set_clipboard(url=...) copies fetched text, with zero error reports.
+
+    Grants clipboard-read and clipboard-write (CI headless-shell denies
+    trusted-click writes without them), installs error listeners before the
+    click, and asserts the section-2 success accounting: clipboard content
+    updated, zero tagged console errors, zero window errors, zero unhandled
+    rejections. The served Content-Type is captured and asserted against
+    the MIME policy (text/* accepted).
+
+    Args:
+        code_block_app: Running code block app harness.
+        page: Playwright page.
+    """
+    page.context.grant_permissions(
+        ["clipboard-read", "clipboard-write"], origin=code_block_app.frontend_url
+    )
+    served_types: list[str] = []
+    page.on(
+        "response",
+        lambda response: served_types.append(response.headers.get("content-type", ""))
+        if "hello.txt" in response.url
+        else None,
+    )
+    page.add_init_script("""
+        window.__clipboardTagCount = 0;
+        window.__clipboardWindowErrors = [];
+        window.__clipboardUnhandled = [];
+        window.addEventListener("error", (e) => {
+            window.__clipboardWindowErrors.push(String(e.message));
+        });
+        window.addEventListener("unhandledrejection", (e) => {
+            window.__clipboardUnhandled.push(String(e.reason));
+        });
+        const originalError = console.error.bind(console);
+        console.error = (...args) => {
+            if (args[0] === "_set_clipboard_from_url") {
+                window.__clipboardTagCount += 1;
+            }
+            originalError(...args);
+        };
+    """)
+    _goto_code_block_app(code_block_app, page)
+    page.evaluate("navigator.clipboard.writeText('')")
+    page.click("#url-copy")
+    expect.poll(
+        lambda: page.evaluate("navigator.clipboard.readText()"),
+        message="expected the fetched hello.txt content on the clipboard",
+    ).to_equal(URL_COPY_CONTENT)
+    assert served_types, "no response captured for hello.txt"
+    assert all(
+        content_type.split(";")[0].strip().lower().startswith("text/")
+        for content_type in served_types
+    ), f"unexpected Content-Type for hello.txt: {served_types}"
+    assert page.evaluate("window.__clipboardTagCount") == 0
+    assert page.evaluate("window.__clipboardWindowErrors") == []
+    assert page.evaluate("window.__clipboardUnhandled") == []
