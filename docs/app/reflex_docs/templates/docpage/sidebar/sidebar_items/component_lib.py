@@ -78,9 +78,15 @@ def get_sidebar_items_component_lib():
         category_item = get_category_children(category, component_list[category])
         library_item_children.append(category_item)
 
-    return [
-        *library_item_children,
-    ]
+    # The State category has no components of its own: its page points to the
+    # state guides, linked directly under its own name.
+    library_item_children.append(
+        SideBarItem(
+            names="State",
+            children=[SideBarItem(names="State", link="/library/state/")],
+        )
+    )
+    return library_item_children
 
 
 def get_sidebar_items_html():

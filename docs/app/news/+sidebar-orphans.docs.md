@@ -1,0 +1,1 @@
+The docs sidebar now lists every docs page: Wrapping React Step by Step, the Mantine Combobox, the AG Grid 36.2 upgrade notes and the Components State page are linked, the State, User Interface and Workflows overviews are highlighted when open, Stripe is listed by name under Payments, and the Database integration appears once.

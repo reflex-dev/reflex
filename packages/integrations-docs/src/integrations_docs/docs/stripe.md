@@ -1,4 +1,5 @@
 ---
+tags: Payments
 description: Connect your apps to Stripe to accept payments, manage subscriptions, and handle billing securely.
 ---
 # Stripe Integration

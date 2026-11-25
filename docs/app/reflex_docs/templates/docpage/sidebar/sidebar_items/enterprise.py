@@ -156,6 +156,10 @@ def get_sidebar_items_enterprise_components():
                     names="Value Transformers",
                     link=enterprise.ag_grid.value_transformers.path,
                 ),
+                SideBarItem(
+                    names="Upgrading to AG Grid 36.2",
+                    link=enterprise.ag_grid.upgrading_to_36_2.path,
+                ),
             ],
         ),
         SideBarItem(
@@ -239,6 +243,10 @@ def get_sidebar_items_enterprise_components():
                 SideBarItem(
                     names="Collapse",
                     link=enterprise.mantine.collapse.path,
+                ),
+                SideBarItem(
+                    names="Combobox",
+                    link=enterprise.mantine.combobox.path,
                 ),
                 SideBarItem(
                     names="JSON Input",

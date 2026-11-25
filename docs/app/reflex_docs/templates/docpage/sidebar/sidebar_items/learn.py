@@ -58,10 +58,10 @@ def get_sidebar_items_frontend():
         ui,
         wrapping_react,
     )
-    from reflex_docs.templates.docpage.sidebar.state import SideBarSection
+    from reflex_docs.templates.docpage.sidebar.state import SideBarItem
 
     items = [
-        SideBarSection(
+        SideBarItem(
             names="User Interface Overview",
             alt_name_for_next_prev="",
             link=ui.overview.path,
@@ -106,6 +106,7 @@ def get_sidebar_items_frontend():
             "Wrapping React",
             children=[
                 wrapping_react.overview,
+                wrapping_react.step_by_step,
                 wrapping_react.library_and_tags,
                 wrapping_react.props,
                 wrapping_react.custom_code_and_hooks,
@@ -132,10 +133,10 @@ def get_sidebar_items_backend():
         utility_methods,
         vars,
     )
-    from reflex_docs.templates.docpage.sidebar.state import SideBarItem, SideBarSection
+    from reflex_docs.templates.docpage.sidebar.state import SideBarItem
 
     items = [
-        SideBarSection(
+        SideBarItem(
             names="State Overview", alt_name_for_next_prev="", link=state.overview.path
         ),
         create_item(
@@ -220,10 +221,10 @@ def get_sidebar_items_backend():
 
 def get_sidebar_items_workflows():
     from reflex_docs.pages.docs import workflows
-    from reflex_docs.templates.docpage.sidebar.state import SideBarSection
+    from reflex_docs.templates.docpage.sidebar.state import SideBarItem
 
     return [
-        SideBarSection(
+        SideBarItem(
             names="Workflows Overview",
             alt_name_for_next_prev="",
             link=workflows.overview.path,

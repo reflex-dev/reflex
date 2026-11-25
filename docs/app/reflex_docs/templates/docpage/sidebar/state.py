@@ -38,9 +38,3 @@ class SideBarItem(SideBarBase):
     """A single item in the sidebar."""
 
     ...
-
-
-class SideBarSection(SideBarBase):
-    """A section in the sidebar."""
-
-    ...

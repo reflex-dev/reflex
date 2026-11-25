@@ -1,6 +1,7 @@
 """Tests for the docs sidebar structure and prev/next chain."""
 
 import inspect
+import json
 from pathlib import Path
 
 import pytest
@@ -122,7 +123,7 @@ def test_group_with_nested_pages_remains_expandable():
 
 
 @pytest.mark.parametrize("active", [False, True])
-@pytest.mark.parametrize("title", ["AG Chart", "Overview", "Testing"])
+@pytest.mark.parametrize("title", ["Overview", "Tutorial", "Webhooks"])
 def test_single_page_group_label_uses_foreground(title, active):
     """Direct-link labels must not inherit the link wrapper's muted color."""
     import reflex as rx
@@ -134,7 +135,7 @@ def test_single_page_group_label_uses_foreground(title, active):
         0,
         SideBarItem(
             names=title,
-            children=[SideBarItem(names="Overview", link="/enterprise/ag-chart/")],
+            children=[SideBarItem(names=title, link="/enterprise/ag-chart/")],
         ),
         rx.Var.create([]),
         rx.Var.create("/enterprise/ag-chart/" if active else "/enterprise/testing/"),
@@ -313,7 +314,6 @@ def test_integrations_are_grouped_with_legacy_cards_last():
         "APIs": ["apis"],
         "Webhooks": ["webhooks"],
         "URLs": ["urls"],
-        "Databases": ["database"],
         "Files": ["files"],
         "Images": ["images"],
         "Figma": ["figma"],
@@ -440,3 +440,199 @@ def test_group_labels_outweigh_page_links(stylesheet, selector):
     assert _css_rule(
         css, f"{selector} summary p,\n{selector} .docs-sidebar-group-label"
     ) == ("font-weight: 500;")
+
+
+# The item lists the docs sidebar renders, as named in its module.
+SIDEBAR_LISTS = (
+    "learn",
+    "frontend",
+    "backend",
+    "workflows",
+    "hosting",
+    "component_lib",
+    "graphing_libs",
+    "html_lib",
+    "recipes",
+    "ai_builder_overview_items",
+    "ai_builder_integrations",
+    "agent_toolkit_items",
+    "mcp_items",
+    "skills_items",
+    "api_reference",
+    "changelog_items",
+    "enterprise_usage_items",
+    "enterprise_component_items",
+)
+
+
+def _sidebar_lists() -> dict[str, list]:
+    """Get every item list the docs sidebar renders.
+
+    Returns:
+        Each rendered list of sidebar items, keyed by its name in the sidebar module.
+    """
+    import importlib
+
+    module = importlib.import_module("reflex_docs.templates.docpage.sidebar.sidebar")
+    return {name: getattr(module, name) for name in SIDEBAR_LISTS}
+
+
+def _page_items(items) -> list:
+    """Collect the sidebar items that link to a page, including nested ones.
+
+    Args:
+        items: Sidebar items.
+
+    Returns:
+        Each item with a link, in sidebar order.
+    """
+    pages = []
+    for item in items:
+        if item.link:
+            pages.append(item)
+        pages.extend(_page_items(item.children))
+    return pages
+
+
+def _rendered_links(component, href=None) -> list[tuple[str, str | None]]:
+    """Collect the page links of a rendered sidebar, in every conditional branch.
+
+    Args:
+        component: The root of a rendered component tree.
+        href: The route of the link enclosing ``component``, if any.
+
+    Returns:
+        A ``(route, label)`` pair for each page link, with label None for the
+        section and category links that only head a list of pages.
+    """
+    to = getattr(component, "to", None)
+    if to is None:
+        to = getattr(component, "href", None)
+    if to is not None:
+        href = json.loads(str(to))
+    if (getattr(component, "tag", None) or "").startswith("DocsSidebarLeaf"):
+        return [(href, json.loads(str(component.title)))]
+    if "docs-sidebar-group-label" in str(getattr(component, "class_name", "")):
+        return [(href, json.loads(str(component.children[0])))]
+    links = [(href, None)] if to is not None else []
+    for child in (
+        *getattr(component, "children", ()),
+        *(
+            branch
+            for branch in (
+                getattr(component, "comp1", None),
+                getattr(component, "comp2", None),
+            )
+            if branch is not None
+        ),
+    ):
+        links.extend(_rendered_links(child, href))
+    return links
+
+
+def _rendered_sidebar():
+    """Render the whole docs sidebar with every group closed.
+
+    Returns:
+        The sidebar's component tree.
+    """
+    import reflex as rx
+
+    from reflex_docs.templates.docpage.sidebar.sidebar import sidebar_comp
+
+    params = inspect.signature(sidebar_comp.__wrapped__).parameters
+    args = {name: rx.Var.create([]) for name in params}
+    args["url"] = rx.Var.create("/")
+    args["section"] = rx.Var.create("framework")
+    return sidebar_comp.__wrapped__(**args)
+
+
+def test_every_sidebar_page_is_shown_under_its_own_name():
+    """Each sidebar entry renders as a link labelled with that entry's own name.
+
+    A one-page group whose page has another name (Payments holding Stripe)
+    lists the page under the group heading rather than hiding its name, and
+    section overview entries such as State Overview are links that the page
+    can mark as current.
+    """
+    from collections import Counter
+
+    expected = Counter(
+        (item.link, item.names)
+        for items in _sidebar_lists().values()
+        for item in _page_items(items)
+    )
+    rendered = Counter(
+        (href, label)
+        for href, label in _rendered_links(_rendered_sidebar())
+        if label is not None
+    )
+    assert rendered == expected
+
+
+@pytest.mark.parametrize("name", SIDEBAR_LISTS)
+def test_sidebar_index_opens_the_group_holding_each_page(name):
+    """``calculate_index`` points at the rendered position of every listed page."""
+    from reflex_docs.templates.docpage.sidebar.sidebar import calculate_index
+
+    items = _sidebar_lists()[name]
+    for page in _page_items(items):
+        found, level = None, items
+        for position in calculate_index(items, page.link):
+            found = level[position]
+            level = found.children
+        assert found is not None and found.link == page.link
+
+
+def test_every_sidebar_page_is_listed_once():
+    """No page appears in two places, apart from marked cross-references."""
+    from collections import Counter
+
+    counts = Counter(
+        item.link
+        for items in _sidebar_lists().values()
+        for item in _page_items(items)
+        if not item.exclude_from_prev_next
+    )
+    assert [link for link, count in counts.items() if count > 1] == []
+
+
+def test_integration_groups_follow_each_card_tag():
+    """An integration card sits in the sidebar group its frontmatter tag names."""
+    from reflex_docs.pages.integrations.integration_list import get_integration_path
+    from reflex_docs.templates.docpage.sidebar.sidebar_items.ai import (
+        get_ai_builder_integrations,
+    )
+
+    # Sidebar group names for the tags whose gallery filter name is shorter.
+    group_by_tag = {"AI": "AI Models", "DevTools": "Developer Tools"}
+    cards = [next(iter(card.values())) for card in get_integration_path()]
+    groups = {
+        child.link: item.names
+        for item in get_ai_builder_integrations()
+        if item.names != "Legacy"
+        for child in item.children
+    }
+    assert {
+        card["path"]: group_by_tag.get(card["tags"], card["tags"])
+        for card in cards
+        if card["path"] in groups
+    } == {
+        card["path"]: groups[card["path"]] for card in cards if card["path"] in groups
+    }
+
+
+# Docs routes deliberately left out of every sidebar, with the reason.
+UNLISTED_ROUTES = {
+    "/": "The docs landing page, reached from the logo and the Overview navbar tab.",
+}
+
+
+def test_every_docs_route_is_in_a_sidebar_or_explicitly_unlisted():
+    """Every registered docs page is reachable from a sidebar, so none is orphaned."""
+    from reflex_docs.pages import routes
+    from reflex_docs.templates.docpage.sidebar.sidebar import normalize_url
+
+    linked = {href for href, _ in _rendered_links(_rendered_sidebar())}
+    registered = {normalize_url(route.path) for route in routes}
+    assert sorted(registered - linked) == sorted(UNLISTED_ROUTES)

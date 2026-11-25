@@ -171,12 +171,6 @@ def get_ai_builder_integrations():
             ],
         ),
         create_item(
-            "Databases",
-            children=[
-                ai_builder.integrations.database,
-            ],
-        ),
-        create_item(
             "Files",
             children=[
                 ai_builder.files,

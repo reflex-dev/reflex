@@ -32,7 +32,7 @@ from .sidebar_items.enterprise import (
 from .sidebar_items.learn import backend, frontend, hosting, learn, workflows
 from .sidebar_items.recipes import recipes
 from .sidebar_items.reference import api_reference, changelog_items
-from .state import SideBarBase, SideBarItem
+from .state import SideBarItem
 
 Scrollable_SideBar = """
 function scrollToActiveSidebarLink() {
@@ -138,7 +138,9 @@ def sidebar_item_comp(
                 guide_margin_class=guide_margin_class,
             )
 
-    if len(item.children) == 1 and not item.children[0].children:
+    # A group holding only a page of its own name links to that page directly;
+    # any other group keeps its heading so the page's own name is shown too.
+    if len(item.children) == 1 and item.children[0].names == item.names:
         child = item.children[0]
         return rx.el.li(
             sidebar_link(
@@ -181,15 +183,12 @@ def calculate_index(sidebar_items, url: str) -> list[int]:
         return index_list
 
     url = url.rstrip("/") + "/"
-    sub = 0
     for i, item in enumerate(sidebar_items):
-        if not item.children:
-            sub += 1
         if item.link == url:
-            return [i - sub]
+            return [i]
         index = calculate_index(item.children, url)
         if index:
-            return [i - sub, *index]
+            return [i, *index]
 
     return index_list
 
@@ -258,18 +257,6 @@ def sidebar_label(url: str) -> str | None:
         The label the sidebar shows for the page, or None if it has no entry.
     """
     return _labels_by_route().get(url.strip("/"))
-
-
-def filter_out_non_sidebar_items(items: list[SideBarBase]) -> list[SideBarItem]:
-    """Filter out non-sidebar items making sure only SideBarItems are present.
-
-    Args:
-        items: The items to filter.
-
-    Return:
-        The filtered side bar items.
-    """
-    return [item for item in items if isinstance(item, SideBarItem)]
 
 
 def create_sidebar_section(
@@ -541,21 +528,21 @@ def sidebar_comp(
         create_sidebar_section(
             "User Interface",
             ui.overview.path,
-            filter_out_non_sidebar_items(frontend),
+            frontend,
             frontend_index,
             url,
         ),
         create_sidebar_section(
             "State",
             state.overview.path,
-            filter_out_non_sidebar_items(backend),
+            backend,
             backend_index,
             url,
         ),
         create_sidebar_section(
             "Workflows",
             workflows_pages.overview.path,
-            filter_out_non_sidebar_items(workflows),
+            workflows,
             workflows_index,
             url,
         ),
