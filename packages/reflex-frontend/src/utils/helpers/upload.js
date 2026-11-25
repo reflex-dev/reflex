@@ -141,7 +141,14 @@ export const uploadFiles = async (
           },
         });
       } else {
-        reject(new Error(`HTTP error! status: ${xhr.status}`));
+        /** @type {Error & { rejection?: string }} */
+        const error = new Error(`HTTP error! status: ${xhr.status}`);
+        if (xhr.status >= 400 && xhr.status < 500) {
+          // The server refused the request before the event handler ran, so
+          // no backend error reaches the page for it.
+          error.rejection = `The server rejected the upload (${xhr.status}): ${xhr.responseText.slice(0, 200)}`;
+        }
+        reject(error);
       }
     };
 
@@ -203,6 +210,19 @@ export const uploadFiles = async (
   })
     .catch((error) => {
       console.log("Upload error:", error.message);
+      if (error.rejection) {
+        // Show it as a failed event handler is shown: a toast, or an alert
+        // when the app has no toast provider.
+        if (refs.__toast) {
+          refs.__toast.error("Upload failed.", {
+            description: error.rejection,
+            position: "top-center",
+            id: "upload_error",
+          });
+        } else {
+          window.alert(`Upload failed. ${error.rejection}`);
+        }
+      }
       return false;
     })
     .finally(() => {
