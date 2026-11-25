@@ -439,29 +439,6 @@ def test_state_manager_memory_cold_get(benchmark: BenchmarkFixture):
             loop.close()
 
 
-def test_state_manager_memory_warm_get(benchmark: BenchmarkFixture):
-    """Benchmark state lookup for a cached token.
-
-    Args:
-        benchmark: The CodSpeed benchmark fixture.
-    """
-    manager = StateManagerMemory()
-    loop = asyncio.new_event_loop()
-    token = BaseStateToken(ident="warm", cls=PerformanceState)
-    loop.run_until_complete(manager.get_state(token))
-
-    try:
-        state = benchmark(
-            lambda: get_performance_state(
-                loop.run_until_complete(manager.get_state(token))
-            )
-        )
-        assert isinstance(state, PerformanceState)
-    finally:
-        loop.run_until_complete(manager.close())
-        loop.close()
-
-
 def test_state_manager_memory_modify(benchmark: BenchmarkFixture):
     """Benchmark lock acquisition, mutation, and release for one token.
 
@@ -473,18 +450,21 @@ def test_state_manager_memory_modify(benchmark: BenchmarkFixture):
     token = BaseStateToken(ident="modify", cls=PerformanceState)
 
     async def modify() -> int:
-        """Increment one state under the manager lock.
+        """Increment one state under the manager lock, repeatedly.
 
         Returns:
             Updated counter.
         """
-        async with manager.modify_state_with_links(token) as root_state:
-            state = get_performance_state(root_state)
-            state.counter += 1
-            return state.counter
+        counter = 0
+        for _ in range(ITERATIONS):
+            async with manager.modify_state_with_links(token) as root_state:
+                state = get_performance_state(root_state)
+                state.counter += 1
+                counter = state.counter
+        return counter
 
     try:
-        assert benchmark(lambda: loop.run_until_complete(modify())) > 0
+        assert benchmark(lambda: loop.run_until_complete(modify())) >= ITERATIONS
     finally:
         loop.run_until_complete(manager.close())
         loop.close()
@@ -501,14 +481,16 @@ def test_state_manager_memory_read_only_modify(benchmark: BenchmarkFixture):
     token = BaseStateToken(ident="read-only", cls=PerformanceState)
 
     async def read_only() -> int:
-        """Read one field under the manager lock.
+        """Read one field under the manager lock, repeatedly.
 
         Returns:
-            Current counter.
+            Sum of the counters read.
         """
-        async with manager.modify_state_with_links(token) as root_state:
-            state = get_performance_state(root_state)
-            return state.counter
+        total = 0
+        for _ in range(ITERATIONS):
+            async with manager.modify_state_with_links(token) as root_state:
+                total += get_performance_state(root_state).counter
+        return total
 
     try:
         assert benchmark(lambda: loop.run_until_complete(read_only())) == 0

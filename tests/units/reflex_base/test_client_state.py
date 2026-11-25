@@ -8,7 +8,9 @@ from reflex_base.client_state import ClientStateVar, client_state
 from reflex_base.components.client_state_context import CLIENT_STATE_APP_WRAP_PRIORITY
 from reflex_base.components.memo import MEMOS
 from reflex_base.constants import Dirs
+from reflex_base.event import Event
 from reflex_base.utils.exceptions import ClientStateConflictError, VarTypeError
+from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import Var, VarData
 from reflex_base.vars.function import FunctionVar
 
@@ -633,16 +635,24 @@ def test_push_plain_value_uses_json_payload() -> None:
 def test_push_var_is_evaluated_on_the_client() -> None:
     """A Var is a client-side expression, so it must not be sent as its text.
 
-    A JSON payload would deliver the literal source (``"Date.now()"``), so a Var
-    keeps the evaluated path, reaching the store through ``refs``.
+    A JSON payload would deliver the literal source, so a Var keeps the evaluated
+    path, reaching the store through ``refs``. The imports of both sides come
+    along, for a page that compiles the push into a trigger instead of receiving
+    it as a script.
     """
-    from reflex_base.event import fix_events
-
     cs = client_state(0, name="counter")
-    event = fix_events([cs.push(Var("Date.now()"))], token="tok")[0]
-    assert event.name.endswith("_call_function")
-    assert 'refs["__client_state"].set("counter", Date.now())' in str(
-        event.payload["function"]
+    other = client_state("", name="other")
+    spec = cs.push(other.global_value.to(str) + "!")
+    (event,) = Event.from_event_type(spec)
+    assert event.name == "_call_function"
+    assert event.payload == {
+        "function": '(() => (refs["__client_state"].set("counter", (getClientState("other")+"!"))))',
+        "callback": None,
+    }
+    (_, function), _ = spec.args
+    assert function._get_all_var_data() == VarData.merge(
+        VarData(imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag="refs")]}),
+        other.global_value._get_all_var_data(),
     )
 
 
@@ -653,19 +663,15 @@ def test_backend_events_use_the_shared_store() -> None:
     the store singleton, and the store is published on ``refs`` at import for
     ``run_script`` code, so neither depends on a provider being mounted.
     """
-    from pathlib import Path
+    from reflex_base.constants import Templates
 
-    import reflex_base
-
-    state_js = (
-        Path(reflex_base.__file__).parent / ".templates" / "web" / "utils" / "state.js"
-    ).read_text()
+    state_js = (Templates.Dirs.WEB_TEMPLATE / "utils" / "state.js").read_text()
     assert "refs[CLIENT_STATE_REF] = getClientStore()" in state_js
-    set_branch = state_js.split('event.name == "_client_state_set"')[1].split(
+    set_branch = state_js.split('event.name === "_client_state_set"')[1].split(
         "return;"
     )[0]
     assert "setClientState(event.payload.var_name, event.payload.value)" in set_branch
-    get_branch = state_js.split('event.name == "_client_state_get"')[1].split(
+    get_branch = state_js.split('event.name === "_client_state_get"')[1].split(
         "return;"
     )[0]
     assert "applyResultCallback" in get_branch

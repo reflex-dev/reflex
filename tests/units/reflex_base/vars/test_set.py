@@ -235,10 +235,10 @@ def test_array_comparisons_with_a_set_operand_are_reflected(mocker):
     deprecate = mocker.patch("reflex_base.vars.set.console.deprecate")
     tags = _tags()
     items = Var(_js_expr="state.items").to(list[str])
-    assert str(items < tags) == "state.tags > state.items"  # pyright: ignore[reportOperatorIssue]
-    assert str(items <= tags) == "state.tags >= state.items"  # pyright: ignore[reportOperatorIssue]
-    assert str(items > tags) == "state.tags < state.items"  # pyright: ignore[reportOperatorIssue]
-    assert str(items >= tags) == "state.tags <= state.items"  # pyright: ignore[reportOperatorIssue]
+    assert str(items < tags) == "(compareArrays(state.tags, state.items) > 0)"  # pyright: ignore[reportOperatorIssue]
+    assert str(items <= tags) == "(compareArrays(state.tags, state.items) >= 0)"  # pyright: ignore[reportOperatorIssue]
+    assert str(items > tags) == "(compareArrays(state.tags, state.items) < 0)"  # pyright: ignore[reportOperatorIssue]
+    assert str(items >= tags) == "(compareArrays(state.tags, state.items) <= 0)"  # pyright: ignore[reportOperatorIssue]
     assert [call.kwargs["feature_name"] for call in deprecate.call_args_list] == [
         "SetVar.__gt__",
         "SetVar.__ge__",
@@ -287,10 +287,10 @@ def test_set_comparison_and_field_contains_fallbacks(mocker):
     other = Var(_js_expr="state.other").to(set[str])
     count = Var(_js_expr="state.count").to(int)
 
-    assert str(tags < other) == "state.tags < state.other"  # pyright: ignore[reportDeprecated]
-    assert str(tags <= ["a"]) == 'state.tags <= ["a"]'  # pyright: ignore[reportDeprecated]
-    assert str(tags > other) == "state.tags > state.other"  # pyright: ignore[reportDeprecated]
-    assert str(tags >= other) == "state.tags >= state.other"  # pyright: ignore[reportDeprecated]
+    assert str(tags < other) == "(compareArrays(state.tags, state.other) < 0)"  # pyright: ignore[reportDeprecated]
+    assert str(tags <= ["a"]) == '(compareArrays(state.tags, ["a"]) <= 0)'  # pyright: ignore[reportDeprecated]
+    assert str(tags > other) == "(compareArrays(state.tags, state.other) > 0)"  # pyright: ignore[reportDeprecated]
+    assert str(tags >= other) == "(compareArrays(state.tags, state.other) >= 0)"  # pyright: ignore[reportDeprecated]
     assert str(tags.contains("a", "name")) == (  # pyright: ignore[reportDeprecated]
         'state.tags.some(obj => obj["name"] === "a")'
     )

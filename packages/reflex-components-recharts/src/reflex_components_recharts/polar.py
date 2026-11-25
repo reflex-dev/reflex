@@ -335,7 +335,7 @@ class PolarAngleAxis(Recharts):
     )
 
     on_mouse_down: EventHandler[no_args_event_spec] = field(
-        doc="The customized event handler of mousedown on the the ticks of this axis."
+        doc="The customized event handler of mousedown on the ticks of this axis."
     )
 
     on_mouse_up: EventHandler[no_args_event_spec] = field(

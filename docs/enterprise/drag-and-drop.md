@@ -279,7 +279,7 @@ class DynamicListState(rx.State):
 
 
 @rx.memo
-def draggable_list_item(item: rx.Var[ListItem]) -> rx.Component:
+def draggable_list_item(rest: rx.RestProp, *, item: rx.Var[ListItem]) -> rx.Component:
     return rxe.dnd.draggable(
         rx.card(
             rx.text(item.text, weight="bold"),
@@ -288,6 +288,7 @@ def draggable_list_item(item: rx.Var[ListItem]) -> rx.Component:
             cursor="grab",
             _hover={"bg": "gray.50"},
         ),
+        rest,
         type="ListItem",
         item={"id": item.id, "text": item.text, "list_id": item.list_id},
     )
