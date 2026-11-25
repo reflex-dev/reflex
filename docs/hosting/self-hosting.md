@@ -44,7 +44,8 @@ reflex run --env prod
 ```
 
 Production mode compiles the app, builds an optimized static frontend, and
-serves it together with the backend (event websocket, `/ping`, `/_upload`)
+serves it together with the backend (event websocket, `/ping`, `/_upload`,
+`/_reflex/session`)
 from a single server on port `3000`. Pass `--frontend-port` or
 `--backend-port` to listen on a different port. When redis is configured,
 the server runs up to 8 backend workers by default (`2 * cpu_count + 1`, capped at 8).
@@ -77,7 +78,8 @@ REFLEX_API_URL=http://localhost:8000 reflex run --env prod --frontend-only --fro
 ```
 
 Alternatively, put a reverse proxy in front of both processes and route the
-backend routes (`/_event`, `/ping`, `/_upload`, `/_health`) to the backend
+backend routes (`/_event`, `/ping`, `/_upload`, `/_health`, `/_reflex/session`)
+to the backend
 port, as the `Caddyfile`s in the container examples below do.
 
 Instances of Reflex 0.9 and 0.10 cannot share a state store, whether Redis or
@@ -124,7 +126,8 @@ time or export time to retain the default for local development.
 If you want to serve the backend behind a reverse proxy at a subpath (e.g.
 nginx routing `/api/*` to Reflex), set `backend_path` on the config instead of
 baking the prefix into `api_url`. Every backend endpoint (event websocket,
-`/ping`, `/_upload`, `/_health`, `/_all_routes`) is mounted under that prefix,
+`/ping`, `/_upload`, `/_health`, `/_reflex/session`, `/_all_routes`) is mounted
+under that prefix,
 and the frontend baked into the export automatically calls the backend at the
 prefixed URLs — no request rewriting in the proxy is required.
 

@@ -83,8 +83,9 @@ replacement connection is accepted. Storage keys are scoped to the backend URL.
 defaults to seven days. `session_token_max_age` is the maximum age of the
 session and also defaults to seven days. It counts from the first issue of the
 session, and renewal cannot extend a session past it. At that age the session
-ends: the next connection gets a new session, and under `enforce` the tab gets
-a new token and fresh state. With both defaults, a session lasts seven days.
+ends: the next renewal gets a new session from `POST /_reflex/session`, and
+under `enforce` the tab gets a new token and fresh state. Until then, uploads
+from that tab return 403. With both defaults, a session lasts seven days.
 Set `session_token_ttl` below `session_token_max_age` to end an idle session
 sooner while an active one renews up to the maximum age.
 `session_token_refresh_interval` defaults to half that lifetime. Only
@@ -92,12 +93,19 @@ sooner while an active one renews up to the maximum age.
 shared cache never stores the credential. A browser timer renews an idle
 session at that age, and a tab that becomes visible after that age renews at
 once, so a suspended timer does not require a new session while the socket
-survives. A socket that connected with a valid cookie renews it over HTTP: the
-backend sends the credential over the socket only when the browser has no valid
-cookie, so page scripts cannot read a credential that is in the cookie.
+survives. A socket that connected with a valid cookie always renews it over
+HTTP and never receives a credential, so page scripts cannot read a credential
+that is in the cookie. If that cookie expired in the meantime, the endpoint
+issues a new session. Only a socket that connected without a cookie receives a
+credential over the socket.
 A socket retains its validated session for its
 connected lifetime. Cookie expiry is checked on subsequent HTTP requests and
 reconnections. Refresh retains the session ID and existing tab bindings.
+
+If the exchange keeps failing, for example because a reverse proxy does not
+forward `/_reflex/session`, the frontend stops holding uploads after three
+attempts and keeps retrying. Under `enforce` those uploads return 403 until
+the exchange works.
 
 ## Origins, cookies, and embedding
 
@@ -112,7 +120,9 @@ accept another app's session even when they share a signing key.
 Installing an in-band credential requires a trusted Origin. Reflex trusts
 `deploy_url`, `api_url`, explicit `cors_allowed_origins`, the development
 loopback frontend origins, and a page on the host that the request reached
-(for example a development server opened through a LAN address).
+when it uses the same scheme. Development accepts any port of that host (for
+example a development server opened through a LAN address); production accepts
+only the origin of the request itself.
 `cors_allowed_origins=["*"]` does **not** authorize credential exchange. Configure `deploy_url` for the frontend and list any
 EmbedPlugin host origins explicitly. This prevents another origin from
 installing a session credential it already knows. A valid existing cookie
