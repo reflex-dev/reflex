@@ -413,6 +413,87 @@ def test_page_stylesheet_not_found(tmp_path: Path, mocker: MockerFixture):
     )
 
 
+def _linked_stylesheet_project(tmp_path: Path, mocker: MockerFixture) -> Path:
+    """Lay out a shared stylesheet linked into the assets directory, like rx.asset(shared=True).
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+
+    Returns:
+        The real stylesheet in the package directory.
+    """
+    real = tmp_path / "pkg" / "css" / "site.css"
+    real.parent.mkdir(parents=True)
+    real.write_text(".site { background: url(../images/y.png); }")
+    link = tmp_path / "assets" / "external" / "pkg" / "css" / "site.css"
+    link.parent.mkdir(parents=True)
+    link.symlink_to(real)
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=tmp_path)
+    mocker.patch(
+        "reflex.compiler.compiler.get_web_dir",
+        return_value=tmp_path / constants.Dirs.WEB,
+    )
+    return real
+
+
+@pytest.mark.skipif(os.name == "nt", reason="symlinks need a privilege on Windows")
+def test_stylesheets_link_to_their_real_file(tmp_path: Path, mocker: MockerFixture):
+    """App and page stylesheets point at their real file, so its relative urls resolve there.
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+    """
+    real = _linked_stylesheet_project(tmp_path, mocker)
+    styles = tmp_path / constants.Dirs.WEB / "styles"
+
+    _, code = compiler.compile_root_stylesheet(
+        ["/external/pkg/css/site.css"], reset_style=False
+    )
+    links = compiler.compile_page_stylesheets(["/external/pkg/css/site.css"])
+
+    assert code == "@layer __reflex_base;\n@import url('./external/pkg/css/site.css');"
+    assert str(links) == (
+        '[({ ["rel"] : "stylesheet", ["href"] : reflexPageStylesheet0 })]'
+    )
+    target = styles / "external" / "pkg" / "css" / "site.css"
+    assert target.is_symlink()
+    assert target.readlink() == real
+
+
+@pytest.mark.skipif(os.name == "nt", reason="symlinks need a privilege on Windows")
+def test_stylesheet_copied_where_links_fail(tmp_path: Path, mocker: MockerFixture):
+    """Without symlinks a stylesheet is copied, never written through an old link.
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+    """
+    real = _linked_stylesheet_project(tmp_path, mocker)
+    target = (
+        tmp_path
+        / constants.Dirs.WEB
+        / "styles"
+        / "external"
+        / "pkg"
+        / "css"
+        / "site.css"
+    )
+    target.parent.mkdir(parents=True)
+    target.symlink_to(real)
+    mocker.patch(
+        "reflex.compiler.compiler._link_shared_asset",
+        side_effect=OSError("A required privilege is not held by the client"),
+    )
+
+    compiler.compile_root_stylesheet(["/external/pkg/css/site.css"], reset_style=False)
+
+    assert not target.is_symlink()
+    assert target.read_text() == ".site { background: url(../images/y.png); }"
+    assert real.read_text() == ".site { background: url(../images/y.png); }"
+
+
 def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
     if importlib.util.find_spec("sass") is None:
         pytest.skip(

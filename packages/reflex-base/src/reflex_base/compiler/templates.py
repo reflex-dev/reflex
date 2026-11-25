@@ -776,6 +776,7 @@ def vite_config_template(
     prod_react: bool = False,
     warmup_routes: bool = False,
     react_compiler: bool = False,
+    fs_allow: Sequence[str] = (),
 ):
     """Template for vite.config.js.
 
@@ -792,10 +793,18 @@ def vite_config_template(
         warmup_routes: Pre-transform every route module when the dev server
             starts, so the first visit to a page does not wait on Vite.
         react_compiler: Enable React Compiler for generated components.
+        fs_allow: Directories the dev server may serve files from besides the
+            frontend's own, such as the fonts a linked stylesheet references.
 
     Returns:
         Rendered vite.config.js content as string.
     """
+    fs_allow_line = (
+        "\n    fs: { allow: [searchForWorkspaceRoot(process.cwd()), "
+        f"...{json.dumps(list(fs_allow))}] }},"
+        if fs_allow
+        else ""
+    )
     if allowed_hosts is True:
         allowed_hosts_line = "\n    allowedHosts: true,"
     elif isinstance(allowed_hosts, list) and allowed_hosts:
@@ -896,7 +905,7 @@ function prodReactPrebundle() {
     react_compiler_plugin = "    reactCompiler(),\n" if react_compiler else ""
     return rf"""import {{ fileURLToPath, URL }} from "url";
 import {{ reactRouter }} from "@react-router/dev/vite";
-import {{ defineConfig }} from "vite";
+import {{ defineConfig, searchForWorkspaceRoot }} from "vite";
 import safariCacheBustPlugin from "./vite-plugin-safari-cachebust.js";
 {react_compiler_import}
 // Ensure that bun always uses the react-dom/server.node functions.
@@ -995,7 +1004,7 @@ export default defineConfig((config) => ({{
     hmr: {"true" if experimental_hmr else "false"},
   }},{prod_react_str}
   server: {{
-    port: process.env.PORT,{allowed_hosts_line}
+    port: process.env.PORT,{allowed_hosts_line}{fs_allow_line}
     hmr: {"true" if hmr else "false"},{warmup_str}
     watch: {{
       ignored: [

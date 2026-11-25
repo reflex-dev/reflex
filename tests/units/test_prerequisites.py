@@ -544,6 +544,37 @@ def test_initialise_vite_config(config, expected_output):
     assert expected_output in output
 
 
+def test_vite_config_allows_the_app_root(tmp_path: Path, monkeypatch):
+    """The dev server may serve files under the app root, which linked stylesheets reference."""
+    from reflex_base.compiler.templates import vite_config_template
+
+    kwargs = {
+        "base": "/",
+        "hmr": True,
+        "force_full_reload": False,
+        "experimental_hmr": False,
+        "sourcemap": False,
+    }
+    fs_line = (
+        "\n    fs: { allow: [searchForWorkspaceRoot(process.cwd()), "
+        '...["/app", "/lib"]] },'
+    )
+    without = vite_config_template(**kwargs)
+
+    assert vite_config_template(**kwargs, fs_allow=["/app", "/lib"]) == without.replace(
+        "    port: process.env.PORT,", "    port: process.env.PORT," + fs_line
+    )
+    assert "fs:" not in without
+
+    monkeypatch.chdir(tmp_path)
+    output = _compile_vite_config(Config(app_name="test"))
+    app_root_line = (
+        "    fs: { allow: [searchForWorkspaceRoot(process.cwd()), "
+        f"...{json.dumps([tmp_path.as_posix()])}] }},"
+    )
+    assert [line for line in output.splitlines() if "fs:" in line] == [app_root_line]
+
+
 def test_react_compiler_vite_config():
     """Only opt-in apps load React Compiler before the router's transforms."""
     default_output = _compile_vite_config(Config(app_name="test"))

@@ -5,6 +5,7 @@ Tests precompressed assets against a real prod build served via AppHarnessProd.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Generator
 from pathlib import Path
 
@@ -36,6 +37,42 @@ def ProdBuildPipelineApp():
             rx.heading("Build Pipeline Test"),
             rx.text("Hello"),
         )
+
+
+def LinkedStylesheetApp():
+    """An app whose stylesheets are a package's, linked in like rx.asset(shared=True)."""
+    import zlib
+    from pathlib import Path
+
+    import reflex as rx
+
+    # The font and image next to the package's stylesheets are not linked
+    # themselves. Above Vite's 4 KiB inline limit, the build emits them as files.
+    package = Path.cwd() / "site_package"
+    (package / "css").mkdir(parents=True, exist_ok=True)
+    (package / "fonts").mkdir(exist_ok=True)
+    (package / "images").mkdir(exist_ok=True)
+    (package / "fonts" / "x.woff2").write_bytes(zlib.compress(b"font", 0) * 500)
+    (package / "images" / "y.png").write_bytes(zlib.compress(b"image", 0) * 500)
+    (package / "css" / "site.css").write_text(
+        '@font-face { font-family: Site; src: url(../fonts/x.woff2) format("woff2"); }'
+    )
+    (package / "css" / "page.css").write_text(
+        ".hero { background-image: url(../images/y.png); }"
+    )
+    external = Path.cwd() / "assets" / "external" / "site_package" / "css"
+    external.mkdir(parents=True, exist_ok=True)
+    for name in ("site.css", "page.css"):
+        if not (external / name).is_symlink():
+            (external / name).symlink_to(package / "css" / name)
+
+    app = rx.App(stylesheets=["/external/site_package/css/site.css"])
+    app.add_page(rx.el.main("Index", style={"font_family": "Site"}), route="/")
+    app.add_page(
+        rx.el.main("Styled", class_name="hero"),
+        route="/styled",
+        stylesheets=["/external/site_package/css/page.css"],
+    )
 
 
 @pytest.fixture(scope="module")
@@ -85,6 +122,54 @@ def _find_build_files(harness: AppHarness, pattern: str) -> list[Path]:
     """
     static_dir = harness.app_path / prerequisites.get_web_dir() / constants.Dirs.STATIC
     return sorted(static_dir.rglob(pattern))
+
+
+@pytest.fixture(scope="module")
+def linked_stylesheet_app(
+    app_harness_env: type[AppHarness],
+    tmp_path_factory: pytest.TempPathFactory,
+) -> Generator[AppHarness, None, None]:
+    """Build and serve the linked stylesheet app in production mode.
+
+    Yields:
+        A running production app harness.
+    """
+    if app_harness_env is not AppHarnessProd:
+        pytest.skip("build pipeline checks are prod-only")
+
+    root = tmp_path_factory.mktemp("linked_stylesheet")
+    # Without Tailwind, which rewrites the urls of the stylesheets it imports
+    # against its own base instead of the importing stylesheet.
+    (root / "rxconfig.py").write_text(
+        'import reflex as rx\n\nconfig = rx.Config(app_name="linked_stylesheet", plugins=[])\n'
+    )
+    (root / "linked_stylesheet").mkdir()
+    (root / "linked_stylesheet" / "__init__.py").touch()
+    with app_harness_env.create(
+        root=root,
+        app_name="linked_stylesheet",
+        app_source=LinkedStylesheetApp,
+    ) as harness:
+        yield harness
+
+
+def test_linked_stylesheet_urls_resolve_next_to_their_real_file(
+    linked_stylesheet_app: AppHarness,
+):
+    """A shared stylesheet's relative urls become fingerprinted build assets.
+
+    Args:
+        linked_stylesheet_app: The running prod harness.
+    """
+    [font] = _find_build_files(linked_stylesheet_app, "assets/x-*.woff2")
+    [image] = _find_build_files(linked_stylesheet_app, "assets/y-*.png")
+    urls = {
+        url
+        for css in _find_build_files(linked_stylesheet_app, "assets/*.css")
+        for url in re.findall(r"url\(([^)]+)\)", css.read_text())
+    }
+
+    assert urls == {f"/assets/{font.name}", f"/assets/{image.name}"}
 
 
 @pytest.mark.parametrize(

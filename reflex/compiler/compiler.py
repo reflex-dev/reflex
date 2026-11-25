@@ -48,6 +48,7 @@ from reflex_components_core.base.fragment import Fragment
 from reflex_components_radix.plugin import RadixThemesPlugin
 from rich.progress import Progress
 
+from reflex.assets import _link_shared_asset
 from reflex.compiler import templates, utils
 from reflex.compiler.plugins import default_page_plugins
 from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin, scope_memo_body_hooks
@@ -452,8 +453,28 @@ def _resolve_stylesheet_files(stylesheet: str) -> list[Path]:
     return files
 
 
+def _link_stylesheet(source: Path, target: Path) -> None:
+    """Link a stylesheet into the styles directory, or copy it where links fail.
+
+    The bundler resolves a linked stylesheet to the file it points at, so its
+    relative ``url()`` references resolve next to its real location: next to a
+    shared asset's package file rather than in the styles directory.
+
+    Args:
+        source: The stylesheet's real path.
+        target: Where the styles directory gets the stylesheet.
+    """
+    try:
+        _link_shared_asset(target, source)
+    except OSError:
+        # Symlinks need a privilege on Windows. Copying through a link left by
+        # an earlier compile would overwrite the source, so drop it first.
+        target.unlink(missing_ok=True)
+        path_ops.cp(src=source, dest=target, overwrite=True)
+
+
 def _compile_stylesheet_files(files: Iterable[Path]) -> list[str]:
-    """Copy stylesheet asset files into the styles directory, compiling sass.
+    """Link stylesheet asset files into the styles directory, compiling sass.
 
     Args:
         files: The stylesheet files in the assets directory.
@@ -472,7 +493,7 @@ def _compile_stylesheet_files(files: Iterable[Path]) -> list[str]:
         target.parent.mkdir(parents=True, exist_ok=True)
 
         if stylesheet.suffix == ".css":
-            path_ops.cp(src=stylesheet, dest=target, overwrite=True)
+            _link_stylesheet(stylesheet.resolve(), target)
         else:
             try:
                 from sass import compile as sass_compile
