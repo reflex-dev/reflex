@@ -76,14 +76,21 @@ export const refs = {};
 globalThis.refs = refs;
 
 /**
+ * Get a stable ref object from the registry, creating it before its component mounts if needed.
+ * @param name The registry key, e.g. "ref_my_id".
+ * @returns The ref object.
+ */
+export const getRegisteredRef = (name) => {
+  return (refs[name] ??= { current: null });
+};
+
+/**
  * Create a ref and register it in `refs` under the given name.
  * @param name The registry key, e.g. "ref_my_id".
  * @returns The ref object.
  */
 export const useRegisteredRef = (name) => {
-  const ref = useRef(null);
-  refs[name] = ref;
-  return ref;
+  return getRegisteredRef(name);
 };
 
 // The client state store, for code evaluated outside this module's scope: a

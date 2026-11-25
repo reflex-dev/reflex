@@ -8,6 +8,8 @@
  * `tests/units`, which predate this package.
  */
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { createElement, memo } from "react";
+import { renderToString } from "react-dom/server";
 
 import {
   applyDelta,
@@ -16,6 +18,7 @@ import {
   generateUUID,
   getBackendURL,
   getFormData,
+  getRegisteredRef,
   getRefValue,
   getRefValues,
   getToken,
@@ -39,7 +42,9 @@ import {
   pyStrSlice,
   pyStrSplit,
   ReflexEvent,
+  refs,
   spreadArraysOrObjects,
+  useRegisteredRef,
 } from "$/utils/state";
 
 const clearCookies = () => {
@@ -54,6 +59,28 @@ const clearCookies = () => {
 beforeEach(() => {
   localStorage.clear();
   clearCookies();
+});
+
+test("component refs are stable when read before a memoized target mounts", () => {
+  const name = `ref_memo_target_${generateUUID()}`;
+  let parentRef;
+
+  const MemoTarget = memo(() => {
+    const targetRef = useRegisteredRef(name);
+    expect(targetRef).toBe(parentRef);
+    return createElement("div", { ref: targetRef });
+  });
+
+  const Parent = () => {
+    parentRef = getRegisteredRef(name);
+    return createElement(MemoTarget);
+  };
+
+  try {
+    expect(renderToString(createElement(Parent))).toBe("<div></div>");
+  } finally {
+    delete refs[name];
+  }
 });
 
 describe("python truthiness", () => {
