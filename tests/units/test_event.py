@@ -872,7 +872,9 @@ def test_set_clipboard_content_and_url_raises_value_error():
     for set_clipboard_fn in _SET_CLIPBOARD_ENTRY_POINTS:
         with pytest.raises(ValueError) as excinfo:
             set_clipboard_fn("hello", url="/page.md")
-        assert str(excinfo.value) == "set_clipboard: pass either content or url, not both"
+        assert (
+            str(excinfo.value) == "set_clipboard: pass either content or url, not both"
+        )
 
 
 def test_set_clipboard_url_literal_compiles_full_event():

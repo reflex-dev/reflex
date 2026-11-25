@@ -143,13 +143,19 @@ This form has a stricter usage contract than the text form:
   `application/x-www-form-urlencoded`, and any `+json`, `+xml`, or `+yaml`
   suffix type. `text/html` and `application/xhtml+xml` are refused, as is
   any other type. The body is read as UTF-8 text.
-- On browsers with `ClipboardItem` (Chrome 98+, Firefox 127+, Safari
-  13.1+, per browser compatibility data) the write is armed with a
-  promise-backed item so it stays bound to the gesture. On older browsers
-  a `writeText` fallback runs after the fetch resolves, which no longer
-  binds the write to the gesture and can be denied. Browsers older than
-  these versions may throw at write time; this behavior is inferred from
-  the specification and is not separately verified.
+- The write path is chosen by capability presence at runtime, not by
+  version. When `ClipboardItem` and `navigator.clipboard.write` are both
+  present, the write is armed with a promise-backed item so it stays
+  bound to the gesture. Arming a promise-valued item requires Chrome 98+,
+  Firefox 127+, or Safari 13.1+ per browser compatibility data. Browsers
+  below that floor still expose the `ClipboardItem` interface (for
+  example Chrome 76 through 97), so they take the promise-backed branch
+  and the constructor or write fails there; that failure is tagged and
+  reported like any other write failure. This below-floor behavior is
+  inferred from the specification and is not separately verified. Only
+  when `ClipboardItem` or `navigator.clipboard.write` is actually absent
+  does a `writeText` fallback run after the fetch resolves, which no
+  longer binds the write to the gesture and can be denied.
 
 Failures are reported, never silent: a failed fetch (an HTTP error or a
 refused content type) or a failed write logs a tagged
