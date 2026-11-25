@@ -142,3 +142,67 @@ def test_reference_html_stays_within_payload_budget(route, budget):
     """Catch accidental reintroduction of repeated inherited API tables."""
     page = WEB / "build/client/docs" / route / "index.html"
     assert page.stat().st_size < budget, (route, page.stat().st_size, budget)
+
+
+class PageSections(HTMLParser):
+    """Collect the navbar tabs and sidebar categories a page marks as current."""
+
+    def __init__(self, html: str):
+        super().__init__()
+        self.tabs = []
+        self.mobile_tabs = []
+        self.categories = []
+        self._label = None
+        self.feed(html)
+
+    def handle_starttag(self, tag, attrs):
+        """Note current navbar links and sidebar categories."""
+        attrs = dict(attrs)
+        if tag != "a":
+            return
+        classes = (attrs.get("class") or "").split()
+        current = attrs.get("aria-current")
+        if current == "page" and "docs-navbar-link" in classes:
+            self._label = self.tabs
+        elif current == "page" and "docs-navbar-mobile-link" in classes:
+            self._label = self.mobile_tabs
+        elif current == "true" and (label := attrs.get("aria-label", "")).startswith(
+            "Navigate to "
+        ):
+            self.categories.append(label.removeprefix("Navigate to "))
+
+    def handle_data(self, data):
+        """Record the text of a current navbar link."""
+        if self._label is not None and data.strip():
+            self._label.append(data.strip())
+            self._label = None
+
+
+@pytest.mark.xfail(
+    not SITEMAP.is_file(),
+    reason="Build the docs before validating prerendered navigation.",
+    run=False,
+)
+@pytest.mark.parametrize(
+    ("route", "tab", "categories"),
+    [
+        ("", "Overview", []),
+        ("ai", "Build with AI", ["Build with AI"]),
+        ("ai/integrations/okta", "Build with AI", ["AI Builder"]),
+        ("getting-started/introduction", "Framework", ["Framework"]),
+        ("wrapping-react/library-and-tags", "Framework", ["Framework"]),
+        ("library/forms/button", "Framework", ["Components"]),
+        ("changelog/reflex-hosting-cli", "Framework", ["API Reference"]),
+        ("enterprise/overview", "Framework", ["Enterprise"]),
+        ("hosting/overview", "Cloud", []),
+        ("hosting/deploy-quick-start", "Cloud", []),
+    ],
+)
+def test_prerendered_pages_mark_their_section(route, tab, categories):
+    """Served HTML marks each page's section before any JavaScript runs.
+
+    Regression test: every page's HTML marked the Framework tab, and substring
+    route matching gave library-and-tags the Components sidebar.
+    """
+    page = PageSections((WEB / "build/client/docs" / route / "index.html").read_text())
+    assert (page.tabs, page.mobile_tabs, page.categories) == ([tab], [tab], categories)

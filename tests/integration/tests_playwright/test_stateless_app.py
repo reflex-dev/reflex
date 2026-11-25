@@ -2,7 +2,7 @@
 
 from collections.abc import Generator
 
-import httpx
+import httpx2
 import pytest
 from playwright.sync_api import Page, expect
 from reflex_base.config import get_config
@@ -68,10 +68,10 @@ def test_statelessness(stateless_app: AppHarness, page: Page):
     assert stateless_app.backend.started
 
     config = get_config()
-    res = httpx.get(config.api_url + config.prepend_backend_path(str(Endpoint.EVENT)))
+    res = httpx2.get(config.api_url + config.prepend_backend_path(str(Endpoint.EVENT)))
     assert res.status_code == 404
 
-    res2 = httpx.get(Endpoint.PING.get_url())
+    res2 = httpx2.get(Endpoint.PING.get_url())
     assert res2.status_code == 200
 
     page.goto(stateless_app.frontend_url)

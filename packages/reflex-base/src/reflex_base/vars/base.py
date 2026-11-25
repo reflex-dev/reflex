@@ -1150,10 +1150,12 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     ) -> ObjectVar[VAR_TYPE]: ...
 
     @overload
-    def to(self, output: VAR_SUBCLASS, var_type: None = None) -> VAR_SUBCLASS: ...
+    def to(
+        self, output: type[VAR_SUBCLASS], var_type: types.GenericType | None = None
+    ) -> VAR_SUBCLASS: ...
 
     @overload
-    def to(
+    def to(  # pyright: ignore[reportOverlappingOverload]
         self,
         output: type[OUTPUT] | types.GenericType,
         var_type: types.GenericType | None = None,
@@ -4480,6 +4482,56 @@ class Field(Generic[FIELD_TYPE]):
         """
         raise self._no_frontend_var_error()
 
+    def _has_no_frontend_var(self) -> bool:
+        """Whether class access reaches the field itself, not a Var.
+
+        Returns:
+            Whether the field is a backend var or a mixin's field.
+        """
+        return self._var is None and (
+            self._backend or getattr(self._owner, "_mixin", False)
+        )
+
+    def __eq__(self, other: object) -> bool:
+        """Compare by identity, refusing to compare a backend var with a value.
+
+        Class access reaches a backend var's field itself, so ``State._x == "a"``
+        would otherwise be a plain ``False``, and ``rx.cond`` on it would always
+        take the same branch. Comparing two fields still works, by identity.
+        ``!=`` uses this method too.
+
+        Args:
+            other: The object to compare with.
+
+        Returns:
+            Whether the two are the same field.
+
+        Raises:
+            BackendVarFormatError: If the field has no frontend var and the
+                other object is not a field.
+        """
+        if not isinstance(other, Field):
+            if self._has_no_frontend_var():
+                raise self._no_frontend_var_error()
+            return NotImplemented
+        return self is other
+
+    # Defining __eq__ would otherwise make fields unhashable.
+    __hash__ = object.__hash__
+
+    def __bool__(self) -> bool:
+        """Refuse to truth-test a backend var, which would always be true.
+
+        Returns:
+            True, for a field with a frontend var.
+
+        Raises:
+            BackendVarFormatError: If the field has no frontend var.
+        """
+        if self._has_no_frontend_var():
+            raise self._no_frontend_var_error()
+        return True
+
     def _no_frontend_var_error(self) -> BackendVarFormatError:
         """Build the error for using the field where a frontend var is needed.
 
@@ -5377,6 +5429,9 @@ class BaseStateMeta(ABCMeta):
 
         Returns:
             The new class.
+
+        Raises:
+            StateValueError: If a class attribute is a dataclasses.field(...).
         """
         lookup_order = _linearize_bases(bases)
         state_bases = [
@@ -5404,6 +5459,13 @@ class BaseStateMeta(ABCMeta):
                     ).items()
                     if key.startswith("_")
                 )
+        for key, value in namespace.items():
+            if isinstance(value, dataclasses.Field):
+                msg = (
+                    f"{name}.{key} uses dataclasses.field(...), which state "
+                    "classes do not support. Use rx.field(...) instead."
+                )
+                raise StateValueError(msg)
         private = _private_prefixes(name)
         own_fields = _unannotated_fields(namespace, private) | _annotated_fields(
             namespace, lookup_order, private, strict=True
