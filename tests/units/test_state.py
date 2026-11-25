@@ -8077,6 +8077,204 @@ def test_wrapper_above_rx_event_is_deprecated_and_still_runs() -> None:
         )
 
 
+def _wrapped_handler_warnings(caplog: pytest.LogCaptureFixture) -> list[str]:
+    """Collect the messages of the deprecation warnings that were logged.
+
+    Args:
+        caplog: The log capture fixture.
+
+    Returns:
+        The full message of every captured deprecation warning, with the
+        run-dependent source location replaced by a fixed placeholder.
+    """
+    messages = []
+    for record in caplog.records:
+        if record.name != "reflex.deprecation":
+            continue
+        message = record.getMessage()
+        if location := getattr(record, "location", None):
+            message = message.removesuffix(f"({location})") + "(<location>)"
+        messages.append(message)
+    return messages
+
+
+def _expected_wrapped_handler_warning(name: str) -> str:
+    """Build the full warning expected for a method decorated above @rx.event.
+
+    Args:
+        name: The method name.
+
+    Returns:
+        The complete expected message, as normalized by
+        ``_wrapped_handler_warnings``.
+    """
+    return (
+        "Decorators above @rx.event has been deprecated in version 0.11.0. "
+        f"`{name}` is decorated above @rx.event; apply other decorators below it. "
+        "It will be completely removed in 1.0. (<location>)"
+    )
+
+
+def test_wrapper_above_rx_event_warning_names_every_method(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Each method decorated above @rx.event is named, not just the first of the class."""
+    class_body_values: list = []
+    with caplog.at_level("WARNING", logger="reflex.deprecation"):
+
+        class ManyWrappedState(BaseState):
+            @_logged
+            @rx.event
+            def first_wrapped(self):
+                pass
+
+            class_body_values.append(first_wrapped)
+
+            @_logged
+            @rx.event
+            def second_wrapped(self):
+                pass
+
+    assert _wrapped_handler_warnings(caplog) == [
+        _expected_wrapped_handler_warning("first_wrapped"),
+        _expected_wrapped_handler_warning("second_wrapped"),
+    ]
+
+    # Repeating the setup of an already-warned method is deduplicated.
+    caplog.clear()
+    with caplog.at_level("WARNING", logger="reflex.deprecation"):
+        ManyWrappedState._item_is_event_handler("first_wrapped", class_body_values[0])
+    assert _wrapped_handler_warnings(caplog) == []
+
+
+def test_wrapper_above_rx_event_warns_once_per_method_for_dynamic_states(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Fresh classes built from one definition do not repeat the warning."""
+
+    class WrappedCounter(rx.ComponentState):
+        @_logged
+        @rx.event
+        def increment(self):
+            pass
+
+        @_logged
+        @rx.event
+        def decrement(self):
+            pass
+
+        @classmethod
+        def get_component(cls, *children, **props):
+            return rx.el.div(*children, **props)
+
+    def make_local_state() -> type[BaseState]:
+        class LocalWrappedState(BaseState):
+            @_logged
+            @rx.event
+            def local_first(self):
+                pass
+
+            @_logged
+            @rx.event
+            def local_second(self):
+                pass
+
+        return LocalWrappedState
+
+    with caplog.at_level("WARNING", logger="reflex.deprecation"):
+        components = [WrappedCounter.create() for _ in range(10)]
+        local_states = [make_local_state() for _ in range(3)]
+
+    assert _wrapped_handler_warnings(caplog) == [
+        _expected_wrapped_handler_warning("increment"),
+        _expected_wrapped_handler_warning("decrement"),
+        _expected_wrapped_handler_warning("local_first"),
+        _expected_wrapped_handler_warning("local_second"),
+    ]
+    # Every fresh class still gets its own handlers.
+    for state in (*(component.State for component in components), *local_states):
+        assert state is not None
+        assert all(handler.state is state for handler in state.event_handlers.values())
+
+
+def _partial_handler_impl(self, n: int = 0):
+    """Back the functools.partial handed to rx.event.
+
+    Args:
+        self: The state instance.
+        n: A bound argument.
+    """
+
+
+class _CallableHandler:
+    """A callable instance handed to rx.event; it has no ``__qualname__``."""
+
+    def __call__(self, state):
+        """Handle the event.
+
+        Args:
+            state: The state instance.
+        """
+
+
+@pytest.mark.parametrize(
+    "make_fn",
+    [lambda: functools.partial(_partial_handler_impl, n=2), _CallableHandler],
+    ids=["partial", "callable_instance"],
+)
+def test_wrapper_above_rx_event_of_callable_without_qualname_warns(
+    make_fn: Callable[[], Any], caplog: pytest.LogCaptureFixture
+) -> None:
+    """A wrapper above rx.event(<callable without __qualname__>) still only warns.
+
+    Args:
+        make_fn: Builds the callable handed to rx.event.
+        caplog: The log capture fixture.
+    """
+    fn = make_fn()
+    assert not hasattr(fn, "__qualname__")
+    with caplog.at_level("WARNING", logger="reflex.deprecation"):
+
+        class NoQualnameState(BaseState):
+            wrapped_no_qualname = _logged(rx.event(fn))
+
+    assert _wrapped_handler_warnings(caplog) == [
+        _expected_wrapped_handler_warning("wrapped_no_qualname"),
+    ]
+    assert isinstance(NoQualnameState.wrapped_no_qualname, EventHandler)
+
+
+def test_wrapper_above_rx_event_warning_names_every_alias(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """One wrapped handler assigned under two attribute names is named once per name."""
+    class_body_values: list = []
+    with caplog.at_level("WARNING", logger="reflex.deprecation"):
+
+        class AliasedWrappedState(BaseState):
+            @_logged
+            @rx.event
+            def aliased_original(self):
+                pass
+
+            aliased_copy = aliased_original
+            class_body_values.append(aliased_original)
+
+    assert _wrapped_handler_warnings(caplog) == [
+        _expected_wrapped_handler_warning("aliased_original"),
+        _expected_wrapped_handler_warning("aliased_copy"),
+    ]
+
+    # Each name is deduplicated on its own: only the new one is reported.
+    caplog.clear()
+    with caplog.at_level("WARNING", logger="reflex.deprecation"):
+        for name in ("aliased_original", "aliased_copy", "not_yet_warned"):
+            AliasedWrappedState._item_is_event_handler(name, class_body_values[0])
+    assert _wrapped_handler_warnings(caplog) == [
+        _expected_wrapped_handler_warning("not_yet_warned"),
+    ]
+
+
 def test_stacked_wrappers_above_rx_event_still_run() -> None:
     """Decorators stacked above @rx.event are found through the whole __wrapped__ chain."""
     from reflex.utils import console
