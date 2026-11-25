@@ -103,9 +103,8 @@ class ToastProps(NoExtrasAllowedProps):
     # If false, it'll prevent the user from dismissing the toast.
     dismissible: bool | None
 
-    # TODO: fix serialization of icons for toast? (might not be possible yet)
     # Icon displayed in front of toast's text, aligned vertically.
-    # icon: Icon | None = None # noqa: ERA001
+    icon: Component | Var | None
 
     # Renders a primary button, clicking it will close the toast.
     action: ToastAction | None
@@ -157,6 +156,8 @@ class ToastProps(NoExtrasAllowedProps):
             d["cancel"] = self.cancel
             if isinstance(self.cancel, dict):
                 d["cancel"] = ToastAction(**self.cancel)
+        if "icon" in d:
+            d["icon"] = self.icon
         if "onDismiss" in d:
             d["onDismiss"] = format.format_queue_events(
                 self.on_dismiss, _toast_callback_signature
