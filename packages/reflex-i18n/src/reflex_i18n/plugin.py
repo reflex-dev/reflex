@@ -51,10 +51,10 @@ from .vars import (
 )
 
 if TYPE_CHECKING:
-    from reflex_base.components.component import Component
-    from reflex_base.plugins.compiler import PageContext
+    from contextlib import AbstractContextManager
 
-    from reflex.app import UnevaluatedPage
+    from reflex_base.components.component import Component
+    from reflex_base.plugins.compiler import PageContext, PageDefinition
 
 logger = logging.getLogger(__name__)
 
@@ -175,10 +175,7 @@ def _localized_page(component: Any, locale: str) -> Any:
 
         from reflex.compiler.compiler import into_component
 
-        # The page function runs in its route's locale, also where a backend
-        # evaluates pages without the compiler's hooks.
-        with active_locale(locale):
-            page = into_component(component)
+        page = into_component(component)
         # Auto-memoization already gives each stateful component a function
         # below LocaleRoute; sealing the whole page would undo its per-component
         # re-renders.
@@ -366,48 +363,41 @@ class I18nPlugin(Plugin):
                 if localized == base_path:
                     # Default-at-root: the app's own page already serves this.
                     continue
+                # A plain string head text is a message, like the page's own.
+                with active_locale(locale):
+                    title = _translate_text(page.title)
+                    description = _translate_text(page.description)
+                    meta = [_translate_meta(meta) for meta in page.meta]
                 add_page(
                     _localized_page(page.component, locale),
                     route=localized,
-                    title=page.title,
-                    description=page.description,
+                    title=title,
+                    description=description,
                     image=page.image,
                     on_load=page.on_load,
-                    meta=page.meta,
+                    meta=meta,
                     context={**(page.context or {}), _PAGE_LOCALE_KEY: locale},
                 )
 
-    def eval_page(
-        self, page_fn: Any, /, *, page: UnevaluatedPage, **kwargs: Any
-    ) -> PageContext | None:
-        """Evaluate a page in the locale its route serves, when URL routing is on.
+    def eval_page_scope(
+        self, page: PageDefinition, /, **kwargs: Any
+    ) -> AbstractContextManager[None] | None:
+        """Build a page in the locale its route serves, when URL routing is on.
 
-        The page function, and so ``get_locale()`` and ``gettext``, run in
-        that locale, and a plain string ``title``, ``description`` or meta tag
-        ``content`` is translated into it; the page is otherwise evaluated as
-        usual.
+        The page function, and so ``get_locale()``, ``gettext`` and
+        :func:`~reflex_i18n.nav.localized_url`, run in that locale.
 
         Args:
-            page_fn: The page component or component callable.
-            page: The page being evaluated.
-            kwargs: The compiler context, passed on.
+            page: The page about to be evaluated.
+            kwargs: The compiler context (unused).
 
         Returns:
-            The evaluated page, or None without URL routing.
+            The route's locale scope, or None without URL routing.
         """
         if self.routing is None:
             return None
-        from reflex.compiler.plugins.builtin import DefaultPagePlugin
-
-        locale = (page.context or {}).get(_PAGE_LOCALE_KEY, self.default_locale)
-        with active_locale(locale):
-            page = dataclasses.replace(
-                page,
-                title=_translate_text(page.title),
-                description=_translate_text(page.description),
-                meta=[_translate_meta(meta) for meta in page.meta],
-            )
-            return DefaultPagePlugin().eval_page(page_fn, page=page, **kwargs)
+        context = getattr(page, "context", None) or {}
+        return active_locale(context.get(_PAGE_LOCALE_KEY, self.default_locale))
 
     def compile_page(self, page_ctx: PageContext, /, **kwargs: Any) -> None:
         """Inject the hreflang app-wrap on every page when URL routing is on.
