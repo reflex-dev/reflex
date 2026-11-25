@@ -40,6 +40,7 @@ from .format import (
 )
 from .registry import collected_messages, format_message_list, untranslated_messages
 from .routing import PathPrefixRouting, segment_locale
+from .runtime import active_locale
 from .vars import (
     _i18n_var_data,
     _pick,
@@ -52,6 +53,8 @@ from .vars import (
 if TYPE_CHECKING:
     from reflex_base.components.component import Component
     from reflex_base.plugins.compiler import PageContext
+
+    from reflex.app import UnevaluatedPage
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +85,9 @@ _RTL_LANGUAGES = frozenset({
 })
 
 _HTML_TAG = re.compile(r"<html\b[^>]*>", re.IGNORECASE)
+
+# The page context key naming the locale a fanned-out route renders in.
+_PAGE_LOCALE_KEY = "i18n_locale"
 
 
 def _catalog_ident(locale: str) -> str:
@@ -165,7 +171,10 @@ def _localized_page(component: Any, locale: str) -> Any:
 
         from reflex.compiler.compiler import into_component
 
-        page = into_component(component)
+        # The page function runs in its route's locale, also where a backend
+        # evaluates pages without the compiler's hooks.
+        with active_locale(locale):
+            page = into_component(component)
         # Auto-memoization already gives each stateful component a function
         # below LocaleRoute; sealing the whole page would undo its per-component
         # re-renders.
@@ -324,8 +333,32 @@ class I18nPlugin(Plugin):
                     image=page.image,
                     on_load=page.on_load,
                     meta=page.meta,
-                    context={**(page.context or {}), "i18n_locale": locale},
+                    context={**(page.context or {}), _PAGE_LOCALE_KEY: locale},
                 )
+
+    def eval_page(
+        self, page_fn: Any, /, *, page: UnevaluatedPage, **kwargs: Any
+    ) -> PageContext | None:
+        """Evaluate a page in the locale its route serves, when URL routing is on.
+
+        The page function, and so ``get_locale()`` and ``gettext``, run in
+        that locale; the page is otherwise evaluated as usual.
+
+        Args:
+            page_fn: The page component or component callable.
+            page: The page being evaluated.
+            kwargs: The compiler context, passed on.
+
+        Returns:
+            The evaluated page, or None without URL routing.
+        """
+        if self.routing is None:
+            return None
+        from reflex.compiler.plugins.builtin import DefaultPagePlugin
+
+        locale = (page.context or {}).get(_PAGE_LOCALE_KEY, self.default_locale)
+        with active_locale(locale):
+            return DefaultPagePlugin().eval_page(page_fn, page=page, **kwargs)
 
     def compile_page(self, page_ctx: PageContext, /, **kwargs: Any) -> None:
         """Inject the hreflang app-wrap on every page when URL routing is on.

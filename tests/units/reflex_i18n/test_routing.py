@@ -1,9 +1,11 @@
 """Tests for URL-based locale routing (fan-out, hreflang, strategies)."""
 
 import types
+from pathlib import Path
+from typing import Any
 
 import pytest
-from reflex_i18n import I18nConfig, PathPrefixRouting
+from reflex_i18n import I18nConfig, PathPrefixRouting, get_locale, gettext
 from reflex_i18n.catalog import compile_index_module
 from reflex_i18n.component import LocaleRoute
 from reflex_i18n.config import set_active_i18n_config
@@ -260,6 +262,93 @@ def test_localized_page_keeps_a_branch_lifecycle_event_in_its_branch(
         if '"shown"' in "".join(memo_body_hooks(definition))
     ]
     assert holder.component.tag == "Text"
+
+
+def _evaluate_in_locale_pages(
+    tmp_path: Path, routing: PathPrefixRouting | None
+) -> tuple[I18nPlugin, list[tuple[str | None, str]], Any]:
+    """Configure an app translating "Hello" into German, with a recording page.
+
+    Args:
+        tmp_path: Directory for the German catalog.
+        routing: The plugin's routing.
+
+    Returns:
+        The plugin, the (locale, text) pairs the page records each time it is
+        evaluated, and the page function.
+    """
+    catalog_dir = tmp_path / "locales"
+    catalog_dir.mkdir()
+    (catalog_dir / "de.po").write_text(
+        'msgid "Hello"\nmsgstr "Hallo"\n', encoding="utf-8"
+    )
+    plugin = I18nPlugin(
+        locales=["en", "de"],
+        default_locale="en",
+        catalog_dir=catalog_dir,
+        routing=routing,
+    )
+    evaluated: list[tuple[str | None, str]] = []
+
+    def index() -> rx.Component:
+        """Record the locale and the translation the page is built with.
+
+        Returns:
+            The page.
+        """
+        evaluated.append((get_locale(), gettext("Hello")))
+        return rx.text("Home")
+
+    return plugin, evaluated, index
+
+
+def test_url_routed_pages_are_evaluated_in_their_locale(tmp_path: Path):
+    """Each route's page function runs in the locale the route serves."""
+    from reflex.app import UnevaluatedPage
+    from reflex.compiler.plugins import (
+        CompileContext,
+        CompilerHooks,
+        default_page_plugins,
+    )
+
+    plugin, evaluated, index = _evaluate_in_locale_pages(tmp_path, PathPrefixRouting())
+    app_page = UnevaluatedPage(component=index, route="index")
+    ctx = _fake_context([app_page])
+    plugin.expand_routes(add_page=ctx["add_page"], pages=ctx["pages"])  # pyright: ignore[reportCallIssue]
+    pages = [
+        app_page,
+        *(
+            UnevaluatedPage(
+                component=kw["component"], route=route, context=kw["context"]
+            )
+            for route, kw in ctx["calls"]
+        ),
+    ]
+    compile_ctx = CompileContext(
+        pages=pages, hooks=CompilerHooks(plugins=default_page_plugins(plugins=[plugin]))
+    )
+    with compile_ctx:
+        compile_ctx.compile()
+
+    assert evaluated == [("en", "Hello"), ("de", "Hallo")]
+    assert get_locale() is None
+
+
+def test_localized_page_renders_in_its_locale_without_the_compiler(tmp_path: Path):
+    """A backend evaluating a fanned page directly gets its locale too."""
+    _, evaluated, index = _evaluate_in_locale_pages(tmp_path, PathPrefixRouting())
+    _localized_page(index, "de")()
+    assert evaluated == [("de", "Hallo")]
+
+
+def test_eval_page_leaves_pages_alone_without_routing(tmp_path: Path):
+    """In cookie mode one route serves every locale, so none is set."""
+    from reflex.app import UnevaluatedPage
+
+    plugin, evaluated, index = _evaluate_in_locale_pages(tmp_path, None)
+    page = UnevaluatedPage(component=index, route="index")
+    assert plugin.eval_page(index, page=page) is None
+    assert evaluated == []
 
 
 def test_expand_routes_noop_without_routing():

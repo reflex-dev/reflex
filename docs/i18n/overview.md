@@ -401,6 +401,25 @@ rx.i18n.language_switcher()  # prebuilt <a> links
 rx.link("Deutsch", href=rx.i18n.locale_url("de", "/pricing"))
 ```
 
+### Translating while a page is built
+
+With URL routing every route serves exactly one locale, and its page function
+runs in it: `rx.i18n.get_locale()` returns the route's locale and `gettext`
+translates into it. Text translated this way is plain text in that route's
+code, prerendered like any other, so a page that needs no client-side switching
+can use `gettext` instead of `rx.t`:
+
+```python
+from reflex_i18n import gettext as _
+
+
+def pricing():
+    return rx.heading(_("Pricing"))  # "Preise" on /de/pricing
+```
+
+A `@rx.memo` component is compiled once for all locales, outside any page:
+use `rx.t` inside it, or pass the translated text in as a prop.
+
 Notes:
 
 - Page `title`/`meta` translated with `rx.t` still resolve in the default
