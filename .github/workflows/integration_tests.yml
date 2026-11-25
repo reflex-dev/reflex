@@ -41,6 +41,7 @@ jobs:
       pull-requests: read
     outputs:
       run: ${{ steps.filter.outputs.changed }}
+      docs: ${{ steps.docs.outputs.changed }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -50,6 +51,16 @@ jobs:
         with:
           paths-ignore: |
             **/*.md
+      # Markdown the docs site builds into pages, which the reflex-docs job's
+      # link and published-SEO checks cover even when nothing else changed.
+      - uses: ./.github/actions/changed_paths
+        id: docs
+        with:
+          paths: |
+            docs/**
+            packages/integrations-docs/**
+            packages/*/CHANGELOG.md
+            CHANGELOG.md
 
   example-counter-and-nba-proxy:
     needs: changes
@@ -127,7 +138,7 @@ jobs:
 
   reflex-docs:
     needs: changes
-    if: needs.changes.outputs.run == 'true'
+    if: needs.changes.outputs.run == 'true' || needs.changes.outputs.docs == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -181,7 +192,16 @@ jobs:
       - name: Init Website for reflex-docs
         working-directory: ./docs/app
         run: uv run --active --no-sync reflex init
+      - name: Install Playwright Chromium
+        if: matrix.python-version == '3.12'
+        working-directory: ./docs/app
+        run: uv run --active --no-sync playwright install chromium --only-shell
       - name: Run Website and Check for errors
+        env:
+          # The browser tests drive the served prod build; one matrix leg is
+          # enough, the site they load is the same on both.
+          REFLEX_DOCS_PREVIEW_URL: http://localhost:3000
+          RUN_WHILE_SERVING: ${{ matrix.python-version == '3.12' && 'cd docs/app && pytest tests/test_docs_features_browser.py tests/test_editorial_browser.py -v' || '' }}
         run: |
           # Verify sfw wrappers are on PATH
           which npm && npm -v

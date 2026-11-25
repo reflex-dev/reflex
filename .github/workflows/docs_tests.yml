@@ -6,11 +6,24 @@ on:
   push:
     branches: ["main"]
     paths:
+      # Keep in sync with the changes job's filter below.
       - 'docs/**'
-      - 'packages/reflex-components-core/src/reflex_components_core/core/upload.py'
+      - 'reflex/**'
+      - 'packages/reflex-base/**'
+      - 'packages/reflex-frontend/src/**'
+      - 'packages/reflex-components-*/**'
+      - 'packages/reflex-docgen/**'
+      - 'packages/reflex-hosting-cli/**'
+      - 'packages/reflex-build-sdk/**'
+      - 'packages/hatch-reflex-pyi/**'
       - 'packages/reflex-site-shared/**'
       - 'packages/integrations-docs/**'
+      - 'packages/*/CHANGELOG.md'
+      - 'CHANGELOG.md'
+      - 'pyproject.toml'
+      - 'uv.lock'
       - '.github/workflows/docs_tests.yml'
+      - '.github/actions/setup_build_env/**'
 
 permissions:
   contents: read
@@ -38,12 +51,30 @@ jobs:
       - uses: ./.github/actions/changed_paths
         id: filter
         with:
+          # Everything the docs app and its tests import or read: the framework
+          # and the components it documents, the frontend runtime reflex-base
+          # embeds, docgen, the hosting CLI behind the cloud CLI reference and
+          # the build SDK it imports, the shared site packages, the build
+          # backend the component packages install with, and the changelogs
+          # the changelog pages render.
           paths: |
             docs/**
-            packages/reflex-components-core/src/reflex_components_core/core/upload.py
+            reflex/**
+            packages/reflex-base/**
+            packages/reflex-frontend/src/**
+            packages/reflex-components-*/**
+            packages/reflex-docgen/**
+            packages/reflex-hosting-cli/**
+            packages/reflex-build-sdk/**
+            packages/hatch-reflex-pyi/**
             packages/reflex-site-shared/**
             packages/integrations-docs/**
+            packages/*/CHANGELOG.md
+            CHANGELOG.md
+            pyproject.toml
+            uv.lock
             .github/workflows/docs_tests.yml
+            .github/actions/setup_build_env/**
 
   docs-tests:
     needs: changes

@@ -2,21 +2,47 @@
 
 import io
 import json
+from pathlib import Path
 
 import pytest
+import yaml
 
 from scripts import changed_paths
 
-# Fixtures modeled on the filters the workflows' `changes` jobs carry. They pin the
-# matching semantics; test_workflow_gates.py checks that the live filters compile.
+WORKFLOW_DIR = Path(__file__).parents[2] / ".github" / "workflows"
+
+
+def load_workflow(name: str) -> dict:
+    """Parse one workflow file.
+
+    Args:
+        name: The workflow's file name.
+
+    Returns:
+        The parsed workflow.
+    """
+    return yaml.safe_load((WORKFLOW_DIR / name).read_text(encoding="utf-8"))
+
+
+def changes_filter(name: str, step_id: str) -> list[str]:
+    """Read the `paths` filter one step of a workflow's `changes` job evaluates.
+
+    Args:
+        name: The workflow's file name.
+        step_id: The id of the changed_paths step.
+
+    Returns:
+        The filter's patterns, in order.
+    """
+    steps = load_workflow(name)["jobs"]["changes"]["steps"]
+    step = next(step for step in steps if step.get("id") == step_id)
+    return changed_paths.lines(step["with"]["paths"])
+
+
 MARKDOWN_IGNORE = ["**/*.md"]
-DOCS_PATHS = [
-    "docs/**",
-    "packages/reflex-components-core/src/reflex_components_core/core/upload.py",
-    "packages/reflex-site-shared/**",
-    "packages/integrations-docs/**",
-    ".github/workflows/docs_tests.yml",
-]
+# The live filters, so the cases below pin what the workflows actually select.
+DOCS_PATHS = changes_filter("docs_tests.yml", "filter")
+DOCS_PAGES_PATHS = changes_filter("integration_tests.yml", "docs")
 
 
 @pytest.mark.parametrize(
@@ -42,28 +68,66 @@ def test_markdown_ignore(changed, expected):
     [
         (["docs/app/main.py"], True),
         (["docs/README.md"], True),
+        # The docs app imports the framework and the packages it documents.
+        (["reflex/app.py"], True),
+        (["packages/reflex-base/src/reflex_base/vars/base.py"], True),
+        (["packages/reflex-frontend/src/state.js"], True),
+        (["packages/reflex-components-core/src/reflex_components_core/x.py"], True),
+        (["packages/reflex-components-internal/pyproject.toml"], True),
+        (["packages/reflex-docgen/src/reflex_docgen/x.py"], True),
+        (["packages/reflex-hosting-cli/src/reflex_cli/v2/deploy.py"], True),
+        (["packages/reflex-build-sdk/src/reflex_build_sdk/x.py"], True),
+        (["packages/hatch-reflex-pyi/src/x.py"], True),
         (["packages/reflex-site-shared/src/x.py"], True),
         (["packages/integrations-docs/pyproject.toml"], True),
-        (
-            [
-                "packages/reflex-components-core/src/reflex_components_core/core/upload.py"
-            ],
-            True,
-        ),
+        # The changelog pages render every package's changelog.
+        (["CHANGELOG.md"], True),
+        (["packages/reflex-otel/CHANGELOG.md"], True),
+        (["pyproject.toml"], True),
+        (["uv.lock"], True),
         ([".github/workflows/docs_tests.yml"], True),
-        (["reflex/app.py"], False),
+        ([".github/actions/setup_build_env/action.yml"], True),
+        # Packages the docs environment never installs.
+        (["packages/reflex-otel/src/x.py"], False),
+        (["packages/reflex-workflow/src/x.py"], False),
+        (["packages/reflex-release/src/x.py"], False),
+        # The frontend package's own tests are not shipped.
+        (["packages/reflex-frontend/tests/state.test.js"], False),
+        (["tests/units/test_app.py"], False),
+        (["README.md"], False),
         ([".github/workflows/unit_tests.yml"], False),
         # A prefix of a filtered directory is not inside it.
         (["docsite/index.py"], False),
-        (
-            ["packages/reflex-components-core/src/reflex_components_core/core/x.py"],
-            False,
-        ),
-        (["reflex/app.py", "docs/app/main.py"], True),
+        (["reflexion/app.py"], False),
+        (["tests/units/test_app.py", "docs/app/main.py"], True),
     ],
 )
 def test_docs_paths(changed, expected):
     assert changed_paths.triggers(changed, paths=DOCS_PATHS) is expected
+
+
+def test_docs_push_filter_matches_the_changes_filter():
+    """A main push runs the docs tests on exactly the paths a pull request does."""
+    push = load_workflow("docs_tests.yml")[True]["push"]["paths"]
+    assert push == DOCS_PATHS
+
+
+@pytest.mark.parametrize(
+    ("changed", "expected"),
+    [
+        (["docs/library/forms/form.md"], True),
+        (["docs/app/reflex_docs/pages/docs/__init__.py"], True),
+        (["packages/integrations-docs/src/integrations_docs/x.md"], True),
+        (["CHANGELOG.md"], True),
+        (["packages/reflex-base/CHANGELOG.md"], True),
+        (["README.md"], False),
+        (["packages/reflex-base/README.md"], False),
+        (["reflex/app.py"], False),
+    ],
+)
+def test_docs_pages_paths(changed, expected):
+    """Markdown the docs site builds into pages runs the built-site checks."""
+    assert changed_paths.triggers(changed, paths=DOCS_PAGES_PATHS) is expected
 
 
 @pytest.mark.parametrize(
