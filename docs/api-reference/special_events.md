@@ -142,7 +142,9 @@ This form has a stricter usage contract than the text form:
   `application/yaml`, `application/x-yaml`,
   `application/x-www-form-urlencoded`, and any `+json`, `+xml`, or `+yaml`
   suffix type. `text/html` and `application/xhtml+xml` are refused, as is
-  any other type. The body is read as UTF-8 text.
+  any other explicitly typed response outside the list. A missing or
+  empty `Content-Type` header is accepted: there is no type to refuse,
+  and the body is still read as UTF-8 text.
 - The write path is chosen by capability presence at runtime, not by
   version. When `ClipboardItem` and `navigator.clipboard.write` are both
   present, the write is armed with a promise-backed item so it stays
@@ -157,11 +159,16 @@ This form has a stricter usage contract than the text form:
   does a `writeText` fallback run after the fetch resolves, which no
   longer binds the write to the gesture and can be denied.
 
-Failures are reported, never silent: a failed fetch (an HTTP error or a
-refused content type) or a failed write logs a tagged
-`_set_clipboard_from_url` console error and raises an unhandled
+Failures are reported, never silent, on two distinct channels.
+Asynchronous failures, meaning a failed fetch (an HTTP error or a
+refused content type) or a failed write, log a tagged
+`_set_clipboard_from_url` console error and raise an unhandled
 rejection, which Reflex forwards to the backend as a frontend exception
-report. When the fetch fails, the clipboard content stays unchanged. If
+report. Synchronous validation failures (an empty or non-string `url`,
+or a missing clipboard API) log the same tagged console error and throw
+through the event handler's error path, which Reflex routes to the
+backend as a frontend exception report; these are not unhandled
+rejections. When the fetch fails, the clipboard content stays unchanged. If
 the write itself fails for a different reason than the fetch (for
 example a permission denial), it is reported as its own failure; the
 exact error identity behavior is engine-dependent, and Firefox reports a
