@@ -572,7 +572,6 @@ def marketing_mobile_drawer() -> rx.Component:
                 )
                 for title, items in sections
             ],
-            _link("Pricing", "", "/pricing/"),
             _link("Sign In", "", REFLEX_BUILD_LOGIN_URL),
             rx.el.div(
                 demo_link(
@@ -641,7 +640,6 @@ def _navigation_menu() -> rx.Component:
     Returns:
         The rendered component.
     """
-    nav_link = "inline-flex items-center justify-center gap-2 rounded-full px-3 py-2 text-sm font-book text-foreground hover:text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring"
     action_link = "inline-flex items-center justify-center gap-2 rounded-full h-10 px-0 text-sm font-book text-foreground hover:text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring"
     return ui.navigation_menu.root(
         ui.navigation_menu.list(
@@ -649,18 +647,6 @@ def _navigation_menu() -> rx.Component:
             _menu_trigger("Resources", _resources_content()),
             _menu_trigger("Solutions", _solutions_content()),
             _menu_trigger("Developers", _developers_content()),
-            ui.navigation_menu.item(
-                rx.el.elements.a(
-                    "Pricing",
-                    href="https://reflex.dev/pricing/",
-                    class_name=nav_link.replace(
-                        "text-foreground hover:text-muted-foreground",
-                        "text-muted-foreground hover:text-foreground",
-                    ),
-                ),
-                unstyled=True,
-                class_name="hidden xl:flex",
-            ),
             _search_item(),
             unstyled=True,
             class_name="m-0 flex h-full list-none items-center",

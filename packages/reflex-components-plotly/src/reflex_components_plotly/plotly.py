@@ -8,9 +8,13 @@ from typing import TYPE_CHECKING, Any, TypedDict, TypeVar
 
 from reflex_base.components.component import Component, NoSSRComponent, field
 from reflex_base.event import EventHandler, no_args_event_spec
+from reflex_base.utils import console
 from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.core.cond import color_mode_cond
+
+if TYPE_CHECKING:
+    from typing_extensions import deprecated
 
 logger = logging.getLogger(__name__)
 
@@ -74,12 +78,57 @@ _ID_PROP = "id"
 _DIV_ID_PROP = "divId"
 
 
+# Plotly.js 4 removed Mapbox. A figure with Mapbox traces or layout.mapbox keys
+# gets a one-time warning, then a copy for Plotly with MapLibre trace types,
+# subplot references and layout keys, in the figure and its animation frames.
+# The user's figure is not changed. Remove with rx.plotly.mapbox in 1.0.
+_MAPBOX_TO_MAP_JS = """
+const _rxMapboxToMapName = (name) =>
+    name.replace(/^((?:scatter|choropleth|density)?map)box(\\d*)$/, "$1$2");
+const _rxRenamePlotlyMapbox = ({ data, layout, ...rest }) => ({
+    ...rest,
+    ...(data && {
+        data: data.map((trace) => ({
+            ...trace,
+            ...(trace?.type && { type: _rxMapboxToMapName(trace.type) }),
+            ...(trace?.subplot && { subplot: _rxMapboxToMapName(trace.subplot) }),
+        })),
+    }),
+    ...(layout && {
+        layout: Object.fromEntries(
+            Object.entries(layout).map(([key, value]) => [_rxMapboxToMapName(key), value])
+        ),
+    }),
+});
+let _rxDidWarnPlotlyMapbox = false;
+const _rxPlotlyMapboxToMap = (figure) => {
+    if (!(
+        figure?.data?.some((trace) => trace?.type?.endsWith("mapbox")) ||
+        Object.keys(figure?.layout ?? {}).some((key) => /^mapbox\\d*$/.test(key))
+    )) {
+        return figure;
+    }
+    if (!_rxDidWarnPlotlyMapbox) {
+        _rxDidWarnPlotlyMapbox = true;
+        console.warn(
+            "Plotly.js 4 removed Mapbox traces and layout.mapbox. Reflex renames them to " +
+            "scattermap, choroplethmap, densitymap and layout.map until Reflex 1.0. " +
+            "Use the MapLibre names in the figure instead."
+        );
+    }
+    const renamed = _rxRenamePlotlyMapbox(figure);
+    if (figure.frames) renamed.frames = figure.frames.map(_rxRenamePlotlyMapbox);
+    return renamed;
+};
+"""
+
+
 class Plotly(NoSSRComponent):
     """Display a plotly graph."""
 
     library = "react-plotly.js@4.1.0"
 
-    lib_dependencies: list[str] = ["plotly.js@3.7.0"]
+    lib_dependencies: list[str] = ["plotly.js@4.3.0"]
 
     tag = "Plot"
 
@@ -200,7 +249,7 @@ class Plotly(NoSSRComponent):
         }
         if self.locale is not None:
             # For locale dictionaries injected into plot config.locales.
-            imports["plotly.js-locales@3.7.0"] = ImportVar(
+            imports["plotly.js-locales@4.3.0"] = ImportVar(
                 tag="plotlyLocales",
                 is_default=True,
             )
@@ -252,6 +301,7 @@ const extractPoints = (points) => {
     })
 }
 """,
+            _MAPBOX_TO_MAP_JS,
         ]
         if self.locale is not None:
             codes.append("""
@@ -340,26 +390,15 @@ const _rxGetPlotlyLocaleConfig = (config, locale, plotlyLocales) => {
             template_dict = LiteralVar.create({"layout": {"template": self.template}})
             merge_dicts.append(template_dict._without_data())
         if merge_dicts:
-            tag = tag.set(
-                special_props=[
-                    *tag.special_props,
-                    # Merge all dictionaries and spread the result over props.
-                    Var(
-                        _js_expr=(
-                            f"{{ ...mergician({figure!s}, "
-                            f"...{Var.create(merge_dicts)!s}) }}"
-                        ),
-                    ),
-                ]
-            )
+            figure_expr = f"{{ ...mergician({figure!s} ?? {{}}, ...{Var.create(merge_dicts)!s}) }}"
         else:
-            tag = tag.set(
-                special_props=[
-                    *tag.special_props,
-                    # Spread the figure dict over props, nothing to merge.
-                    Var(_js_expr=str(figure)),
-                ]
-            )
+            figure_expr = str(figure)
+        tag = tag.set(
+            special_props=[
+                *tag.special_props,
+                Var(_js_expr=f"_rxPlotlyMapboxToMap({figure_expr})"),
+            ]
+        )
         if self.locale is not None:
             config = self.config if self.config is not None else LiteralVar.create({})
             tag = tag.set(
@@ -410,7 +449,7 @@ class PlotlyBasic(Plotly):
 
     library = "react-plotly.js@4.1.0"
 
-    lib_dependencies: list[str] = ["plotly.js-basic-dist-min@3.7.0"]
+    lib_dependencies: list[str] = ["plotly.js-basic-dist-min@4.3.0"]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the plotly basic component.
@@ -436,7 +475,7 @@ class PlotlyCartesian(Plotly):
 
     library = "react-plotly.js@4.1.0"
 
-    lib_dependencies: list[str] = ["plotly.js-cartesian-dist-min@3.7.0"]
+    lib_dependencies: list[str] = ["plotly.js-cartesian-dist-min@4.3.0"]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the plotly cartesian component.
@@ -462,7 +501,7 @@ class PlotlyGeo(Plotly):
 
     library = "react-plotly.js@4.1.0"
 
-    lib_dependencies: list[str] = ["plotly.js-geo-dist-min@3.7.0"]
+    lib_dependencies: list[str] = ["plotly.js-geo-dist-min@4.3.0"]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the plotly geo component.
@@ -488,7 +527,7 @@ class PlotlyGl3d(Plotly):
 
     library = "react-plotly.js@4.1.0"
 
-    lib_dependencies: list[str] = ["plotly.js-gl3d-dist-min@3.7.0"]
+    lib_dependencies: list[str] = ["plotly.js-gl3d-dist-min@4.3.0"]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the plotly 3d component.
@@ -514,7 +553,7 @@ class PlotlyGl2d(Plotly):
 
     library = "react-plotly.js@4.1.0"
 
-    lib_dependencies: list[str] = ["plotly.js-gl2d-dist-min@3.7.0"]
+    lib_dependencies: list[str] = ["plotly.js-gl2d-dist-min@4.3.0"]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the plotly 2d component.
@@ -533,30 +572,69 @@ class PlotlyGl2d(Plotly):
         return dynamic_plotly_import(self.tag, "plotly.js-gl2d-dist-min")
 
 
-class PlotlyMapbox(Plotly):
-    """Display a plotly mapbox graph."""
+class PlotlyMap(Plotly):
+    """Display a Plotly MapLibre graph without a Mapbox access token."""
 
-    tag: str = "MapboxPlotlyPlot"
+    tag: str = "MapPlotlyPlot"
 
-    library = "react-plotly.js@4.1.0"
-
-    lib_dependencies: list[str] = ["plotly.js-mapbox-dist-min@3.7.0"]
+    lib_dependencies: list[str] = ["plotly.js-map-dist-min@4.3.0"]
 
     def add_imports(self) -> ImportDict:
-        """Add imports for the plotly mapbox component.
+        """Add the factory import for the Plotly map component.
 
         Returns:
-            The imports for the plotly mapbox component.
+            The Plotly component factory import.
         """
         return CREATE_PLOTLY_COMPONENT
 
     def _get_dynamic_imports(self) -> str:
-        """Get the dynamic imports for the plotly mapbox component.
+        """Load the MapLibre bundle on the client.
 
         Returns:
-            The dynamic imports for the plotly mapbox component.
+            The dynamic import for the Plotly map component.
         """
-        return dynamic_plotly_import(self.tag, "plotly.js-mapbox-dist-min")
+        return dynamic_plotly_import(self.tag, "plotly.js-map-dist-min")
+
+
+class PlotlyMapbox(PlotlyMap):
+    """Display a legacy Mapbox figure on the MapLibre bundle."""
+
+    if TYPE_CHECKING:
+
+        @classmethod
+        @deprecated("Use rx.plotly.map with MapLibre traces and layout.map instead.")
+        def create(cls, *children, **props) -> Component:
+            """Create a deprecated Plotly Mapbox component.
+
+            Args:
+                *children: The children of the component.
+                **props: The properties of the component.
+
+            Returns:
+                The Plotly Mapbox component.
+            """
+            ...
+
+    else:
+
+        @classmethod
+        def create(cls, *children, **props) -> Component:
+            """Create a legacy Mapbox map with a migration warning.
+
+            Args:
+                *children: The children of the component.
+                **props: The properties of the component.
+
+            Returns:
+                The Plotly Mapbox component.
+            """
+            console.deprecate(
+                feature_name="rx.plotly.mapbox",
+                reason="Use rx.plotly.map with MapLibre traces and layout.map instead",
+                deprecation_version="0.11.1",
+                removal_version="1.0",
+            )
+            return super().create(*children, **props)
 
 
 class PlotlyFinance(Plotly):
@@ -566,7 +644,7 @@ class PlotlyFinance(Plotly):
 
     library = "react-plotly.js@4.1.0"
 
-    lib_dependencies: list[str] = ["plotly.js-finance-dist-min@3.7.0"]
+    lib_dependencies: list[str] = ["plotly.js-finance-dist-min@4.3.0"]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the plotly finance component.
@@ -592,7 +670,7 @@ class PlotlyStrict(Plotly):
 
     library = "react-plotly.js@4.1.0"
 
-    lib_dependencies: list[str] = ["plotly.js-strict-dist-min@3.7.0"]
+    lib_dependencies: list[str] = ["plotly.js-strict-dist-min@4.3.0"]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the plotly strict component.
