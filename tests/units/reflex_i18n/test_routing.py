@@ -47,6 +47,10 @@ def test_path_prefix_delocalize_and_locale_of():
     assert r.delocalize("/de", LOCALES) == "/"
     assert r.delocalize("/de//evil.example", LOCALES) == "/evil.example"
     assert r.delocalize("//evil.example", LOCALES) == "/evil.example"
+    # A prerendered nested page is rendered at its path with a trailing slash.
+    assert r.delocalize("/de/help/terminal/", LOCALES) == "/help/terminal"
+    assert r.delocalize("/help/terminal/", LOCALES) == "/help/terminal"
+    assert r.delocalize("/de/", LOCALES) == "/"
     assert r.locale_of("/de/pricing", LOCALES, "en") == "de"
     assert r.locale_of("/pricing", LOCALES, "en") == "en"
 

@@ -792,6 +792,21 @@ def test_language_switcher_links_stay_on_site(
         ("/DE/pricing", ["/pricing", "/de/pricing", "/pricing", "/de/pricing"]),
         ("//de/pricing", ["/pricing", "/de/pricing", "/pricing", "/de/pricing"]),
         ("///de", ["/", "/de", "/", "/de"]),
+        # Prerendering renders a nested page at its path with a trailing slash.
+        (
+            "/de/help/terminal/",
+            [
+                "/help/terminal",
+                "/de/help/terminal",
+                "/help/terminal",
+                "/de/help/terminal",
+            ],
+        ),
+        (
+            "/help/terminal/",
+            ["/help/terminal", "/de/help/terminal", "/help/terminal", "/help/terminal"],
+        ),
+        ("/de/", ["/", "/de", "/", "/de"]),
         (
             "/de//evil.example",
             ["/evil.example", "/de/evil.example", "/evil.example", "/de/evil.example"],

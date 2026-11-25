@@ -121,7 +121,7 @@ class PathPrefixRouting(LocaleRouting):
         return f"/{locale}" if base == "/" else f"/{locale}{base}"
 
     def delocalize(self, path: str, locales: Sequence[str]) -> str:
-        """Strip a leading ``/<locale>`` segment if present.
+        """Strip a leading ``/<locale>`` segment and any trailing slash.
 
         Args:
             path: A (possibly localized) URL path.
@@ -131,9 +131,10 @@ class PathPrefixRouting(LocaleRouting):
             The base URL path.
         """
         head, _, rest = path.lstrip("/").partition("/")
-        # One leading slash: "//host" is a protocol-relative URL off the site.
         located = segment_locale(head, locales) is not None
-        return "/" + (rest if located else path).lstrip("/")
+        # One leading slash ("//host" is a protocol-relative URL off the site)
+        # and no trailing one, as a page's address has none.
+        return "/" + (rest if located else path).strip("/")
 
     def locale_of(self, path: str, locales: Sequence[str], default_locale: str) -> str:
         """Return the locale named by the leading path segment, else default.

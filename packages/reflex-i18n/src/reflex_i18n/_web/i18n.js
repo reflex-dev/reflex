@@ -542,8 +542,9 @@ const segmentLocale = (segment) => localesBySegment.get(segment.toLowerCase());
 const pathLocale = (pathname) =>
   segmentLocale(pathname.replace(/^\/+/, "").split("/")[0]);
 
-// One leading slash: "//host" is a protocol-relative URL off the site.
-const sitePath = (path) => "/" + path.replace(/^\/+/, "");
+// One leading slash ("//host" is a protocol-relative URL off the site) and no
+// trailing one: a nested page is prerendered at "/a/b/" but addressed as "/a/b".
+const sitePath = (path) => "/" + path.replace(/^\/+|\/+$/g, "");
 
 const delocalizePath = (pathname) => {
   const [head, ...rest] = pathname.replace(/^\/+/, "").split("/");
