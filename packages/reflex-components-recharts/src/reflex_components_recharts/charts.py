@@ -354,11 +354,11 @@ class RadarChart(ChartBase):
     )
 
     cx: Var[int | str] = field(
-        doc='The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage. Default: "50%"'
+        doc='The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage. Default: "50%"'
     )
 
     cy: Var[int | str] = field(
-        doc='The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage. Default: "50%"'
+        doc='The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage. Default: "50%"'
     )
 
     start_angle: Var[int] = field(
@@ -420,11 +420,11 @@ class RadialBarChart(ChartBase):
     )
 
     cx: Var[int | str] = field(
-        doc='The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage. Default: "50%"'
+        doc='The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage. Default: "50%"'
     )
 
     cy: Var[int | str] = field(
-        doc='The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage. Default: "50%"'
+        doc='The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage. Default: "50%"'
     )
 
     start_angle: Var[int] = field(

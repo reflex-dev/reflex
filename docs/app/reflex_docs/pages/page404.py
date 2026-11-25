@@ -16,7 +16,8 @@ def not_found() -> rx.Component:
     from reflex_docs.views.editorial_footer import editorial_footer
 
     return rx.el.div(
-        docs_navbar(),
+        # A missing page belongs to no section, so no tab is marked current.
+        docs_navbar(active_tab=""),
         rx.el.main(
             rx.el.div(
                 rx.el.p("404", class_name="text-sm font-normal text-muted-foreground"),

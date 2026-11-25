@@ -3,7 +3,16 @@
 from collections.abc import Callable
 from typing import Any, ClassVar, assert_type
 
-from reflex_base.event import EventCallback, EventHandler, EventSpec, EventType, event
+from reflex_base.event import (
+    EventCallback,
+    EventHandler,
+    EventSpec,
+    EventType,
+    IdentityEventReturn,
+    LambdaEventCallback,
+    event,
+    passthrough_event_spec,
+)
 from reflex_base.vars.base import Var
 
 from reflex.state import State
@@ -88,6 +97,23 @@ assert_type(
     _HandlerState.nine(1, "a", True, 1.5, b"", 2, "b", False), EventCallback[float]
 )
 
+# An event spec passes a trigger's values on as Vars of the given types. A
+# union, such as `str | None`, makes a Var of any value.
+assert_type(passthrough_event_spec(str), Callable[[Var[str]], tuple[Var[str]]])
+assert_type(
+    passthrough_event_spec(int, str),
+    Callable[[Var[int], Var[str]], tuple[Var[int], Var[str]]],
+)
+assert_type(passthrough_event_spec(str | None), Callable[[Var[Any]], tuple[Var[Any]]])
+assert_type(
+    passthrough_event_spec(str | int, dict),
+    Callable[[Var[Any], Var[Any]], tuple[Var[Any], Var[Any]]],
+)
+assert_type(
+    passthrough_event_spec(int, str | None),
+    Callable[[Var[Any], Var[Any]], tuple[Var[Any], Var[Any]]],
+)
+
 # A handler is a callable of its arguments, so it can be passed where one is expected.
 _one: Callable[[int], Any] = _HandlerState.one
 _two: Callable[[int, str], Any] = _HandlerState.two
@@ -135,3 +161,20 @@ def _reads(state: _State, holder: _Holder, handler_state: _HandlerHolderState) -
     # whatever function it wraps.
     assert_type(_HandlerHolderState.on_submit, EventHandler)
     assert_type(handler_state.on_submit, Callable[..., Any])
+
+
+def _namespace_annotations(
+    callback: event.EventCallback[str],
+    lambda_callback: event.LambdaEventCallback[str],
+    identity: event.IdentityEventReturn[int],
+    event_type: event.EventType[str],
+    spec: event.EventSpec,
+) -> None:
+    # The event namespace (`rx.event`) re-exports the event types, generic or
+    # not, for annotations.
+    assert_type(callback, EventCallback[str])
+    assert_type(lambda_callback, LambdaEventCallback[str])
+    assert_type(identity, IdentityEventReturn[int])
+    assert_type(event_type, EventType[str])
+    assert_type(spec, EventSpec)
+    _event_prop(_HandlerState.one(1))

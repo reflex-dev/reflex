@@ -94,11 +94,17 @@ carries that span's W3C ids, so a log line can be looked up in your tracing
 backend and vice versa:
 
 ```json
-{"level": "error", "message": "...", "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736", "span_id": "00f067aa0ba902b7"}
+{"level": "error", "message": "...", "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736", "span_id": "00f067aa0ba902b7", "trace_flags": "01"}
 ```
 
+`trace_flags` is the span's [W3C trace flags](https://www.w3.org/TR/trace-context-2/#trace-flags)
+as two hex digits. Its lowest bit is the sampled flag: an odd value (`"01"`,
+`"03"`) means the span was sampled, an even one (`"00"`, `"02"`) means it was
+not, so Reflex exported no spans for it and its ids won't be found in your
+tracing backend.
+
 Records emitted outside a span, or while the instrumentation is off, have no
-`trace_id`/`span_id` fields. For your own application loggers, use
+`trace_id`/`span_id`/`trace_flags` fields. For your own application loggers, use
 [`opentelemetry-instrumentation-logging`](https://opentelemetry-python-contrib.readthedocs.io/en/latest/instrumentation/logging/logging.html).
 
 ## Frontend: browser traces

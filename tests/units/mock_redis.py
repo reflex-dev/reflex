@@ -12,6 +12,7 @@ from redis.asyncio import Redis
 from redis.typing import EncodableT, KeyT
 
 from reflex.istate.manager.redis import (
+    _COUNT_OTHER_CONTENDERS_SCRIPT,
     _EXTEND_LOCK_SCRIPT,
     _FENCED_SAVE_SCRIPT,
     _RELEASE_LOCK_SCRIPT,
@@ -205,7 +206,8 @@ def mock_redis() -> Redis:
         lock release deletes the lock in KEYS[1] only while it holds ARGV[1],
         and returns the ID that held it. The lock extension sets the lock's
         expiration to ARGV[2] milliseconds only while it holds ARGV[1], and
-        returns 1 when it did.
+        returns 1 when it did. The contender count returns the size of the set
+        in KEYS[1], less one when ARGV[1] is a member.
 
         Args:
             script: The Lua source, which must be one of the state manager's.
@@ -229,6 +231,10 @@ def mock_redis() -> Redis:
             if await redis_mock.get(lock_key) != lock_id:
                 return 0
             return int(await redis_mock.pexpire(lock_key, int(px)))
+        if script == _COUNT_OTHER_CONTENDERS_SCRIPT:
+            waiters_key, instance_id = keys_and_args
+            contenders = await redis_mock.scard(waiters_key)
+            return contenders - (instance_id in keys.get(_key_bytes(waiters_key), ()))
         if script != _FENCED_SAVE_SCRIPT:
             msg = "mock_redis only emulates the state manager's scripts."
             raise NotImplementedError(msg)
