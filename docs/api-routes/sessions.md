@@ -139,13 +139,7 @@ partitioned cookies cannot persist sessions in those contexts. Plain HTTP on
 a non-loopback development host uses a warning and an insecure `SameSite=Lax`
 cookie; use HTTPS for embedding and production.
 
-Local development over plain HTTP on a loopback host, for example
-`http://localhost:8000`, sends both forms: the secure partitioned cookie and
-the plain `SameSite=Lax` cookie. Chrome and Firefox store a `Secure` cookie
-from plain-HTTP localhost; Safari does not, and keeps the plain one. The
-backend reads the plain cookie only in this case and prefers the secure one.
-
-Outside local development, a browser stores a `Secure` cookie only from HTTPS. A
+A browser stores a `Secure` cookie only from HTTPS or a loopback host. A
 production app served over plain HTTP on another host, or a development server
 opened through a LAN address while `api_url` is a loopback URL, therefore has
 no persistent session. The default `enforce` mode gives the tab a new token and
