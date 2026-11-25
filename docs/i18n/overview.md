@@ -420,11 +420,25 @@ def pricing():
 A `@rx.memo` component is compiled once for all locales, outside any page:
 use `rx.t` inside it, or pass the translated text in as a prop.
 
+A page's head is translated the same way: a plain string `title`,
+`description` and meta tag `content` is a message, translated into each
+route's locale. Mark them with `N_` so `reflex i18n extract` finds them:
+
+```python
+from reflex_i18n import N_
+
+app.add_page(
+    pricing,
+    title=N_("Pricing"),
+    description=N_("Plans for every team"),
+    meta=[{"property": "og:title", "content": N_("Pricing")}],
+)
+```
+
 Notes:
 
-- Page `title`/`meta` translated with `rx.t` still resolve in the default
-  locale (the document head is outside the per-route locale provider); prefer
-  per-route titles if that matters.
+- A head text given as `rx.t` resolves in the default locale (the document
+  head is outside the per-route locale provider); give plain strings instead.
 - `default_at_root=True` (the default) is recommended for SEO: the default
   locale keeps clean canonical URLs (`/pricing`). With `default_at_root=False`
   every locale is prefixed; visiting an unprefixed path redirects to its

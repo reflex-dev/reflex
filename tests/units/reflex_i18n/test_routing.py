@@ -341,6 +341,99 @@ def test_localized_page_renders_in_its_locale_without_the_compiler(tmp_path: Pat
     assert evaluated == [("de", "Hallo")]
 
 
+@pytest.mark.parametrize(
+    ("locale", "expected"),
+    [
+        (
+            "en",
+            [
+                ("title", [], ['"Pricing"']),
+                ("meta", ['content:"Our prices"', 'name:"description"'], []),
+                ("meta", ['content:""', 'property:"og:image"'], []),
+                ("meta", ['content:"Pricing"', 'property:"og:title"'], []),
+                ("meta", ['content:"index"', 'name:"robots"'], []),
+                ("meta", ['content:"Pricing"', 'name:"custom"'], []),
+            ],
+        ),
+        (
+            "de",
+            [
+                ("title", [], ['"Preise"']),
+                ("meta", ['content:"Unsere Preise"', 'name:"description"'], []),
+                ("meta", ['content:""', 'property:"og:image"'], []),
+                ("meta", ['content:"Preise"', 'property:"og:title"'], []),
+                ("meta", ['content:"index"', 'name:"robots"'], []),
+                # A meta component is the app's own and stays as built.
+                ("meta", ['content:"Pricing"', 'name:"custom"'], []),
+            ],
+        ),
+    ],
+)
+def test_url_routed_page_head_is_translated_into_its_locale(
+    tmp_path: Path, locale: str, expected: list[tuple[str, list[str], list[str]]]
+):
+    """A page's plain string title, description and meta content are msgids."""
+    from reflex.app import UnevaluatedPage
+    from reflex.compiler.plugins import (
+        CompileContext,
+        CompilerHooks,
+        default_page_plugins,
+    )
+
+    (tmp_path / "de.po").write_text(
+        'msgid "Pricing"\nmsgstr "Preise"\n\n'
+        'msgid "Our prices"\nmsgstr "Unsere Preise"\n',
+        encoding="utf-8",
+    )
+    plugin = I18nPlugin(
+        locales=["en", "de"],
+        default_locale="en",
+        catalog_dir=tmp_path,
+        routing=PathPrefixRouting(),
+    )
+
+    def pricing() -> rx.Component:
+        """The page.
+
+        Returns:
+            Its content.
+        """
+        return rx.text("Prices")
+
+    # The default locale's route is the app's own page; the other is fanned.
+    fanned = locale != "en"
+    route = f"{locale}/pricing" if fanned else "pricing"
+    page = UnevaluatedPage(
+        component=_localized_page(pricing, locale) if fanned else pricing,
+        route=route,
+        title="Pricing",
+        description="Our prices",
+        image="",
+        meta=[
+            {"property": "og:title", "content": "Pricing"},
+            {"name": "robots", "content": "index"},
+            rx.el.meta(name="custom", content="Pricing"),
+        ],
+        context={"i18n_locale": locale} if fanned else {},
+    )
+    ctx = CompileContext(
+        pages=[page],
+        hooks=CompilerHooks(plugins=default_page_plugins(plugins=[plugin])),
+    )
+    with ctx:
+        ctx.compile()
+
+    head = [tag.render() for tag in ctx.compiled_pages[route].root_component.children]
+    assert [
+        (
+            tag["name"].strip('"'),
+            tag["props"],
+            [child["contents"] for child in tag["children"]],
+        )
+        for tag in head[1:]
+    ] == expected
+
+
 def test_eval_page_leaves_pages_alone_without_routing(tmp_path: Path):
     """In cookie mode one route serves every locale, so none is set."""
     from reflex.app import UnevaluatedPage

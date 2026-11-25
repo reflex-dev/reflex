@@ -6,7 +6,7 @@ import dataclasses
 import logging
 import os
 import re
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -40,7 +40,7 @@ from .format import (
 )
 from .registry import collected_messages, format_message_list, untranslated_messages
 from .routing import PathPrefixRouting, segment_locale
-from .runtime import active_locale
+from .runtime import active_locale, gettext
 from .vars import (
     _i18n_var_data,
     _pick,
@@ -183,6 +183,33 @@ def _localized_page(component: Any, locale: str) -> Any:
         return LocaleRoute.create(page, locale=locale, catalog=_catalog_var(locale))
 
     return render
+
+
+def _translate_text(value: Any) -> Any:
+    """Translate a page's head text if it is a plain string.
+
+    Args:
+        value: The text, or a Var, None or anything else left as is.
+
+    Returns:
+        The translated text, or the value unchanged.
+    """
+    # gettext("") would return the catalog's header.
+    return gettext(value) if isinstance(value, str) and value else value
+
+
+def _translate_meta(meta: Any) -> Any:
+    """Translate the text content of a page's meta tag.
+
+    Args:
+        meta: A meta tag, as a mapping of its attributes or a component.
+
+    Returns:
+        The tag with a plain string ``content`` translated.
+    """
+    if isinstance(meta, Mapping) and "content" in meta:
+        return {**meta, "content": _translate_text(meta["content"])}
+    return meta
 
 
 def _text_direction(locale: str) -> str:
@@ -342,7 +369,9 @@ class I18nPlugin(Plugin):
         """Evaluate a page in the locale its route serves, when URL routing is on.
 
         The page function, and so ``get_locale()`` and ``gettext``, run in
-        that locale; the page is otherwise evaluated as usual.
+        that locale, and a plain string ``title``, ``description`` or meta tag
+        ``content`` is translated into it; the page is otherwise evaluated as
+        usual.
 
         Args:
             page_fn: The page component or component callable.
@@ -358,6 +387,12 @@ class I18nPlugin(Plugin):
 
         locale = (page.context or {}).get(_PAGE_LOCALE_KEY, self.default_locale)
         with active_locale(locale):
+            page = dataclasses.replace(
+                page,
+                title=_translate_text(page.title),
+                description=_translate_text(page.description),
+                meta=[_translate_meta(meta) for meta in page.meta],
+            )
             return DefaultPagePlugin().eval_page(page_fn, page=page, **kwargs)
 
     def compile_page(self, page_ctx: PageContext, /, **kwargs: Any) -> None:
