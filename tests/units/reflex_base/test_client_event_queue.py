@@ -13,8 +13,10 @@ from reflex_base.constants import Templates
     "script",
     [
         "client_event_queue.mjs",
+        "client_session.mjs",
         "client_state_updates.mjs",
         "client_upload.mjs",
+        "client_upload_session.mjs",
         "state_string_helpers.mjs",
     ],
 )
