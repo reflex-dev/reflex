@@ -153,7 +153,10 @@ workflow edited in place and a template change that was never applied.
 
 **Where changelogs are published:** the docs site renders every `CHANGELOG.md`
 in the repo (repo root and `packages/*/`) under
-[reflex.dev/docs/changelog/](https://reflex.dev/docs/changelog/). The
+[reflex.dev/docs/changelog/](https://reflex.dev/docs/changelog/), except those
+of the build and release tooling packages listed in `UNPUBLISHED_CHANGELOGS`
+(`docs/app/reflex_docs/changelogs.py`): `hatch-reflex-pyi`, `reflex-docgen`
+and `reflex-release`. The
 `reflex-enterprise` changelog is read from the installed `reflex-enterprise`
 distribution at docs build time; it appears once the published wheel ships a
 `CHANGELOG.md` and the docs app's lockfile picks up that version.

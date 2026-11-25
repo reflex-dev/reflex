@@ -144,7 +144,7 @@ def test_html_layout_page_lists_plain_elements_in_one_table():
     assert toc == [
         (2, "API Reference"),
         (3, "rx.el.blockquote"),
-        (3, "rx.el.Del"),
+        (3, "rx.el.del"),
         (3, "rx.el.details"),
         (3, "rx.el.dialog"),
         (3, "rx.el.html"),

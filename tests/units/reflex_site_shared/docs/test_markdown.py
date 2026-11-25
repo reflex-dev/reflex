@@ -314,6 +314,18 @@ def test_render_inline_markdown_handles_inline_and_block_content() -> None:
     assert "Paragraph." in block
 
 
+def test_render_inline_markdown_keeps_style_across_paragraphs() -> None:
+    """Every paragraph of a multi-paragraph description keeps the given style."""
+    rendered = render_inline_markdown("First.\n\nSecond.", class_name="small")
+    assert str(rendered) == str(
+        rx.el.div(
+            rx.text("First.", class_name="small"),
+            rx.text("Second.", class_name="small"),
+            class_name="flex flex-col gap-2",
+        )
+    )
+
+
 def _anchors(component: rx.Component):
     """Yield every anchor in a rendered tree.
 

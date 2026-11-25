@@ -1218,7 +1218,11 @@ def api_reference(
     detailed, plain = [], []
     for item in component_list:
         (plain if is_plain_html_element(item[0], shared) else detailed).append(item)
-    toc = api_reference_toc([name for _, name in detailed], bool(shared), bool(plain))
+    toc = api_reference_toc(
+        [_COMPONENT_DISPLAY_NAMES.get(name, name) for _, name in detailed],
+        bool(shared),
+        bool(plain),
+    )
     return toc, [
         h2_comp(text="API Reference"),
         rx.box(

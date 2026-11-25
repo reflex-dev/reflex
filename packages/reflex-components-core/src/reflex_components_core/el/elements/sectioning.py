@@ -46,31 +46,31 @@ class H1(BaseHTML):
 
 
 class H2(BaseHTML):
-    """Display the h1 element."""
+    """Display the h2 element."""
 
     tag = "h2"
 
 
 class H3(BaseHTML):
-    """Display the h1 element."""
+    """Display the h3 element."""
 
     tag = "h3"
 
 
 class H4(BaseHTML):
-    """Display the h1 element."""
+    """Display the h4 element."""
 
     tag = "h4"
 
 
 class H5(BaseHTML):
-    """Display the h1 element."""
+    """Display the h5 element."""
 
     tag = "h5"
 
 
 class H6(BaseHTML):
-    """Display the h1 element."""
+    """Display the h6 element."""
 
     tag = "h6"
 
