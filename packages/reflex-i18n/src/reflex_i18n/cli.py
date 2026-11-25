@@ -291,18 +291,35 @@ def _extract_python(
     yield from _t_calls(tree)
 
 
-def scan_sources(source_dir: Path) -> Catalog:
+def scan_sources(source_dir: Path, exclude: Collection[Path] = ()) -> Catalog:
     """Extract the messages marked in a source tree: gettext, N_ and rx.t calls.
 
     Args:
         source_dir: The directory to scan. Source locations are recorded
             relative to the working directory, the project root.
+        exclude: Directories below it to leave out, e.g. nested packages with
+            catalogs of their own.
 
     Returns:
         A catalog holding every message found (untranslated template).
     """
     from babel.messages.catalog import Catalog
     from babel.messages.extract import extract_from_dir
+
+    excluded = {path.resolve() for path in exclude}
+
+    def directory_filter(dirpath: str) -> bool:
+        """Whether to scan a directory.
+
+        Args:
+            dirpath: The directory's path.
+
+        Returns:
+            False for an excluded one, and as Babel does by default, for a dot
+            or underscore one (``.venv``, ``__pycache__``).
+        """
+        path = Path(dirpath)
+        return not path.name.startswith((".", "_")) and path.resolve() not in excluded
 
     catalog = Catalog()
     try:
@@ -315,6 +332,7 @@ def scan_sources(source_dir: Path) -> Catalog:
         source_dir,
         method_map=[("**.py", f"{__name__}:{_extract_python.__name__}")],
         keywords=_KEYWORDS,
+        directory_filter=directory_filter,
     ):
         catalog.add(
             message,
@@ -331,6 +349,11 @@ def extract_catalog(
 ) -> Catalog:
     """Build the app's message template from its sources and its rx.t registry.
 
+    Each source file belongs to the innermost of these directories holding it,
+    so a catalog package nested in the app's package (or the app's package in
+    a catalog package) keeps its own messages, even ones spelled like the
+    app's.
+
     Args:
         app_dir: The app source directory to scan.
         used_messages: Static ``rx.t`` messages from the compile registry,
@@ -342,14 +365,49 @@ def extract_catalog(
         A catalog holding every message the app translates (untranslated
         template).
     """
-    catalog = scan_sources(app_dir)
+    roots = [path.resolve() for path in (app_dir, *package_dirs)]
+
+    def scan(root: Path) -> Catalog:
+        """Scan a directory, leaving out the other directories nested in it.
+
+        Args:
+            root: The directory.
+
+        Returns:
+            Its messages.
+        """
+        nested = [
+            other for other in roots if other != root and other.is_relative_to(root)
+        ]
+        return scan_sources(root, exclude=nested)
+
+    catalog = scan(roots[0])
+    package_messages = {
+        (_singular(message.id), message.context)
+        for root in roots[1:]
+        if root != roots[0]
+        for message in scan(root)
+        if message.id
+    }
     for key in used_messages:
-        catalog.add(key.msgid, context=key.context)
-    for package_dir in package_dirs:
-        for message in scan_sources(package_dir):
-            if message.id:
-                catalog.delete(message.id, message.context)
+        # A package's rx.t text registers when its components are built; it is
+        # the app's only where the app's own sources use it too.
+        owned = (key.message, key.context) in package_messages
+        if not owned or catalog.get(key.message, key.context) is not None:
+            catalog.add(key.msgid, context=key.context)
     return catalog
+
+
+def _singular(message_id: str | Sequence[str]) -> str:
+    """The singular form of a catalog message id.
+
+    Args:
+        message_id: A message id, or a plural message's (singular, plural).
+
+    Returns:
+        The singular form.
+    """
+    return message_id if isinstance(message_id, str) else message_id[0]
 
 
 def _read_or_new_catalog(po_path: Path, locale: str) -> Catalog:
@@ -469,21 +527,27 @@ def _report(stats: LocaleStats, *, is_source: bool = False) -> None:
 
 
 def _app_source_dir() -> Path:
-    """The app's Python source directory.
+    """The app's Python source directory: the package holding the app module.
 
     Resolved from the imported app module (the dry compile imported it), so
-    ``app_module_import`` and src layouts scan the real package; falls back to
-    ``<cwd>/<app_name>`` when the module cannot be found.
+    ``app_module_import`` and src layouts scan the real package, and an app
+    whose module sits in a subpackage of a larger one (``site.web.app``)
+    scans that subpackage only; falls back to ``<cwd>/<app_name>`` when the
+    module cannot be found.
 
     Returns:
         The directory scanned for gettext calls.
     """
     config = get_config()
-    top_module = sys.modules.get(config.module.partition(".")[0])
-    pkg_paths = getattr(top_module, "__path__", None)
+    module = sys.modules.get(config.module)
+    if not hasattr(module, "__path__"):
+        # A plain module: its package, if it has one.
+        package, _, _ = config.module.rpartition(".")
+        module = sys.modules.get(package) if package else module
+    pkg_paths = getattr(module, "__path__", None)
     if pkg_paths:
         return Path(next(iter(pkg_paths)))
-    module_file = getattr(top_module, "__file__", None)
+    module_file = getattr(module, "__file__", None)
     if module_file:
         return Path(module_file).parent
     return Path.cwd() / config.app_name

@@ -544,6 +544,11 @@ reflex i18n init es
 reflex i18n check
 ```
 
+`extract` scans the package holding the app module (`myapp` for
+`myapp.myapp`, `site.web` for an `app_module_import` of `site.web.app`), so a
+second app living in a subpackage of a larger one extracts its own messages
+only.
+
 A typical workflow: run `reflex i18n extract` after adding or changing strings,
 fill in the `msgstr` values in each locale's `.po` file, and add
 `reflex i18n check` to CI to catch missing translations.
@@ -607,8 +612,9 @@ I18nPlugin(locales=["de", "en"], default_locale="de", catalog_packages=["my_lib"
 ```
 
 Its catalogs then translate the package's messages in the browser and on the
-server, and `reflex i18n extract` leaves those messages out of the app's own
-catalogs.
+server, and `reflex i18n extract` leaves the package's sources out of the app's
+own catalogs, also when it is a subpackage of the app's. A message the app's own
+code uses stays in the app's catalogs, even if the package uses it too.
 
 ## How it works
 

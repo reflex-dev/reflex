@@ -289,6 +289,32 @@ def test_app_source_dir_resolves_from_imported_module(
     assert _app_source_dir() == pkg_dir
 
 
+@pytest.mark.parametrize(
+    ("app_module", "expected"),
+    [
+        # A module in a subpackage scans that subpackage, not its parent.
+        ("shop.web.app", "shop/web"),
+        # An app module that is a package scans itself.
+        ("shop.web", "shop/web"),
+    ],
+)
+def test_app_source_dir_is_the_package_holding_the_app_module(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, app_module: str, expected: str
+):
+    for name in ("shop", "shop.web"):
+        package = types.ModuleType(name)
+        package.__path__ = [str(tmp_path / name.replace(".", "/"))]
+        monkeypatch.setitem(sys.modules, name, package)
+    app = types.ModuleType("shop.web.app")
+    app.__file__ = str(tmp_path / "shop" / "web" / "app.py")
+    monkeypatch.setitem(sys.modules, "shop.web.app", app)
+    monkeypatch.setattr(
+        "reflex_i18n.cli.get_config",
+        lambda: SimpleNamespace(module=app_module, app_name="shop"),
+    )
+    assert _app_source_dir() == tmp_path / expected
+
+
 def test_app_source_dir_falls_back_to_app_name(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
@@ -434,7 +460,58 @@ def test_extract_catalog_leaves_package_messages_to_the_package(
 
     catalog = extract_catalog(app_dir, used, [lib])
 
-    assert [m.id for m in catalog if m.id] == ["App text", "Machine name"]
+    # "Save" stays: the app's own code uses it too.
+    assert [m.id for m in catalog if m.id] == ["App text", "Save", "Machine name"]
+
+
+def _write_module(path: Path, *messages: str) -> None:
+    """Write a module marking messages with N_.
+
+    Args:
+        path: The module's path; its directory is created if missing.
+        messages: The messages it marks.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "from reflex_i18n import N_\n"
+        + "".join(f"m{i} = N_({message!r})\n" for i, message in enumerate(messages)),
+        encoding="utf-8",
+    )
+
+
+def test_extract_catalog_leaves_a_nested_catalog_package_to_itself(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """The package's directory is left out, not every message it spells."""
+    monkeypatch.chdir(tmp_path)
+    app_dir = tmp_path / "myapp"
+    _write_module(app_dir / "app.py", "Status")
+    _write_module(app_dir / "website" / "page.py", "Status", "Website only")
+    used = (MessageKey("Website only"), MessageKey("Computed"))
+
+    catalog = extract_catalog(app_dir, used, [app_dir / "website"])
+
+    assert [(m.id, m.locations) for m in catalog if m.id] == [
+        ("Status", [("myapp/app.py", 2)]),
+        ("Computed", []),
+    ]
+
+
+def test_extract_catalog_of_an_app_nested_in_a_catalog_package(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """An app inside a package with catalogs scans only its own directory."""
+    monkeypatch.chdir(tmp_path)
+    lib = tmp_path / "mylib"
+    _write_module(lib / "ui.py", "Library text")
+    _write_module(lib / "site" / "app.py", "Site text")
+    used = (MessageKey("Library text"), MessageKey("Site text"))
+
+    catalog = extract_catalog(lib / "site", used, [lib])
+
+    assert [(m.id, m.locations) for m in catalog if m.id] == [
+        ("Site text", [("mylib/site/app.py", 2)]),
+    ]
 
 
 def _write_package(site: Path, source: str) -> Path:
