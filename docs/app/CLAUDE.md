@@ -21,8 +21,8 @@ reflex_docs/        # Main application code
   whitelist.py      # Dev mode: limits which pages are compiled (faster builds)
   pages/            # All page routes (docs/, etc.)
   components/       # Reusable UI components
-  views/            # Shared view components (navbar, footer, cta)
-  templates/        # Page templates (docpage, mainpage)
+  views/            # Shared view components (navbar, footer, search, Algolia, announcement banner)
+  templates/        # Page templates (docpage)
 docs/               # Markdown documentation (reflex_docgen)
 tests/              # Pytest + Playwright tests
 ```
@@ -46,8 +46,8 @@ tests/              # Pytest + Playwright tests
 ## Code patterns
 
 - **Components:** shared components for the app — see `reflex_docs/components/`
-- **Pages:** use `@mainpage` or `@docpage` decorators — see `reflex_docs/pages/`, `reflex_docs/templates/`
-- **Imports:** absolute from project root — `from reflex_docs.components.button import button`
+- **Pages:** use the `@docpage` decorator — see `reflex_docs/pages/`, `reflex_docs/templates/`
+- **Imports:** absolute from project root — `from reflex_docs.templates.docpage import docpage`
 - **Elements:** use `rx.el.*` with Tailwind (not `rx.box`, `rx.text`)
 
 ## Key conventions

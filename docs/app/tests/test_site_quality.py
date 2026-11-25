@@ -4,7 +4,6 @@ from typing import Literal, get_args
 
 import pytest
 import reflex as rx
-
 from reflex_components_core.el.elements.tables import Td, Tr
 from reflex_components_radix.themes.typography.code import Code
 from reflex_components_radix.themes.typography.heading import Heading
@@ -15,8 +14,6 @@ from reflex_docs.pages.docs.component import (
     component_docs,
     split_props,
 )
-from reflex_docs.pages.docs.source import stacked_description_rows
-
 from reflex_docs.pages.docs_landing.views.ai_builder import card
 from reflex_docs.pages.docs_landing.views.link_item import link_item
 from reflex_docs.templates.docpage import h3_comp
