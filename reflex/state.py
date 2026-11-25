@@ -58,6 +58,7 @@ from reflex_base.utils.exceptions import (
     UnretrievableVarValueError,
 )
 from reflex_base.utils.exceptions import ImmutableStateError as ImmutableStateError
+from reflex_base.utils.log import dedupe_once
 from reflex_base.utils.serializers import serializer
 from reflex_base.utils.types import _isinstance
 from reflex_base.vars import Field, VarData, field
@@ -547,6 +548,8 @@ all_base_state_classes: dict[str, None] = {}
 # The fields holding router data, which reset() leaves alone.
 _ROUTER_FIELD_NAMES = frozenset((*constants.ROUTER_VARS, constants.ROUTER_DATA))
 
+
+_WRAPPED_HANDLER_DEPRECATION = "Decorators above @rx.event"
 
 # What a wrapper stacked above @rx.event takes over from the function it
 # wraps: what functools.wraps copied from a plain function (its name, module,
@@ -1057,15 +1060,29 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             inner := inspect.unwrap(value, stop=lambda f: isinstance(f, EventHandler)),
             EventHandler,
         ):
-            console.deprecate(
-                feature_name="Decorators above @rx.event",
-                reason=(
-                    f"`{name}` is decorated above @rx.event; apply other "
-                    "decorators below it."
-                ),
-                deprecation_version="0.11.0",
-                removal_version="1.0",
-            )
+            # The default dedupe key is the feature name plus the class source
+            # location, which would name only the first method of a class.
+            # Dedupe per wrapped function and attribute name instead: every
+            # name a handler is assigned to is reported once, and classes built
+            # again from the same definition (ComponentState instances, states
+            # defined in a function) stay quiet. A partial or callable instance
+            # has no __qualname__.
+            if dedupe_once((
+                _WRAPPED_HANDLER_DEPRECATION,
+                inner.fn.__module__,
+                getattr(inner.fn, "__qualname__", None),
+                name,
+            )):
+                console.deprecate(
+                    feature_name=_WRAPPED_HANDLER_DEPRECATION,
+                    reason=(
+                        f"`{name}` is decorated above @rx.event; apply other "
+                        "decorators below it."
+                    ),
+                    deprecation_version="0.11.0",
+                    removal_version="1.0",
+                    dedupe=False,
+                )
             for attr in _STACKED_HANDLER_ATTRIBUTES:
                 if hasattr(inner.fn, attr):
                     setattr(value, attr, getattr(inner.fn, attr))
@@ -2186,8 +2203,14 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         """
         if include_computed:
             self._mark_dirty_computed_vars()
+        # Read stored fields straight from the instance dict; defaults not
+        # stored yet go through `get_value`.
+        values = self.__dict__
         base_vars = {
-            prop_name: self.get_value(prop_name) for prop_name in self.base_vars
+            prop_name: values[prop_name]
+            if prop_name in values
+            else self.get_value(prop_name)
+            for prop_name in self.base_vars
         }
         if initial and include_computed:
             computed_vars = {
