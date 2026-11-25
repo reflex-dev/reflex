@@ -1848,6 +1848,23 @@ export const applyEventActions = (
 };
 
 /**
+ * Get the key that debounce and throttle track events by.
+ *
+ * Every module call is a `_call_js` event, so its key also names the module
+ * and the function: calls of different functions keep separate timers.
+ * @param {{name: string, payload?: any}[]} events The events.
+ * @returns {string} The key.
+ */
+export const eventActionKey = (events) =>
+  events
+    .map(({ name, payload }) =>
+      name === "_call_js"
+        ? `${name}:${payload.module}:${payload.function}`
+        : name,
+    )
+    .join("+++");
+
+/**
  * Package client-side storage values as payload to send to the
  * backend with the hydrate event
  * @param client_storage The client storage object from context.js
@@ -2106,7 +2123,7 @@ export const useEventLoop = (
       () => queueEvents(_events, socket, false, navigate, params),
       event_actions,
       args,
-      _events.map((e) => e.name).join("+++"),
+      eventActionKey(_events),
       () => !!socket.current?.connected,
     );
   }, []);

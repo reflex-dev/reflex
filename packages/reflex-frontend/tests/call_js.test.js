@@ -6,7 +6,7 @@
  */
 import { afterEach, beforeAll, expect, test, vi } from "vitest";
 
-import { applyEvent, queueEvents } from "$/utils/state";
+import { applyEvent, eventActionKey, queueEvents } from "$/utils/state";
 
 const modules = vi.hoisted(() => {
   let releaseSlow = () => {};
@@ -369,5 +369,25 @@ test("a function that throws, or a module that fails to load, is reported", asyn
       null,
       new Error("Failed to fetch the module."),
     ],
+  ]);
+});
+
+test("each module function keeps its own debounce and throttle key", () => {
+  const call = (module, fn) => ({
+    name: "_call_js",
+    payload: { module, function: fn, args: [] },
+  });
+  expect(
+    [
+      [call("app.scripts.party", "celebrate")],
+      [call("app.scripts.party", "flash")],
+      [call("app.scripts.page", "celebrate")],
+      [call("app.scripts.party", "celebrate"), { name: "state.handler" }],
+    ].map(eventActionKey),
+  ).toEqual([
+    "_call_js:app.scripts.party:celebrate",
+    "_call_js:app.scripts.party:flash",
+    "_call_js:app.scripts.page:celebrate",
+    "_call_js:app.scripts.party:celebrate+++state.handler",
   ]);
 });

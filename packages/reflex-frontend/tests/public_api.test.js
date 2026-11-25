@@ -25,6 +25,7 @@ const PUBLIC_API = {
     "connect",
     "encodeFormDataArgs",
     "evalReactComponent",
+    "eventActionKey",
     "generateUUID",
     "getBackendURL",
     "getClientState",
