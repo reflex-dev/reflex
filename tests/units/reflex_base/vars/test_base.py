@@ -209,6 +209,24 @@ def test_custom_attr_is_carried_by_reference():
     assert rebuilt._check is check  # pyright: ignore[reportAttributeAccessIssue]
 
 
+@pytest.mark.parametrize(
+    ("name", "annotated"),
+    [("item", True), ("item", False), ("_item", True), ("_item", False)],
+)
+def test_dataclasses_field_default_raises(name: str, annotated: bool):
+    """A dataclasses.field(...) default names the var and points to rx.field.
+
+    Args:
+        name: A frontend or backend var name.
+        annotated: Whether the var has a type annotation.
+    """
+    namespace = {"__module__": __name__, name: dataclasses.field(default_factory=list)}
+    if annotated:
+        namespace["__annotations__"] = {name: list}
+    with pytest.raises(StateValueError, match=rf"MyState\.{name}.*rx\.field"):
+        type("MyState", (EvenMoreBasicBaseState,), namespace)
+
+
 def _type_alias_types() -> list[type]:
     native = getattr(typing, "TypeAliasType", None)
     return (
