@@ -6,7 +6,7 @@ import asyncio
 import contextlib
 import inspect
 import time
-from collections.abc import Iterator, Mapping
+from collections.abc import Coroutine, Iterator, Mapping
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Final, NamedTuple
 
@@ -47,6 +47,15 @@ _record_delta_values: ContextVar[bool] = ContextVar(
 # to the normal event delta, avoiding an extra evaluation during hydration.
 _replay_client_storage: ContextVar[bool] = ContextVar(
     "_replay_client_storage", default=False
+)
+
+
+# Collects the errors of frontend computed vars that raise while a hydration
+# snapshot is built, so that the snapshot leaves them out instead of failing as
+# a whole; None outside of one. A computed var of any state is evaluated there,
+# so one that raises would otherwise break hydration of every page.
+_snapshot_errors: ContextVar[list[Exception] | None] = ContextVar(
+    "_snapshot_errors", default=None
 )
 
 
@@ -153,6 +162,47 @@ async def _resolve_delta(delta: Delta) -> Delta:
         else:
             delta[state_name][var_name] = resolved
     return delta
+
+
+def _snapshot_value(state: BaseState, name: str, errors: list[Exception]) -> Any:
+    """Get a computed var's value for a snapshot, recording an error instead of raising it.
+
+    Args:
+        state: The state the computed var belongs to.
+        name: The name of the computed var.
+        errors: The list to append an error raised while computing it to.
+
+    Returns:
+        The value, a coroutine resolving to it for an async computed var, or
+        ``_DROP_FROM_DELTA`` when computing it raised.
+    """
+    try:
+        value = state.get_value(name)
+    except Exception as err:
+        errors.append(err)
+        return _DROP_FROM_DELTA
+    if inspect.iscoroutine(value):
+        return _await_snapshot_value(value, errors)
+    return value
+
+
+async def _await_snapshot_value(
+    value: Coroutine[Any, Any, Any], errors: list[Exception]
+) -> Any:
+    """Await an async computed var's value for a snapshot, recording an error instead of raising it.
+
+    Args:
+        value: The coroutine computing the value.
+        errors: The list to append an error raised while awaiting it to.
+
+    Returns:
+        The value, or ``_DROP_FROM_DELTA`` when awaiting it raised.
+    """
+    try:
+        return await value
+    except Exception as err:
+        errors.append(err)
+        return _DROP_FROM_DELTA
 
 
 def _record_or_drop_delta_value(

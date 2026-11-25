@@ -1,0 +1,1 @@
+A computed var that raises no longer breaks page loads for every page in the browser tab: hydration leaves that var out, reports its error to the backend exception handler, and still runs the page's `on_load` handlers.

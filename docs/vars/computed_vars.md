@@ -37,6 +37,12 @@ Here, `upper_text` is a computed var that always holds the upper case version of
 
 We recommend always using type annotations for computed vars.
 
+A page load computes every computed var of every state, not only those the page
+uses. A computed var that raises is left out, and its error goes to the
+[backend exception handler](/docs/utility-methods/exception-handlers/) on every
+page load until its inputs change. Return a fallback value instead, for example
+`self._data.get("user", "")`.
+
 ## Cached Vars
 
 By default, all computed vars are cached (`cache=True`). A cached var is only

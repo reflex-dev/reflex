@@ -2680,10 +2680,10 @@ async def test_hydrate_and_load_survives_raising_computed_vars(
         {PageState.get_full_name(): {"loads" + FIELD_MARKER: 2}},
         {state_name: {hydrated_key: True}},
     ]
+    # Both errors are reported ahead of the on_load chain, in one batch.
     redirect = Event.from_event_type(rx.redirect("/login"))[0]
     assert [[(e.name, e.payload) for e in events] for _, events in emitted_events] == [
-        [(redirect.name, redirect.payload)],
-        [(redirect.name, redirect.payload)],
+        [(redirect.name, redirect.payload), (redirect.name, redirect.payload)]
     ]
 
 
