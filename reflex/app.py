@@ -9,6 +9,7 @@ import dataclasses
 import functools
 import importlib
 import inspect
+import ipaddress
 import json
 import logging
 import operator
@@ -31,7 +32,7 @@ from contextvars import Token
 from datetime import timedelta
 from pathlib import Path
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, Any, ForwardRef, overload
 
 from reflex_base import constants, otel
 from reflex_base.client_state import _collect_declarations
@@ -45,6 +46,8 @@ from reflex_base.event import (
     EventSpec,
     EventType,
     IndividualEventType,
+    _check_not_undecorated_state_method,
+    event_sequence,
     noop,
 )
 from reflex_base.event.context import EventContext
@@ -81,7 +84,7 @@ from starlette.middleware import cors
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from starlette.staticfiles import StaticFiles
-from typing_extensions import Unpack
+from typing_extensions import Unpack, evaluate_forward_ref
 
 from reflex._upload import UploadedFilesHeadersMiddleware, upload
 from reflex._upload import UploadFile as UploadFile
@@ -121,6 +124,9 @@ if sys.version_info < (3, 13):
     from typing_extensions import deprecated
 else:
     from warnings import deprecated
+
+if sys.version_info >= (3, 14):
+    from annotationlib import Format
 
 if TYPE_CHECKING:
     from engineio import AsyncServer as AsyncEngineIOServer
@@ -537,6 +543,59 @@ def _cors_allowed_origins() -> list[str] | None:
     return [f"{parts.scheme}://{host}:{port}"]
 
 
+def _get_typed_signature(call: Callable) -> inspect.Signature:
+    """Get the signature of a callable with its string annotations resolved.
+
+    String annotations (``from __future__ import annotations`` or quoted forward
+    references) are evaluated in the module that defines the callable, following
+    ``__wrapped__`` and callable instances.
+
+    Args:
+        call: The callable to inspect.
+
+    Returns:
+        The signature with every resolvable annotation evaluated.
+    """
+    try:
+        signature = inspect.signature(call, eval_str=True)
+    except NameError:
+        # Names imported only under TYPE_CHECKING cannot be evaluated at runtime.
+        if sys.version_info >= (3, 14):
+            signature = inspect.signature(call, annotation_format=Format.FORWARDREF)
+        else:
+            signature = inspect.signature(call)
+    globalns = getattr(inspect.unwrap(call), "__globals__", {})
+    return signature.replace(
+        parameters=[
+            param.replace(annotation=_get_typed_annotation(param.annotation, globalns))
+            for param in signature.parameters.values()
+        ],
+        return_annotation=_get_typed_annotation(signature.return_annotation, globalns),
+    )
+
+
+def _get_typed_annotation(annotation: Any, globalns: dict[str, Any]) -> Any:
+    """Evaluate a string annotation that is left after ``eval_str``.
+
+    A quoted forward reference under ``from __future__ import annotations`` is a
+    string again after one evaluation, so it is evaluated as a ``ForwardRef``.
+
+    Args:
+        annotation: The annotation to evaluate.
+        globalns: The module namespace of the callable.
+
+    Returns:
+        The evaluated annotation, or the annotation unchanged when it is not a
+        string or names something that is not defined at runtime.
+    """
+    if isinstance(annotation, str):
+        try:
+            return evaluate_forward_ref(ForwardRef(annotation), globals=globalns)
+        except NameError:
+            return annotation
+    return annotation
+
+
 def _host_authority(host: str, default_port: int) -> tuple[str | None, int] | None:
     """Split a ``Host`` header value into a lowercase hostname and a port.
 
@@ -598,6 +657,50 @@ def _trusted_forwarded_value(
     if len(entries) >= trusted_proxy_hops:
         return entries[-trusted_proxy_hops]
     return None if appended or not entries else entries[0]
+
+
+def _is_port(text: str) -> bool:
+    """Return whether text is a port number.
+
+    Args:
+        text: The text after the ``:`` of an address.
+
+    Returns:
+        Whether the text is ASCII digits for a number from 0 to 65535.
+    """
+    return len(text) <= 5 and text.isascii() and text.isdigit() and int(text) < 65536
+
+
+def _forwarded_client_ip(entry: str) -> str | None:
+    """Normalize an ``X-Forwarded-For`` entry to an IP address.
+
+    Args:
+        entry: The entry, an IP address with an optional port and IPv6 brackets.
+
+    Returns:
+        The normalized address, or None when the entry is not an IP address.
+    """
+    if entry.startswith("["):
+        entry, closed, rest = entry[1:].partition("]")
+        port_ok = not rest or (rest.startswith(":") and _is_port(rest[1:]))
+        if not closed or not port_ok:
+            return None
+    elif entry.count(":") == 1:
+        entry, _, port = entry.partition(":")
+        if not _is_port(port):
+            return None
+    if "%" in entry:
+        # A zone index only means something on the proxy's own host, and
+        # ``ipaddress`` keeps it without validating it.
+        return None
+    try:
+        ip = ipaddress.ip_address(entry)
+    except ValueError:
+        return None
+    # A dual-stack proxy writes an IPv4 client as ``::ffff:a.b.c.d``.
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped:
+        ip = ip.ipv4_mapped
+    return str(ip)
 
 
 def _origin_matches_request(
@@ -1521,6 +1624,9 @@ class App(MiddlewareMixin, LifespanMixin):
         # Check if the route given is valid
         verify_route_validity(route)
 
+        for load_event in event_sequence(on_load):
+            _check_not_undecorated_state_method(load_event, "on_load")
+
         if isinstance(component, Callable):
             source_module = memo_paths.capture_source_module(component)
         else:
@@ -1774,12 +1880,15 @@ class App(MiddlewareMixin, LifespanMixin):
 
         self._plugin_routes_registered = True
 
-    def _compile_page(self, route: str, save_page: bool = True):
+    def _compile_page(self, route: str, save_page: bool = True) -> Component | None:
         """Compile a page.
 
         Args:
             route: The route of the page to compile.
             save_page: If True, the compiled page is saved to self._pages.
+
+        Returns:
+            The evaluated page, or None if it was evaluated earlier in this process.
         """
         # Evaluating a page has global side effects (dynamic state creation), so
         # skip routes already evaluated in this process to avoid duplicating them.
@@ -1787,7 +1896,7 @@ class App(MiddlewareMixin, LifespanMixin):
         # page saved, or it is already saved. Otherwise fall through to build and
         # store the component so ``save_page=True`` still populates ``_pages``.
         if route in self._evaluated_pages and (not save_page or route in self._pages):
-            return
+            return None
 
         n_states_before = len(all_base_state_classes)
         component = compiler.compile_unevaluated_page(
@@ -1807,6 +1916,7 @@ class App(MiddlewareMixin, LifespanMixin):
         self._check_routes_conflict(route)
         if save_page:
             self._pages[route] = component
+        return component
 
     @property
     def _page_routes(self) -> list[str]:
@@ -2322,6 +2432,7 @@ class App(MiddlewareMixin, LifespanMixin):
                     await self.event_namespace.emit_update(
                         update=StateUpdate(delta=delta),
                         token=token.ident,
+                        suppress_warnings=True,
                     )
 
     def _validate_exception_handlers(self):
@@ -2367,11 +2478,12 @@ class App(MiddlewareMixin, LifespanMixin):
                 raise ValueError(msg)
 
             # Check if the function has the necessary annotations and types in the right order
-            argspec = inspect.getfullargspec(handler_fn)
+            sig = _get_typed_signature(handler_fn)
             arg_annotations = {
-                k: eval(v) if isinstance(v, str) else v
-                for k, v in argspec.annotations.items()
-                if k not in ["args", "kwargs", "return"]
+                k: param.annotation
+                for k, param in sig.parameters.items()
+                if param.annotation is not inspect.Parameter.empty
+                and k not in ["args", "kwargs"]
             }
 
             for required_arg_index, required_arg in enumerate(handler_spec):
@@ -2385,21 +2497,20 @@ class App(MiddlewareMixin, LifespanMixin):
                     )
                     raise ValueError(msg)
 
-                if not issubclass(arg_annotations[required_arg], Exception):
+                # An annotation that names something undefined at runtime stays unresolved.
+                annotation = arg_annotations[required_arg]
+                if not isinstance(annotation, type) or not issubclass(
+                    annotation, Exception
+                ):
                     msg = (
                         f"Provided custom {handler_domain} exception handler `{fn_name_}` has the wrong type for {required_arg} argument."
-                        f"Expected to be `Exception` but got `{arg_annotations[required_arg]}`"
+                        f"Expected to be `Exception` but got `{annotation}`"
                     )
                     raise ValueError(msg)
 
             # Check if the return type is valid for backend exception handler
             if handler_domain == "backend":
-                sig = inspect.signature(self.backend_exception_handler)
-                return_type = (
-                    eval(sig.return_annotation)
-                    if isinstance(sig.return_annotation, str)
-                    else sig.return_annotation
-                )
+                return_type = sig.return_annotation
 
                 valid = bool(
                     return_type == EventSpec
@@ -2623,7 +2734,7 @@ class EventNamespace(AsyncNamespace):
         """
         if isinstance(self._token_manager, RedisTokenManager):
             # Make sure this instance is watching for updates from other instances.
-            self._token_manager.ensure_lost_and_found_task(self.emit_update)
+            await self._token_manager.ensure_lost_and_found_subscribed(self.emit_update)
         boot_event = frontend_schema = None
         if isinstance(auth, dict):
             boot_event = auth.get(constants.CompileVars.CONNECT_AUTH_EVENT)
@@ -2716,7 +2827,13 @@ class EventNamespace(AsyncNamespace):
             headers.get("x-forwarded-for", ""), get_config().trusted_proxy_hops
         )
         if forwarded_ip is not None:
-            client_ip = forwarded_ip
+            if (normalized_ip := _forwarded_client_ip(forwarded_ip)) is not None:
+                client_ip = normalized_ip
+            else:
+                logger.debug(
+                    f"Ignoring X-Forwarded-For entry {_clip(forwarded_ip)}: "
+                    "not an IP address."
+                )
         return {
             constants.RouteVar.SESSION_ID: sid,
             constants.RouteVar.HEADERS: headers,
@@ -2762,12 +2879,16 @@ class EventNamespace(AsyncNamespace):
             return task
         return None
 
-    async def emit_update(self, update: StateUpdate, token: str) -> None:
+    async def emit_update(
+        self, update: StateUpdate, token: str, suppress_warnings: bool = False
+    ) -> None:
         """Emit an update to the client.
 
         Args:
             update: The state update to send.
             token: The client token (tab) associated with the event.
+            suppress_warnings: Whether to skip the warning when no client is
+                connected with the token.
         """
         socket_record = self._token_manager.token_to_socket.get(token)
         if (
@@ -2777,7 +2898,7 @@ class EventNamespace(AsyncNamespace):
             if isinstance(self._token_manager, RedisTokenManager):
                 # The socket belongs to another instance of the app, send it to the lost and found.
                 await self._token_manager.emit_lost_and_found(token, update)
-            else:
+            elif not suppress_warnings:
                 # If the socket record is None, we are not connected to a client. Prevent sending
                 # updates to all clients.
                 logger.warning(

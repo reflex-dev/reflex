@@ -35,7 +35,7 @@ from reflex_base import otel
 from reflex_base.components.component import Component
 from reflex_base.constants import Templates
 from reflex_base.constants.state import FIELD_MARKER
-from reflex_base.event import Event
+from reflex_base.event import Event, EventSpec
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.event.processor.event_processor import QueueShutDown
@@ -92,6 +92,7 @@ from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
+from reflex.istate.shared import UPDATE_OTHER_CLIENT_TASKS
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.model import Model
 from reflex.state import (
@@ -103,7 +104,12 @@ from reflex.state import (
 )
 from reflex.utils import build
 from reflex.utils import exec as exec_utils
-from reflex.utils.token_manager import RedisTokenManager, SocketRecord
+from reflex.utils.token_manager import (
+    LocalTokenManager,
+    RedisTokenManager,
+    SocketRecord,
+)
+from tests.units.exception_handler_helpers import logged
 
 from .conftest import active_tracer, chdir, metric_points
 from .mock_redis import mock_redis
@@ -117,6 +123,8 @@ from .states.upload import (
 
 if TYPE_CHECKING:
     from multiprocessing.connection import Connection
+
+    from tests.units.exception_handler_helpers import TypeCheckingOnlyError
 
 
 class EmptyState(BaseState):
@@ -4075,6 +4083,227 @@ custom_exception_handlers = {
 }
 
 
+class CustomAppError(Exception):
+    """An exception class defined outside reflex.app."""
+
+
+def custom_exception_handler_with_custom_error(exception: CustomAppError):
+    """Custom exception handler annotated with an application exception.
+
+    Args:
+        exception: The exception to handle.
+    """
+    print("Custom Backend Exception")
+    print(exception)
+
+
+def test_exception_handler_annotation_resolves_outside_reflex_app():
+    """String annotations resolve in the handler's module, not reflex.app."""
+    rx.App(
+        # A narrower annotation than ``Exception`` is the case under test.
+        frontend_exception_handler=custom_exception_handler_with_custom_error,  # pyright: ignore[reportArgumentType]
+        backend_exception_handler=custom_exception_handler_with_custom_error,  # pyright: ignore[reportArgumentType]
+    )
+
+
+class ClassBasedDecorator:
+    """Decorator that keeps ``__wrapped__`` on itself and forwards through ``__call__``."""
+
+    def __init__(self, fn):
+        """Mirror the function's metadata onto the decorator instance.
+
+        Args:
+            fn: The function to wrap.
+        """
+        functools.update_wrapper(self, fn)
+
+    def __call__(self, *args, **kwargs):
+        """Call the wrapped function.
+
+        Args:
+            *args: Positional arguments for the wrapped function.
+            **kwargs: Keyword arguments for the wrapped function.
+
+        Returns:
+            The value returned by the wrapped function.
+        """
+        return self.__wrapped__(*args, **kwargs)  # pyright: ignore[reportAttributeAccessIssue]
+
+
+class ClassCustomExceptionHandler:
+    """Handler provided as a class instead of a function or an instance."""
+
+    def __call__(self, exception: CustomAppError):
+        """Handle the exception.
+
+        Args:
+            exception: The exception to handle.
+        """
+        print("Custom Backend Exception")
+        print(exception)
+
+
+def test_exception_handler_unwraps_class_based_decorator():
+    """A decorator instance forwards to its function through ``__wrapped__``."""
+    handler = ClassBasedDecorator(custom_exception_handler_with_custom_error)
+    rx.App(frontend_exception_handler=handler, backend_exception_handler=handler)
+
+
+def test_exception_handler_rejects_class():
+    """A class is rejected because its signature is the one of its constructor."""
+    with pytest.raises(ValueError, match="does not take the required argument"):
+        rx.App(frontend_exception_handler=ClassCustomExceptionHandler)  # pyright: ignore[reportArgumentType] - the class itself is the case under test
+
+
+@logged
+def decorated_custom_exception_handler(exception: CustomAppError):
+    """Handler decorated in another module.
+
+    Args:
+        exception: The exception to handle.
+    """
+    print("Custom Backend Exception")
+    print(exception)
+
+
+def quoted_custom_exception_handler(exception: "CustomAppError"):  # noqa: UP037  # the quotes are the case under test
+    """Handler with an explicitly quoted forward reference.
+
+    Args:
+        exception: The exception to handle.
+    """
+    print("Custom Backend Exception")
+    print(exception)
+
+
+class CallableCustomExceptionHandler:
+    """Handler provided as a callable instance."""
+
+    def __call__(self, exception: CustomAppError):
+        """Handle the exception.
+
+        Args:
+            exception: The exception to handle.
+        """
+        print("Custom Backend Exception")
+        print(exception)
+
+
+class DecoratedCallableCustomExceptionHandler:
+    """Handler provided as a callable instance whose ``__call__`` is decorated."""
+
+    @logged
+    def __call__(self, exception: CustomAppError):
+        """Handle the exception.
+
+        Args:
+            exception: The exception to handle.
+        """
+        print("Custom Backend Exception")
+        print(exception)
+
+
+@pytest.mark.parametrize(
+    "handler_fn",
+    [
+        pytest.param(decorated_custom_exception_handler, id="decorated"),
+        pytest.param(quoted_custom_exception_handler, id="quoted"),
+        pytest.param(CallableCustomExceptionHandler(), id="callable_instance"),
+        pytest.param(
+            DecoratedCallableCustomExceptionHandler(),
+            id="decorated_callable_instance",
+        ),
+    ],
+)
+def test_exception_handler_annotation_resolves_in_handler_module(handler_fn):
+    """Annotations resolve for decorated, quoted and callable-instance handlers.
+
+    Args:
+        handler_fn: The exception handler to validate.
+    """
+    rx.App(frontend_exception_handler=handler_fn, backend_exception_handler=handler_fn)
+
+
+def backend_exception_handler_with_invalid_string_return_annotation(
+    exception: CustomAppError,
+) -> int:
+    """Backend handler whose string return annotation resolves to an invalid type.
+
+    Args:
+        exception: The exception to handle.
+
+    Returns:
+        int: The wrong return type.
+    """
+    print("Custom Backend Exception")
+    print(exception)
+    return 0
+
+
+class BackendCallableExceptionHandlerWithStringReturnAnnotation:
+    """Backend handler whose decorated ``__call__`` has a string return annotation."""
+
+    @logged
+    def __call__(self, exception: CustomAppError) -> EventSpec | None:
+        """Handle the exception.
+
+        Args:
+            exception: The exception to handle.
+        """
+        print("Custom Backend Exception")
+        print(exception)
+
+
+def test_backend_exception_handler_return_annotation_is_resolved():
+    """A string return annotation is resolved before it is validated."""
+    rx.App(
+        backend_exception_handler=BackendCallableExceptionHandlerWithStringReturnAnnotation()
+    )
+
+
+def test_backend_exception_handler_rejects_invalid_resolved_return_annotation():
+    """An invalid return annotation is rejected after resolution."""
+    # An ``int`` return type is the case under test.
+    handler = backend_exception_handler_with_invalid_string_return_annotation
+    with pytest.raises(ValueError, match="has the wrong return type"):
+        rx.App(backend_exception_handler=handler)  # pyright: ignore[reportArgumentType]
+
+
+def frontend_handler_with_type_checking_only_return(
+    exception: Exception,
+) -> TypeCheckingOnlyError | None:
+    """Frontend handler whose return annotation is defined only for type checkers.
+
+    Args:
+        exception: The exception to handle.
+    """
+    print(exception)
+
+
+def frontend_handler_with_type_checking_only_exception(
+    exception: TypeCheckingOnlyError,
+):
+    """Frontend handler whose exception annotation is defined only for type checkers.
+
+    Args:
+        exception: The exception to handle.
+    """
+    print(exception)
+
+
+def test_exception_handler_allows_type_checking_only_return_annotation():
+    """A name imported only under TYPE_CHECKING does not stop the validation."""
+    handler = frontend_handler_with_type_checking_only_return
+    rx.App(frontend_exception_handler=handler)  # pyright: ignore[reportArgumentType]
+
+
+def test_exception_handler_rejects_type_checking_only_exception_annotation():
+    """An exception annotation that cannot be resolved is rejected, not crashed on."""
+    with pytest.raises(ValueError, match="has the wrong type for exception argument"):
+        handler = frontend_handler_with_type_checking_only_exception
+        rx.App(frontend_exception_handler=handler)  # pyright: ignore[reportArgumentType]
+
+
 @pytest.mark.parametrize(
     ("handler_fn", "expected"),
     [
@@ -4250,10 +4479,11 @@ async def test_app_modify_state_clean(token: str, substate: bool, frontend: bool
             exp_delta = {Sub.get_full_name(): {"sub_count_rx_state_": 1}}
         else:
             exp_delta = {Base.get_full_name(): {"count_rx_state_": 1}}
-        assert (
-            app._event_namespace.emit_update.call_args.kwargs["update"].delta
-            == exp_delta
-        )
+        assert app._event_namespace.emit_update.call_args.kwargs == {
+            "update": StateUpdate(delta=exp_delta),
+            "token": token,
+            "suppress_warnings": True,
+        }
     else:
         assert app._event_namespace.emit_update.call_count == 0
 
@@ -4411,6 +4641,107 @@ async def test_modify_state_rebinds_event_context_to_token(
         assert EventContext.get().token == "token-A"
     finally:
         EventContext.reset(actor_token)
+
+
+async def test_modify_state_emits_only_to_connected_tokens(
+    monkeypatch: pytest.MonkeyPatch,
+    clean_registration_context: RegistrationContext,
+    caplog: pytest.LogCaptureFixture,
+):
+    """Modify state emits only to tokens that a browser connected with.
+
+    A shared state token has no socket: its linked clients get the update
+    through the shared state fan-out. A browser token that another client links
+    to, or whose state expired while it stayed connected, still gets the emit.
+    Modify state logs no warning for a token without a socket, while a regular
+    emit to a browser that disconnected still does.
+
+    Args:
+        monkeypatch: Restore root metadata changed by defining a shared state.
+        clean_registration_context: Isolate the temporary shared state class.
+        caplog: Capture the warnings of the app.
+    """
+    links = State.get_fields()["_reflex_internal_links"]
+    monkeypatch.setattr(links, "default", links.default)
+    monkeypatch.setattr(links, "default_factory", links.default_factory)
+    monkeypatch.setattr(
+        State, "_always_dirty_substates", State._always_dirty_substates.copy()
+    )
+
+    class CounterState(rx.SharedState):
+        count: int = 0
+
+    app = App(_state=State)
+    state_manager = app._state_manager = StateManagerMemory()
+    app._event_processor = Mock(
+        _root_context=EventContext(
+            token="", state_manager=state_manager, enqueue_impl=AsyncMock()
+        )
+    )
+    event_namespace = app._event_namespace = EventNamespace("/event", app)
+    event_namespace._token_manager = LocalTokenManager()
+    emit = event_namespace.emit = AsyncMock()
+    for token in ("client", "target", "expired", "gone"):
+        await event_namespace.link_token_to_sid(f"{token}-sid", token)
+    await event_namespace._token_manager.disconnect_token("gone", "gone-sid")
+
+    async def modify(token: str, count: int | None = None, link: str = "") -> list:
+        """Modify the counter of a token and wait for the shared state fan-out.
+
+        Args:
+            token: The token to modify.
+            count: The count to set, if any.
+            link: The token to link the counter to, if any.
+
+        Returns:
+            The socket ids the updates were emitted to.
+        """
+        emit.reset_mock()
+        async with app.modify_state(
+            BaseStateToken(ident=token, cls=CounterState)
+        ) as root_state:
+            counter = await root_state.get_state(CounterState)
+            if link:
+                await counter._link_to(link)
+            if count is not None:
+                counter.count = count
+        await asyncio.gather(*UPDATE_OTHER_CLIENT_TASKS)
+        return [call.kwargs["to"] for call in emit.await_args_list]
+
+    def app_warnings() -> list[str]:
+        """Get the warnings logged by the app.
+
+        Returns:
+            The messages of the reflex.app warning records.
+        """
+        return [
+            record.getMessage()
+            for record in caplog.records
+            if record.name == "reflex.app" and record.levelno == logging.WARNING
+        ]
+
+    with caplog.at_level(logging.WARNING, logger="reflex.app"):
+        assert await modify("client", link="shared") == ["client-sid"]
+        assert await modify("client", count=1) == ["client-sid"]
+        # The shared token gets no emit; its linked client gets the fan-out.
+        assert await modify("shared", count=2) == ["client-sid"]
+        # A shared token that no client linked to yet has no socket either.
+        assert await modify("unlinked", count=3) == []
+
+        # A browser token that another client links to is still connected.
+        await modify("target", count=4)
+        await modify("client", link="target")
+        assert await modify("target", count=5) == ["target-sid", "client-sid"]
+        # A connected browser whose state expired still gets the emit.
+        state_manager._purge_token(BaseStateToken(ident="expired", cls=State))
+        assert await modify("expired", count=6) == ["expired-sid"]
+
+        assert await modify("gone", count=7) == []
+        assert app_warnings() == []
+
+        await event_namespace.emit_update(StateUpdate(), token="gone")
+    assert emit.await_count == 0
+    assert app_warnings() == ["Attempting to send delta to disconnected client 'gone'"]
 
 
 def test_set_contexts_no_event_processor(isolated_context: contextvars.Context):
@@ -4782,6 +5113,22 @@ def test_static_router_data_keeps_every_repeated_header_field(
         (1, "203.0.113.7", "10.0.0.2", "203.0.113.7"),
         (2, "6.6.6.6, 203.0.113.7, 10.0.0.2", "127.0.0.1", "203.0.113.7"),
         (2, "203.0.113.7", "10.0.0.2", "10.0.0.2"),
+        (1, "203.0.113.7:51234", "10.0.0.2", "203.0.113.7"),
+        (1, "[2001:db8::1]:443", "10.0.0.2", "2001:db8::1"),
+        (1, "[2001:db8::1]", "10.0.0.2", "2001:db8::1"),
+        (1, "2001:db8:0:0:0:0:0:1", "10.0.0.2", "2001:db8::1"),
+        (1, "6.6.6.6, not an ip <script>", "10.0.0.2", "10.0.0.2"),
+        (1, "[2001:db8::1", "10.0.0.2", "10.0.0.2"),
+        (1, "[2001:db8::1]junk", "10.0.0.2", "10.0.0.2"),
+        (1, "[2001:db8::1]:", "10.0.0.2", "10.0.0.2"),
+        (1, "203.0.113.7:garbage", "10.0.0.2", "10.0.0.2"),
+        (1, "203.0.113.7:", "10.0.0.2", "10.0.0.2"),
+        (1, "203.0.113.7:65536", "10.0.0.2", "10.0.0.2"),
+        (1, "[2001:db8::1]:100000", "10.0.0.2", "10.0.0.2"),
+        (1, "::ffff:203.0.113.7", "10.0.0.2", "203.0.113.7"),
+        (1, "[::ffff:203.0.113.7]:443", "10.0.0.2", "203.0.113.7"),
+        (1, "fe80::1%not an ip <script>", "10.0.0.2", "10.0.0.2"),
+        (1, "[fe80::1%eth0]:443", "10.0.0.2", "10.0.0.2"),
     ],
 )
 def test_static_router_data_resolves_client_ip_from_trusted_proxy_hops(
@@ -4807,6 +5154,30 @@ def test_static_router_data_resolves_client_ip_from_trusted_proxy_hops(
     )
 
     assert router_data[constants.RouteVar.CLIENT_IP] == expected_ip
+
+
+def test_static_router_data_logs_ignored_forwarded_client_ip(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """A forwarded entry that is not an IP address is logged and ignored."""
+    monkeypatch.setattr("reflex.app.get_config", lambda: Mock(trusted_proxy_hops=1))
+    with caplog.at_level(logging.DEBUG, logger="reflex.app"):
+        router_data = EventNamespace("/event", Mock())._build_static_router_data(
+            "sid1",
+            {
+                "asgi.scope": {
+                    "headers": [(b"x-forwarded-for", b"not an ip <script>")],
+                    "client": ("10.0.0.2", 1234),
+                }
+            },
+        )
+
+    assert router_data[constants.RouteVar.CLIENT_IP] == "10.0.0.2"
+    assert [
+        record.getMessage()
+        for record in caplog.records
+        if record.name == "reflex.app" and record.levelno == logging.DEBUG
+    ] == ["Ignoring X-Forwarded-For entry 'not an ip <script>': not an IP address."]
 
 
 def test_call_ignores_stale_marker_without_dev_backend_reload(
@@ -7178,3 +7549,25 @@ def test_client_state_conflicts_do_not_outlive_a_compile(
     app._unevaluated_pages.clear()
     app.add_page(lambda: rx.text(after.value), route="/a")
     app._compile(dry_run=True)
+
+
+def test_add_page_rejects_undecorated_on_load(monkeypatch: pytest.MonkeyPatch):
+    """With explicit event handlers, an undecorated on_load fails when the page is added."""
+    monkeypatch.setenv("REFLEX_STATE_EXPLICIT_EVENT_HANDLERS", "true")
+
+    with RegistrationContext():
+
+        class OnLoadState(State):
+            def load(self):
+                pass
+
+        app = App()
+        with pytest.raises(
+            exceptions.EventHandlerValueError,
+            match=r"OnLoadState\.load is wired to on_load but is not an event handler",
+        ):
+            app.add_page(
+                lambda: rx.text("x"),
+                route="/load",
+                on_load=OnLoadState.load,  # pyright: ignore[reportArgumentType]
+            )

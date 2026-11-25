@@ -1,0 +1,1 @@
+In development, a blocking warning caused by the first import of a module now names that module and the app line that imports it, suggests importing it with the app or in a thread, and leaves Python's import machinery out of the stack. The stack is now titled "Stack when the threshold was reached", since it is one sample taken at that moment.
