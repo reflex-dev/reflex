@@ -1008,9 +1008,6 @@ export default defineConfig((config) => ({{
     host: "127.0.0.1",
   }},
   resolve: {{
-    // utils/script_modules/<package> links to the app's package: its files
-    // resolve their imports from there, so packages come from .web.
-    preserveSymlinks: true,
     mainFields: ["browser", "module", "jsnext"],
     alias: [
       {{
@@ -1022,6 +1019,9 @@ export default defineConfig((config) => ({{
         replacement: fileURLToPath(new URL("./public", import.meta.url)),
       }},
     ],
+    // utils/script_modules/<package> links to the app's package: its files
+    // resolve their imports from there, so packages come from .web.
+    preserveSymlinks: true,
   }},
 }}));"""
 

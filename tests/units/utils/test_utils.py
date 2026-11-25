@@ -877,9 +877,6 @@ def test_vite_config_template_preserves_symlinks() -> None:
         sourcemap=False,
     )
     assert config.partition("\n  resolve: {\n")[2] == (
-        "    // utils/script_modules/<package> links to the app's package: its files\n"
-        "    // resolve their imports from there, so packages come from .web.\n"
-        "    preserveSymlinks: true,\n"
         '    mainFields: ["browser", "module", "jsnext"],\n'
         "    alias: [\n"
         "      {\n"
@@ -891,6 +888,9 @@ def test_vite_config_template_preserves_symlinks() -> None:
         '        replacement: fileURLToPath(new URL("./public", import.meta.url)),\n'
         "      },\n"
         "    ],\n"
+        "    // utils/script_modules/<package> links to the app's package: its files\n"
+        "    // resolve their imports from there, so packages come from .web.\n"
+        "    preserveSymlinks: true,\n"
         "  },\n"
         "}));"
     )
