@@ -42,6 +42,69 @@ def test_sidebar_active_marker_aligns_with_section_guide() -> None:
     assert "-bottom-1 -top-1 left-0" in rendered
 
 
+def test_sidebar_active_pill_stays_inside_indented_row() -> None:
+    """The active highlight aligns with the indented label (#7956).
+
+    The pill must not carry classes matched by the Reference/Changelog
+    guide-hiding selector.
+    """
+    rendered = docs_sidebar_leaf._definition.component.render()
+
+    def find_pill(node, parents):
+        """Find the active-highlight pill in a render dict.
+
+        Args:
+            node: The render-dict node to search from.
+            parents: The ancestors of node, outermost first.
+
+        Returns:
+            The ancestor list of the pill node (excluding the pill itself),
+            or None if no node carries the pill's exact className.
+        """
+        if not isinstance(node, dict):
+            return None
+        props = node.get("props") or []
+        cls = next(
+            (p for p in props if isinstance(p, str) and p.startswith("className:")),
+            "",
+        )
+        if (
+            cls
+            == 'className:"absolute left-0 top-1/2 h-8 w-full -translate-y-1/2 rounded-lg bg-accent"'
+        ):
+            return parents
+        for child in node.get("children", []):
+            found = find_pill(child, [*parents, node])
+            if found is not None:
+                return found
+        for key in ("true_value", "false_value"):
+            branch = node.get(key)
+            if isinstance(branch, dict):
+                found = find_pill(branch, [*parents, node])
+                if found is not None:
+                    return found
+        return None
+
+    parents = find_pill(rendered, [])
+    assert parents is not None, "active highlight pill not found"
+    flex = next(n for n in reversed(parents) if n.get("name") == "RadixThemesFlex")
+    assert (flex.get("props") or []) == [
+        'className:(isTrue(activeRxMemo) ? ("relative "+guideMarginClassRxMemo+" flex h-8 max-w-[14rem] items-center") : "relative flex h-8 items-center pl-4")'
+    ]
+
+    label = next(
+        n for n in flex.get("children", []) if n.get("name") == "RadixThemesText"
+    )
+    assert (label.get("props") or []) == [
+        'as:"p"',
+        'className:(isTrue(activeRxMemo) ? "relative m-0 min-w-0 truncate pl-4 text-sm font-[475] text-foreground transition-color" : "m-0 min-w-0 w-full truncate text-sm font-[475] text-foreground transition-color")',
+        "title:titleRxMemo",
+    ]
+
+    pill_top = next(n for n in reversed(parents) if n in flex.get("children", []))
+    assert flex["children"].index(pill_top) < flex["children"].index(label)
+
+
 def test_feedback_choices_are_individual_popover_triggers():
     """Each feedback choice is a real button, without an interactive div parent."""
     choices = docs_feedback_button().children[0]

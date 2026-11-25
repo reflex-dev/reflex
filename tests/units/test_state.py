@@ -4383,6 +4383,7 @@ def test_potentially_dirty_states():
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("forked_registration_context")
 async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
     """Test that router var dependencies are correctly tracked.
 
@@ -4429,16 +4430,6 @@ async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
     assert state.dirty_vars == {"foo"}
     assert parent_state.dirty_substates == {RouterVarDepState.get_name()}
 
-    # The locally-defined states above registered themselves in the class-level
-    # dependency maps on State, which outlive this test. Left behind, a later
-    # test that dirties a router var on a fresh State tree resolves the stale
-    # entry and raises on the missing substate. Drop them.
-    for dep_set in State._var_dependencies.values():
-        dep_set.difference_update({
-            (RouterVarDepState.get_full_name(), "foo"),
-        })
-    State._potentially_dirty_states.discard(RouterVarDepState.get_full_name())
-
 
 @pytest.mark.parametrize("name", constants.ROUTER_VARS)
 def test_router_field_names_are_reserved(name):
@@ -4455,6 +4446,7 @@ def test_router_field_names_are_reserved(name):
         )
 
 
+@pytest.mark.usefixtures("forked_registration_context")
 def test_router_var_dep_legacy_string() -> None:
     """An explicit deps=["router"] still fires when any router var changes.
 
@@ -4476,13 +4468,8 @@ def test_router_var_dep_legacy_string() -> None:
         ) in State._var_dependencies[router_var]
     assert "router" not in State._var_dependencies
 
-    # Drop the class-level registrations this locally-defined state made; see
-    # the note in test_router_var_dep.
-    for dep_set in State._var_dependencies.values():
-        dep_set.discard((LegacyRouterDepState.get_full_name(), "foo"))
-    State._potentially_dirty_states.discard(LegacyRouterDepState.get_full_name())
 
-
+@pytest.mark.usefixtures("forked_registration_context")
 def test_router_var_dep_legacy_string_still_compiles() -> None:
     """An app declaring deps=["router"] must still pass dependency validation.
 
@@ -4501,10 +4488,6 @@ def test_router_var_dep_legacy_string_still_compiles() -> None:
     assert constants.ROUTER in State.vars
     # Raises VarDependencyError if the dependency does not resolve to a var.
     App()._validate_var_dependencies()
-
-    for dep_set in State._var_dependencies.values():
-        dep_set.discard((LegacyRouterCompileState.get_full_name(), "foo"))
-    State._potentially_dirty_states.discard(LegacyRouterCompileState.get_full_name())
 
 
 @pytest.mark.asyncio
@@ -4528,6 +4511,7 @@ async def test_get_var_value_of_the_whole_router() -> None:
     ).client_token == router.session.client_token
 
 
+@pytest.mark.usefixtures("forked_registration_context")
 def test_router_var_dep_does_not_warn_for_the_var_form(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -4566,13 +4550,8 @@ def test_router_var_dep_does_not_warn_for_the_var_form(
     assert len(deprecations) == 1
     assert "StringFormRouterDepState.from_string" in deprecations[0]
 
-    for dep_set in State._var_dependencies.values():
-        dep_set.discard((VarFormRouterDepState.get_full_name(), "from_var"))
-        dep_set.discard((StringFormRouterDepState.get_full_name(), "from_string"))
-    State._potentially_dirty_states.discard(VarFormRouterDepState.get_full_name())
-    State._potentially_dirty_states.discard(StringFormRouterDepState.get_full_name())
 
-
+@pytest.mark.usefixtures("forked_registration_context")
 def test_router_var_dep_whole_router() -> None:
     """deps=[State.router] must track every per-field router var.
 
@@ -4606,11 +4585,6 @@ def test_router_var_dep_whole_router() -> None:
         WholeRouterDepState.get_full_name(),
         "summary",
     ) not in State._var_dependencies.get(constants.ROUTER, set())
-
-    # Drop the class-level registrations; see the note in test_router_var_dep.
-    for dep_set in State._var_dependencies.values():
-        dep_set.discard((WholeRouterDepState.get_full_name(), "summary"))
-    State._potentially_dirty_states.discard(WholeRouterDepState.get_full_name())
 
 
 def test_router_is_listed_as_a_var_and_inherited_by_substates() -> None:
@@ -4886,6 +4860,7 @@ def test_setvar_async_setter():
         ),
     ],
 )
+@pytest.mark.usefixtures("forked_registration_context")
 def test_redis_state_manager_config_knobs(tmp_path, expiration_kwargs, expected_values):
     proj_root = tmp_path / "project1"
     proj_root.mkdir()
@@ -4922,6 +4897,7 @@ config = rx.Config(
         (20000, 30000),
     ],
 )
+@pytest.mark.usefixtures("forked_registration_context")
 def test_redis_state_manager_config_knobs_invalid_lock_warning_threshold(
     tmp_path, redis_lock_expiration, redis_lock_warning_threshold
 ):
@@ -6457,6 +6433,50 @@ def test_dict_and_get_delta():
     }
 
 
+def test_dict_reads_stored_fields_from_instance_dict(monkeypatch: pytest.MonkeyPatch):
+    """Stored fields skip get_value; unread fields and computed vars go through it."""
+
+    class StoredFieldsState(rx.State):
+        count: int = 0
+        items: list[int] = []
+
+        @rx.var
+        def doubled(self) -> int:
+            return self.count * 2
+
+    state = StoredFieldsState()
+    state.count = 2
+    get_value = StoredFieldsState.get_value
+    read = []
+
+    def spy(self: StoredFieldsState, key: str) -> Any:
+        read.append(key)
+        return get_value(self, key)
+
+    monkeypatch.setattr(StoredFieldsState, "get_value", spy)
+    expected = {
+        StoredFieldsState.get_full_name(): {
+            "count" + FIELD_MARKER: 2,
+            "doubled" + FIELD_MARKER: 4,
+            "items" + FIELD_MARKER: [],
+        }
+    }
+
+    assert state.dict() == expected
+    assert read == ["items", "doubled"]
+
+    read.clear()
+    state.items.append(1)
+    expected[StoredFieldsState.get_full_name()]["items" + FIELD_MARKER] = [1]
+    snapshot = state.dict()
+
+    assert snapshot == expected
+    assert read == ["doubled"]
+    items = snapshot[StoredFieldsState.get_full_name()]["items" + FIELD_MARKER]
+    assert not isinstance(items, MutableProxy)
+    assert items is state.__dict__["items"]
+
+
 @pytest.mark.parametrize(
     ("key_factory", "expected_result", "should_raise"),
     [
@@ -6871,6 +6891,7 @@ async def test_async_computed_var_get_var_value(mock_app: rx.App, token: str):
     assert "foo" in comp_state.dirty_vars
 
 
+@pytest.mark.usefixtures("forked_registration_context")
 def test_computed_var_mutability() -> None:
     class CvMixin(rx.State, mixin=True):
         @rx.var(cache=True, deps=["hi"])
@@ -7362,6 +7383,7 @@ def test_base_var_bare_reannotation_does_not_raise() -> None:
     assert isinstance(ReannotatingChild.reannotated_value, Var)
 
 
+@pytest.mark.usefixtures("forked_registration_context")
 def test_composite_var_dep_tracks_fields_in_every_state():
     """A dependency on a var spanning two states must track both states' fields.
 
@@ -7402,16 +7424,6 @@ def test_composite_var_dep_tracks_fields_in_every_state():
     static_deps = _CompositeDepConsumer.__dict__["combined"]._static_deps
     assert "a_field" in static_deps.get(a_name, set())
     assert "b_field" in static_deps.get(b_name, set())
-
-    # The consumer registered itself in both source states' class-level
-    # dependency maps, which outlive this test. Left behind, a later test that
-    # dirties a_field or b_field resolves the stale entry and raises on the
-    # missing substate. Drop them.
-    consumer_name = _CompositeDepConsumer.get_full_name()
-    for state_cls in (_CompositeDepStateA, _CompositeDepStateB):
-        for dep_set in state_cls._var_dependencies.values():
-            dep_set.difference_update({(consumer_name, "combined")})
-        state_cls._potentially_dirty_states.discard(consumer_name)
 
 
 def test_getstate_holds_only_the_fields_of_the_state():
@@ -8031,6 +8043,204 @@ def test_wrapper_above_rx_event_is_deprecated_and_still_runs() -> None:
             event_deprecate.call_args.kwargs["feature_name"]
             == "Calling an event handler with a state instance"
         )
+
+
+def _wrapped_handler_warnings(caplog: pytest.LogCaptureFixture) -> list[str]:
+    """Collect the messages of the deprecation warnings that were logged.
+
+    Args:
+        caplog: The log capture fixture.
+
+    Returns:
+        The full message of every captured deprecation warning, with the
+        run-dependent source location replaced by a fixed placeholder.
+    """
+    messages = []
+    for record in caplog.records:
+        if record.name != "reflex.deprecation":
+            continue
+        message = record.getMessage()
+        if location := getattr(record, "location", None):
+            message = message.removesuffix(f"({location})") + "(<location>)"
+        messages.append(message)
+    return messages
+
+
+def _expected_wrapped_handler_warning(name: str) -> str:
+    """Build the full warning expected for a method decorated above @rx.event.
+
+    Args:
+        name: The method name.
+
+    Returns:
+        The complete expected message, as normalized by
+        ``_wrapped_handler_warnings``.
+    """
+    return (
+        "Decorators above @rx.event has been deprecated in version 0.11.0. "
+        f"`{name}` is decorated above @rx.event; apply other decorators below it. "
+        "It will be completely removed in 1.0. (<location>)"
+    )
+
+
+def test_wrapper_above_rx_event_warning_names_every_method(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Each method decorated above @rx.event is named, not just the first of the class."""
+    class_body_values: list = []
+    with caplog.at_level("WARNING", logger="reflex.deprecation"):
+
+        class ManyWrappedState(BaseState):
+            @_logged
+            @rx.event
+            def first_wrapped(self):
+                pass
+
+            class_body_values.append(first_wrapped)
+
+            @_logged
+            @rx.event
+            def second_wrapped(self):
+                pass
+
+    assert _wrapped_handler_warnings(caplog) == [
+        _expected_wrapped_handler_warning("first_wrapped"),
+        _expected_wrapped_handler_warning("second_wrapped"),
+    ]
+
+    # Repeating the setup of an already-warned method is deduplicated.
+    caplog.clear()
+    with caplog.at_level("WARNING", logger="reflex.deprecation"):
+        ManyWrappedState._item_is_event_handler("first_wrapped", class_body_values[0])
+    assert _wrapped_handler_warnings(caplog) == []
+
+
+def test_wrapper_above_rx_event_warns_once_per_method_for_dynamic_states(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Fresh classes built from one definition do not repeat the warning."""
+
+    class WrappedCounter(rx.ComponentState):
+        @_logged
+        @rx.event
+        def increment(self):
+            pass
+
+        @_logged
+        @rx.event
+        def decrement(self):
+            pass
+
+        @classmethod
+        def get_component(cls, *children, **props):
+            return rx.el.div(*children, **props)
+
+    def make_local_state() -> type[BaseState]:
+        class LocalWrappedState(BaseState):
+            @_logged
+            @rx.event
+            def local_first(self):
+                pass
+
+            @_logged
+            @rx.event
+            def local_second(self):
+                pass
+
+        return LocalWrappedState
+
+    with caplog.at_level("WARNING", logger="reflex.deprecation"):
+        components = [WrappedCounter.create() for _ in range(10)]
+        local_states = [make_local_state() for _ in range(3)]
+
+    assert _wrapped_handler_warnings(caplog) == [
+        _expected_wrapped_handler_warning("increment"),
+        _expected_wrapped_handler_warning("decrement"),
+        _expected_wrapped_handler_warning("local_first"),
+        _expected_wrapped_handler_warning("local_second"),
+    ]
+    # Every fresh class still gets its own handlers.
+    for state in (*(component.State for component in components), *local_states):
+        assert state is not None
+        assert all(handler.state is state for handler in state.event_handlers.values())
+
+
+def _partial_handler_impl(self, n: int = 0):
+    """Back the functools.partial handed to rx.event.
+
+    Args:
+        self: The state instance.
+        n: A bound argument.
+    """
+
+
+class _CallableHandler:
+    """A callable instance handed to rx.event; it has no ``__qualname__``."""
+
+    def __call__(self, state):
+        """Handle the event.
+
+        Args:
+            state: The state instance.
+        """
+
+
+@pytest.mark.parametrize(
+    "make_fn",
+    [lambda: functools.partial(_partial_handler_impl, n=2), _CallableHandler],
+    ids=["partial", "callable_instance"],
+)
+def test_wrapper_above_rx_event_of_callable_without_qualname_warns(
+    make_fn: Callable[[], Any], caplog: pytest.LogCaptureFixture
+) -> None:
+    """A wrapper above rx.event(<callable without __qualname__>) still only warns.
+
+    Args:
+        make_fn: Builds the callable handed to rx.event.
+        caplog: The log capture fixture.
+    """
+    fn = make_fn()
+    assert not hasattr(fn, "__qualname__")
+    with caplog.at_level("WARNING", logger="reflex.deprecation"):
+
+        class NoQualnameState(BaseState):
+            wrapped_no_qualname = _logged(rx.event(fn))
+
+    assert _wrapped_handler_warnings(caplog) == [
+        _expected_wrapped_handler_warning("wrapped_no_qualname"),
+    ]
+    assert isinstance(NoQualnameState.wrapped_no_qualname, EventHandler)
+
+
+def test_wrapper_above_rx_event_warning_names_every_alias(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """One wrapped handler assigned under two attribute names is named once per name."""
+    class_body_values: list = []
+    with caplog.at_level("WARNING", logger="reflex.deprecation"):
+
+        class AliasedWrappedState(BaseState):
+            @_logged
+            @rx.event
+            def aliased_original(self):
+                pass
+
+            aliased_copy = aliased_original
+            class_body_values.append(aliased_original)
+
+    assert _wrapped_handler_warnings(caplog) == [
+        _expected_wrapped_handler_warning("aliased_original"),
+        _expected_wrapped_handler_warning("aliased_copy"),
+    ]
+
+    # Each name is deduplicated on its own: only the new one is reported.
+    caplog.clear()
+    with caplog.at_level("WARNING", logger="reflex.deprecation"):
+        for name in ("aliased_original", "aliased_copy", "not_yet_warned"):
+            AliasedWrappedState._item_is_event_handler(name, class_body_values[0])
+    assert _wrapped_handler_warnings(caplog) == [
+        _expected_wrapped_handler_warning("not_yet_warned"),
+    ]
 
 
 def test_stacked_wrappers_above_rx_event_still_run() -> None:

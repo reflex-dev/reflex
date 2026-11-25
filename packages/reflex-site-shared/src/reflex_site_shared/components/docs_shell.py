@@ -207,14 +207,14 @@ def docs_sidebar_leaf(
     """
     return rx.el.li(
         rx.link(
-            rx.cond(
-                active,
-                rx.el.div(
-                    class_name="absolute left-0 top-1/2 -translate-y-1/2 w-full h-8 rounded-lg bg-accent z-[-1]",
-                ),
-                rx.fragment(),
-            ),
             rx.flex(
+                rx.cond(
+                    active,
+                    rx.el.div(
+                        class_name="absolute left-0 top-1/2 h-8 w-full -translate-y-1/2 rounded-lg bg-accent",
+                    ),
+                    rx.fragment(),
+                ),
                 rx.cond(
                     active,
                     rx.el.div(
@@ -230,7 +230,7 @@ def docs_sidebar_leaf(
                     # and its active highlight.
                     class_name=rx.cond(
                         active,
-                        "m-0 min-w-0 truncate pl-4 text-sm font-[475] text-foreground transition-color",
+                        "relative m-0 min-w-0 truncate pl-4 text-sm font-[475] text-foreground transition-color",
                         "m-0 min-w-0 w-full truncate text-sm font-[475] text-foreground transition-color",
                     ),
                 ),

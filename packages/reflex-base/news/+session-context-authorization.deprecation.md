@@ -1,0 +1,1 @@
+State access without an authorized session now warns by default and is rejected with `REFLEX_SESSION_TOKEN_MODE=enforce`: `app.modify_state` and event enqueueing raise `SessionAuthorizationError`, and unauthorized uploads return HTTP 403. Trusted server-side fan-out can explicitly pass `SessionToken.SYSTEM`.
