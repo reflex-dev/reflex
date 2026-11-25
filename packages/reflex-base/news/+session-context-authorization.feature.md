@@ -1,0 +1,1 @@
+Add session ownership checks to event contexts, including chained events and streamed upload responses. See the [browser session guide](https://reflex.dev/docs/api-routes/sessions/) for rollout and deployment configuration.

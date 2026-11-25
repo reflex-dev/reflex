@@ -121,7 +121,14 @@ def test_decode_rejects_invalid_claims(manager, field, value):
         field: The claim to replace.
         value: The invalid claim value.
     """
-    claims = {"v": 1, "aud": "test", "sid": "a" * 32, "iat": 1000, "exp": 1100}
+    claims = {
+        "v": 1,
+        "aud": "test",
+        "sid": "a" * 32,
+        "iat": 1000,
+        "exp": 1100,
+        "oat": 1000,
+    }
     header = {"alg": "HS256", "kid": next(iter(manager._keys))}
     assert manager.decode(_signed_token(header, claims)) is not None
     claims[field] = value
@@ -147,7 +154,14 @@ def test_decode_rejects_wrong_algorithm_or_key(manager, header):
         manager: The session codec fixture.
         header: The invalid JWT header.
     """
-    claims = {"v": 1, "aud": "test", "sid": "a" * 32, "iat": 1000, "exp": 1100}
+    claims = {
+        "v": 1,
+        "aud": "test",
+        "sid": "a" * 32,
+        "iat": 1000,
+        "exp": 1100,
+        "oat": 1000,
+    }
     assert manager.decode(_signed_token(header, claims)) is None
 
 
@@ -158,13 +172,20 @@ def test_decode_rejects_bad_signature_and_nonobject_claims(manager):
         manager: The session codec fixture.
     """
     header = {"alg": "HS256", "kid": next(iter(manager._keys))}
-    claims = {"v": 1, "aud": "test", "sid": "a" * 32, "iat": 1000, "exp": 1100}
+    claims = {
+        "v": 1,
+        "aud": "test",
+        "sid": "a" * 32,
+        "iat": 1000,
+        "exp": 1100,
+        "oat": 1000,
+    }
     assert manager.decode(_signed_token(header, claims, OTHER_SECRET)) is None
     assert manager.decode(_signed_token(header, [])) is None
 
 
 def test_refresh_keeps_existing_client_bindings(manager, monkeypatch):
-    """Refresh at the configured age without changing client token ownership.
+    """Refresh a session without changing client token ownership.
 
     Args:
         manager: The session codec fixture.
@@ -172,10 +193,7 @@ def test_refresh_keeps_existing_client_bindings(manager, monkeypatch):
     """
     session = manager.create()
     client_token = manager.create_client_token(session)
-    monkeypatch.setattr("reflex_base.session.time.time", lambda: 1049)
-    assert not manager.should_refresh(session)
     monkeypatch.setattr("reflex_base.session.time.time", lambda: 1050)
-    assert manager.should_refresh(session)
     refreshed = manager.refresh(session)
     assert refreshed.id == session.id
     assert refreshed.issued_at == 1050
@@ -288,7 +306,14 @@ def test_sessions_cannot_cross_apps_sharing_signing_keys(manager):
 @pytest.mark.parametrize("audience", [None, "other", ["test"], 1])
 def test_decode_rejects_missing_or_invalid_audience(manager, audience):
     """Require the issuing app's exact signed audience, including its type."""
-    claims = {"v": 1, "aud": "test", "sid": "a" * 32, "iat": 1000, "exp": 1100}
+    claims = {
+        "v": 1,
+        "aud": "test",
+        "sid": "a" * 32,
+        "iat": 1000,
+        "exp": 1100,
+        "oat": 1000,
+    }
     if audience is None:
         del claims["aud"]
     else:
@@ -443,6 +468,7 @@ def test_config_defaults_and_secret_is_not_config(monkeypatch):
     config = Config(app_name="test")
     assert config.session_token_ttl == 604800
     assert config.session_token_refresh_interval is None
+    assert config.session_token_max_age == 604800
     assert "secret_key" not in config.class_fields()
     monkeypatch.setenv("REFLEX_SESSION_TOKEN_TTL", "100")
     monkeypatch.setenv("REFLEX_SESSION_TOKEN_REFRESH_INTERVAL", "25")
@@ -466,6 +492,84 @@ def test_session_rollout_mode(monkeypatch, mode):
     monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "invalid")
     with pytest.raises(EnvironmentVarValueError):
         environment.REFLEX_SESSION_TOKEN_MODE.get()
+
+
+def test_exchange_credential_is_short_lived_and_single_purpose(manager, monkeypatch):
+    """An exchange credential expires after a minute and is not a cookie value.
+
+    Args:
+        manager: The session codec fixture.
+        monkeypatch: The clock override fixture.
+    """
+    session = manager.create()
+    credential = manager.encode(session, exchange=True)
+    assert manager.decode(credential) is None
+    exchanged = manager.decode(credential, exchange=True)
+    assert exchanged is not None
+    assert exchanged.id == session.id
+    assert manager.decode(manager.encode(session), exchange=True) is None
+    monkeypatch.setattr("reflex_base.session.time.time", lambda: 1060)
+    assert manager.decode(credential, exchange=True) is None
+    assert manager.decode(manager.encode(session)) is not None
+
+
+@pytest.mark.parametrize("mode", ["off", "warn", "enforce"])
+def test_client_token_for_replaces_unowned_tokens_only_when_enforced(
+    manager, monkeypatch, mode
+):
+    """One rule decides the token of a tab for the socket and the endpoint.
+
+    Args:
+        manager: The session codec fixture.
+        monkeypatch: The environment override fixture.
+        mode: The session token mode.
+    """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", mode)
+    session = manager.create()
+    owned = manager.create_client_token(session)
+    foreign = manager.create_client_token(manager.create())
+    assert manager.client_token_for(session, owned) == owned
+    assert session.authorizes(manager.client_token_for(session, ""))
+    kept = manager.client_token_for(session, foreign)
+    assert (kept == foreign) is (mode != "enforce")
+    assert session.authorizes(kept) is (mode == "enforce")
+
+
+def test_refresh_stops_at_the_maximum_session_age(monkeypatch):
+    """A session cannot be renewed past its maximum age.
+
+    Renewal keeps the time of first issue, so a credential that is renewed
+    again and again still ends. A stolen credential cannot stay alive forever.
+
+    Args:
+        monkeypatch: The clock override fixture.
+    """
+    now = 1000
+    monkeypatch.setattr("reflex_base.session.time.time", lambda: now)
+    manager = SessionTokenManager("test", ttl=100, max_age=250, secrets=(SECRET,))
+    session = manager.create()
+    assert (session.created_at, session.expires_at) == (1000, 1100)
+    for moment, expires_at in ((1090, 1190), (1180, 1250), (1240, 1250)):
+        now = moment
+        session = manager.decode(manager.encode(manager.refresh(session)))
+        assert session is not None
+        assert (session.created_at, session.expires_at) == (1000, expires_at)
+    credential = manager.encode(session)
+    now = 1250
+    assert manager.decode(credential) is None
+
+    # A credential cannot claim a lifetime past its first issue plus the maximum.
+    now = 1300
+    claims = {"v": 1, "aud": "test", "sid": "a" * 32, "iat": 1300, "exp": 1400}
+    header = {"alg": "HS256", "typ": "JWT", "kid": next(iter(manager._keys))}
+    assert manager.decode(_signed_token(header, {**claims, "oat": 1300})) is not None
+    assert manager.decode(_signed_token(header, {**claims, "oat": 1000})) is None
+    assert manager.decode(_signed_token(header, claims)) is None
+
+
+def test_maximum_session_age_defaults_to_seven_days():
+    """The default maximum age is seven days."""
+    assert SessionTokenManager("test", secrets=(SECRET,)).max_age == 7 * 24 * 60 * 60
 
 
 @pytest.mark.parametrize("blank", ["", "  "])
