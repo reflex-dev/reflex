@@ -241,6 +241,48 @@ test("a connection lost while the mounted loop drains leaves the rest queued", a
   await loop.unmount();
 });
 
+test.each([
+  [false, { hashes: ["compiled"] }],
+  // The store holds the server-rendered state, not the compiled defaults the
+  // hashes describe, and the live session still has to load the page.
+  [true, undefined],
+])("the first connect hydrates and loads the page (server-rendered: %s)", async (ssrHydrated, payload) => {
+  registry.registerApp({
+    initialEvents: (first = false) => [
+      state.ReflexEvent(
+        "reflex___state____state.hydrate_and_load",
+        first ? { hashes: ["compiled"] } : {},
+      ),
+    ],
+  });
+  const socketRef = { current: null };
+  await state.connect(
+    socketRef,
+    {},
+    ["websocket"],
+    () => {},
+    {},
+    navigate,
+    params,
+    ssrHydrated,
+  );
+  looseSockets.push(socketRef);
+
+  let auth;
+  socketRef.current.auth((value) => {
+    auth = value;
+  });
+
+  expect(auth).toEqual({
+    event: {
+      name: "reflex___state____state.hydrate_and_load",
+      ...(payload && { payload }),
+      router_data: { pathname: "/", asPath: "/" },
+    },
+    state_schema: "schema",
+  });
+});
+
 test("an unmounted event loop is not reconnected when the page becomes visible", async () => {
   const loop = await mountEventLoop();
   expect(io).toHaveBeenCalledTimes(1);

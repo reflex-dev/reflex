@@ -6,6 +6,7 @@
     "types": ["node"]
   },
   "include": ["src/*.js"],
-  // Imports babel, which an app installs only when the React Compiler is on.
-  "exclude": ["src/vite-plugin-react-compiler.js"]
+  // Import packages an app installs only when the React Compiler (babel) or
+  // runtime SSR (express and its middleware) is on.
+  "exclude": ["src/vite-plugin-react-compiler.js", "src/ssr-serve.js"]
 }

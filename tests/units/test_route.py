@@ -4,7 +4,12 @@ from reflex_base import constants
 
 import reflex as rx
 from reflex.app import App
-from reflex.route import get_route_args, get_router, verify_route_validity
+from reflex.route import (
+    extract_route_params,
+    get_route_args,
+    get_router,
+    verify_route_validity,
+)
 
 
 @pytest.mark.parametrize(
@@ -22,6 +27,55 @@ from reflex.route import get_route_args, get_router, verify_route_validity
 )
 def test_route_args(route_name, expected):
     assert get_route_args(route_name) == expected
+
+
+@pytest.mark.parametrize(
+    ("path", "route", "expected"),
+    [
+        ("/blog/hello-world", "blog/[slug]", {"slug": "hello-world"}),
+        ("/blog/my-post", "/blog/[slug]", {"slug": "my-post"}),
+        ("/blog/my-post/", "blog/[slug]", {"slug": "my-post"}),
+        ("/users/42/posts/99", "users/[id]/posts/[pid]", {"id": "42", "pid": "99"}),
+        ("/about", "about", {}),
+        ("/", "/", {}),
+        ("/blog", "blog/[slug]", {}),
+        ("/docs/intro", "docs/[[section]]", {"section": "intro"}),
+        ("/docs", "docs/[[section]]", {}),
+        ("/docs/intro", "docs/[[lang]]/[page]", {"page": "intro"}),
+        ("/docs/en/intro", "docs/[[lang]]/[page]", {"lang": "en", "page": "intro"}),
+        ("/blog/hello%20world", "blog/[slug]", {"slug": "hello world"}),
+        ("/files/a/b", "files/[[...splat]]", {"splat": ["a", "b"]}),
+        ("/files/a%20b/c", "files/[[...splat]]", {"splat": ["a b", "c"]}),
+        ("/files", "files/[[...splat]]", {}),
+        ("/files/a", "files/[[...splat]]", {"splat": ["a"]}),
+        # Only the catch-all is a list, not every argument named `splat`.
+        ("/blog/hello", "blog/[splat]", {"splat": "hello"}),
+        ("/blog/a%2Fb", "blog/[splat]", {"splat": "a/b"}),
+        ("/docs/intro", "docs/[[splat]]", {"splat": "intro"}),
+    ],
+)
+def test_extract_route_params(path: str, route: str, expected: dict):
+    # Params match what React Router reports to the client: decoded, the splat
+    # split into segments, and omitted optional segments left out.
+    assert extract_route_params(path, route) == expected
+
+
+@pytest.mark.parametrize(
+    ("path", "route", "expected"),
+    [
+        ("/Blog/Hello", "blog/[slug]", {"slug": "Hello"}),
+        ("/DOCS/EN/intro", "docs/[[lang]]/[page]", {"lang": "EN", "page": "intro"}),
+        ("/Files/a/B", "files/[[...splat]]", {"splat": ["a", "B"]}),
+        ("/blog/x", "Blog/[slug]", {"slug": "x"}),
+        # React Router folds ASCII case only.
+        ("/k\u0131t/x", "kit/[slug]", {}),
+        ("/\u212ait/x", "kit/[slug]", {}),
+    ],
+)
+def test_extract_route_params_ignores_case(path: str, route: str, expected: dict):
+    # get_router resolves any casing of a path to its route, so the params of
+    # that route come from the same case-insensitive match.
+    assert extract_route_params(path, route) == expected
 
 
 @pytest.mark.parametrize(

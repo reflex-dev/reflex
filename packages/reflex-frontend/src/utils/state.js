@@ -1100,6 +1100,7 @@ const handleStateMismatch = (info) => {
  * @param client_storage The client storage object from context.js
  * @param navigate The navigate function from React Router
  * @param params The params object from React Router
+ * @param ssrHydrated Whether the page already holds state rendered by the backend
  */
 export const connect = async (
   socket,
@@ -1109,6 +1110,7 @@ export const connect = async (
   client_storage = {},
   navigate,
   params,
+  ssrHydrated = false,
 ) => {
   // Socket already allocated, just reconnect it if needed.
   if (socket.current) {
@@ -1129,7 +1131,12 @@ export const connect = async (
   // the state schema goes along on every (re)connect, since a reconnect can
   // land on another backend version.
   const bootAuth = (first) => (callback) => {
-    const boot_event = withRouterData(app.initialEvents(first)[0], params);
+    // A server-rendered page holds no compiled defaults to diff against, so its
+    // first connect gets the full state; the live session still loads the page.
+    const boot_event = withRouterData(
+      app.initialEvents(first && !ssrHydrated)[0],
+      params,
+    );
     bootRoute = currentRouteKey();
     recordSentStorageValues(boot_event);
     // Instrumentation hook (installed by reflex-otel): may add a traceparent.
@@ -1652,6 +1659,7 @@ const applyClientStorageDelta = (client_storage, delta) => {
  * @param dispatch The reducer dispatch function to update state.
  * @param initial_events The initial app events.
  * @param client_storage The client storage object from context.js
+ * @param ssrHydrated Whether the page already holds state rendered by the backend
  *
  * @returns [addEvents, connectErrors] -
  *   addEvents is used to queue an event, and
@@ -1661,6 +1669,7 @@ export const useEventLoop = (
   dispatch,
   initial_events = () => [],
   client_storage = {},
+  ssrHydrated = false,
 ) => {
   const socket = useRef(null);
   const location = useLocation();
@@ -1710,6 +1719,7 @@ export const useEventLoop = (
           client_storage,
           navigate,
           params,
+          ssrHydrated,
         );
       }
     } catch (error) {
