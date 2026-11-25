@@ -98,7 +98,7 @@ def index():
 app = rx.App()
 app.add_page(index)
 """
-    base_context = RegistrationContext.ensure_context().fork()
+    base_context = RegistrationContext()
     monkeypatch.setattr(AppHarness, "_base_registration_context", base_context)
     shared_module_name = f"{package_name}.state"
 

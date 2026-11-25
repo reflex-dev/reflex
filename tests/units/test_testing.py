@@ -499,8 +499,10 @@ def test_app_harness_restarts_multi_module_app_without_reimporting_states(
         assert app_state.get_name() in rx.State._always_dirty_substates
     finally:
         if RegistrationContext.get() is not outer_context:
+            reload_state_module("reflex.istate.dynamic")
             restarted.stop()
         assert RegistrationContext.get() is outer_context
+    assert factory_states[0].get_full_name() not in all_base_state_classes
 
 
 def test_app_harness_reloads_cached_child_when_parent_module_reloads(
