@@ -379,6 +379,7 @@ def test_app_harness_restarts_multi_module_app_without_reimporting_states(
     app_info = reflex.utils.prerequisites.AppInfo(
         app=mock.Mock(_state_manager=None), module=app_module
     )
+    factory_states = []
 
     def load_or_check_app(*args, **kwargs):
         if not hasattr(package_module, "AppState"):
@@ -407,6 +408,7 @@ def test_app_harness_restarts_multi_module_app_without_reimporting_states(
             state_module.__dict__["MainState"] = app_module.MainState
             exec(
                 "class DataState(rx.State):\n"
+                "    count: int = 0\n"
                 "    @rx.var(cache=True)\n"
                 "    async def main_count(self) -> int:\n"
                 "        main = await self.get_state(MainState)\n"
@@ -431,6 +433,20 @@ def test_app_harness_restarts_multi_module_app_without_reimporting_states(
                 app_module.__dict__,
             )
             assert app_module.MainState is not previous_main_state
+            factory_namespace = {
+                "__name__": "reflex.istate.dynamic",
+                "rx": rx,
+                "DataState": state_module.DataState,
+            }
+            exec(
+                "class FactoryState(rx.State):\n"
+                "    @rx.var(cache=True)\n"
+                "    async def data_count(self) -> int:\n"
+                "        data = await self.get_state(DataState)\n"
+                "        return data.count\n",
+                factory_namespace,
+            )
+            factory_states.append(factory_namespace["FactoryState"])
         return app_info
 
     harness_mocks.get_and_validate_app.side_effect = load_or_check_app
@@ -470,6 +486,10 @@ def test_app_harness_restarts_multi_module_app_without_reimporting_states(
             state_module.DataState.get_full_name(),
             "main_count",
         ) in app_module.MainState._var_dependencies["count"]
+        assert (
+            factory_states[0].get_full_name(),
+            "data_count",
+        ) in state_module.DataState._var_dependencies["count"]
         assert state_module.CachedMixin.get_full_name() not in context.base_states
         assert any(
             handler.handler is child_state.event_handlers["increment"]

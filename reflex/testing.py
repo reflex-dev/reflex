@@ -452,7 +452,12 @@ class AppHarness:
             for full_name in restored:
                 all_base_state_classes[full_name] = None
             if initialize_var_dependencies:
-                dependency_states = {**cached_classes, **restored}
+                dependency_states = {
+                    state_cls.get_full_name(): state_cls
+                    for state_cls in context.base_states.values()
+                }
+                dependency_states.update(cached_classes)
+                dependency_states.update(restored)
                 for state_cls in dependency_states.values():
                     state_cls._var_dependencies = {}
                 for state_cls in sorted(
