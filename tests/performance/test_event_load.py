@@ -17,6 +17,7 @@ from tests.benchmarks.support import BenchmarkResult, PerformanceReport, percent
 from tests.benchmarks.support.baseline_server import BaselineSocketServer
 from tests.benchmarks.support.report import current_process_metrics
 from tests.benchmarks.support.socket_client import (
+    create_session,
     run_clients,
     run_reconnect_client,
     run_socket_client,
@@ -42,7 +43,7 @@ def _client_timeout(clients: int) -> float:
 
 def _wait_for_token_cleanup(
     harness: AppHarness,
-    token_prefixes: tuple[str, ...],
+    tokens: set[str],
     timeout: float = 10.0,
 ) -> None:
     """Poll until disconnect cleanup has removed the given client tokens.
@@ -53,7 +54,7 @@ def _wait_for_token_cleanup(
 
     Args:
         harness: Running in-process app harness.
-        token_prefixes: Prefixes of tokens that must disappear.
+        tokens: Client tokens that must disappear.
         timeout: Maximum wait in seconds.
     """
     app = harness.app_instance
@@ -61,10 +62,7 @@ def _wait_for_token_cleanup(
     assert app.event_namespace is not None
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
-        if not any(
-            token.startswith(token_prefixes)
-            for token in app.event_namespace.token_to_sid
-        ):
+        if tokens.isdisjoint(app.event_namespace.token_to_sid):
             return
         time.sleep(0.05)
 
@@ -127,17 +125,20 @@ def test_event_load_report(
 
     curve: list[dict[str, float | int]] = []
     for clients in client_counts:
+        sessions = [create_session(backend_url) for _ in range(clients)]
         started = time.perf_counter_ns()
         results = asyncio.run(
             run_clients(
                 clients,
-                lambda index, executor, clients=clients: run_socket_client(
-                    backend_url,
-                    f"load-token-{clients}-{index}",
-                    payload,
-                    events_per_client,
-                    timeout=_client_timeout(clients),
-                    executor=executor,
+                lambda index, executor, clients=clients, sessions=sessions: (
+                    run_socket_client(
+                        backend_url,
+                        sessions[index],
+                        payload,
+                        events_per_client,
+                        timeout=_client_timeout(clients),
+                        executor=executor,
+                    )
                 ),
             )
         )
@@ -217,7 +218,9 @@ def test_framework_overhead_report(
     payload = _increment_payload()
 
     reflex_result = asyncio.run(
-        run_socket_client(_backend_url(), "overhead-reflex", payload, events + warmup)
+        run_socket_client(
+            _backend_url(), create_session(_backend_url()), payload, events + warmup
+        )
     )
     assert not reflex_result.errors, reflex_result.errors
 
@@ -294,7 +297,7 @@ def test_reconnect_storm_report(
     clients = {"smoke": 5, "release": 100}[performance_scale]
     backend_url = _backend_url()
     payload = _increment_payload()
-    tokens = [f"storm-token-{index}" for index in range(clients)]
+    tokens = [create_session(backend_url) for _ in range(clients)]
 
     timeout = _client_timeout(clients)
 
@@ -316,7 +319,7 @@ def test_reconnect_storm_report(
     assert not prime_errors, f"priming clients failed: {prime_errors}"
     # Wait for fire-and-forget disconnect cleanup so the storm exercises
     # reconnection instead of duplicate-tab handling.
-    _wait_for_token_cleanup(performance_load_app, ("storm-token-",))
+    _wait_for_token_cleanup(performance_load_app, {session.token for session in tokens})
 
     rss_before = current_process_metrics()["rss_bytes"]
     started = time.perf_counter_ns()

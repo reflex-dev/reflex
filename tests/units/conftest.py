@@ -61,6 +61,23 @@ def _isolate_app_in_context() -> Generator[None, None, None]:
 
 
 @pytest.fixture(autouse=True)
+def _session_token_compatibility_mode() -> Generator[None, None, None]:
+    """Run unit tests in the session mode that allows tokens without a session.
+
+    Most unit tests address state with a plain token and no browser session,
+    which the default enforce mode rejects. Tests of session ownership set the
+    mode that they cover. The patch is local to this fixture: the shared
+    ``monkeypatch`` fixture here would change the teardown order of every test.
+
+    Yields:
+        Control while the mode is set.
+    """
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setenv("REFLEX_SESSION_TOKEN_MODE", "warn")
+        yield
+
+
+@pytest.fixture(autouse=True)
 def _isolate_managed_logging() -> Generator[None, None, None]:
     """Run each test outside managed logging and detach the sinks it attached.
 

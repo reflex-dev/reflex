@@ -1,0 +1,1 @@
+File uploads carry the browser session cookie, and an upload for a client token that the session does not own returns HTTP 403. `REFLEX_SESSION_TOKEN_MODE=warn` or `off` turns the rejection off. See the [browser session guide](https://reflex.dev/docs/api-routes/sessions/) for configuration and migration.
