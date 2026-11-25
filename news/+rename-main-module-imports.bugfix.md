@@ -1,0 +1,1 @@
+`reflex rename` now updates imports of the app module, such as `from myapp.myapp import app` and `from .myapp import State`, and a custom `app_module_import` in `rxconfig.py`. Before, the renamed app failed with `ModuleNotFoundError`.
