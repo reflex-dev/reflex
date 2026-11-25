@@ -204,10 +204,13 @@ if TYPE_CHECKING or find_spec("sqlalchemy"):
         registered too.
 
         Attributes:
+            _registered_models: Track explicitly registered models in insertion order.
             _metadata: Cache the metadata to avoid re-creating it.
         """
 
         models: ClassVar[set[SQLModelOrSqlAlchemy]] = set()
+
+        _registered_models: ClassVar[dict[SQLModelOrSqlAlchemy, None]] = {}
 
         _metadata: ClassVar[sqlalchemy.MetaData | None] = None
 
@@ -221,7 +224,10 @@ if TYPE_CHECKING or find_spec("sqlalchemy"):
             Returns:
                 The model passed in as an argument (Allows decorator usage)
             """
+            if model not in cls.models:
+                cls._registered_models.pop(model, None)
             cls.models.add(model)
+            cls._registered_models.setdefault(model, None)
             return model
 
         @classmethod
@@ -234,25 +240,52 @@ if TYPE_CHECKING or find_spec("sqlalchemy"):
             Returns:
                 The registered models.
             """
+            return set(cls._get_ordered_models(include_empty=include_empty))
+
+        @classmethod
+        def _get_ordered_models(
+            cls, include_empty: bool = False
+        ) -> tuple[SQLModelOrSqlAlchemy, ...]:
+            """Get models in registration order, followed by detected bases.
+
+            Args:
+                include_empty: If True, include models with empty metadata.
+
+            Returns:
+                The models in deterministic order.
+            """
+            for model in tuple(cls._registered_models):
+                if model not in cls.models:
+                    del cls._registered_models[model]
+            registered_models = tuple(cls._registered_models)
+            registered_models += tuple(
+                sorted(
+                    cls.models.difference(registered_models),
+                    key=lambda model: (model.__module__, model.__qualname__),
+                )
+            )
             sqlmodel = sys.modules.get("sqlmodel")
             # A registered base opts out of detection; SQLModel ones, such as the
             # always registered rx.Model, do not.
             models = (
-                cls.models
+                registered_models
                 if any(
                     sqlmodel is None or not issubclass(model, sqlmodel.SQLModel)
-                    for model in cls.models
+                    for model in registered_models
                 )
-                else cls.models | cls._find_bases()
+                else (*registered_models, *cls._find_bases())
             )
+            ordered_models = tuple(dict.fromkeys(models))
             if include_empty:
-                return models
-            return {
-                model for model in models if not cls._model_metadata_is_empty(model)
-            }
+                return ordered_models
+            return tuple(
+                model
+                for model in ordered_models
+                if not cls._model_metadata_is_empty(model)
+            )
 
         @staticmethod
-        def _find_bases() -> set[type[sqlalchemy.orm.DeclarativeBase]]:
+        def _find_bases() -> tuple[type[sqlalchemy.orm.DeclarativeBase], ...]:
             """Find the model bases: the DeclarativeBase subclasses with their own metadata.
 
             Only a base that its module holds under its qualified name counts, such
@@ -260,7 +293,7 @@ if TYPE_CHECKING or find_spec("sqlalchemy"):
             replaced, or one made inside a function, does not.
 
             Returns:
-                The model bases.
+                The model bases in deterministic order.
             """
             bases = set()
             pending = sqlalchemy.orm.DeclarativeBase.__subclasses__()
@@ -277,8 +310,11 @@ if TYPE_CHECKING or find_spec("sqlalchemy"):
                     is cls
                 ):
                     bases.add(cls)
-            logger.debug(f"Detected model bases: {sorted(map(str, bases))}")
-            return bases
+            ordered_bases = tuple(
+                sorted(bases, key=lambda model: (model.__module__, model.__qualname__))
+            )
+            logger.debug(f"Detected model bases: {list(map(str, ordered_bases))}")
+            return ordered_bases
 
         @staticmethod
         def _model_metadata_is_empty(model: SQLModelOrSqlAlchemy) -> bool:
@@ -302,17 +338,33 @@ if TYPE_CHECKING or find_spec("sqlalchemy"):
             if cls._metadata is not None:
                 return cls._metadata
 
-            models = cls.get_models(include_empty=False)
+            models = cls._get_ordered_models(include_empty=False)
 
             if len(models) == 1:
-                metadata = next(iter(models)).metadata
+                metadata = models[0].metadata
             else:
                 # Merge the metadata from all the models.
                 # This allows mixing bare sqlalchemy models with sqlmodel models in one database.
                 metadata = sqlalchemy.MetaData()
+                table_owners: dict[
+                    str, tuple[sqlalchemy.MetaData, SQLModelOrSqlAlchemy]
+                ] = {}
                 for model in models:
                     for table in model.metadata.tables.values():
+                        if table.key in table_owners:
+                            original_metadata, original_model = table_owners[table.key]
+                            if original_metadata is table.metadata:
+                                continue
+                            table_key = table.key
+                            first_model = f"{original_model.__module__}.{original_model.__qualname__}"
+                            second_model = f"{model.__module__}.{model.__qualname__}"
+                            msg = (
+                                f"Table '{table_key}' is defined by both "
+                                f"{first_model} and {second_model}."
+                            )
+                            raise sqlalchemy.exc.InvalidRequestError(msg)
                         table.to_metadata(metadata)
+                        table_owners[table.key] = (table.metadata, model)
 
             # Cache the metadata
             cls._metadata = metadata
