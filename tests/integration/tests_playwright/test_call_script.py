@@ -350,9 +350,14 @@ def CallScript():
             ),
             rx.button(
                 "drop_connection",
+                # reconnect() connects with the tab's current token, as the
+                # frontend does after a dropped connection; socket.connect()
+                # would resend the token of the socket's first connect, which
+                # a new tab leaves empty for the backend to issue one.
                 on_click=rx.call_script(
                     "socket.disconnect();"
-                    "setTimeout(() => socket.connect(), window.reconnectAfterMs)"
+                    "socket.once('connect', () => { window.reconnected = true });"
+                    "setTimeout(() => socket.reconnect(), window.reconnectAfterMs)"
                 ),
                 id="drop_connection",
             ),
@@ -662,15 +667,36 @@ def test_awaited_script_does_not_hold_up_other_events(
     expect(call_script_page.locator("#awaited")).to_have_value("{'answer': 'yes'}")
 
 
-def _drop_connection(page: Page, reconnect_after_ms: int) -> None:
+def _drop_connection(page: Page, reconnect_after_ms: int) -> str:
     """Drop the tab's socket and connect it again after a delay.
 
     Args:
         page: Playwright page.
         reconnect_after_ms: Milliseconds until the socket connects again.
+
+    Returns:
+        The client token the tab had before the drop.
     """
-    page.evaluate(f"window.reconnectAfterMs = {reconnect_after_ms}")
+    token = page.evaluate(CLIENT_TOKEN_JS)
+    page.evaluate(
+        f"window.reconnectAfterMs = {reconnect_after_ms}; window.reconnected = false"
+    )
     page.locator("#drop_connection").click()
+    return token
+
+
+def _assert_reconnected_with(page: Page, token: str) -> None:
+    """Wait for the dropped socket to connect again and check it kept the tab's token.
+
+    The calls a tab awaits are filed under its client token, so a reconnect
+    that comes back with another token can never settle them.
+
+    Args:
+        page: Playwright page.
+        token: The client token the tab had before the drop.
+    """
+    page.wait_for_function("() => window.reconnected === true")
+    assert page.evaluate(CLIENT_TOKEN_JS) == token
 
 
 def test_awaited_result_arrives_after_a_reconnect_within_the_grace_period(
@@ -683,8 +709,9 @@ def test_awaited_result_arrives_after_a_reconnect_within_the_grace_period(
         call_script_page: Playwright page.
     """
     _await_user(call_script_page)
-    _drop_connection(call_script_page, 300)
+    token = _drop_connection(call_script_page, 300)
     call_script_page.evaluate("window.answerAwaited('after the drop')")
+    _assert_reconnected_with(call_script_page, token)
     expect(call_script_page.locator("#awaited")).to_have_value("'after the drop'")
 
 
@@ -698,7 +725,8 @@ def test_awaited_call_fails_when_the_tab_stays_away_past_the_grace_period(
         call_script_page: Playwright page.
     """
     _await_user(call_script_page)
-    _drop_connection(call_script_page, int(GRACE_PERIOD * 1000) + 1500)
+    token = _drop_connection(call_script_page, int(GRACE_PERIOD * 1000) + 1500)
+    _assert_reconnected_with(call_script_page, token)
     expect(call_script_page.locator("#awaited")).to_have_value(
         "BrowserDisconnectedError: The browser tab did not reconnect to this "
         "backend worker within browser_call_grace_period "
