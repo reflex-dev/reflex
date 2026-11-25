@@ -5,11 +5,21 @@ from typing import Literal, get_args
 
 import pytest
 import reflex as rx
+from reflex_components_core.el.elements.tables import Td, Tr
+from reflex_components_radix.themes.typography.code import Code
+from reflex_components_radix.themes.typography.heading import Heading
+from reflex_docgen import generate_documentation
 from reflex_docgen.markdown import DirectiveBlock, HeadingBlock, parse_document
 
+from reflex_docs.pages.docs.component import (
+    api_reference_toc,
+    component_docs,
+    split_props,
+)
 from reflex_docs.pages.docs.source import stacked_description_rows
 from reflex_docs.pages.docs_landing.views.ai_builder import card
 from reflex_docs.pages.docs_landing.views.link_item import link_item
+from reflex_docs.templates.docpage import h3_comp
 from reflex_docs.templates.docpage.docpage import breadcrumb
 
 
@@ -285,3 +295,111 @@ def test_page_headings_are_unique():
         if page.name.endswith("-ll.md")
     }
     assert {path: pair for path, pair in low_level.items() if pair[0] != pair[1]} == {}
+
+
+BUTTON_OWN_PROPS = [
+    "as_child",
+    "size",
+    "variant",
+    "color_scheme",
+    "high_contrast",
+    "radius",
+    "loading",
+    "auto_focus",
+    "disabled",
+    "form",
+    "form_action",
+    "form_enc_type",
+    "form_method",
+    "form_no_validate",
+    "form_target",
+    "name",
+    "type",
+    "value",
+]
+GLOBAL_HTML_ATTRIBUTES = [
+    "access_key",
+    "auto_capitalize",
+    "content_editable",
+    "context_menu",
+    "dir",
+    "draggable",
+    "enter_key_hint",
+    "hidden",
+    "input_mode",
+    "item_prop",
+    "lang",
+    "role",
+    "slot",
+    "spell_check",
+    "tab_index",
+    "title",
+]
+
+
+def _prop_names(table: rx.Component) -> list[str]:
+    """Read the prop names from a props table, in row order.
+
+    Args:
+        table: A rendered props table.
+
+    Returns:
+        The name in each body row's first cell.
+    """
+    pending, names = [table], []
+    while pending:
+        node = pending.pop(0)
+        if isinstance(node, Tr) and isinstance(node.children[0], Td):
+            cell = node.children[0]
+            while not isinstance(cell, Code):
+                cell = cell.children[0]
+            names.append(str(cell.children[0].contents).strip('"'))
+            continue
+        pending.extend(node.children)
+    return names
+
+
+def test_button_props_list_its_own_props_before_global_html_attributes():
+    """Component props lead the table; global attributes are collapsed after them."""
+    button = type(rx.button())
+    own, global_attrs = split_props(button, generate_documentation(button).props)
+    assert [prop.name for prop in own] == BUTTON_OWN_PROPS
+    assert [prop.name for prop in global_attrs] == GLOBAL_HTML_ATTRIBUTES
+
+    rendered = component_docs((button, "rx.button"), {})
+    props_table = rendered.children[2].children[-1]
+    assert _prop_names(props_table) == BUTTON_OWN_PROPS
+    disclosure = rendered.children[3]
+    assert disclosure.tag == "details"
+    summary, table = disclosure.children
+    assert str(summary.children[0].contents) == '"Inherited HTML attributes (16)"'
+    assert _prop_names(table) == GLOBAL_HTML_ATTRIBUTES
+
+
+def test_component_reference_headings_nest_under_api_reference():
+    """Component headings sit one level below API Reference, on the page and in the TOC."""
+    h3_tag = h3_comp(text="").tag
+    headings, pending = [], [component_docs((type(rx.button()), "rx.button"), {})]
+    while pending:
+        node = pending.pop(0)
+        if node.tag == h3_tag:
+            headings.append(("h3", str(node.text)))
+        elif isinstance(node, Heading):
+            headings.append((str(node.as_), str(node.children[0].contents)))
+        pending.extend(node.children)
+    assert headings == [
+        ("h3", '"rx.button"'),
+        ('"h4"', '"Props"'),
+        ('"h4"', '"Event Triggers"'),
+    ]
+    assert api_reference_toc(["rx.button"], has_shared=False) == [
+        (2, "API Reference"),
+        (3, "rx.button"),
+    ]
+    assert api_reference_toc(["rx.el.div", "rx.el.input"], has_shared=True) == [
+        (2, "API Reference"),
+        (3, "rx.el.div"),
+        (3, "rx.el.input"),
+        (3, "Shared HTML props"),
+    ]
+    assert api_reference_toc([], has_shared=False) == []

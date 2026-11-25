@@ -255,6 +255,42 @@ def test_run_prod_sends_telemetry_synchronously(
     assert [name for name, _args, _kwargs in calls.mock_calls] == ["send", "serve"]
 
 
+@pytest.mark.parametrize(
+    ("running_mode", "generated"),
+    [
+        (constants.RunningMode.BACKEND_ONLY, True),
+        (constants.RunningMode.FRONTEND_ONLY, False),
+    ],
+)
+def test_run_exports_secret_key_before_backend_starts(
+    mocker, monkeypatch, running_mode: constants.RunningMode, generated: bool
+):
+    """Generate the secret key in the run process, so backend workers inherit it.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        monkeypatch: The environment override fixture.
+        running_mode: The parts of the app to run.
+        generated: Whether the run must export a secret key.
+    """
+    from reflex.utils import exec
+
+    generated_key = environment.REFLEX_GENERATED_SECRET_KEY.name
+    monkeypatch.setenv("REFLEX_SECRET_KEY", "unset")
+    monkeypatch.delenv("REFLEX_SECRET_KEY")
+    monkeypatch.setenv(generated_key, "unset")
+    monkeypatch.delenv(generated_key)
+    monkeypatch.setenv("REFLEX_ENV_MODE", "dev")
+    mocker.patch.object(reflex, "get_config")
+    # Stop before the servers start; the key must already be exported.
+    mocker.patch.object(exec, "output_system_info", side_effect=SystemExit)
+
+    with pytest.raises(SystemExit):
+        reflex._run(running_mode=running_mode)
+
+    assert (generated_key in os.environ) is generated
+
+
 def test_cloud_commands_registered():
     """The hosting CLI commands import, resolve, and dispatch only on demand."""
     probe = """
