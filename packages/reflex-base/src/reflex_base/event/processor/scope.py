@@ -50,10 +50,16 @@ class _EventScope:
     __slots__ = ("_root_state", "_stack")
 
     def __init__(self, root_state: BaseState):
+        """Remember the root state for the providers.
+
+        Args:
+            root_state: The root state each provider receives.
+        """
         self._root_state = root_state
         self._stack = contextlib.ExitStack()
 
     async def __aenter__(self) -> None:
+        """Enter the scope of every registered provider."""
         # Drop the reference so a background task's scope does not pin the tree
         # its proxy replaces on `async with self`.
         root_state = self._root_state
@@ -74,6 +80,16 @@ class _EventScope:
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> bool | None:
+        """Exit the providers' scopes in reverse order.
+
+        Args:
+            exc_type: The type of the exception that ended the block, if any.
+            exc_value: The exception that ended the block, if any.
+            traceback: Its traceback, if any.
+
+        Returns:
+            Whether a provider suppressed the exception.
+        """
         # Forwarded so a provider's context manager can observe (and suppress)
         # an exception raised by the handler or by delta resolution.
         return self._stack.__exit__(exc_type, exc_value, traceback)

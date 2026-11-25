@@ -31,6 +31,11 @@ from reflex_i18n.registry import MessageKey
 
 
 def _write_app_source(app_dir: Path) -> None:
+    """Write an app module with a gettext and an ngettext call.
+
+    Args:
+        app_dir: The app directory, created if missing.
+    """
     app_dir.mkdir(parents=True, exist_ok=True)
     (app_dir / "app.py").write_text(
         "from reflex_i18n import gettext as _\n"
@@ -320,6 +325,15 @@ def test_scan_sources_records_absolute_locations_across_drives(
 ):
     # Windows: relpath raises for a directory on another drive than the cwd.
     def relpath(path: str, start: str | None = None) -> str:
+        """Fail like os.path.relpath on Windows for paths on different drives.
+
+        Args:
+            path: The path to make relative.
+            start: The directory to make it relative to.
+
+        Raises:
+            ValueError: Always.
+        """
         msg = "path is on mount 'C:', start on mount 'D:'"
         raise ValueError(msg)
 
@@ -372,6 +386,15 @@ def test_extract_catalog_leaves_package_messages_to_the_package(
 
 
 def _write_package(site: Path, source: str) -> Path:
+    """Write a mylib package with the given source.
+
+    Args:
+        site: The directory to create the package in.
+        source: The source of the package's __init__.py.
+
+    Returns:
+        The package directory.
+    """
     package_dir = site / "mylib"
     package_dir.mkdir(parents=True, exist_ok=True)
     (package_dir / "__init__.py").write_text(source, encoding="utf-8")
@@ -379,6 +402,14 @@ def _write_package(site: Path, source: str) -> Path:
 
 
 def _po_strings(po_path: Path) -> dict[object, object]:
+    """Read the translations of a .po file.
+
+    Args:
+        po_path: The .po file.
+
+    Returns:
+        The translation of every message by its msgid.
+    """
     with po_path.open("rb") as f:
         return {m.id: m.string for m in read_po(f) if m.id}
 

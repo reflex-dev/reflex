@@ -58,41 +58,75 @@ def I18nApp():
 
         @rx.event
         def increment(self):
+            """Count a click."""
             self.count += 1
 
         @rx.event
         def greet(self):
+            """Set the message to a server-side translation."""
             self.message = _("Welcome")
 
         @rx.event
         def use_saved_locale(self):
-            # A locale the backend chose, e.g. from a user's profile: only the
-            # server event, without the client switch rx.i18n.set_locale adds.
+            """Switch to a locale the backend chose, e.g. from a user's profile.
+
+            Only the server event, without the client switch rx.i18n.set_locale adds.
+
+            Returns:
+                The event setting the locale.
+            """
             return rx.i18n.I18nState.set_locale("de")
 
         @rx.var
         def computed_greeting(self) -> str:
-            # No explicit locale reference: auto-detection injects the
-            # dependency on the active locale so this recomputes on switch.
+            """A server-side translation without an explicit locale reference.
+
+            Auto-detection injects the dependency on the active locale, so this
+            recomputes on a locale switch.
+
+            Returns:
+                The translated greeting.
+            """
             return _("Welcome")
 
         @rx.var
         def server_number(self) -> str:
-            # Server-side Babel formatting; auto-reformats on locale switch.
+            """The amount formatted server-side by Babel, reformatted on a locale switch.
+
+            Returns:
+                The formatted amount.
+            """
             return format_number(self.amount, min_fraction_digits=2)
 
     @rx.memo
     def memo_inside() -> rx.Component:
-        # rx.t call site INSIDE a memoized component.
+        """A memoized component with an rx.t call site inside it.
+
+        Returns:
+            The translated text.
+        """
         return rx.text(rx.t("Hello"), id="memo-inside")
 
     @rx.memo
     def memo_prop(label: rx.Var[str]) -> rx.Component:
-        # A translated string computed outside and passed IN as a prop, which
-        # React.memo gates on by identity.
+        """A memoized component rendering a translation passed in as a prop.
+
+        React.memo gates on the prop's identity.
+
+        Args:
+            label: The translated text.
+
+        Returns:
+            The text.
+        """
         return rx.text(label, id="memo-prop")
 
     def index():
+        """The page under test.
+
+        Returns:
+            The page.
+        """
         return rx.box(
             rx.input(
                 value=PageState.router.session.client_token,
@@ -332,6 +366,11 @@ def test_first_paint_never_shows_the_source_text(i18n_app: AppHarness, page: Pag
     held_catalogs: list[Route] = []
 
     def hold_catalog(route: Route) -> None:
+        """Hold the catalog request until the test continues it.
+
+        Args:
+            route: The intercepted catalog request.
+        """
         held_catalogs.append(route)
 
     page.route("**/i18n/de.js*", hold_catalog)
@@ -358,6 +397,11 @@ def test_switch_waits_for_the_new_catalog(i18n_app: AppHarness, page: Page):
     held_catalogs: list[Route] = []
 
     def hold_catalog(route: Route) -> None:
+        """Hold the catalog request until the test continues it.
+
+        Args:
+            route: The intercepted catalog request.
+        """
         held_catalogs.append(route)
 
     page.route("**/i18n/de.js*", hold_catalog)

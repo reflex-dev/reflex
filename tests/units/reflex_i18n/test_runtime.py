@@ -49,6 +49,14 @@ def clean_state():
 def _write_po(
     catalog_dir: Path, locale: str, body: str, plural: str = "(n != 1)"
 ) -> None:
+    """Write a .po file with a two-form plural header.
+
+    Args:
+        catalog_dir: The catalog directory, created if missing.
+        locale: The file's locale.
+        body: The messages after the header.
+        plural: The plural expression.
+    """
     catalog_dir.mkdir(parents=True, exist_ok=True)
     header = (
         'msgid ""\nmsgstr ""\n'
@@ -432,6 +440,11 @@ async def test_format_computed_var_reformats_on_locale_change():
 
             @rx.var
             def price(self) -> str:
+                """The amount formatted with at most one fraction digit.
+
+                Returns:
+                    The formatted amount.
+                """
                 return format_number(self.amount, max_fraction_digits=1)
 
         # The real (non-mocked) registration wired the locale dependency.
@@ -486,6 +499,11 @@ def test_gettext_computed_var_registers_i18n_state_in_a_fresh_context():
             class FreshContextGreetingState(rx.State):
                 @rx.var
                 def greeting(self) -> str:
+                    """A translated greeting.
+
+                    Returns:
+                        The greeting.
+                    """
                     return gettext("Welcome")
 
             assert ctx.base_states[i18n_name] is I18nState

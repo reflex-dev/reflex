@@ -240,6 +240,13 @@ def clean_registry():
 
 
 def _write_po(catalog_dir: Path, locale: str, body: str) -> None:
+    """Write a .po file with a two-form plural header.
+
+    Args:
+        catalog_dir: The catalog directory, created if missing.
+        locale: The file's locale.
+        body: The messages after the header.
+    """
     catalog_dir.mkdir(parents=True, exist_ok=True)
     header = (
         'msgid ""\nmsgstr ""\n'

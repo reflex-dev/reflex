@@ -249,6 +249,14 @@ async def test_locale_scope_reads_the_router_fields_directly(
     deprecations: list[str] = []
 
     def build_router(**fields) -> RouterData:
+        """Build router data and record it.
+
+        Args:
+            **fields: The router data fields.
+
+        Returns:
+            The router data.
+        """
         router = RouterData(**fields)
         built.append(router)
         return router

@@ -113,6 +113,15 @@ def test_catalog_var_static_namespace_import():
 
 
 def _page(route, component=None):
+    """A stand-in for a registered page.
+
+    Args:
+        route: The page's route.
+        component: The page's component.
+
+    Returns:
+        The page.
+    """
     return types.SimpleNamespace(
         route=route,
         component=component or (lambda: None),
@@ -126,9 +135,24 @@ def _page(route, component=None):
 
 
 def _fake_context(pages):
+    """A stand-in for the pre-compile context that records added pages.
+
+    Args:
+        pages: The app's pages.
+
+    Returns:
+        The context, with the recorded add_page calls under "calls".
+    """
     calls = []
 
     def add_page(component=None, route=None, **kwargs):
+        """Record an added page.
+
+        Args:
+            component: The page's component.
+            route: The page's route.
+            **kwargs: The other page arguments.
+        """
         calls.append((route, {**kwargs, "component": component}))
 
     return {"add_page": add_page, "pages": pages, "calls": calls}
@@ -263,12 +287,41 @@ def test_plugin_rejects_custom_routing():
 
     class DomainRouting(LocaleRouting):
         def localize(self, path, locale, default_locale):
+            """Leave the path unchanged.
+
+            Args:
+                path: The path.
+                locale: The locale to localize it for.
+                default_locale: The default locale.
+
+            Returns:
+                The path.
+            """
             return path
 
         def delocalize(self, path, locales):
+            """Leave the path unchanged.
+
+            Args:
+                path: The path.
+                locales: The configured locales.
+
+            Returns:
+                The path.
+            """
             return path
 
         def locale_of(self, path, locales, default_locale):
+            """Report the default locale for every path.
+
+            Args:
+                path: The path.
+                locales: The configured locales.
+                default_locale: The default locale.
+
+            Returns:
+                The default locale.
+            """
             return default_locale
 
     with pytest.raises(TypeError, match="PathPrefixRouting"):

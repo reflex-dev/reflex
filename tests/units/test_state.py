@@ -4401,6 +4401,11 @@ def test_reload_scrubs_cross_state_dependency_edges():
     # A state in a separate "app" module whose computed var depends on
     # PkgState.value, so the edge is stored on PkgState.
     def _computed(self) -> str:
+        """The getter of the app state's computed var.
+
+        Returns:
+            An empty string.
+        """
         return ""
 
     app_module = "_reload_regression_fake_app"

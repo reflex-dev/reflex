@@ -1661,6 +1661,17 @@ async def test_proxy_aexit_cleans_state_when_scope_provider_raises(
     from reflex_base.event.processor import scope
 
     async def provider(root_state):
+        """Scope the event to the state's lang and fail for the failing lang.
+
+        Args:
+            root_state: The root state of the event.
+
+        Returns:
+            The ambient lang context.
+
+        Raises:
+            RuntimeError: For the failing lang.
+        """
         lang = (await root_state.get_state(ScopedProxyState)).lang
         if lang == failing_lang:
             msg = "scope failed"
@@ -1724,6 +1735,15 @@ async def test_proxy_block_exception_suppressed_by_scope_provider(
 
     @asynccontextmanager
     async def modify_state_persisting_on_clean_exit(token, **context):
+        """Modify the state and record its data when the block exits cleanly.
+
+        Args:
+            token: The state token.
+            **context: Passed on to the state manager.
+
+        Yields:
+            The root state.
+        """
         async with modify_state(token, **context) as root_state:
             yield root_state
             state = await root_state.get_state(MutableProxyState)
@@ -1734,6 +1754,14 @@ async def test_proxy_block_exception_suppressed_by_scope_provider(
     )
 
     async def provider(_root_state):  # noqa: RUF029 - providers are awaited
+        """Suppress a RuntimeError raised inside the scope.
+
+        Args:
+            _root_state: The root state of the event.
+
+        Returns:
+            The suppressing context.
+        """
         return suppress(RuntimeError)
 
     scope.register_event_scope_provider(provider)
@@ -1790,6 +1818,14 @@ async def test_proxy_aexit_drops_delta_suppressed_by_scope_provider(
     root_state = proxy.__wrapped__._get_root_state()
 
     async def provider(_root_state):  # noqa: RUF029 - providers are awaited
+        """Suppress a RuntimeError raised inside the scope.
+
+        Args:
+            _root_state: The root state of the event.
+
+        Returns:
+            The suppressing context.
+        """
         return suppress(RuntimeError)
 
     scope.register_event_scope_provider(provider)

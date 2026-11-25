@@ -30,6 +30,14 @@ def _warnings(caplog: pytest.LogCaptureFixture) -> list[str]:
 
 
 def _catalog(locale: str = "de") -> Catalog:
+    """A catalog with a plain, a context and a plural message.
+
+    Args:
+        locale: The catalog's locale.
+
+    Returns:
+        The catalog.
+    """
     catalog = Catalog(locale=locale)
     catalog.add("Hello {name}!", "Hallo {name}!")
     catalog.add("Open", "Öffnen", context="menu")
@@ -171,6 +179,16 @@ def test_default_plural_expr_from_babel_table():
 
 
 def _write_po(tmp_path: Path, locale: str, header_lines: str = "") -> Path:
+    """Write a .po file holding only a header.
+
+    Args:
+        tmp_path: The directory to write it to.
+        locale: The file's locale.
+        header_lines: Header lines after the Content-Type.
+
+    Returns:
+        The written file.
+    """
     po_path = tmp_path / f"{locale}.po"
     po_path.write_text(
         'msgid ""\nmsgstr ""\n'
@@ -242,6 +260,13 @@ _PO_HEADER = (
 
 
 def _write_catalog(catalog_dir: Path, locale: str, body: str) -> None:
+    """Write a .po file with the shared header.
+
+    Args:
+        catalog_dir: The catalog directory, created if missing.
+        locale: The file's locale.
+        body: The messages after the header.
+    """
     catalog_dir.mkdir(parents=True, exist_ok=True)
     (catalog_dir / f"{locale}.po").write_text(_PO_HEADER + body, encoding="utf-8")
 

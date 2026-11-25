@@ -987,9 +987,22 @@ def test_add_meta_drops_empty_description():
 
 class _LangPlugin(rx.plugins.Plugin):
     def __init__(self, lang: str | None):
+        """Report a fixed html lang.
+
+        Args:
+            lang: The lang to report, or None to leave it to the app.
+        """
         self.lang = lang
 
     def get_html_lang(self, **context) -> str | None:
+        """The fixed html lang.
+
+        Args:
+            **context: The compile context.
+
+        Returns:
+            The lang.
+        """
         return self.lang
 
 

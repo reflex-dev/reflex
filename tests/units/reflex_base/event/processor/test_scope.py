@@ -39,6 +39,11 @@ async def test_provider_scope_entered_and_exited():
 
     @contextlib.contextmanager
     def cm():
+        """Record entering and exiting the scope.
+
+        Yields:
+            None.
+        """
         events.append("enter")
         try:
             yield
@@ -46,6 +51,14 @@ async def test_provider_scope_entered_and_exited():
             events.append("exit")
 
     async def provider(_root):  # noqa: RUF029 (async required by provider protocol)
+        """Provide the recording context.
+
+        Args:
+            _root: The root state of the event.
+
+        Returns:
+            The recording context.
+        """
         return cm()
 
     scope.register_event_scope_provider(provider)
@@ -61,15 +74,36 @@ async def test_earlier_scope_cleaned_up_when_later_provider_raises():
 
     @contextlib.contextmanager
     def tracking_cm():
+        """Record exiting the scope.
+
+        Yields:
+            None.
+        """
         try:
             yield
         finally:
             exited.append("first")
 
     async def first(_root):  # noqa: RUF029 (async required by provider protocol)
+        """Provide the tracking context.
+
+        Args:
+            _root: The root state of the event.
+
+        Returns:
+            The tracking context.
+        """
         return tracking_cm()
 
     async def second(_root):  # noqa: RUF029 (async required by provider protocol)
+        """Fail before providing a context.
+
+        Args:
+            _root: The root state of the event.
+
+        Raises:
+            RuntimeError: Always.
+        """
         msg = "boom"
         raise RuntimeError(msg)
 
@@ -90,6 +124,11 @@ async def test_body_exception_is_forwarded_to_providers():
 
     @contextlib.contextmanager
     def observing_cm():
+        """Record the exception raised inside the scope.
+
+        Yields:
+            None.
+        """
         try:
             yield
         except BaseException as exc:
@@ -97,6 +136,14 @@ async def test_body_exception_is_forwarded_to_providers():
             raise
 
     async def provider(_root):  # noqa: RUF029 (async required by provider protocol)
+        """Provide the observing context.
+
+        Args:
+            _root: The root state of the event.
+
+        Returns:
+            The observing context.
+        """
         return observing_cm()
 
     scope.register_event_scope_provider(provider)
@@ -112,6 +159,14 @@ async def test_body_exception_is_forwarded_to_providers():
 @pytest.mark.asyncio
 async def test_provider_can_suppress_a_body_exception():
     async def provider(_root):  # noqa: RUF029 (async required by provider protocol)
+        """Provide a context suppressing RuntimeError.
+
+        Args:
+            _root: The root state of the event.
+
+        Returns:
+            The suppressing context.
+        """
         return contextlib.suppress(RuntimeError)
 
     scope.register_event_scope_provider(provider)
@@ -129,6 +184,14 @@ async def test_entered_scope_releases_the_root_state():
         pass
 
     async def provider(_root):  # noqa: RUF029 (async required by provider protocol)
+        """Provide a context that does nothing.
+
+        Args:
+            _root: The root state of the event.
+
+        Returns:
+            The empty context.
+        """
         return contextlib.nullcontext()
 
     scope.register_event_scope_provider(provider)

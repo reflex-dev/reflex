@@ -7258,15 +7258,33 @@ async def test_app_modify_state_runs_in_the_event_scope(app_with_processor: App)
 
         @rx.var(deps=["lang"])
         def scoped(self) -> str:
+            """The ambient lang, recomputed when lang changes.
+
+            Returns:
+                The ambient lang.
+            """
             return _modify_ambient_lang.get()
 
         @rx.event
         def ambient(self) -> str:
+            """Read the ambient lang inside the event.
+
+            Returns:
+                The ambient lang.
+            """
             return _modify_ambient_lang.get()
 
     async def provider(
         root_state: BaseState,
     ) -> contextlib.AbstractContextManager[None]:
+        """Scope the event to the state's lang.
+
+        Args:
+            root_state: The root state of the event.
+
+        Returns:
+            The ambient lang context.
+        """
         state = await root_state.get_state(ModifyScopedState)
         return _use_modify_ambient_lang(state.lang)
 

@@ -50,10 +50,20 @@ def test_gettext_computed_var_gains_locale_dependency():
 
         @rx.var
         def greeting(self) -> str:
+            """A translated greeting.
+
+            Returns:
+                The greeting.
+            """
             return _("Hello")
 
         @rx.var
         def greeting_named(self) -> str:
+            """A translated greeting followed by the name.
+
+            Returns:
+                The greeting.
+            """
             return _("Hi ") + self.name
 
     greeting_deps = TranslatedState.computed_vars["greeting"]._deps(
@@ -82,6 +92,11 @@ def test_format_computed_var_gains_locale_dependency():
 
         @rx.var
         def label(self) -> str:
+            """The amount formatted for the active locale.
+
+            Returns:
+                The formatted amount.
+            """
             return format_number(self.amount)
 
     deps = PriceState.computed_vars["label"]._deps(objclass=PriceState)
@@ -104,6 +119,11 @@ def test_get_locale_computed_var_gains_locale_dependency(
     class LocaleBranchState(rx.State):
         @rx.var
         def greeting(self) -> str:
+            """A greeting picked by the active locale.
+
+            Returns:
+                The greeting.
+            """
             return "Hallo" if get_locale() == "de" else "Hello"
 
     deps = LocaleBranchState.computed_vars["greeting"]._deps(objclass=LocaleBranchState)
@@ -118,6 +138,11 @@ def test_no_registration_no_extra_dependency():
 
         @rx.var
         def doubled(self) -> int:
+            """Twice n.
+
+            Returns:
+                The doubled value.
+            """
             return self.n * 2
 
     deps = PlainState.computed_vars["doubled"]._deps(objclass=PlainState)
@@ -128,6 +153,11 @@ def test_provider_returning_none_adds_nothing():
     import reflex as rx
 
     def marker() -> str:
+        """A function registered with a provider that adds no dependency.
+
+        Returns:
+            A constant.
+        """
         return "x"
 
     register_implicit_dependency((marker,), lambda: None)
@@ -135,6 +165,11 @@ def test_provider_returning_none_adds_nothing():
     class UsesMarker(rx.State):
         @rx.var
         def value(self) -> str:
+            """The marker's value.
+
+            Returns:
+                The value.
+            """
             return marker()
 
     deps = UsesMarker.computed_vars["value"]._deps(objclass=UsesMarker)
@@ -153,9 +188,19 @@ def test_helper_method_recursion_detects_dependency():
     class HelperState(rx.State):
         @rx.var
         def label(self) -> str:
+            """A translation from a private helper method.
+
+            Returns:
+                The translated label.
+            """
             return self._translated()
 
         def _translated(self) -> str:
+            """A translation.
+
+            Returns:
+                The translated label.
+            """
             return _("Save")
 
     deps = HelperState.computed_vars["label"]._deps(objclass=HelperState)
@@ -173,6 +218,11 @@ def test_inline_imported_helper_gains_locale_dependency():
     class InlineImportState(rx.State):
         @rx.var
         def greeting(self) -> str:
+            """A translated greeting.
+
+            Returns:
+                The greeting.
+            """
             from reflex_i18n import gettext as _
 
             return _("Hello")
@@ -192,12 +242,22 @@ def test_helper_after_an_inline_import_gains_locale_dependency():
     class ImportThenTranslateState(rx.State):
         @rx.var
         def today(self) -> str:
+            """Today's date in a translated sentence.
+
+            Returns:
+                The sentence.
+            """
             import datetime
 
             return _("Today: {day}").format(day=datetime.date.today())
 
         @rx.var
         def code(self) -> str:
+            """A translation followed by two imported constants.
+
+            Returns:
+                The code.
+            """
             from string import ascii_letters as letters
             from string import digits
 
@@ -225,12 +285,22 @@ def test_combined_load_helper_gains_locale_dependency():
 
         @rx.var
         def translated_tags(self) -> str:
+            """Every tag translated.
+
+            Returns:
+                The translated tags.
+            """
             from reflex_i18n import gettext as _
 
             return ", ".join(map(_, self.tags))
 
         @rx.var
         def translated_first(self) -> str:
+            """The first tag translated.
+
+            Returns:
+                The translated tag.
+            """
             from reflex_i18n import gettext as _
 
             items = self.tags
@@ -264,16 +334,29 @@ def test_module_qualified_helper_gains_locale_dependency():
 
         @rx.var
         def via_global_module(self) -> str:
-            # `reflex_i18n` is a module global of this test module.
+            """The amount formatted through a module global.
+
+            Returns:
+                The formatted amount.
+            """
             return reflex_i18n.format_number(self.amount)
 
         @rx.var
         def via_closure_module_chain(self) -> str:
-            # `rx` is closure-captured; `.i18n` is a submodule attribute.
+            """The amount formatted through a submodule of a closure variable.
+
+            Returns:
+                The formatted amount.
+            """
             return rx.i18n.format_number(self.amount)
 
         @rx.var
         def via_inline_import(self) -> str:
+            """The amount formatted through an inline import.
+
+            Returns:
+                The formatted amount.
+            """
             import reflex_i18n as i18n
 
             return i18n.format_number(self.amount)
@@ -298,12 +381,20 @@ def test_nested_function_helper_gains_locale_dependency():
 
         @rx.var
         def via_lambda_closure(self) -> str:
-            # `_` reaches the lambda through the getter's closure.
+            """Every tag translated by a lambda reaching gettext through the closure.
+
+            Returns:
+                The translated tags.
+            """
             return ", ".join(map(lambda tag: _(tag), self.tags))  # noqa: C417
 
         @rx.var
         def via_lambda_global(self) -> str:
-            # The lambda's own globals are the enclosing function's.
+            """Every tag translated by a lambda reaching gettext through its globals.
+
+            Returns:
+                The translated tags.
+            """
             return ", ".join(map(lambda tag: reflex_i18n.gettext(tag), self.tags))  # noqa: C417
 
     i18n_name = I18nState.get_full_name()

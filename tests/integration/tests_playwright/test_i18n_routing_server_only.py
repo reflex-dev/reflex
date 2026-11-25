@@ -38,9 +38,19 @@ def I18nServerOnlyUrlApp():
     class UrlState(rx.State):
         @rx.var
         def greeting(self) -> str:
+            """A server-side translation.
+
+            Returns:
+                The translated greeting.
+            """
             return _("Welcome")
 
     def index():
+        """The page under test.
+
+        Returns:
+            The page.
+        """
         return rx.box(
             rx.input(
                 value=UrlState.router.session.client_token,

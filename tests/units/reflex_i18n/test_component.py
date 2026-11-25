@@ -55,6 +55,14 @@ def compile_app(
     root = mocker.spy(compiler, "compile_app_root")
 
     def compile_(routing: PathPrefixRouting | None) -> tuple[str, str]:
+        """Compile an app with a translated text and a language switcher.
+
+        Args:
+            routing: The URL routing, if any.
+
+        Returns:
+            The compiled memo and root code, and the set_locale handler name.
+        """
         with RegistrationContext():
             plugin = I18nPlugin(locales=["en", "de"], routing=routing)
             config = rx.Config(app_name="i18n_test", plugins=[plugin])
@@ -93,6 +101,15 @@ def test_provider_follows_a_newly_configured_plugin(compile_app: CompileApp):
 def _provider_for(
     mocker: MockerFixture, routing: PathPrefixRouting | None
 ) -> I18nProvider:
+    """The I18nProvider of an app with en and de and the given routing.
+
+    Args:
+        mocker: The mocker patching the config.
+        routing: The URL routing, if any.
+
+    Returns:
+        The provider.
+    """
     with RegistrationContext():
         plugin = I18nPlugin(locales=["en", "de"], routing=routing)
         config = rx.Config(app_name="i18n_test", plugins=[plugin])

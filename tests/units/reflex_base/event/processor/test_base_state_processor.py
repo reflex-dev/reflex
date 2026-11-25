@@ -3167,11 +3167,24 @@ async def test_hydrate_snapshot_uses_the_scope_of_the_browser_storage(
 
         @rx.var(cache=True, auto_deps=False, deps=["lang"])
         def scoped_lang(self) -> str:
+            """The lang of the event's scope.
+
+            Returns:
+                The scoped lang.
+            """
             return _scope_lang.get()
 
     async def provider(
         root_state: BaseState,
     ) -> contextlib.AbstractContextManager[None]:
+        """Scope the event to the lang of the LangState.
+
+        Args:
+            root_state: The root state of the event.
+
+        Returns:
+            The scope lang context.
+        """
         return _use_scope_lang((await root_state.get_state(LangState)).lang)
 
     monkeypatch.setattr(scope, "_providers", [provider])
@@ -3230,6 +3243,14 @@ async def test_scope_suppressing_delta_resolution_drops_the_delta(
 
         @rx.var
         def boom(self) -> str:
+            """Fail once explode is set.
+
+            Returns:
+                An empty string.
+
+            Raises:
+                RuntimeError: When explode is set.
+            """
             if self.explode:
                 msg = "boom"
                 raise RuntimeError(msg)

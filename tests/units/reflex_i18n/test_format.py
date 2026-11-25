@@ -32,6 +32,11 @@ def active_config():
 
 
 def _num() -> Var:
+    """A float var standing in for a state value.
+
+    Returns:
+        The var.
+    """
     return Var(_js_expr="state.value", _var_type=float)
 
 

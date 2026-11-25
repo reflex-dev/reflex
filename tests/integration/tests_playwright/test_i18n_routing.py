@@ -40,10 +40,19 @@ def I18nUrlApp():
     class UrlState(rx.State):
         @rx.var
         def greeting(self) -> str:
-            # Dynamic (server) gettext; must follow the URL locale.
+            """A server-side translation, which must follow the URL locale.
+
+            Returns:
+                The translated greeting.
+            """
             return _("Welcome")
 
     def index():
+        """The page under test.
+
+        Returns:
+            The page.
+        """
         return rx.box(
             rx.input(
                 value=UrlState.router.session.client_token,
