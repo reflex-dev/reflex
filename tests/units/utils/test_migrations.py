@@ -578,7 +578,23 @@ def test_defaults_without_an_untyped_sql_literal(
         "    )"
     )
     _write_source(project, ENUM_APP.format(columns=columns))
+    caplog.clear()
     _db("makemigrations", "--message", "defaults")
+    assert _warnings(caplog, "") == [
+        (
+            "The column 'thing.tags' is added without a server default, since its "
+            "default [] has no SQL literal form: existing rows will hold NULL. "
+            "Review the revision before running reflex db migrate."
+        )
+    ]
+    assert [
+        line.strip()
+        for line in _versions(project)[-1].read_text().splitlines()
+        if "'tags'" in line
+    ] == [
+        "batch_op.add_column(sa.Column('tags', sa.JSON(), nullable=True))",
+        "batch_op.drop_column('tags')",
+    ]
     _db("migrate")
     ((_, t1, level, tags, created),) = _rows()
     assert (t1, level, tags) == ("existing", "HIGH", None)

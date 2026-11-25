@@ -135,7 +135,9 @@ def add_column_with_server_default(
     is evaluated once, when the migration script is generated. A NOT NULL
     column is refused rather than added without a value when its default has no
     SQL literal form, like a JSON list, or when its only default is a dataclass
-    ``default_factory``, which is not on the column.
+    ``default_factory``, which is not on the column. A nullable column whose
+    default has no SQL literal form is added without one, with a warning that
+    existing rows will hold NULL.
 
     Args:
         context: The migration context.
@@ -175,6 +177,16 @@ def add_column_with_server_default(
                 op,
                 f"with the default {value!r}, which has no SQL literal form",
                 "Set server_default=... or make the column nullable.",
+            )
+        # `reflex db makemigrations` runs `alembic check` first: warn once, when
+        # the revision is written.
+        if getattr(config.cmd_opts, "autogenerate", False):
+            name = ".".join(filter(None, (op.schema, op.table_name, column.name)))
+            logger.warning(
+                f"The column {name!r} is added without a server default, since "
+                f"its default {value!r} has no SQL literal form: existing rows "
+                "will hold NULL. Review the revision before running reflex db "
+                "migrate."
             )
     elif not column.nullable and has_default_factory(op):
         raise missing_value_error(
