@@ -28,6 +28,7 @@ from reflex_base.event.processor.event_processor import (
 )
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegistrationContext
+from reflex_base.session import SessionToken
 from reflex_base.utils.exceptions import BrowserDisconnectedError
 
 from reflex.event import Event, EventHandler, EventSpec
@@ -712,7 +713,11 @@ async def test_processor_reports_blocking_sync_handler(
     mock_event_processor.event_loop_blocking_threshold = 0.04
 
     async with mock_event_processor as ep:
-        await ep.enqueue(token, Event.from_event_type(blocking_sync_event())[0])
+        await ep.enqueue(
+            token,
+            Event.from_event_type(blocking_sync_event())[0],
+            session_token=SessionToken.SYSTEM,
+        )
 
     # The probe that times the block lands up to a polling gap into it, so only
     # the report of a total is checked here; test_blocking checks its length
@@ -781,7 +786,11 @@ async def test_processor_reports_blocking_after_handler_returns(
     mock_event_processor.event_loop_blocking_threshold = 0.04
 
     async with mock_event_processor as ep:
-        await ep.enqueue(token, Event.from_event_type(noop_event())[0])
+        await ep.enqueue(
+            token,
+            Event.from_event_type(noop_event())[0],
+            session_token=SessionToken.SYSTEM,
+        )
 
     messages = [
         re.sub(
@@ -1130,6 +1139,26 @@ async def test_stream_delta_yields_single_delta(token: str):
         event = Event.from_event_type(delta_event())[0]
         collected = [d async for d in ep.enqueue_stream_delta(token, event)]
     assert collected == [{"state": {"x": 1}}]
+
+
+async def test_stream_delta_forks_ambient_transaction(mocker: MockerFixture):
+    """A buffered upload must not reuse the root transaction ID.
+
+    Args:
+        mocker: The mock fixture.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2).configure()
+    enqueue = mocker.spy(EventProcessor, "enqueue")
+    async with ep:
+        parent = EventContext.get().fork(token="upload")
+        with parent:
+            event = Event.from_event_type(delta_event())[0]
+            assert [d async for d in ep.enqueue_stream_delta("upload", event)]
+        upload_context = enqueue.call_args.kwargs["ev_ctx"]
+        assert ep._root_context is not None
+        assert upload_context.txid != ep._root_context.txid
+        assert upload_context.txid != parent.txid
+        assert upload_context.parent_txid == parent.txid
 
 
 async def test_stream_delta_yields_multiple_deltas(token: str):

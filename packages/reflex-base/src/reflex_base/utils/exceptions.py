@@ -28,6 +28,10 @@ class ReflexRuntimeError(ReflexError, RuntimeError):
     """Custom RuntimeError for Reflex."""
 
 
+class SessionAuthorizationError(ReflexError, PermissionError):
+    """Raised when a browser session does not own the requested client state."""
+
+
 class AdminDashRemovedError(ReflexRuntimeError):
     """Raised when an app uses the removed starlette-admin integration."""
 
