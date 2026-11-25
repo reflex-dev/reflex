@@ -261,6 +261,43 @@ def test_exchange_trusts_origins_on_the_backend_host(
     assert response.status_code == status
 
 
+@pytest.mark.parametrize(
+    ("host", "origin", "status"),
+    [
+        ("API.test", "https://api.test", 200),
+        ("api.test:443", "https://api.test", 200),
+        ("api.test", "https://api.test:443", 200),
+        ("api.test:8443", "https://api.test:8443", 200),
+        ("api.test:8443", "https://api.test", 403),
+    ],
+)
+def test_production_same_origin_ignores_host_case_and_default_port(
+    manager: SessionTokenManager,
+    monkeypatch: pytest.MonkeyPatch,
+    host: str,
+    origin: str,
+    status: int,
+):
+    """A proxy can forward the Host header in another case or with the default port.
+
+    Args:
+        manager: The session manager.
+        monkeypatch: Environment fixture.
+        host: The Host header that the backend receives.
+        origin: The request Origin.
+        status: The expected response status.
+    """
+    monkeypatch.setenv("REFLEX_ENV_MODE", "prod")
+    app = _app(manager, allowed_origins=())
+    with TestClient(app, base_url="https://api.test") as client:
+        response = client.post(
+            "/_reflex/session",
+            json={"session_token": manager.encode(manager.create(), exchange=True)},
+            headers={"Origin": origin, "Host": host},
+        )
+    assert response.status_code == status
+
+
 def test_exchange_rejects_cookie_credential_and_cookie_rejects_exchange(
     manager: SessionTokenManager,
 ):
