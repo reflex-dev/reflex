@@ -230,10 +230,15 @@ def LinkedStateApp():
 
     @api.get("/api/set-counter/{shared_token}/{value}")
     async def set_counter_api(shared_token: str, value: int):
+        from reflex_base.session import SessionToken
+
         from reflex.istate.manager.token import BaseStateToken
 
+        # A shared token belongs to no browser session, so this trusted route
+        # names its authority.
         async with app.modify_state(
-            BaseStateToken(ident=shared_token, cls=SharedState)
+            BaseStateToken(ident=shared_token, cls=SharedState),
+            session_token=SessionToken.SYSTEM,
         ) as state:
             shared = await state.get_state(SharedState)
             shared.counter = value

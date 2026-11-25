@@ -164,7 +164,9 @@ def test_connection_banner(
     assert connection_banner.app_instance is not None
     assert connection_banner.backend is not None
     assert connection_banner.frontend_url is not None
-    page.goto(connection_banner.frontend_url)
+    # Offline emulation does not close a socket to "localhost". The frontend
+    # reaches the backend on the host of the page, so open the page by address.
+    page.goto(connection_banner.frontend_url.replace("localhost", "127.0.0.1"))
     token = _assert_token(connection_banner, page)
     expect(page.get_by_text("Cannot connect to server")).to_have_count(0)
 

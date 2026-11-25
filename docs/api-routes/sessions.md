@@ -33,7 +33,9 @@ Under `enforce`, an app that upgrades can see these changes:
 - Server code that reaches the state of another client, such as a broadcast
   from an event handler or a webhook route that calls `app.modify_state`,
   raises `SessionAuthorizationError`. Pass `session_token=SessionToken.SYSTEM`
-  (see [Server-side state access](#server-side-state-access)).
+  (see [Server-side state access](#server-side-state-access)). The same
+  applies to `app.modify_state` with the token of an `rx.SharedState`: a shared
+  token belongs to no browser session.
 - A browser that does not store the session cookie gets fresh state on each
   new connection (see [Origins, cookies, and embedding](#origins-cookies-and-embedding)).
 - A client that is not a browser must use the client token that the backend
