@@ -109,6 +109,62 @@ def copy_input_example():
     )
 ```
 
+### Copying text fetched from a URL
+
+Pass the `url` keyword to copy text that the browser fetches from a URL:
+
+```python
+rx.button(
+    "Copy the example file",
+    on_click=rx.set_clipboard(url="/example.txt"),
+)
+```
+
+The fetch runs in the browser, so the URL is resolved by the browser. A
+relative path like `/example.txt` is served by your app. Cross-origin URLs
+must allow the fetch through CORS, and the fetch uses the default
+credentials mode.
+
+This form has a stricter usage contract than the text form:
+
+- The page must be in a secure context (HTTPS or localhost), and the
+  browser must grant clipboard access.
+- Call it as the direct, first or sole event of a user gesture trigger
+  such as `on_click`. Backend round trips and timers drop the gesture's
+  transient activation, and the copy can then fail or never settle. A
+  throttled trigger keeps activation only on its leading edge; dropped
+  events never run.
+- Events returned from a backend event handler are not supported with
+  `url`. Delivering the event through the backend loses the user gesture,
+  so the write may be denied or stay pending without an error signal.
+- The response must be text. Accepted content types are `text/*`,
+  `application/json`, `application/javascript`, `application/xml`,
+  `application/yaml`, `application/x-yaml`,
+  `application/x-www-form-urlencoded`, and any `+json`, `+xml`, or `+yaml`
+  suffix type. `text/html` and `application/xhtml+xml` are refused, as is
+  any other type. The body is read as UTF-8 text.
+- On browsers with `ClipboardItem` (Chrome 98+, Firefox 127+, Safari
+  13.1+, per browser compatibility data) the write is armed with a
+  promise-backed item so it stays bound to the gesture. On older browsers
+  a `writeText` fallback runs after the fetch resolves, which no longer
+  binds the write to the gesture and can be denied. Browsers older than
+  these versions may throw at write time; this behavior is inferred from
+  the specification and is not separately verified.
+
+Failures are reported, never silent: a failed fetch (an HTTP error or a
+refused content type) or a failed write logs a tagged
+`_set_clipboard_from_url` console error and raises an unhandled
+rejection, which Reflex forwards to the backend as a frontend exception
+report. When the fetch fails, the clipboard content stays unchanged. If
+the write itself fails for a different reason than the fetch (for
+example a permission denial), it is reported as its own failure; the
+exact error identity behavior is engine-dependent, and Firefox reports a
+distinct, less specific error for fetch refusals.
+
+Two rapid clicks race: in Chromium an earlier fetch can finish last and
+overwrite a newer copy, while Firefox rejects the concurrent write. Do
+not rely on last-click-wins ordering.
+
 ## rx.set_value
 
 Set the value of a specified reference element.
