@@ -1,7 +1,8 @@
 # ruff: noqa: D101, D102
 
+import contextlib
 import dataclasses
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from typing import Any
 
 import pytest
@@ -267,6 +268,78 @@ def test_eval_page_uses_first_non_none_result() -> None:
     assert page_ctx is not None
     assert page_ctx.route == "/demo"
     assert calls == ["no-match", "match"]
+
+
+def _scope_plugin(name: str, calls: list[str]) -> Plugin:
+    """A plugin whose page evaluation scope records entering and leaving it.
+
+    Args:
+        name: The name recorded for the plugin.
+        calls: The list the scope records into.
+
+    Returns:
+        The plugin.
+    """
+
+    class ScopePlugin(StubPlugin):
+        @contextlib.contextmanager
+        def eval_page_scope(
+            self, page: PageDefinition, /, **kwargs: Any
+        ) -> Iterator[None]:
+            calls.append(f"enter {name} {page.route}")
+            yield
+            calls.append(f"leave {name}")
+
+    return ScopePlugin()
+
+
+def test_eval_page_scope_wraps_whichever_plugin_evaluates_the_page() -> None:
+    calls: list[str] = []
+
+    def page_fn() -> Component:
+        calls.append("page")
+        return Fragment.create()
+
+    class EvaluatingPlugin(StubPlugin):
+        def eval_page(
+            self, page_fn: Any, /, *, page: PageDefinition, **kwargs: Any
+        ) -> PageContext:
+            del kwargs
+            return PageContext(name="page", route=page.route, root_component=page_fn())
+
+    ctx = CompileContext(
+        pages=[FakePage(route="demo", component=page_fn)],
+        hooks=CompilerHooks(
+            plugins=(
+                _scope_plugin("a", calls),
+                EvaluatingPlugin(),
+                _scope_plugin("b", calls),
+            )
+        ),
+    )
+    with ctx:
+        ctx.compile()
+
+    assert calls == ["enter a demo", "enter b demo", "page", "leave b", "leave a"]
+
+
+def test_eval_page_scope_wraps_a_page_the_backend_evaluates(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from reflex_base.config import get_config
+
+    calls: list[str] = []
+
+    def page_fn() -> Component:
+        calls.append("page")
+        return Fragment.create()
+
+    monkeypatch.setattr(get_config(), "plugins", [_scope_plugin("a", calls)])
+    compiler.compile_unevaluated_page(
+        "demo", UnevaluatedPage(component=page_fn, route="demo")
+    )
+
+    assert calls == ["enter a demo", "page", "leave a"]
 
 
 def test_compile_page_runs_plugins_in_registration_order() -> None:

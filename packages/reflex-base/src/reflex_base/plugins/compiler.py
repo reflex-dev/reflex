@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import contextlib
 import copy
 import dataclasses
 import inspect
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeAlias, TypeVar, cast
 
 from reflex_base.components.component import BaseComponent, Component
@@ -71,6 +72,10 @@ class CompilerHooks:
     """Dispatch compiler hooks across an ordered plugin chain."""
 
     plugins: tuple[Plugin, ...] = ()
+    _eval_page_scope_hooks: tuple[Callable[..., Any], ...] = dataclasses.field(
+        init=False,
+        repr=False,
+    )
     _eval_page_hooks: tuple[Callable[..., Any], ...] = dataclasses.field(
         init=False,
         repr=False,
@@ -94,6 +99,9 @@ class CompilerHooks:
 
     def __post_init__(self) -> None:
         """Resolve the active compiler hook callables once."""
+        object.__setattr__(
+            self, "_eval_page_scope_hooks", self._resolve_hooks("eval_page_scope")
+        )
         object.__setattr__(self, "_eval_page_hooks", self._resolve_hooks("eval_page"))
         object.__setattr__(
             self,
@@ -254,6 +262,28 @@ class CompilerHooks:
             return leave_component
 
         return bind
+
+    @contextlib.contextmanager
+    def eval_page_scope(
+        self,
+        page: PageDefinition,
+        /,
+        **kwargs: Any,
+    ) -> Iterator[None]:
+        """Enter every plugin's ``eval_page_scope`` context, in plugin order.
+
+        Args:
+            page: The page about to be evaluated.
+            kwargs: Additional compiler-specific context.
+
+        Yields:
+            None, while all the contexts are entered.
+        """
+        with contextlib.ExitStack() as stack:
+            for hook_impl in self._eval_page_scope_hooks:
+                if (scope := hook_impl(page, **kwargs)) is not None:
+                    stack.enter_context(scope)
+            yield
 
     def eval_page(
         self,
@@ -721,12 +751,13 @@ class CompileContext(BaseContext):
         for page in self.pages:
             page_fn = page.component
             n_states_before = len(all_base_state_classes)
-            page_ctx = self.hooks.eval_page(
-                page_fn,
-                page=page,
-                compile_context=self,
-                **kwargs,
-            )
+            with self.hooks.eval_page_scope(page, compile_context=self, **kwargs):
+                page_ctx = self.hooks.eval_page(
+                    page_fn,
+                    page=page,
+                    compile_context=self,
+                    **kwargs,
+                )
             if page_ctx is None:
                 page_name = getattr(page_fn, "__name__", repr(page_fn))
                 msg = (

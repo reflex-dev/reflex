@@ -1036,8 +1036,10 @@ def compile_unevaluated_page(
         Exception: If an error occurs while evaluating the page.
     """
     try:
-        # Generate the component if it is a callable.
-        component = into_component(page.component)
+        # Generate the component if it is a callable, in the context the
+        # plugins evaluate pages in.
+        with CompilerHooks(plugins=tuple(get_config().plugins)).eval_page_scope(page):
+            component = into_component(page.component)
 
         component._add_style_recursive(style or {}, theme)
 

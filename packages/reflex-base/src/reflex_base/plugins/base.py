@@ -1,6 +1,7 @@
 """Base class for all plugins."""
 
 from collections.abc import Callable, Mapping, Sequence
+from contextlib import AbstractContextManager
 from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, ParamSpec, Protocol, TypedDict, TypeVar
@@ -22,7 +23,11 @@ if TYPE_CHECKING:
     from reflex.app import App, UnevaluatedPage
     from reflex_base.components.component import BaseComponent, Component
     from reflex_base.event import EventType
-    from reflex_base.plugins.compiler import ComponentAndChildren, PageContext
+    from reflex_base.plugins.compiler import (
+        ComponentAndChildren,
+        PageContext,
+        PageDefinition,
+    )
     from reflex_base.vars.base import Var
 
 
@@ -274,6 +279,26 @@ class Plugin:
 
         Returns:
             A mapping of env entries to add or override, or ``None``.
+        """
+        return None
+
+    def eval_page_scope(
+        self,
+        page: "PageDefinition",
+        /,
+        **kwargs: Any,
+    ) -> AbstractContextManager[None] | None:
+        """Get a context to evaluate a page in, e.g. one setting its language.
+
+        Every plugin's context is entered around a page's evaluation, whichever
+        ``eval_page`` hook evaluates it, so the page function runs inside it.
+
+        Args:
+            page: The page about to be evaluated.
+            kwargs: Additional compiler-specific context.
+
+        Returns:
+            A context manager to enter while the page is evaluated, or ``None``.
         """
         return None
 
