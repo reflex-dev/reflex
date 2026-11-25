@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING
 
 import click
@@ -16,6 +17,9 @@ if TYPE_CHECKING:
 def set_loglevel(ctx: click.Context, self: click.Parameter, value: str | None):
     """Set the log level.
 
+    An explicit level is always exported as ``REFLEX_LOGLEVEL`` so the app's
+    config picks it up, even when it equals the current level.
+
     Args:
         ctx: The click context.
         self: The click command.
@@ -23,6 +27,7 @@ def set_loglevel(ctx: click.Context, self: click.Parameter, value: str | None):
     """
     if value is not None:
         console.set_log_level(value)
+        os.environ["REFLEX_LOGLEVEL"] = value
 
 
 loglevel_option = click.option(
