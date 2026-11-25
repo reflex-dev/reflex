@@ -184,7 +184,7 @@ def remove_stale_external_asset_symlinks():
     re-creation during import.
     """
     external_dir = (
-        Path.cwd() / constants.Dirs.APP_ASSETS / constants.Dirs.EXTERNAL_APP_ASSETS
+        Path.cwd() / get_config().assets_dir / constants.Dirs.EXTERNAL_APP_ASSETS
     )
     if not external_dir.exists():
         return
@@ -324,13 +324,12 @@ def asset(
         FileNotFoundError: If the file does not exist.
         ValueError: If subfolder is provided for local assets.
     """
-    assets = constants.Dirs.APP_ASSETS
+    assets = Path.cwd() / get_config().assets_dir
     backend_only = EnvironmentVariables.REFLEX_BACKEND_ONLY.get()
 
     # Local asset handling
     if not shared:
-        cwd = Path.cwd()
-        src_file_local = cwd / assets / path
+        src_file_local = assets / path
         if subfolder is not None:
             msg = "Subfolder is not supported for local assets."
             raise ValueError(msg)
@@ -361,7 +360,7 @@ def asset(
     # Symlink the asset to the app's external assets directory if running frontend.
     if not backend_only:
         # Create the asset folder in the currently compiling app.
-        asset_folder = Path.cwd() / assets / external / subfolder
+        asset_folder = assets / external / subfolder
         asset_folder.mkdir(parents=True, exist_ok=True)
 
         _link_shared_asset(asset_folder / path, src_file_shared)

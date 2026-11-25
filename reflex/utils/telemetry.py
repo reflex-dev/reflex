@@ -210,7 +210,7 @@ def get_init_environment() -> dict[str, bool]:
         "has_pyproject_toml": Path(constants.PyprojectToml.FILE).exists(),
         "has_requirements_txt": Path(constants.RequirementsTxt.FILE).exists(),
         "has_uv_lock": Path(constants.UvLock.FILE).exists(),
-        "has_reflex_lock": Path(constants.Bun.ROOT_LOCKFILE_DIR).is_dir(),
+        "has_reflex_lock": get_config().lockfile_dir.is_dir(),
     }
 
 

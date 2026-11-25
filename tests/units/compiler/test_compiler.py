@@ -328,6 +328,30 @@ def test_compile_stylesheets(tmp_path: Path, mocker: MockerFixture):
     ).read_text()
 
 
+def test_compile_stylesheets_from_the_configured_assets_dir(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """Local stylesheets resolve against the configured assets directory.
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+    """
+    site_assets = tmp_path / "site" / "assets"
+    site_assets.mkdir(parents=True)
+    (site_assets / "site.css").write_text(".site { color: red; }")
+    web_dir = tmp_path / constants.Dirs.WEB
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=tmp_path)
+    mocker.patch("reflex.compiler.compiler.get_web_dir", return_value=web_dir)
+    config = rx.Config(app_name="site", assets_dir=Path("site/assets"))
+    mocker.patch("reflex.compiler.compiler.get_config", return_value=config)
+
+    _, code = compiler.compile_root_stylesheet(["/site.css"], reset_style=False)
+
+    assert code == "@layer __reflex_base;\n@import url('./site.css');"
+    assert (web_dir / "styles" / "site.css").read_text() == ".site { color: red; }"
+
+
 def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
     if importlib.util.find_spec("sass") is None:
         pytest.skip(
@@ -484,6 +508,7 @@ def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker: MockerFixture):
 
     mocker.patch.object(mock, "tailwind", None)
     mocker.patch.object(mock, "plugins", [])
+    mocker.patch.object(mock, "assets_dir", Path("assets"))
     mocker.patch("reflex.compiler.compiler.get_config", return_value=mock)
 
     (assets_dir / "style.css").touch()
@@ -551,6 +576,7 @@ def test_compile_stylesheets_includes_radix_plugin(
 
     config = mocker.Mock()
     config.plugins = [rx.plugins.RadixThemesPlugin()]
+    config.assets_dir = Path("assets")
     mocker.patch("reflex.compiler.compiler.get_config", return_value=config)
     mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
     mocker.patch(

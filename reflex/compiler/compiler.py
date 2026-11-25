@@ -401,7 +401,7 @@ def _compile_root_stylesheet(
     ])
 
     failed_to_import_sass = False
-    assets_app_path = Path.cwd() / constants.Dirs.APP_ASSETS
+    assets_app_path = Path.cwd() / get_config().assets_dir
 
     stylesheets_files: list[Path] = []
     stylesheets_urls = []

@@ -178,6 +178,8 @@ class BaseConfig:
         telemetry_enabled: Telemetry opt-in.
         bun_path: The bun path.
         frozen_lockfile: Run frontend package manager in lockfile-enforcing mode (only honored by bun).
+        lockfile_dir: The directory that keeps the frontend's package.json and lockfiles between builds, to commit with the app. Relative to the app root. Lets apps that share a root keep their own lockfiles.
+        assets_dir: The directory of the static files copied into the frontend and served from its root, which `rx.asset` and local stylesheets resolve against. Relative to the app root. Lets apps that share a root ship only their own assets.
         static_page_generation_timeout: Timeout to do a production build of a frontend page.
         cors_allowed_origins: Comma separated list of origins that are allowed to connect to the backend API. The default allows any origin in dev mode; in prod mode it allows the backend's own origin and, when deploy_url is set, the origin of deploy_url.
         vite_allowed_hosts: Allowed hosts for the Vite dev server. Set to True to allow all hosts, or provide a list of hostnames (e.g. ["myservice.local"]) to allow specific ones. Prevents 403 errors in Docker, Codespaces, reverse proxies, etc.
@@ -238,6 +240,10 @@ class BaseConfig:
     bun_path: ExistingPath = constants.Bun.DEFAULT_PATH
 
     frozen_lockfile: bool = True
+
+    lockfile_dir: Path = Path(constants.Bun.ROOT_LOCKFILE_DIR)
+
+    assets_dir: Path = Path(constants.Dirs.APP_ASSETS)
 
     static_page_generation_timeout: int = 60
 
@@ -663,6 +669,8 @@ class Config(BaseConfig):
     def _normalize_paths(self):
         """Ensure frontend and backend paths start with a slash if provided.
 
+        Directories given as strings become ``Path`` objects.
+
         Raises:
             ConfigError: If a frontend_path segment is not a plain directory name.
         """
@@ -686,6 +694,9 @@ class Config(BaseConfig):
 
         if self.backend_path and not self.backend_path.startswith("/"):
             self.backend_path = f"/{self.backend_path}"
+
+        self.lockfile_dir = Path(self.lockfile_dir)
+        self.assets_dir = Path(self.assets_dir)
 
     def _add_builtin_plugins(self):
         """Add the builtin plugins to the config."""

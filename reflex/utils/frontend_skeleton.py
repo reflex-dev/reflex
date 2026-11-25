@@ -277,16 +277,25 @@ LOCKFILE_NAMES: tuple[str, ...] = (
 NO_PRUNE_LOCKFILE_NAMES: tuple[str, ...] = (constants.PackageJson.PATH,)
 
 
+def get_root_lockfile_dir() -> Path:
+    """Get the directory the frontend lockfiles persist in, ``reflex.lock`` by default.
+
+    Returns:
+        The configured ``lockfile_dir`` under the app root.
+    """
+    return Path.cwd() / get_config().lockfile_dir
+
+
 def get_root_lockfile_path(filename: str) -> Path:
-    """Get a persisted lockfile path under the app root's reflex.lock dir.
+    """Get a persisted lockfile path under the app's lockfile directory.
 
     Args:
         filename: The lockfile basename (e.g. ``bun.lock``, ``package-lock.json``).
 
     Returns:
-        The lockfile path inside ``<cwd>/reflex.lock/``.
+        The lockfile path inside the configured ``lockfile_dir``.
     """
-    return Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR / filename
+    return get_root_lockfile_dir() / filename
 
 
 def get_web_lockfile_path(filename: str) -> Path:

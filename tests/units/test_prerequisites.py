@@ -665,6 +665,27 @@ def test_sync_root_lockfiles_to_web_keeps_web_package_json(tmp_path, monkeypatch
     assert not web_lock.exists()
 
 
+def test_lockfiles_persist_in_the_configured_directory(tmp_path, monkeypatch):
+    """An app whose config names another lockfile directory keeps its lockfiles there."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+    config = Config(app_name="site", lockfile_dir=Path("site/reflex.lock"))
+    monkeypatch.setattr(frontend_skeleton, "get_config", lambda: config)
+    (web_dir / constants.Bun.LOCKFILE_PATH).write_text("site-lock")
+
+    with chdir(tmp_path):
+        assert frontend_skeleton.get_root_lockfile_path(
+            constants.Bun.LOCKFILE_PATH
+        ) == (tmp_path / "site" / "reflex.lock" / constants.Bun.LOCKFILE_PATH)
+        frontend_skeleton.sync_web_lockfiles_to_root()
+
+    assert (
+        tmp_path / "site" / "reflex.lock" / constants.Bun.LOCKFILE_PATH
+    ).read_text() == ("site-lock")
+    assert not (tmp_path / constants.Bun.ROOT_LOCKFILE_DIR).exists()
+
+
 def test_sync_root_lockfiles_to_web_processes_package_json(tmp_path, monkeypatch):
     """Persisted package.json is rendered into .web instead of byte-copied."""
     web_dir = tmp_path / constants.Dirs.WEB

@@ -85,7 +85,7 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
         Path.cwd(),
         config.app_name,
         new_app_name,
-        exclude_dirs=[constants.Dirs.WEB, constants.Dirs.APP_ASSETS],
+        exclude_dirs=[constants.Dirs.WEB, config.assets_dir],
     )
 
     rename_path_up_tree(module_path, config.app_name, new_app_name)

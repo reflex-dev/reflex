@@ -31,6 +31,7 @@ from reflex_base.components.memo import (
     MemoFunctionDefinition,
     MemoParamKind,
 )
+from reflex_base.config import get_config
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
@@ -1276,7 +1277,7 @@ def _sync_app_assets() -> None:
     Raises:
         OSError: If the source cannot be scanned or the output cannot be updated.
     """
-    assets = Path(constants.Dirs.APP_ASSETS)
+    assets = get_config().assets_dir
     web_dir = get_web_dir()
     public = web_dir / constants.Dirs.PUBLIC
     manifest_path = web_dir / _ASSET_MANIFEST_FILENAME

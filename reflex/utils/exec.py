@@ -720,7 +720,7 @@ def get_reload_paths() -> Sequence[Path]:
         return path.name in (
             ".gitignore",
             "uploaded_files",
-            constants.Bun.ROOT_LOCKFILE_DIR,
+            get_config().lockfile_dir.name,
         )
 
     reload_paths = (

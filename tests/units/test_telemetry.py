@@ -7,11 +7,13 @@ import threading
 import time
 import uuid
 import warnings
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 from packaging.version import parse as parse_python_version
 from pytest_mock import MockerFixture
+from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.registry import RegistrationContext
 
@@ -356,7 +358,10 @@ def patch_telemetry_config(mocker: MockerFixture):
     def patch(*, enabled: bool) -> None:
         mocker.patch(
             "reflex.utils.telemetry.get_config",
-            return_value=SimpleNamespace(telemetry_enabled=enabled),
+            return_value=SimpleNamespace(
+                telemetry_enabled=enabled,
+                lockfile_dir=Path(constants.Bun.ROOT_LOCKFILE_DIR),
+            ),
         )
 
     return patch

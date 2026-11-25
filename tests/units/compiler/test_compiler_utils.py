@@ -78,6 +78,28 @@ def test_sync_app_assets_renames_and_prunes_empty_directories(asset_project):
     assert not (public / utils._ASSET_MANIFEST_FILENAME).exists()
 
 
+def test_sync_app_assets_copies_the_configured_directory(
+    asset_project, monkeypatch: pytest.MonkeyPatch
+):
+    """An app whose config names another assets directory ships only that one.
+
+    Args:
+        asset_project: The source and destination directories.
+        monkeypatch: Fixture for configuring the app.
+    """
+    assets, public = asset_project
+    (assets / "default.txt").write_text("default")
+    site_assets = assets.parent / "site" / "assets"
+    site_assets.mkdir(parents=True)
+    (site_assets / "site.txt").write_text("site")
+    config = rx.Config(app_name="site", assets_dir=Path("site/assets"))
+    monkeypatch.setattr(utils, "get_config", lambda: config)
+
+    utils._sync_app_assets()
+
+    assert sorted(path.name for path in public.iterdir()) == ["site.txt"]
+
+
 def test_sync_app_assets_preserves_incremental_copies(asset_project):
     """Unchanged assets and their manifest keep timestamps across compiles.
 
