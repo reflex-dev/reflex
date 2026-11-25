@@ -8,7 +8,7 @@ from reflex_docs.pages.docs_landing.views.link_item import link_item
 def hosting_section() -> rx.Component:
     return rx.el.section(
         section_heading(
-            "Cloud", "Learn how to host your applications with Reflex Hosting."
+            "Cloud", "Learn how to host your applications with Reflex Cloud."
         ),
         rx.el.div(
             link_item(
@@ -20,14 +20,14 @@ def hosting_section() -> rx.Component:
             link_item(
                 "LockKeyIcon",
                 "Secret Management",
-                "How to securely manage sensitive environment variables, API keys, and secrets in Reflex Hosting.",
+                "How to securely manage sensitive environment variables, API keys, and secrets in Reflex Cloud.",
                 hosting_page.secrets_environment_vars.path,
                 has_padding_left=True,
             ),
             link_item(
                 "EyeIcon",
                 "Observability",
-                "Monitor your application's health, view logs, and gain insights using Reflex Hosting's integrated observability tools.",
+                "Monitor your application's health, view logs, and gain insights using Reflex Cloud's integrated observability tools.",
                 hosting_page.logs.path,
             ),
             link_item(
