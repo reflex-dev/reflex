@@ -254,16 +254,17 @@ def _trusted_origin(request: Request, allowed_origins: tuple[str, ...]) -> bool:
         return True
     try:
         page = urlsplit(origin)
-        hostname = page.hostname
+        hostname, port = page.hostname, page.port
     except ValueError:
         return False
     if page.scheme != request.url.scheme or hostname != request.url.hostname:
         return False
     # Development serves the frontend on another port of the backend host.
-    return (
-        environment.REFLEX_ENV_MODE.get() == constants.Env.DEV
-        or page.netloc == request.url.netloc
-    )
+    if environment.REFLEX_ENV_MODE.get() == constants.Env.DEV:
+        return True
+    # A proxy can forward the Host header with the default port written out.
+    default_port = 443 if page.scheme == "https" else 80
+    return (port or default_port) == (request.url.port or default_port)
 
 
 async def session_endpoint(
