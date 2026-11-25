@@ -188,8 +188,8 @@ def _render_spans(
                     out.append(_render_link(children, target))
                 else:
                     out.extend(_render_spans(children, links))
-            case ImageSpan(src=src):
-                out.append(img_comp_xd(src=src))
+            case ImageSpan(children=children, src=src):
+                out.append(img_comp_xd(src=src, alt=_spans_to_plaintext(children)))
             case LineBreakSpan(soft=soft):
                 out.append("\n" if soft else rx.el.br())
     return out
@@ -485,7 +485,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         return _render_link(span.children, span.target)
 
     def image(self, span: ImageSpan) -> rx.Component:
-        return img_comp_xd(src=span.src)
+        return img_comp_xd(src=span.src, alt=_spans_to_plaintext(span.children))
 
     def line_break(self, span: LineBreakSpan) -> rx.Component:
         return rx.fragment()

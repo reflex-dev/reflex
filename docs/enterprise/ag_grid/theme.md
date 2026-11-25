@@ -8,7 +8,7 @@ import reflex as rx
 import reflex_enterprise as rxe
 ```
 
-# Themes
+# AG Grid Themes
 
 ```md alert warning
 # Only the old theme API of AG Grid is currently supported. The new theme API is not supported yet.

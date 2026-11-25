@@ -1,4 +1,4 @@
-# Tables
+# Database Tables
 
 Tables are database objects that contain all the data in a database.
 

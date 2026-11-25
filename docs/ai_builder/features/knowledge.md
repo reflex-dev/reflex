@@ -1,4 +1,4 @@
-# Knowledge
+# Agent Knowledge
 
 Knowledge gives the agent reusable context that should guide more than one prompt. Reflex Build separates project-wide knowledge from instructions that apply only to the current app.
 

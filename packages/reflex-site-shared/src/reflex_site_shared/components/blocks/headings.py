@@ -271,14 +271,18 @@ def h4_comp_xd(text: rx.Var[str]) -> rx.Component:
 
 
 @rx.memo
-def img_comp_xd(src: rx.Var[str]) -> rx.Component:
-    """Img comp xd.
+def img_comp_xd(src: rx.Var[str], alt: rx.Var[str]) -> rx.Component:
+    """Render a documentation image.
+
+    Args:
+        src: The image URL.
+        alt: The image's alt text; empty for a decorative image.
 
     Returns:
         The component.
     """
     return rx.image(
         src=src,
-        alt="Documentation image",
+        alt=alt,
         class_name="rounded-lg border border-border-subtle mb-2",
     )

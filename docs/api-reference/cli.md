@@ -86,7 +86,7 @@ Options:
 
 You can export your app's frontend and backend to zip files using the `reflex export` command.
 
-The frontend is a compiled NextJS app, which can be deployed to a static hosting service like Github Pages or Vercel.
+The frontend is a static build of the compiled React app, which can be deployed to a static hosting service like GitHub Pages or Vercel.
 However this is just a static build, so you will need to deploy the backend separately.
 See the self-hosting guide for more information.
 

@@ -1,4 +1,4 @@
-# Queries
+# Database Queries
 
 Queries are used to retrieve data from a database.
 

@@ -28,6 +28,7 @@ PAGES = {
     "queries": DOCS / "database" / "queries.md",
     "relationships": DOCS / "database" / "relationships.md",
     "table": DOCS / "library" / "tables-and-data-grids" / "table.md",
+    "ag_grid": DOCS / "enterprise" / "ag_grid" / "index.md",
 }
 SESSION = "Session = async_sessionmaker"
 
@@ -185,6 +186,28 @@ def test_examples_parse_and_never_block():
             ast.parse(code)
             assert "with Session()" not in code.replace("async with Session()", "")
             assert "rx.session(" not in code, page
+
+
+# Pages that show deprecated database APIs only to explain migrating off them.
+MIGRATION_GUIDES = {
+    DOCS / "database" / "tables.md",
+    DOCS / "changelog" / "upgrading" / "upgrading-to-0-11.md",
+}
+
+
+def test_docs_examples_avoid_deprecated_database_apis():
+    """No example outside the migration guides teaches rx.Model or rx.session()."""
+    offenders = sorted(
+        (str(page.relative_to(DOCS)), api)
+        for page in DOCS.rglob("*.md")
+        if DOCS / "app" not in page.parents and page not in MIGRATION_GUIDES
+        for code in re.findall(
+            r"^```python[^\n]*\n(.*?)^```", page.read_text(), re.MULTILINE | re.DOTALL
+        )
+        for api in ("rx.Model", "rx.session(", "rx.asession(")
+        if api in code
+    )
+    assert offenders == []
 
 
 def test_tables_register_with_the_migration_registry(monkeypatch):
@@ -480,3 +503,51 @@ async def test_table_pagination(monkeypatch):
     assert [user.name for user in state.users] == ["Customer 3", "Customer 4"]
     assert state.total_items == 5
     await table.engine.dispose()
+
+
+@run_async
+async def test_ag_grid_database_example(monkeypatch, tmp_path):
+    """The AG Grid example seeds the table once, loads it, and saves cell edits."""
+    pytest.importorskip("reflex_enterprise")
+    pytest.importorskip("pandas")
+    source, _, _ = block("ag_grid", "class AGGridDatabaseState(rx.State)").partition(
+        "\n# Add state and page to the app."
+    )
+    module = load(monkeypatch, source)
+    (tmp_path / "data").mkdir()
+    (tmp_path / "data" / "gapminder2007.csv").write_text(
+        "country,pop,continent\nNorway,4627926,Europe\nPeru,28674757,Americas\n"
+    )
+    monkeypatch.chdir(tmp_path)
+    await create_tables(module)
+
+    state = await run(module.AGGridDatabaseState, "load_countries", countries=[])
+    state = await run(module.AGGridDatabaseState, "load_countries", countries=[])
+    assert to_json(state.countries) == [
+        {"id": 1, "country": "Norway", "population": 4627926, "continent": "Europe"},
+        {"id": 2, "country": "Peru", "population": 28674757, "continent": "Americas"},
+    ]
+
+    events = [
+        event
+        async for event in module.AGGridDatabaseState.cell_value_changed.fn(
+            state, 1, "population", 30000000
+        )
+    ]
+    assert len(events) == 1
+    ignored = [
+        event
+        async for event in module.AGGridDatabaseState.cell_value_changed.fn(
+            state, 1, "id", 7
+        )
+    ]
+    assert ignored == []
+    assert to_json(state.countries[1]) == {
+        "id": 2,
+        "country": "Peru",
+        "population": 30000000,
+        "continent": "Americas",
+    }
+    reloaded = await run(module.AGGridDatabaseState, "load_countries", countries=[])
+    assert to_json(reloaded.countries) == to_json(state.countries)
+    await module.engine.dispose()

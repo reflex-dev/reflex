@@ -3,7 +3,7 @@ tags: AI Builder
 description: Attach images as visual context, add image assets to an app, or ask the Reflex Build agent to generate an original visual.
 ---
 
-# Images
+# Working with Images
 
 ## Attach an Image as Context
 

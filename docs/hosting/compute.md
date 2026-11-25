@@ -2,7 +2,7 @@
 import reflex as rx
 ```
 
-# Compute
+# Compute Usage
 
 ## How compute usage works
 

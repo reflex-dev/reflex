@@ -3,7 +3,7 @@ title: Mantine
 order: 4
 ---
 
-# Mantine
+# Mantine Components
 
 Mantine is a React component library that provides a set of high-quality components and hooks for building modern web applications. It is designed to be flexible, customizable, and easy to use, making it a popular choice among developers.
 

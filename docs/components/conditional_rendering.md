@@ -6,10 +6,6 @@ import reflex as rx
 
 Recall from the [basics](/docs/getting-started/basics/) that we cannot use Python `if/else` statements when referencing state vars in Reflex. Instead, use the `rx.cond` component to conditionally render components or set props based on the value of a state var.
 
-```md video https://youtube.com/embed/ITOZkzjtjUA?start=6040&end=6463
-# Video: Conditional Rendering
-```
-
 ```md alert
 # Check out the API reference for [cond docs](/docs/library/dynamic-rendering/cond/).
 ```

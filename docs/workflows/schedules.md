@@ -2,7 +2,7 @@
 meta_description: Run reflex-workflow steps on a fixed interval or a cron expression in any timezone. Register schedules on startup without duplicates and catch up after downtime.
 ---
 
-# Schedules
+# Workflow Schedules
 
 A step that returns `every(...)` runs again on a schedule: a fixed interval, a cron expression, or a function of your own. A schedule is an ordinary run, so it survives restarts, retries like any other step, and runs on one worker at a time however many workers you have.
 

@@ -23,7 +23,7 @@ Prefer to use the Python API whenever possible and file an issue if you need add
 
 There are four ways to execute custom Javascript code into your Reflex app:
 
-- `rx.script` - Injects the script via `next/script` for efficient loading of inline and external Javascript code. Described further in the [component library](/docs/library/other/script/).
+- `rx.script` - Injects inline or external Javascript code with a `<script>` element placed in the document head. Described further in the [component library](/docs/library/other/script/).
   - These components can be directly included in the body of a page, or they may
     be passed to `rx.App(head_components=[rx.script(...)])` to be included in
     the `<Head>` tag of all pages.

@@ -4,7 +4,7 @@ import reflex as rx
 
 # Deploy to GCP Cloud Run
 
-The `reflex cloud deploy --gcp` command deploys a Reflex app to your own [Google Cloud Run](https://cloud.google.com/run) service.
+The `reflex cloud gcp-standalone --gcp` command deploys a Reflex app to your own [Google Cloud Run](https://cloud.google.com/run) service. It was named `reflex cloud deploy` before reflex-hosting-cli 0.1.70; that name still works but is deprecated.
 
 The CLI fetches a Cloud Run-ready Dockerfile and deploy script, then submits the build through [Cloud Build](https://cloud.google.com/build/docs/build-config-file-schema). Google Cloud stores the image in Artifact Registry and runs it on Cloud Run. The temporary deployment files do not modify your project tree.
 
@@ -16,7 +16,7 @@ Self-deploying to GCP Cloud Run is part of the **Enterprise tier** of Reflex Clo
 ```md alert warning
 # Self-service vs. managed GCP deploys
 
-This page covers the **self-service** `reflex cloud deploy --gcp` command, which builds and deploys from your own machine using your local `gcloud`. If you'd rather connect a GCP account to your organization once and deploy with the normal `reflex deploy` command — keeping the managed lifecycle (history, rollback, scaling, logs) — see [Cloud Providers](/docs/hosting/cloud-providers/).
+This page covers the **self-service** `reflex cloud gcp-standalone --gcp` command, which builds and deploys from your own machine using your local `gcloud`. If you'd rather connect a GCP account to your organization once and deploy with the normal `reflex deploy` command — keeping the managed lifecycle (history, rollback, scaling, logs) — see [Cloud Providers](/docs/hosting/cloud-providers/).
 ```
 
 ## Prerequisites
@@ -39,7 +39,7 @@ You also need:
 From the root of your Reflex app:
 
 ```bash
-reflex cloud deploy --gcp \
+reflex cloud gcp-standalone --gcp \
     --gcp-project my-gcp-project-id \
     --service-name my-reflex-app
 ```
@@ -66,9 +66,17 @@ When it's done, you'll get a service URL like `https://my-reflex-app-<project-nu
 | `--service-name` | `reflex-app` | Cloud Run service name. |
 | `--ar-repo` | `reflex` | Artifact Registry repository name (created on first deploy). |
 | `--version` | UTC timestamp (`YYYYMMDD-HHMMSS`) | Image version tag. |
+| `--cpu` | `1` | Cloud Run CPU allocation, such as `1`, `2`, or `4`. |
+| `--memory` | `1Gi` | Cloud Run memory allocation, such as `512Mi`, `1Gi`, or `2Gi`. |
+| `--min-instances` | `1` | Instances kept warm. Set `0` to scale to zero. |
+| `--max-instances` | `100` | Autoscaling ceiling. Must be at least `--min-instances`. |
+| `--allow-unauthenticated / --no-allow-unauthenticated` | `--allow-unauthenticated` | Whether the service is publicly reachable. With `--no-allow-unauthenticated`, callers need a `roles/run.invoker` binding. |
+| `--service-account` | _project default compute SA_ | Service account email the Cloud Run service runs as. The deploying principal needs `roles/iam.serviceAccountUser` on it. |
+| `--env` | _none_ | Environment variable for the service as `KEY=VALUE`. Repeat for multiple. Values are visible to anyone with `roles/run.viewer`. |
+| `--envfile` | _none_ | Path to a `.env` file loaded into the service. Takes precedence over `--env`. |
 | `--source` | `.` | Directory containing the Reflex app. Uploaded to Cloud Build as the build context; the source tree itself is not modified. |
 | `--token` | _from `~/.reflex` config_ | Reflex authentication token. |
-| `--interactive / --no-interactive` | `--interactive` | Whether to prompt before running the deploy script. |
+| `--interactive / --no-interactive` | _on when stdout is a terminal, off otherwise (CI, pipes)_ | Whether to prompt for confirmations, including before running the deploy script. |
 | `--dry-run` | _off_ | Print the manifest, the generated `cloudbuild.yaml`, and the rewritten script without writing the tempfile or running the script. |
 | `--loglevel` | `info` | Log verbosity. |
 
@@ -84,7 +92,7 @@ It then creates (idempotently) and uses:
 
 - An Artifact Registry Docker repository at `${REGION}-docker.pkg.dev/${GCP_PROJECT}/${AR_REPO}`.
 - A Cloud Build job that builds and pushes the image.
-- A Cloud Run service named `${SERVICE_NAME}`, deployed with `--allow-unauthenticated`, port 8080, 1 vCPU, 1 GiB memory, `--min-instances 1`, and `--session-affinity`.
+- A Cloud Run service named `${SERVICE_NAME}`, on port 8080 with `--session-affinity` and the access, CPU, memory, instance, and service-account settings from the options above (by default public, 1 vCPU, 1 GiB memory, and at least one warm instance).
 
 Re-running the command pushes a new image tag and rolls the Cloud Run service forward.
 
@@ -113,7 +121,7 @@ The CLI runs the deploy script under a **restricted environment**. Only an expli
 You can preview the rewritten script, generated `cloudbuild.yaml`, and Dockerfile before anything runs by using `--dry-run`:
 
 ```bash
-reflex cloud deploy --gcp \
+reflex cloud gcp-standalone --gcp \
     --gcp-project my-gcp-project-id \
     --dry-run
 ```
@@ -123,7 +131,7 @@ reflex cloud deploy --gcp \
 For automated pipelines, pass `--no-interactive` and an explicit `--token`:
 
 ```bash
-reflex cloud deploy --gcp \
+reflex cloud gcp-standalone --gcp \
     --gcp-project "$GCP_PROJECT_ID" \
     --service-name my-reflex-app \
     --token "$REFLEX_TOKEN" \
@@ -146,8 +154,8 @@ Pass the project ID (e.g. `my-app-123456`), not the numeric project number.
 **`No active GCP account found.`**
 Run `gcloud auth login` and `gcloud auth application-default login`.
 
-**`The 'gcloud' / 'docker' / 'bash' CLI was not found on PATH.`**
-Install the missing tool and ensure it's on `PATH` for the shell you're invoking the CLI from.
+**A required tool was not found on `PATH`.**
+The CLI checks for `bash`, `gcloud`, and `docker`, in that order, and stops at the first one that is missing with an error that names the tool and says it `was not found on PATH`. Install the missing tool and ensure it's on `PATH` for the shell you're invoking the CLI from.
 
 **`Dockerfile content contains the reserved heredoc marker 'REFLEX_DOCKERFILE_EOF'.`**
 Vanishingly unlikely — the Dockerfile from Reflex Cloud happens to contain a line that exactly matches the heredoc terminator the CLI uses to embed it. Re-run after the next CLI release, or open an issue.

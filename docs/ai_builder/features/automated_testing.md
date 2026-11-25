@@ -1,4 +1,4 @@
-# Testing
+# Automated Testing
 
 Reflex Build can generate and run tests from plain-language descriptions. Use tests to verify important app behavior after generation and before sharing or deploying.
 

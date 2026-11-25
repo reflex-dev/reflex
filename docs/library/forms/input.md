@@ -23,10 +23,6 @@ import reflex as rx
 
 The `input` component is an input field that users can type into.
 
-```md video https://youtube.com/embed/ITOZkzjtjUA?start=1517&end=1869
-# Video: Input
-```
-
 ## Basic Example
 
 The `on_blur` event handler is called when focus has left the `input` for example, it’s called when the user clicks outside of a focused text input.

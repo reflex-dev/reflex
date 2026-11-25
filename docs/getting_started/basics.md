@@ -2,7 +2,7 @@
 import reflex as rx
 ```
 
-# Basics
+# Reflex Basics
 
 **~10 min** · An introduction to the most common concepts you'll use to build Reflex apps.
 

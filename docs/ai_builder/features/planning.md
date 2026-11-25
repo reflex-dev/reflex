@@ -1,4 +1,4 @@
-# Planning
+# Plan View
 
 The **Plan** view turns a large prompt into an implementation plan that can be reviewed and adjusted while the agent works.
 

@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 from reflex_base.environment import EnvironmentVariables
+from reflex_site_shared.integrations import RAW_DOC_IMAGES_PREFIX
 
 from agent_files._plugin import (
     MarkdownFileEntry,
@@ -159,6 +160,42 @@ def test_generate_markdown_file_content_adds_agent_directive(monkeypatch, tmp_pa
         "remove the trailing slash from the page URL and append `.md`. "
         "The docs home is available at [index.md](http://localhost:3000/docs/index.md).\n\n"
         "# Overview"
+    )
+
+
+def test_generate_markdown_file_content_serves_integration_images_locally(
+    monkeypatch, tmp_path
+):
+    """Integration screenshots point at the copies the docs site serves."""
+    _patch_config(monkeypatch, deploy_url="https://reflex.dev")
+    monkeypatch.setattr(
+        "agent_files._plugin.integrations_doc_images_url",
+        lambda: "/docs/external/integrations_docs/docs/",
+    )
+    source = tmp_path / "okta_auth.md"
+    source.write_text(
+        "# Okta\n\n"
+        f"![The Okta applications page]({RAW_DOC_IMAGES_PREFIX}okta_auth_4.webp)\n",
+        encoding="utf-8",
+    )
+
+    content = generate_markdown_file_content(
+        MarkdownFileEntry(
+            url_path=Path("ai/integrations/okta_auth.md"),
+            source_path=source,
+            title="Okta",
+            section="Integrations",
+        )
+    )
+
+    assert content == (
+        "> For AI agents: the complete documentation index is at "
+        "[llms.txt](https://reflex.dev/docs/llms.txt). For a Markdown version, "
+        "remove the trailing slash from the page URL and append `.md`. "
+        "The docs home is available at [index.md](https://reflex.dev/docs/index.md).\n\n"
+        "# Okta\n\n"
+        "![The Okta applications page](https://reflex.dev/docs/external/"
+        "integrations_docs/docs/okta_auth_4.webp)\n"
     )
 
 

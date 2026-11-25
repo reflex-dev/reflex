@@ -3,7 +3,7 @@ tags: AI Builder
 description: Attach supported documents and structured data to a Reflex Build prompt and give the agent a clear task for each file.
 ---
 
-# Files
+# Attaching Files
 
 Select the attachment control to upload a file as context for the Reflex Build agent. You can also drag a file directly into the chat.
 

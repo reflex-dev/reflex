@@ -3,7 +3,7 @@ tags: AI Builder
 description: Store project and app credentials securely, control their scope, and update or remove them without exposing their values.
 ---
 
-# Secrets
+# Reflex Build Secrets
 
 Store API keys, tokens, database URLs, and other sensitive configuration in **Secrets** instead of prompts or source files. Apps receive the values as environment variables at runtime.
 

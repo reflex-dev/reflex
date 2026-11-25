@@ -1,6 +1,6 @@
 # Bring Your Own Cloud
 
-Bring Your Own Cloud (BYOC) deploys a Reflex app to your own AWS, Google Cloud, or Azure account. The command uses your local cloud credentials to build the image, store it in your registry, and run it on the cloud's managed container service.
+Bring Your Own Cloud (BYOC) deploys a Reflex app into your own cloud account instead of Reflex-managed infrastructure. Google Cloud is the supported target: the `reflex cloud gcp-standalone` command uses your local `gcloud` credentials to build the image with Cloud Build, store it in Artifact Registry, and run it on Cloud Run.
 
 ```md alert info
 # Enterprise tier only
@@ -11,39 +11,38 @@ BYOC is part of the **Enterprise tier** of Reflex Cloud. Contact [sales@reflex.d
 
 | Cloud | Command | Runtime |
 | --- | --- | --- |
-| AWS | `reflex cloud deploy --aws` | ECS |
-| Google Cloud | `reflex cloud deploy --gcp --gcp-project <GCP_PROJECT_ID>` | Cloud Run |
-| Azure | `reflex cloud deploy --azure` | Container Apps |
+| Google Cloud | `reflex cloud gcp-standalone --gcp --gcp-project <GCP_PROJECT_ID>` | Cloud Run |
+
+The CLI has no AWS or Azure target. To run a Reflex app on those clouds, follow [Self Hosting](/docs/hosting/self-hosting/).
 
 ## Before you deploy
 
 - Sign in to Reflex with `reflex login`.
-- Install the cloud provider's CLI: `aws`, `gcloud`, or `az`.
-- For Google Cloud, install Docker and Bash in addition to `gcloud`.
-- Sign in to the target cloud account with that CLI.
-- Confirm that the account can create builds, registry images, and managed container services.
+- Install `gcloud`, Docker, and Bash.
+- Sign in with `gcloud auth login` and `gcloud auth application-default login`.
+- Confirm that the project has billing enabled and that your account can enable services, push to Artifact Registry, and deploy Cloud Run services.
 
 ## Run the deployment
 
-Run the command for your provider. The CLI:
-
-1. Checks the provider CLI and your current login.
-2. Loads the Reflex deployment configuration and validates the required command options.
-3. Shows the build and deploy commands for confirmation.
-4. Uses the provider's build service and registry, then deploys the container.
-5. Prints the deployed app URL.
-
-The deployment runs under your cloud identity. Review the displayed commands and selected account before confirming.
-
-For Google Cloud, pass the target project explicitly:
+From the root of your Reflex app, pass the target project explicitly:
 
 ```bash
-reflex cloud deploy --gcp --gcp-project <GCP_PROJECT_ID>
+reflex cloud gcp-standalone --gcp --gcp-project <GCP_PROJECT_ID>
 ```
+
+The CLI:
+
+1. Authenticates with Reflex, checks for `bash`, `gcloud`, and `docker`, then checks for an active `gcloud` account.
+2. Fetches the Dockerfile and deploy script and generates a temporary `cloudbuild.yaml`.
+3. Shows the commands for confirmation.
+4. Builds the image with Cloud Build, pushes it to Artifact Registry, and deploys the Cloud Run service.
+5. Prints the deployed service URL.
+
+The deployment runs under your Google Cloud identity, and Reflex Cloud does not record the resulting app. Review the displayed commands and selected project before confirming.
 
 ```md alert warning
 # Self-service and managed cloud connections are different
-This page covers self-service CLI deployments to AWS, Google Cloud, and Azure. An organization admin can also connect Google Cloud to Reflex for managed deployments with logs, history, rollback, and scaling in the Reflex dashboard. See [Cloud Providers](/docs/hosting/cloud-providers/).
+This page covers self-service CLI deployments to Google Cloud. An organization admin can also connect Google Cloud to Reflex so `reflex deploy --provider gcp` deploys into it with logs, history, rollback, and scaling in the Reflex dashboard. See [Cloud Providers](/docs/hosting/cloud-providers/).
 ```
 
 ## Next steps

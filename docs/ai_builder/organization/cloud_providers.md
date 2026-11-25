@@ -3,7 +3,7 @@ tags: Organization
 description: Connect your own cloud provider account to a Reflex organization so its apps deploy to infrastructure you control.
 ---
 
-# Bring Your Own Cloud
+# Organization Cloud Providers
 
 ```python exec
 import reflex as rx
@@ -24,7 +24,7 @@ The organization-managed connection on this page currently supports **Google Clo
 
 ```md alert info
 # Managed connection and self-service deployment are different
-An organization admin can connect GCP once so members deploy to it through the normal managed Reflex workflow. Separately, Enterprise customers can run `reflex cloud deploy --gcp`, `--aws`, or `--azure` from their own machine. The self-service commands use the operator's local cloud credentials and do not create an organization-level connection.
+An organization admin can connect GCP once so members deploy to it through the normal managed Reflex workflow. Separately, Enterprise customers can run `reflex cloud gcp-standalone --gcp --gcp-project <GCP_PROJECT_ID>` from their own machine. The self-service command uses the operator's local `gcloud` credentials and does not create an organization-level connection.
 ```
 
 ## Connecting Google Cloud
@@ -66,7 +66,7 @@ To disconnect, open the connected provider and select **Remove connection**. Two
 
 Connecting an account here lets your organization's apps target managed GCP. For self-service cloud deployment and a detailed GCP walkthrough, see:
 
-- [Bring Your Own Cloud](/docs/hosting/bring-your-own-cloud/) — deploying to AWS, GCP, or Azure from the command line.
+- [Bring Your Own Cloud](/docs/hosting/bring-your-own-cloud/) — deploying to your own Google Cloud project from the command line.
 - [Deploy to GCP Cloud Run](/docs/hosting/deploy-to-gcp/) — a detailed Google Cloud walkthrough.
 
 ## Workload isolation and namespaces

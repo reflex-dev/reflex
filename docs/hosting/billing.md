@@ -2,7 +2,7 @@
 import reflex as rx
 ```
 
-# Billing
+# Cloud Billing
 
 ## Overview
 

@@ -2,7 +2,7 @@
 import reflex as rx
 ```
 
-# Client-storage
+# Client Storage
 
 You can use the browser's local storage to persist state between sessions.
 This allows user preferences, authentication cookies, other bits of information

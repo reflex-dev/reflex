@@ -9,6 +9,10 @@ from typing import Any, Literal, Union, get_args, get_origin
 from reflex.constants import Dirs
 from reflex_base.config import get_config
 from reflex_base.plugins import CommonContext, Plugin
+from reflex_site_shared.integrations import (
+    RAW_DOC_IMAGES_PREFIX,
+    integrations_doc_images_url,
+)
 from reflex_site_shared.utils.url import public_url
 from typing_extensions import Unpack
 
@@ -268,6 +272,13 @@ def generate_markdown_file_content(entry: MarkdownFileEntry) -> str:
         The generated markdown content.
     """
     source = entry.source_path.read_text(encoding="utf-8").lstrip()
+    if RAW_DOC_IMAGES_PREFIX in source:
+        # Not every screenshot is on the integrations-docs default branch; the
+        # site serves the packaged copies.
+        images_url = (get_config().deploy_url or "").rstrip("/")
+        source = source.replace(
+            RAW_DOC_IMAGES_PREFIX, images_url + integrations_doc_images_url()
+        )
     component_reference = _component_api_reference_markdown(entry.source_path)
     body = source.rstrip()
     if component_reference:

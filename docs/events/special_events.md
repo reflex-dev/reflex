@@ -2,7 +2,7 @@
 import reflex as rx
 ```
 
-# Special Events
+# Using Special Events
 
 Reflex also has built-in special events can be found in the [reference](/docs/api-reference/special-events/).
 

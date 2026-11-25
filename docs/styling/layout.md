@@ -6,10 +6,6 @@ import reflex as rx
 
 Layout components such as `rx.flex`, `rx.container`, `rx.box`, etc. are used to organize and structure the visual presentation of your application. This page gives a breakdown of when and how each of these components might be used.
 
-```md video https://youtube.com/embed/ITOZkzjtjUA?start=3311&end=3853
-# Video: Example of Laying Out the Main Content of a Page
-```
-
 ## Box
 
 `rx.box` is a generic component that can apply any CSS style to its children. It's a building block that can be used to apply a specific layout or style property.

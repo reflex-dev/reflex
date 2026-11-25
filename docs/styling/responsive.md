@@ -12,7 +12,7 @@ cell_style = {
 }
 ```
 
-# Responsive
+# Responsive Design
 
 Reflex apps can be made responsive to look good on mobile, tablet, and desktop.
 

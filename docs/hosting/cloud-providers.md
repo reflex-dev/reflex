@@ -11,7 +11,7 @@ Deploying to a connected cloud provider is part of the **Enterprise tier** of Re
 ```md alert warning
 # Managed vs. self-service GCP deploys
 
-This page covers the **managed** flow: an admin connects a GCP account to your organization once, and Reflex Cloud deploys into it for you using the normal `reflex deploy` command, giving you the full managed lifecycle (history, rollback, scaling, logs). This is different from the self-service [`reflex cloud deploy --gcp`](/docs/hosting/deploy-to-gcp/) command, which builds and deploys from your own machine using your local `gcloud`.
+This page covers the **managed** flow: an admin connects a GCP account to your organization once, and Reflex Cloud deploys into it for you using the normal `reflex deploy` command, giving you the full managed lifecycle (history, rollback, scaling, logs). This is different from the self-service [`reflex cloud gcp-standalone --gcp`](/docs/hosting/deploy-to-gcp/) command, which builds and deploys from your own machine using your local `gcloud`.
 ```
 
 ## Connecting Google Cloud

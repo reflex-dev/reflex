@@ -3,7 +3,7 @@ tags: Organization
 description: Group organization members into teams and grant project access to the group.
 ---
 
-# Teams
+# Organization Teams
 
 A **team** groups organization members so you can grant a project role once instead of adding every person individually. Everyone in the team inherits that project access.
 

@@ -443,3 +443,22 @@ def test_demo_block_reports_source_document_on_errors() -> None:
         )
 
     assert "tests/broken-demo.md" in "".join(error.value.__notes__)
+
+
+def test_images_keep_their_markdown_alt_text() -> None:
+    """An image's alt text comes from its Markdown, not a generic label."""
+    component = render_markdown(
+        "![The **Clients** page](/clients.png)\n\n![](/divider.png)\n",
+        virtual_filepath="tests/images.md",
+    )
+    pending: list[BaseComponent] = [component]
+    images = []
+    while pending:
+        child = pending.pop(0)
+        if str(getattr(child, "tag", "")).startswith("ImgCompXd"):
+            images.append(child)
+        pending.extend(child.children)
+    assert [str(image) for image in images] == [
+        f'jsx({images[0].tag},{{alt:"The Clients page",src:"/clients.png"}},)',
+        f'jsx({images[1].tag},{{alt:"",src:"/divider.png"}},)',
+    ]

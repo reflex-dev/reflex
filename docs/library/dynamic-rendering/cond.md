@@ -60,10 +60,6 @@ def cond_optional_example():
     )
 ```
 
-```md video https://youtube.com/embed/ITOZkzjtjUA?start=6040&end=6463
-# Video: Conditional Rendering
-```
-
 ## Negation
 
 You can use the logical operator `~` to negate a condition.

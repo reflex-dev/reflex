@@ -116,7 +116,7 @@ component_map = {
     "a": doclink2,
     "code": lambda text: code_comp(text=text),
     "pre": code_block_markdown,
-    "img": lambda src: img_comp_xd(src=src),
+    "img": lambda src: img_comp_xd(src=src, alt=""),
     **_markdown_table_component_map,
 }
 comp2 = component_map.copy()
@@ -165,7 +165,7 @@ def markdown_with_shiki(*args, **kwargs):
             "li": lambda text: list_comp(text=text),
             "a": doclink2,
             "pre": markdown_codeblock,
-            "img": lambda src: img_comp_xd(src=src),
+            "img": lambda src: img_comp_xd(src=src, alt=""),
         },
         **kwargs,
     )
