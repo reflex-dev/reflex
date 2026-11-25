@@ -36,6 +36,7 @@ const EVENTURL = env.EVENT;
 // Socket event names (must match reflex_base/constants/event.py SocketEvent)
 const CLIENT_ERROR_EVENT = "client_error";
 const STATE_MISMATCH_EVENT = "state_mismatch";
+const SESSION_REFRESH_EVENT = "session_refresh";
 
 // sessionStorage key with the time of the last automatic reload (must match
 // LAST_RELOADED_KEY in reflex/state.py: the reload on a frontend error and the
@@ -62,12 +63,8 @@ const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "[::]"];
 // Global variable to hold the token.
 let token;
 
-// A token generated for the transport warmed up before the app mounted. It is
-// saved to the session storage by getToken, once the mounted app connects.
-let unsavedToken;
-
-// Key for the token in the session storage.
-const TOKEN_KEY = "token";
+// Share cookie exchange and refresh requests in this tab.
+let initialSessionExchange;
 
 // create cookie instance
 const cookies = new Cookies();
@@ -130,7 +127,7 @@ const locationRef = {
 };
 
 /**
- * Generate a UUID (Used for session tokens).
+ * Generate a UUID for component identifiers.
  * Taken from: https://stackoverflow.com/questions/105034/how-do-i-create-a-guid-uuid
  * @returns A UUID.
  */
@@ -159,25 +156,20 @@ export const getToken = () => {
     return token;
   }
   if (typeof window !== "undefined") {
-    if (!window.sessionStorage.getItem(TOKEN_KEY)) {
-      window.sessionStorage.setItem(TOKEN_KEY, unsavedToken ?? generateUUID());
-    }
-    token = window.sessionStorage.getItem(TOKEN_KEY);
+    token =
+      window.sessionStorage.getItem(clientTokenStorageKey()) ||
+      window.sessionStorage.getItem(LEGACY_TOKEN_STORAGE_KEY) ||
+      "";
   }
-  return token;
+  return token || "";
 };
 
-/**
- * Get the token for the current session without saving a new one.
- *
- * A new token only reaches the session storage when the mounted app
- * connects, so anything waiting for it there sees the rendered page.
- * @returns The saved token, or a new one that getToken saves later.
- */
+/** Get the saved client token to warm the transport before the app mounts. */
 const peekToken = () =>
   token ||
-  window.sessionStorage.getItem(TOKEN_KEY) ||
-  (unsavedToken ??= generateUUID());
+  window.sessionStorage.getItem(clientTokenStorageKey()) ||
+  window.sessionStorage.getItem(LEGACY_TOKEN_STORAGE_KEY) ||
+  "";
 
 /**
  * Get the URL for the backend server
@@ -209,6 +201,68 @@ export const getBackendURL = (url_str) => {
   return endpoint;
 };
 
+/** Namespace browser state by the backend URL, including its port and path. */
+const sessionStorageKey = () => `reflex:${getBackendURL(EVENTURL).href}`;
+const LEGACY_TOKEN_STORAGE_KEY = "token";
+const clientTokenStorageKey = () => `${sessionStorageKey()}:token`;
+const sessionRefreshStorageKey = () => `${sessionStorageKey()}:expires_at`;
+
+/** Store only the non-secret tab routing token in JavaScript-accessible storage. */
+const setToken = (value) => {
+  token = value;
+  window.sessionStorage.setItem(clientTokenStorageKey(), value);
+};
+
+/** Wait until credentialed HTTP calls can use the initial session cookie. */
+export const waitForSession = async () => {
+  await initialSessionExchange;
+};
+
+/** Exchange an in-band credential or refresh the HTTP-only session cookie. */
+const ensureSession = async (sessionCredential, controller) => {
+  const endpoint = getBackendURL(EVENTURL);
+  endpoint.protocol = endpoint.protocol === "wss:" ? "https:" : "http:";
+  endpoint.pathname = endpoint.pathname.replace(
+    /\/_event\/?$/,
+    "/_reflex/session",
+  );
+  endpoint.search = "";
+  const headers = { "Content-Type": "application/json" };
+  const previousToken = getToken();
+  if (previousToken) headers["Reflex-Client-Token"] = previousToken;
+  // Abort a stalled cookie exchange after ten seconds.
+  const timeout = window.setTimeout(() => controller.abort(), 10000);
+  try {
+    const response = await window.fetch(endpoint.href, {
+      method: "POST",
+      credentials: "include",
+      headers,
+      body: JSON.stringify(
+        sessionCredential ? { session_token: sessionCredential } : {},
+      ),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      /** @type {Error & { status?: number }} */
+      const error = new Error(`Session request failed: ${response.status}`);
+      error.status = response.status;
+      throw error;
+    }
+    const session = await response.json();
+    if (
+      typeof session.client_token !== "string" ||
+      !session.client_token ||
+      !Number.isFinite(session.expires_in) ||
+      session.expires_in <= 0
+    ) {
+      throw new Error("Invalid session response");
+    }
+    return session;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+};
+
 /**
  * Check if the backend is disabled.
  *
@@ -235,6 +289,7 @@ const createSocket = (endpoint, transports, token) =>
     protocols: [env.REFLEX_VERSION],
     autoUnref: false,
     autoConnect: false,
+    withCredentials: true,
     query: { token },
     reconnection: false,
   });
@@ -280,6 +335,15 @@ if (typeof window !== "undefined") {
       return;
     }
     try {
+      // A cold transport would capture cookies before the shared session lock.
+      if (
+        !(
+          Number(window.localStorage.getItem(sessionRefreshStorageKey())) >
+          Date.now()
+        )
+      ) {
+        return;
+      }
       warmSocket = createSocket(
         getBackendURL(EVENTURL),
         [env.TRANSPORT],
@@ -1029,7 +1093,8 @@ export const applyRestEvent = async (event, socket, navigate, params) => {
     for (const name of event.payload.__reflex_event_arg_names ?? []) {
       extra_args[name] = event.payload[name];
     }
-    // Start upload, but do not wait for it, which would block other events.
+    // The helper reserves its cancellation controller before waiting for cookies.
+    // Do not await it here: ordinary WebSocket events must keep draining.
     void uploadFiles(
       event.name,
       event.payload.files,
@@ -1041,6 +1106,8 @@ export const applyRestEvent = async (event, socket, navigate, params) => {
       refs,
       getBackendURL,
       getToken,
+      waitForSession,
+      app.isDevMode,
     );
   }
 };
@@ -1222,7 +1289,7 @@ export const connect = async (
   // Socket already allocated, just reconnect it if needed.
   if (socket.current) {
     if (!socket.current.connected) {
-      socket.current.reconnect();
+      await socket.current.reconnect();
     }
     return;
   }
@@ -1264,10 +1331,67 @@ export const connect = async (
     warmSocket ?? createSocket(endpoint, transports, session_token);
   warmSocket = null;
   cancelWarmup();
-  // Socket.IO calls this when the namespace connection is sent, so route data
-  // reflects any navigation that happened while the transport was connecting.
-  socket.current.auth = bootAuth(true);
-  socket.current.wait_connect = !socket.current.connected;
+  socket.current.wait_connect = false;
+  let firstConnect = true;
+  let finishBootstrap;
+  let reconnectingSession = false;
+  let sessionTimer;
+  // The abort controller of the exchange in progress, if any.
+  let sessionController;
+  let resolveSession;
+  let rejectSession;
+  let sessionFailures = 0;
+  // Whether the backend denied the exchange for this page's origin.
+  let sessionRejected = false;
+  const currentSocket = socket.current;
+  const requestSessionRefresh = () => {
+    window.clearTimeout(sessionTimer);
+    // A denied exchange gets the same answer until the backend reconnects.
+    if (sessionRejected) return;
+    if (socket.current === currentSocket && currentSocket.connected) {
+      currentSocket.emit(SESSION_REFRESH_EVENT);
+    }
+  };
+  // Ask for a new credential once the wait has passed. A browser runs a timer
+  // over 2**31 - 1 ms with no delay, so the wait is capped.
+  const scheduleSessionRefresh = (
+    wait = Number(window.localStorage.getItem(sessionRefreshStorageKey())) -
+      Date.now(),
+  ) => {
+    window.clearTimeout(sessionTimer);
+    if (wait > 0) {
+      sessionTimer = window.setTimeout(
+        requestSessionRefresh,
+        Math.min(wait, 2 ** 31 - 1),
+      );
+    } else {
+      requestSessionRefresh();
+    }
+  };
+  const finishSessionExchange = () => {
+    resolveSession?.();
+    resolveSession = rejectSession = undefined;
+    initialSessionExchange = undefined;
+  };
+  const stopSessionExchange = (preserveReadiness = false) => {
+    window.clearTimeout(sessionTimer);
+    sessionController?.abort();
+    sessionController = undefined;
+    if (!preserveReadiness) {
+      reconnectingSession = false;
+      rejectSession?.(new Error("Session connection closed"));
+      resolveSession = rejectSession = undefined;
+      initialSessionExchange = undefined;
+    }
+  };
+  const releaseBootstrap = () => {
+    finishBootstrap?.();
+    finishBootstrap = null;
+  };
+  socket.current.releaseSessionBootstrap = () => {
+    stopSessionExchange();
+    releaseBootstrap();
+  };
   // Ensure undefined fields in events are sent as null instead of removed
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
   // The server drops a transport whose frame exceeds the limit its handshake
@@ -1296,6 +1420,8 @@ export const connect = async (
       error.code = ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE;
       console.error(error.message);
       setConnectErrors((errors) => [...errors.slice(-9), error]);
+      // No connect or disconnect event follows, so free the cold-tab lock here.
+      releaseBootstrap();
       socket.current.disconnect();
       return [];
     }
@@ -1309,17 +1435,48 @@ export const connect = async (
     }
   };
   // Set up a reconnect helper function
-  socket.current.reconnect = () => {
+  socket.current.reconnect = async () => {
     if (
       socket.current &&
       !socket.current.connected &&
       !socket.current.wait_connect
     ) {
       socket.current.wait_connect = true;
-      socket.current.io.opts.query = { token: getToken() }; // Update token for reconnect.
-      // A reconnect rehydrates in full: the reducers no longer hold the defaults.
-      socket.current.auth = bootAuth(false);
-      socket.current.connect();
+      const current = socket.current;
+      const start = () => {
+        if (socket.current !== current) {
+          releaseBootstrap();
+          return;
+        }
+        current.io.opts.query = { token: getToken() };
+        current.auth = bootAuth(firstConnect);
+        current.connect();
+      };
+      const key = sessionStorageKey();
+      if (
+        window.navigator?.locks &&
+        !(
+          Number(window.localStorage.getItem(sessionRefreshStorageKey())) >
+          Date.now()
+        )
+      ) {
+        // Only cold tabs wait. The first socket hydrates while its in-band
+        // credential becomes a cookie; the next tab then shares that cookie.
+        window.navigator.locks
+          .request(
+            `${key}:session`,
+            () =>
+              new Promise((resolve) => {
+                finishBootstrap = resolve;
+                start();
+              }),
+          )
+          .catch((error) => {
+            if (socket.current === current) retryConnect(error);
+          });
+      } else {
+        start();
+      }
     }
   };
 
@@ -1334,8 +1491,9 @@ export const connect = async (
       if (!socket.current.connected) {
         console.log("Socket is disconnected, attempting to reconnect ");
         socket.current.reconnect();
-      } else {
-        console.log("Socket is reconnected ");
+      } else if (!sessionController) {
+        // A timer that the browser suspended can be past its refresh time.
+        scheduleSessionRefresh();
       }
     }
   }
@@ -1368,6 +1526,17 @@ export const connect = async (
 
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", async () => {
+    if (reconnectingSession) {
+      reconnectingSession = false;
+      if (!sessionController) finishSessionExchange();
+    }
+    if (!sessionController) {
+      releaseBootstrap();
+      // The backend can trust this origin after a restart with new settings.
+      sessionRejected = false;
+      scheduleSessionRefresh();
+    }
+    firstConnect = false;
     socket.current.wait_connect = false;
     reported_missing_substates.clear();
     failed_attempts = 0;
@@ -1399,6 +1568,7 @@ export const connect = async (
 
   // Record a failed connection attempt and retry it with incremental backoff.
   const retryConnect = (error) => {
+    releaseBootstrap();
     socket.current.wait_connect = false;
     failed_attempts = Math.min(failed_attempts + 1, 10);
     setConnectErrors((connectErrors) => [...connectErrors.slice(-9), error]);
@@ -1406,7 +1576,7 @@ export const connect = async (
     retry_timer = window.setTimeout(() => {
       retry_timer = undefined;
       if (socket.current && !socket.current.connected) {
-        socket.current.reconnect();
+        return socket.current.reconnect();
       }
     }, 200 * failed_attempts); // Incremental backoff
   };
@@ -1414,6 +1584,11 @@ export const connect = async (
   socket.current.on("connect_error", retryConnect);
 
   socket.current.on("disconnect", (reason, details) => {
+    stopSessionExchange(
+      reconnectingSession && reason === "io client disconnect",
+    );
+    releaseBootstrap();
+    firstConnect = false;
     // A transport closed before the namespace connected is a failed attempt,
     // e.g. a CONNECT packet over the server or a proxy message size limit.
     if (socket.current.wait_connect) {
@@ -1512,9 +1687,82 @@ export const connect = async (
     }
   });
   socket.current.on("new_token", async (new_token) => {
-    token = new_token;
-    window.sessionStorage.setItem(TOKEN_KEY, new_token);
+    setToken(new_token);
   });
+  socket.current.on(SESSION_REFRESH_EVENT, requestSessionRefresh);
+  socket.current.on("session_token", async (sessionCredential) => {
+    if (sessionController) return;
+    const controller = new AbortController();
+    sessionController = controller;
+    window.clearTimeout(sessionTimer);
+    // HTTP calls wait while a credential from the socket is exchanged for
+    // the cookie. After a lasting failure the retries go on, but they hold
+    // nothing.
+    if (!resolveSession && sessionCredential && sessionFailures < 3) {
+      initialSessionExchange = new Promise((resolve, reject) => {
+        resolveSession = resolve;
+        rejectSession = reject;
+      });
+      // Readiness may have no HTTP consumer when the connection closes.
+      initialSessionExchange.catch(() => {});
+    }
+    try {
+      const previousToken = getToken();
+      const session = await ensureSession(sessionCredential, controller);
+      if (sessionController !== controller) return;
+      setToken(session.client_token);
+      const refreshDelay =
+        (session.refresh_in ?? session.expires_in / 2) * 1000;
+      sessionRejected = false;
+      try {
+        window.localStorage.setItem(
+          sessionRefreshStorageKey(),
+          String(Date.now() + refreshDelay),
+        );
+      } catch {
+        // The cookie is set; the refresh time is only a hint for later loads.
+      }
+      sessionFailures = 0;
+      setConnectErrors([]);
+      scheduleSessionRefresh(refreshDelay);
+      if (currentSocket.connected && getToken() !== previousToken) {
+        // Keep waiting HTTP calls queued until this cookie's socket is accepted.
+        reconnectingSession = true;
+        currentSocket.disconnect();
+        await currentSocket.reconnect();
+      } else {
+        finishSessionExchange();
+      }
+    } catch (error) {
+      if (sessionController !== controller) return;
+      window.localStorage.removeItem(sessionRefreshStorageKey());
+      if (error.status === 403) {
+        // The backend does not trust this page's origin, so a retry gets the
+        // same answer. The socket works without the cookie: release HTTP calls.
+        console.error(
+          `${error.message}. The backend does not trust the origin ${window.location.origin}; ` +
+            "add it to deploy_url or cors_allowed_origins to persist the browser session.",
+        );
+        sessionRejected = true;
+        finishSessionExchange();
+        return;
+      }
+      setConnectErrors((errors) => [...errors.slice(-9), error]);
+      // Retry on the live socket after one second, backing off to thirty seconds.
+      // Each attempt requests a fresh credential, including after cookie expiry.
+      const delay = Math.min(30000, 1000 * 2 ** Math.min(sessionFailures++, 5));
+      sessionTimer = window.setTimeout(requestSessionRefresh, delay);
+      // A failure that lasts is not transient, for example a proxy that does
+      // not forward this route. Stop holding HTTP calls; the retry goes on.
+      if (sessionFailures >= 3) finishSessionExchange();
+    } finally {
+      if (sessionController === controller) {
+        sessionController = undefined;
+        releaseBootstrap();
+      }
+    }
+  });
+
   socket.current.on(STATE_MISMATCH_EVENT, handleStateMismatch);
 
   document.addEventListener("visibilitychange", checkVisibility);
@@ -1522,7 +1770,7 @@ export const connect = async (
   // so it would otherwise outlive the socket and everything it closes over.
   socket.current.stopWatchingVisibility = () =>
     document.removeEventListener("visibilitychange", checkVisibility);
-  socket.current.connect();
+  await socket.current.reconnect();
 };
 
 /**
@@ -1598,6 +1846,23 @@ export const applyEventActions = (
   }
   return invokeTarget();
 };
+
+/**
+ * Get the key that debounce and throttle track events by.
+ *
+ * Every module call is a `_call_js` event, so its key also names the module
+ * and the function: calls of different functions keep separate timers.
+ * @param {{name: string, payload?: any}[]} events The events.
+ * @returns {string} The key.
+ */
+export const eventActionKey = (events) =>
+  events
+    .map(({ name, payload }) =>
+      name === "_call_js"
+        ? `${name}:${payload.module}:${payload.function}`
+        : name,
+    )
+    .join("+++");
 
 /**
  * Package client-side storage values as payload to send to the
@@ -1858,7 +2123,7 @@ export const useEventLoop = (
       () => queueEvents(_events, socket, false, navigate, params),
       event_actions,
       args,
-      _events.map((e) => e.name).join("+++"),
+      eventActionKey(_events),
       () => !!socket.current?.connected,
     );
   }, []);
@@ -1910,6 +2175,7 @@ export const useEventLoop = (
     return () => {
       mounted.current = false;
       if (socket.current) {
+        socket.current.releaseSessionBootstrap?.();
         socket.current.disconnect();
         socket.current.off();
         socket.current.stopWatchingVisibility();

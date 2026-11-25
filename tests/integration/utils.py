@@ -12,6 +12,17 @@ from playwright.sync_api import Page, expect
 
 from reflex.testing import DEFAULT_TIMEOUT
 
+# JavaScript for the client token of a tab. The frontend keeps it in
+# sessionStorage under a key that is scoped to the backend URL.
+CLIENT_TOKEN_KEY_JS = (
+    "Object.keys(sessionStorage).find((key) => key.endsWith(':token'))"
+)
+CLIENT_TOKEN_JS = f"sessionStorage.getItem({CLIENT_TOKEN_KEY_JS})"
+# JavaScript for the localStorage key of the time when the session is next renewed.
+SESSION_REFRESH_KEY_JS = (
+    "Object.keys(localStorage).find((key) => key.endsWith(':expires_at'))"
+)
+
 
 def request_raw(
     url: str,

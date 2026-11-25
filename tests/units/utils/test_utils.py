@@ -876,7 +876,24 @@ def test_vite_config_template_preserves_symlinks() -> None:
         experimental_hmr=False,
         sourcemap=False,
     )
-    assert "preserveSymlinks: true," in config
+    assert config.partition("\n  resolve: {\n")[2] == (
+        "    // utils/script_modules/<package> links to the app's package: its files\n"
+        "    // resolve their imports from there, so packages come from .web.\n"
+        "    preserveSymlinks: true,\n"
+        '    mainFields: ["browser", "module", "jsnext"],\n'
+        "    alias: [\n"
+        "      {\n"
+        '        find: "$",\n'
+        '        replacement: fileURLToPath(new URL("./", import.meta.url)),\n'
+        "      },\n"
+        "      {\n"
+        '        find: "@",\n'
+        '        replacement: fileURLToPath(new URL("./public", import.meta.url)),\n'
+        "      },\n"
+        "    ],\n"
+        "  },\n"
+        "}));"
+    )
 
 
 def test_vite_config_template_imports_plugin_with_extension() -> None:
