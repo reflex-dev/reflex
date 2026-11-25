@@ -944,6 +944,10 @@ def test_write_file_atomic_replaces_the_file_whole(
 
     The temporary file ends as the target does, so a watcher that ignores the
     target's type ignores it too.
+
+    Args:
+        tmp_path: The directory for the test file.
+        monkeypatch: Fixture for recording file replacements.
     """
     path = tmp_path / "party.pyi"
     write_file(path, "before")
