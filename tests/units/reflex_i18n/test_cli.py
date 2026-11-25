@@ -553,3 +553,73 @@ def test_resolve_plugin_requires_exactly_one_i18n_plugin(
         )
     finally:
         set_active_i18n_config(None)
+
+
+_LONG_MESSAGE = (
+    "A paragraph long enough that a catalog wrapped at the usual width would "
+    "split it over several lines"
+)
+
+
+@pytest.mark.parametrize(
+    ("width", "locations", "expected"),
+    [
+        (
+            76,
+            "line",
+            (
+                "#: myapp/app.py:2\n"
+                'msgid ""\n'
+                '"A paragraph long enough that a catalog wrapped at the usual '
+                'width would "\n'
+                '"split it over several lines"\n'
+                'msgstr ""\n\n'
+            ),
+        ),
+        (
+            0,
+            "file",
+            f'#: myapp/app.py\nmsgid "{_LONG_MESSAGE}"\nmsgstr ""\n\n',
+        ),
+        (0, "none", f'msgid "{_LONG_MESSAGE}"\nmsgstr ""\n\n'),
+    ],
+    ids=["line", "file", "none"],
+)
+def test_catalogs_are_written_in_the_configured_format(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    width: int,
+    locations: str,
+    expected: str,
+):
+    """Without wrapping and line numbers, editing a message touches only its entry."""
+    app_dir = tmp_path / "myapp"
+    app_dir.mkdir()
+    (app_dir / "app.py").write_text(
+        f'from reflex_i18n import gettext as _\nx = _("{_LONG_MESSAGE}")\n',
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+    plugin = I18nPlugin(
+        locales=["en", "de"],
+        catalog_width=width,
+        catalog_locations=locations,  # pyright: ignore[reportArgumentType]
+    )
+    monkeypatch.setattr(get_config(), "plugins", [plugin])
+    po_path = tmp_path / "de.po"
+    try:
+        merge_into_locale(extract_catalog(app_dir, ()), po_path, "de")
+    finally:
+        set_active_i18n_config(None)
+
+    # The header ends with the first blank line.
+    assert po_path.read_text(encoding="utf-8").split("\n\n", 1)[1] == expected
+
+
+def test_plugin_rejects_unknown_catalog_locations():
+    with pytest.raises(ValueError) as error:
+        I18nPlugin(locales=["en"], catalog_locations="lines")  # pyright: ignore[reportArgumentType]
+    assert str(error.value) == (
+        "I18nPlugin.catalog_locations must be one of ('line', 'file', 'none'); "
+        "got 'lines'."
+    )

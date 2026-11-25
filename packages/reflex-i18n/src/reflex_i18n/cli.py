@@ -369,7 +369,7 @@ def _read_or_new_catalog(po_path: Path, locale: str) -> Catalog:
 
 
 def _write_catalog(catalog: Catalog, path: Path) -> None:
-    """Write a catalog to a ``.po``/``.pot`` file.
+    """Write a catalog to a ``.po``/``.pot`` file, formatted as the app configures.
 
     Args:
         catalog: The catalog to write.
@@ -377,9 +377,17 @@ def _write_catalog(catalog: Catalog, path: Path) -> None:
     """
     from babel.messages.pofile import write_po
 
+    # Without a plugin, e.g. for a package's catalogs, its defaults apply.
+    plugin = get_plugin(I18nPlugin) or I18nPlugin
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("wb") as f:
-        write_po(f, catalog, omit_header=False)
+        write_po(
+            f,
+            catalog,
+            width=plugin.catalog_width,
+            no_location=plugin.catalog_locations == "none",
+            include_lineno=plugin.catalog_locations == "line",
+        )
 
 
 def merge_into_locale(template: Catalog, po_path: Path, locale: str) -> LocaleStats:

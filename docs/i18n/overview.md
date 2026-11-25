@@ -536,6 +536,22 @@ msgstr ""
 When its source text changes, the entry starts over without the flag, so
 `check` asks again.
 
+By default the CLI writes catalogs as `pybabel` does: lines wrapped at 76
+characters and each entry's `#:` comment naming every source line using it.
+For long texts this makes small edits noisy in review, as an edit above a
+message changes its line numbers. Two plugin options change that:
+
+```python
+I18nPlugin(
+    locales=["en", "de"],
+    catalog_width=0,  # never wrap: one line per message
+    catalog_locations="file",  # name source files, not lines ("none": neither)
+)
+```
+
+A translation tool writing the same catalogs should use the same wrapping
+(Weblate: the component's "Long lines wrapping" setting).
+
 ## Translating a library
 
 A package that other apps install marks its text the same way: `rx.t` in

@@ -8,7 +8,7 @@ import os
 import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal, get_args
 
 from reflex_base.plugins.base import (
     CommonContext,
@@ -88,6 +88,10 @@ _HTML_TAG = re.compile(r"<html\b[^>]*>", re.IGNORECASE)
 
 # The page context key naming the locale a fanned-out route renders in.
 _PAGE_LOCALE_KEY = "i18n_locale"
+
+# What the ``#:`` comments of a written catalog entry name: each source line,
+# each source file, or nothing.
+CatalogLocations = Literal["line", "file", "none"]
 
 
 def _catalog_ident(locale: str) -> str:
@@ -264,6 +268,9 @@ class I18nPlugin(Plugin):
     catalog_dir: str | os.PathLike[str] = "locales"
     catalog_packages: Sequence[str] = ()
     routing: PathPrefixRouting | None = None
+    # The width ``reflex i18n`` wraps catalog lines at; 0 keeps each on one line.
+    catalog_width: int = 76
+    catalog_locations: CatalogLocations = "line"
 
     def _config(self) -> I18nConfig:
         """Build the i18n configuration from the plugin's fields.
@@ -284,7 +291,14 @@ class I18nPlugin(Plugin):
 
         Raises:
             TypeError: If ``routing`` is not a PathPrefixRouting.
+            ValueError: If ``catalog_locations`` is not a known choice.
         """
+        if self.catalog_locations not in get_args(CatalogLocations):
+            msg = (
+                f"I18nPlugin.catalog_locations must be one of "
+                f"{get_args(CatalogLocations)!r}; got {self.catalog_locations!r}."
+            )
+            raise ValueError(msg)
         if self.routing is not None and not isinstance(self.routing, PathPrefixRouting):
             # The shipped client runtime (hreflang, language switcher, locale
             # detection) only understands path-prefix URLs.
