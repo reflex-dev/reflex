@@ -61,6 +61,14 @@ ENV_VAR_SECTIONS: tuple[tuple[str, tuple[str, ...]], ...] = (
 GENERAL_SECTION = "General"
 
 
+ENV_VARS_INTRO = """
+Reflex provides a number of environment variables that can be used to configure the behavior of your application.
+These environment variables can be set in your shell environment or in a `.env` file.
+
+This page documents the environment variables that `rx.Config` does not define, plus a few, such as the ports, that also override a config parameter. Any other `rx.Config` parameter can be set with a `REFLEX_`-prefixed variable (e.g. `REFLEX_DB_URL`); those are listed in the [config reference](/docs/api-reference/config/).
+"""
+
+
 class EnvVarDocs:
     """Documentation for Reflex environment variables."""
 
@@ -163,14 +171,7 @@ def env_vars_page():
             f"{EnvironmentVariables.__module__}.{EnvironmentVariables.__qualname__}",
             class_name="mb-5 font-mono text-sm text-muted-foreground",
         ),
-        render_markdown(
-            """
-            Reflex provides a number of environment variables that can be used to configure the behavior of your application.
-            These environment variables can be set in your shell environment or in a `.env` file.
-
-            This page documents the environment variables that are not config parameters. Environment variables that override `rx.Config` parameters (e.g. `REFLEX_FRONTEND_PORT`) are listed in the [config reference](/docs/api-reference/config/).
-            """
-        ),
+        render_markdown(ENV_VARS_INTRO),
         *(
             rx.el.section(
                 h2_comp(text=title),

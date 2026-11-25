@@ -1,5 +1,9 @@
 """Tests for the environment variables reference page."""
 
+import dataclasses
+import re
+
+from reflex_base.config import Config
 from reflex_base.environment import EnvironmentVariables
 
 
@@ -83,3 +87,14 @@ def test_group_env_vars_uses_first_matching_prefix_and_general_fallback():
         "Frontend build": [minify],
         "Database": [pool],
     }
+
+
+def test_intro_config_example_is_one_this_page_omits():
+    """The intro's example of a config-only variable is not documented here."""
+    from reflex_docs.pages.docs.env_vars import ENV_VARS_INTRO, EnvVarDocs
+
+    examples = re.findall(r"\(e\.g\. `([A-Z_]+)`\)", ENV_VARS_INTRO)
+    assert examples == ["REFLEX_DB_URL"]
+    assert "db_url" in {field.name for field in dataclasses.fields(Config)}
+    documented = {field.name for field in EnvVarDocs.get_documented_fields()}
+    assert "REFLEX_DB_URL" not in documented

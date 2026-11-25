@@ -209,13 +209,35 @@ def usage_line(command: CommandInfoDict, prefix: str | None, name: str) -> str:
         else ""
     )
     arguments = "".join(
-        " " + param["name"].upper()
+        " " + argument_metavar(param)
         for param in params
         if param.get("param_type_name") == "argument" and param["name"]
     )
+    if "commands" in command:
+        arguments += (
+            " COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]..."
+            if cast(MultiCommandInfoDict, command)["chain"]
+            else " COMMAND [ARGS]..."
+        )
     return (
         f"${' ' + prefix.strip() if prefix else ''} {name.strip()}{options}{arguments}"
     )
+
+
+def argument_metavar(param: ParamsInfoDict) -> str:
+    """Name an argument in a usage line the way click's own usage does.
+
+    Args:
+        param: The argument's click info dict.
+
+    Returns:
+        The upper-cased name, bracketed when optional and followed by an
+        ellipsis when it takes more than one value.
+    """
+    metavar = cast(str, param["name"]).upper()
+    if not param["required"]:
+        metavar = f"[{metavar}]"
+    return metavar + ("..." if param["nargs"] != 1 else "")
 
 
 def option_item(

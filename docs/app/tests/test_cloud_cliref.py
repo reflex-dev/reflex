@@ -2,6 +2,9 @@
 
 import re
 
+import click
+from reflex.reflex import cli
+
 from reflex_docs.pages.docs.cloud_cliref import (
     CommandDoc,
     InlineCode,
@@ -11,6 +14,7 @@ from reflex_docs.pages.docs.cloud_cliref import (
     cli_to_doc,
     generate_docs,
     modules,
+    usage_line,
 )
 
 
@@ -128,3 +132,33 @@ def test_single_command_page_keeps_its_options_inline(monkeypatch):
         "* `--token TEXT`: The authentication token.\n"
         "\n"
     )
+
+
+def _command_usages(command: click.Command, path: tuple[str, ...]):
+    """Yield click's own usage line and info dict for every command in a tree.
+
+    Args:
+        command: The command to walk; a lazy command resolves in its context.
+        path: The names leading to the command, its own name last.
+
+    Yields:
+        Each command's ``(path, usage, info)``, the root included.
+    """
+    with command.make_context(" ".join(path), [], resilient_parsing=True) as ctx:
+        resolved = ctx.command
+        yield path, ctx.get_usage(), ctx.to_info_dict()["command"]
+        if isinstance(resolved, click.Group):
+            for name in resolved.list_commands(ctx):
+                if (sub := resolved.get_command(ctx, name)) is not None:
+                    yield from _command_usages(sub, (*path, name))
+
+
+def test_usage_line_matches_click_usage_for_every_command():
+    """Optional and variadic arguments are shown the way click's --help shows them."""
+    mismatched = {}
+    for path, usage, info in _command_usages(cli, ("reflex",)):
+        expected = "$ " + usage.removeprefix("Usage: ")
+        actual = usage_line(info, " ".join(path[:-1]) or None, path[-1])
+        if actual != expected:
+            mismatched[" ".join(path)] = (actual, expected)
+    assert mismatched == {}

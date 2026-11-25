@@ -135,7 +135,7 @@ def test_html_layout_page_lists_plain_elements_in_one_table():
         (1, "API Reference"),
         (2, "Shared HTML props"),
         (2, "rx.el.blockquote"),
-        (2, "rx.el.Del"),
+        (2, "rx.el.del"),
         (2, "rx.el.details"),
         (2, "rx.el.dialog"),
         (2, "rx.el.html"),

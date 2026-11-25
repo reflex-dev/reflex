@@ -1101,7 +1101,7 @@ def api_reference(
     toc = [(1, "API Reference")]
     if shared:
         toc.append((2, "Shared HTML props"))
-    toc.extend((2, name) for _, name in detailed)
+    toc.extend((2, _COMPONENT_DISPLAY_NAMES.get(name, name)) for _, name in detailed)
     if plain:
         toc.append((2, OTHER_ELEMENTS_TITLE))
     return toc, [
