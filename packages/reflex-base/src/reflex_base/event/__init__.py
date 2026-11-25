@@ -290,6 +290,13 @@ def _scan_detach(value: Any, memo: dict[int, Any], active: set[int]) -> Any:
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 SUPERSEDES_MARKER = "_reflex_supersedes"
 EVENT_ACTIONS_MARKER = "_rx_event_actions"
+_UNDECORATED_STATE_METHOD_MARKER = "_rx_undecorated_state_method"
+# How to fix a reference to an undecorated state method; ends its error.
+_UNDECORATED_STATE_METHOD_HINT = (
+    "Decorate it with `@rx.event`: with `state_explicit_event_handlers` enabled, "
+    "undecorated methods stay plain methods. "
+    "See https://reflex.dev/docs/events/events-overview/#explicit-event-handlers"
+)
 UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
 
 # Payload key listing the names of the extra bound handler args in an upload
@@ -1488,6 +1495,20 @@ def passthrough_event_spec(
 
 
 @overload
+def passthrough_event_spec(
+    event_type: types.UnionType, /
+) -> Callable[[Var[Any]], tuple[Var[Any]]]: ...
+
+
+@overload
+def passthrough_event_spec(
+    event_type_1: types.UnionType | type[T],
+    event_type2: types.UnionType | type[U],
+    /,
+) -> Callable[[Var[Any], Var[Any]], tuple[Var[Any], Var[Any]]]: ...
+
+
+@overload
 def passthrough_event_spec(*event_types: type[T]) -> IdentityEventReturn[T]: ...
 
 
@@ -2664,6 +2685,26 @@ def check_fn_match_arg_spec(
         raise EventFnArgMismatchError(msg)
 
 
+def _check_not_undecorated_state_method(value: Any, key: str | None) -> None:
+    """Reject a state method that explicit event handler mode left undecorated.
+
+    Args:
+        value: The value wired to the event trigger.
+        key: The name of the event trigger.
+
+    Raises:
+        EventHandlerValueError: If value is an undecorated state method.
+    """
+    if getattr(value, _UNDECORATED_STATE_METHOD_MARKER, False) is True:
+        from reflex_base.utils.exceptions import EventHandlerValueError
+
+        msg = (
+            f"{value.__qualname__} is wired to {key or 'an event trigger'} but is not an "
+            f"event handler. {_UNDECORATED_STATE_METHOD_HINT}"
+        )
+        raise EventHandlerValueError(msg)
+
+
 def event_sequence(events: Any) -> Sequence[Any]:
     """Get events as a sequence, wrapping a single event-like value in a list.
 
@@ -2705,11 +2746,14 @@ def call_event_fn(
         The event-like values from calling the function.
 
     Raises:
-        EventHandlerValueError: If the lambda returns an unusable value.
+        EventHandlerValueError: If fn is an undecorated state method or returns
+            an unusable value.
     """
     # Import here to avoid circular imports.
     from reflex_base.event import EventHandler, EventSpec
     from reflex_base.utils.exceptions import EventHandlerValueError
+
+    _check_not_undecorated_state_method(fn, key)
 
     parsed_args, _ = parse_args_spec(arg_spec)
 
@@ -2797,6 +2841,7 @@ def call_event_fn(
 
         # Make sure the event spec is valid.
         if not isinstance(e, (EventSpec, FunctionVar, EventVar)):
+            _check_not_undecorated_state_method(e, key)
             hint = ""
             if isinstance(e, VarOperationCall):
                 hint = " Hint: use `fn.partial(...)` instead of calling the FunctionVar directly."
@@ -3578,6 +3623,8 @@ class EventNamespace:
     SUPERSEDES_MARKER = SUPERSEDES_MARKER
     EVENT_ACTIONS_MARKER = EVENT_ACTIONS_MARKER
     _EVENT_FIELDS = _EVENT_FIELDS
+    _UNDECORATED_STATE_METHOD_MARKER = _UNDECORATED_STATE_METHOD_MARKER
+    _UNDECORATED_STATE_METHOD_HINT = _UNDECORATED_STATE_METHOD_HINT
     FORM_DATA = FORM_DATA
     FORM_SUBMIT_MAPPING = FORM_SUBMIT_MAPPING
     upload_files = upload_files
@@ -3593,6 +3640,9 @@ class EventNamespace:
     )
     _values_returned_from_event = staticmethod(_values_returned_from_event)
     _is_bound_event_handler = staticmethod(_is_bound_event_handler)
+    _check_not_undecorated_state_method = staticmethod(
+        _check_not_undecorated_state_method
+    )
     _check_event_args_subclass_of_callback = staticmethod(
         _check_event_args_subclass_of_callback
     )

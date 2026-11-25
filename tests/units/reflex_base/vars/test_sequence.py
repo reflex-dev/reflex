@@ -2,9 +2,11 @@
 
 import operator
 from collections.abc import Callable
+from datetime import date, datetime
 from typing import Any
 
 import pytest
+from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import Var
 from reflex_base.vars.sequence import ArrayVar
 
@@ -62,3 +64,68 @@ def test_optional_array_operation_results():
     # Indexing is already null-safe, and the var itself still reads as None.
     assert str(maybe[0]) == "state.maybe?.at?.(0)"
     assert str(maybe.is_none()) == "!(isNotNullOrUndefined(state.maybe))"
+
+
+_COMPARE_ARRAYS = ImportVar(tag="compareArrays", is_default=True, install=False)
+_COMPARE_DATETIME = ImportVar(tag="compareDatetime", is_default=True, install=False)
+
+
+@pytest.mark.parametrize(
+    ("operation", "operator"),
+    [
+        (operator.lt, "<"),
+        (operator.le, "<="),
+        (operator.gt, ">"),
+        (operator.ge, ">="),
+    ],
+)
+def test_array_ordering_compiles_to_compare_arrays(
+    operation: Callable[[Any, Any], Var], operator: str
+):
+    """Array ordering compiles to a compareArrays call, not a raw JS comparison.
+
+    Args:
+        operation: The Python comparison operator function.
+        operator: The JS operator applied to the compareArrays result.
+    """
+    comparison = operation(Var.create([1, 10, 0]), [1, 9, 0])
+    var_data = comparison._get_all_var_data()
+
+    assert str(comparison) == f"(compareArrays([1, 10, 0], [1, 9, 0]) {operator} 0)"
+    assert var_data is not None
+    assert dict(var_data.imports) == {"$/utils/helpers/array.js": (_COMPARE_ARRAYS,)}
+
+
+@pytest.mark.parametrize(
+    ("items", "expected"),
+    [
+        (
+            [date(2024, 1, 1)],
+            '(compareArrays(["2024-01-01"], ["2024-01-01"], compareDatetime) < 0)',
+        ),
+        (
+            [datetime(2024, 1, 1, 12)],
+            '(compareArrays(["2024-01-01 12:00:00"], ["2024-01-01 12:00:00"], compareDatetime) < 0)',
+        ),
+        (
+            [[date(2024, 1, 1)]],
+            '(compareArrays([["2024-01-01"]], [["2024-01-01"]], compareDatetime) < 0)',
+        ),
+    ],
+)
+def test_date_array_ordering_passes_compare_datetime(items: list, expected: str):
+    """Dates reach the frontend as strings, so their lists order through compareDatetime.
+
+    Args:
+        items: A list of dates or datetimes, possibly nested.
+        expected: The compiled comparison.
+    """
+    comparison = Var.create(items) < items
+    var_data = comparison._get_all_var_data()
+
+    assert str(comparison) == expected
+    assert var_data is not None
+    assert dict(var_data.imports) == {
+        "$/utils/helpers/array.js": (_COMPARE_ARRAYS,),
+        "$/utils/helpers/datetime.js": (_COMPARE_DATETIME,),
+    }

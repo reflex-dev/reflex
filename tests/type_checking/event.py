@@ -11,6 +11,7 @@ from reflex_base.event import (
     IdentityEventReturn,
     LambdaEventCallback,
     event,
+    passthrough_event_spec,
 )
 from reflex_base.vars.base import Var
 
@@ -94,6 +95,23 @@ assert_type(_HandlerState.seven(1, "a", True, 1.5, b"", 2), EventCallback[str])
 assert_type(_HandlerState.eight(1, "a", True, 1.5, b"", 2, "b"), EventCallback[bool])
 assert_type(
     _HandlerState.nine(1, "a", True, 1.5, b"", 2, "b", False), EventCallback[float]
+)
+
+# An event spec passes a trigger's values on as Vars of the given types. A
+# union, such as `str | None`, makes a Var of any value.
+assert_type(passthrough_event_spec(str), Callable[[Var[str]], tuple[Var[str]]])
+assert_type(
+    passthrough_event_spec(int, str),
+    Callable[[Var[int], Var[str]], tuple[Var[int], Var[str]]],
+)
+assert_type(passthrough_event_spec(str | None), Callable[[Var[Any]], tuple[Var[Any]]])
+assert_type(
+    passthrough_event_spec(str | int, dict),
+    Callable[[Var[Any], Var[Any]], tuple[Var[Any], Var[Any]]],
+)
+assert_type(
+    passthrough_event_spec(int, str | None),
+    Callable[[Var[Any], Var[Any]], tuple[Var[Any], Var[Any]]],
 )
 
 # A handler is a callable of its arguments, so it can be passed where one is expected.

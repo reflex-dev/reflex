@@ -1,5 +1,5 @@
 """Lucide Icon Component."""
 
-from .icon import Icon
+from .icon import Icon as Icon
 
 icon = Icon.create
