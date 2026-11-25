@@ -2089,14 +2089,21 @@ def test_calling_event_handler_with_all_args_returns_eventspec() -> None:
 
     assert one_spec.stop_propagation.event_actions == {"stopPropagation": True}
 
-    chained_single = Event.from_event_type(ChainState.chain_one.fn(ChainState()))
-    assert len(chained_single) == 1
-    assert chained_single[0].name.endswith(".one")
-    assert chained_single[0].payload == {"count": 1}
-
-    chained_many = Event.from_event_type(ChainState.chain_many.fn(ChainState()))
-    assert [ev.payload for ev in chained_many] == [
-        {},
-        {"count": 2},
-        {"count": 3, "label": "ok"},
+    state_name = ChainState.get_full_name()
+    assert Event.from_event_type(ChainState.chain_no_args.fn(ChainState())) == [
+        Event(name=f"{state_name}.no_args", payload={}),
+    ]
+    assert Event.from_event_type(ChainState.chain_one.fn(ChainState())) == [
+        Event(name=f"{state_name}.one", payload={"count": 1}),
+    ]
+    assert Event.from_event_type(ChainState.chain_many.fn(ChainState())) == [
+        Event(name=f"{state_name}.no_args", payload={}),
+        Event(name=f"{state_name}.one", payload={"count": 2}),
+        Event(name=f"{state_name}.two", payload={"count": 3, "label": "ok"}),
+    ]
+    assert Event.from_event_type(decentralized_spec) == [
+        Event(
+            name=format.format_event_handler(cast(EventHandler, decentralized)),
+            payload={"count": 5},
+        ),
     ]
