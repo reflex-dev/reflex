@@ -54,7 +54,7 @@ from reflex_base.event import (
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
-from reflex_base.session import SessionToken, SessionTokenManager
+from reflex_base.session import SessionToken, SessionTokenManager, authorize
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
 from reflex_base.utils import memo_paths
 from reflex_base.utils.compat import MISSING_TYPE
@@ -3270,9 +3270,14 @@ class EventNamespace(AsyncNamespace):
         session = socket_session.session if socket_session is not None else None
         if session is not None:
             # Validate before linking or loading any client state.
-            context = dataclasses.replace(
-                EventContext.get(), token=token, session_token=session
-            )
+            try:
+                context = dataclasses.replace(
+                    EventContext.get(), token=token, session_token=session
+                )
+            except LookupError:
+                # No request scope, for example a harness that connects directly.
+                authorize(session, token)
+                context = contextlib.nullcontext()
             with context:
                 new_token = await self._token_manager.link_token_to_sid(
                     token,
