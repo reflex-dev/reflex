@@ -78,7 +78,12 @@ export function formatCell(value, column) {
       return {
         kind: GridCellKind.Text,
         data: value,
-        displayData: column.type,
+        displayData:
+          value == null
+            ? ""
+            : typeof value === "object"
+              ? JSON.stringify(value)
+              : String(value),
       };
   }
 }

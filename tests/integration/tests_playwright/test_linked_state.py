@@ -12,6 +12,7 @@ from playwright.sync_api import Browser, Page, expect
 from reflex_base.config import get_config
 
 from reflex.testing import AppHarness
+from tests.integration.utils import CLIENT_TOKEN_JS
 
 
 def LinkedStateApp():
@@ -308,7 +309,7 @@ def _linked_page(
     page = tab_factory()
     assert harness.frontend_url is not None
     page.goto(f"{harness.frontend_url}{url}")
-    page.wait_for_function("Boolean(sessionStorage.getItem('token'))")
+    page.wait_for_function(f"Boolean({CLIENT_TOKEN_JS})")
     return page
 
 
@@ -334,7 +335,7 @@ def test_linked_state(linked_state: AppHarness, tab_factory: Callable[[], Page])
     """
     tab1, tab2 = tab_factory(), tab_factory()
     for page in (tab1, tab2):
-        page.wait_for_function("Boolean(sessionStorage.getItem('token'))")
+        page.wait_for_function(f"Boolean({CLIENT_TOKEN_JS})")
         expect(page.locator("#n-changes")).to_have_text("0")
         expect(page.locator("#greeting")).to_have_text("Hello, world!")
 
@@ -499,7 +500,7 @@ def test_unrelated_reset_does_not_break_shared_event_link_context(
         tab_factory: factory that creates pages sharing local storage.
     """
     page = tab_factory()
-    page.wait_for_function("Boolean(sessionStorage.getItem('token'))")
+    page.wait_for_function(f"Boolean({CLIENT_TOKEN_JS})")
     shared_token = f"reset-repro-{uuid.uuid4()}"
     _submit(page, "#token-input", shared_token)
     expect(page.locator("#linked-to")).to_have_text(shared_token)
@@ -529,7 +530,7 @@ def test_concurrent_async_vars_do_not_deadlock_linked_token(
         pytest.skip("Only applicable with Redis state manager")
     max_acceptable_s = manager.lock_expiration / 2000
     page = tab_factory()
-    page.wait_for_function("Boolean(sessionStorage.getItem('token'))")
+    page.wait_for_function(f"Boolean({CLIENT_TOKEN_JS})")
     shared_token = f"race-repro-{uuid.uuid4()}"
     _submit(page, "#token-input", shared_token)
     expect(page.locator("#linked-to")).to_have_text(shared_token)

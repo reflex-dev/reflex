@@ -45,10 +45,14 @@ async function createConnection(
     getItem: (key) => session.get(key) ?? null,
     setItem: (key, value) => session.set(key, String(value)),
   };
+  const localStorage = {
+    getItem: (key) => saved.get(key) ?? null,
+    setItem: (key, value) => saved.set(key, value),
+  };
   const body = element("body");
   let authPayload;
   const socket = {
-    connected: true,
+    connected: false,
     io: {
       opts: {},
       encoder: { encode: (packet) => [JSON.stringify(packet)] },
@@ -87,6 +91,8 @@ async function createConnection(
             reload: () => reloads.push(true),
           },
           sessionStorage,
+          localStorage,
+          clearTimeout() {},
           addEventListener() {},
           removeEventListener() {},
           dispatchEvent: (event) => windowEvents.dispatchEvent(event),
@@ -98,7 +104,7 @@ async function createConnection(
           getElementById: (id) =>
             body.children.find((node) => node.id === id) ?? null,
         },
-        localStorage: { setItem: (key, value) => saved.set(key, value) },
+        localStorage,
         sessionStorage,
       },
       "socket.io-client": { default: () => socket },

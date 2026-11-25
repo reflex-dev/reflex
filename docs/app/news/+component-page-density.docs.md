@@ -1,0 +1,1 @@
+Component reference pages list each component's own props first, collapse the inherited global HTML attributes behind a disclosure, and nest each component under "API Reference" on the page and in its table of contents; demos no longer carry a "Start Building Now!" link and the page footer is more compact.

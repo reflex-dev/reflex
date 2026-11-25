@@ -90,6 +90,7 @@ import reflex as rx
 from reflex.istate.data import ReflexURLCastedVar, RouterDataVar
 from reflex.istate.proxy import MutableProxy
 from reflex.state import BaseState, State, _override_base_method
+from tests.units.field_errors import backend_var_error, mixin_var_error
 
 _MARKER_ATTR = "_marker"
 
@@ -1949,6 +1950,62 @@ def test_backend_field_literal_var_raises_format_error(
         BackendVarFormatError, match=r"Backend var 'Model\._secret' exists only"
     ):
         use(Model._secret)
+
+
+@pytest.mark.parametrize(
+    "use",
+    [
+        lambda f: f == "x",
+        lambda f: f != "x",
+        lambda f: f in ["x", "y"],
+        lambda f: bool(f),
+    ],
+    ids=["eq", "ne", "in_list", "bool"],
+)
+def test_backend_field_comparison_raises_format_error(
+    use: typing.Callable[[Any], Any],
+):
+    """Comparing or truth-testing a backend var raises instead of a plain bool.
+
+    Args:
+        use: Compares or truth-tests the backend field.
+    """
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: str = "s"
+
+    with pytest.raises(BackendVarFormatError) as exc_info:
+        use(Model._secret)
+    assert str(exc_info.value) == backend_var_error("Model._secret")
+
+
+def test_backend_field_identity_and_hash_unchanged():
+    """Fields still compare and hash by identity with other fields."""
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: str = "s"
+        _other: str = "o"
+
+    secret, other = Model._secret, Model._other
+    assert secret == secret
+    assert secret != other
+    assert {secret: 1, other: 2}[secret] == 1
+    assert secret in [other, secret]
+    assert len({secret, other, secret}) == 2
+
+
+def test_mixin_field_comparison_raises_format_error():
+    """Comparing or truth-testing a mixin's field says to use the including state."""
+
+    class Mixin(EvenMoreBasicBaseState, mixin=True):
+        count: int = 0
+
+    with pytest.raises(BackendVarFormatError) as eq_info:
+        Mixin.count == 1  # noqa: B015
+    with pytest.raises(BackendVarFormatError) as bool_info:
+        bool(Mixin.count)
+    assert str(eq_info.value) == mixin_var_error("Mixin.count")
+    assert str(bool_info.value) == mixin_var_error("Mixin.count")
 
 
 def test_mixin_field_literal_var_raises_format_error():
