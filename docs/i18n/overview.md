@@ -401,6 +401,15 @@ rx.i18n.language_switcher()  # prebuilt <a> links
 rx.link("Deutsch", href=rx.i18n.locale_url("de", "/pricing"))
 ```
 
+Links between your pages should stay in the visitor's language.
+`rx.i18n.localized_url` builds a route's URL in the locale the current page is
+built in (see below), so one layout serves every locale:
+
+```python
+# /pricing on English pages, /de/pricing on German ones
+rx.link(_("Pricing"), href=rx.i18n.localized_url("/pricing"))
+```
+
 ### Translating while a page is built
 
 With URL routing every route serves exactly one locale, and its page function
@@ -418,7 +427,8 @@ def pricing():
 ```
 
 A `@rx.memo` component is compiled once for all locales, outside any page:
-use `rx.t` inside it, or pass the translated text in as a prop.
+use `rx.t` inside it, or pass the translated text and `localized_url` links in
+as props.
 
 A page's head is translated the same way: a plain string `title`,
 `description` and meta tag `content` is a message, translated into each

@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from .component import LanguageSwitcher
+from .config import source_locale
+from .runtime import get_locale
 
 if TYPE_CHECKING:
     from reflex_base.components.component import Component
@@ -46,6 +48,22 @@ def locale_url(locale: str, route: str) -> str:
     if plugin is None or plugin.routing is None:
         return path
     return plugin.routing.localize(path, locale, plugin.default_locale)
+
+
+def localized_url(route: str) -> str:
+    """The URL path for a route in the locale the current page is built in.
+
+    For links in a layout shared by every locale: on a page compiled for
+    ``/de/...`` it points to the German address. Like ``gettext``, it uses the
+    default locale outside a page, e.g. in a ``@rx.memo`` component.
+
+    Args:
+        route: The base route (``"/pricing"`` or ``"pricing"``).
+
+    Returns:
+        The localized URL path (unchanged if URL routing is off).
+    """
+    return locale_url(get_locale() or source_locale(), route)
 
 
 def language_switcher(**props: Any) -> Component:
