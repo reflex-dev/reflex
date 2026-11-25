@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from reflex_base.registry import RegistrationContext
 
 import reflex as rx
 from reflex.istate.shared import (
@@ -134,6 +135,71 @@ async def test_no_fan_out_without_linked_clients():
             pass
 
     do_update.assert_not_called()
+
+
+async def test_modify_linked_states_releases_locks_when_linking_fails(
+    monkeypatch: pytest.MonkeyPatch, clean_registration_context: RegistrationContext
+):
+    """A failure while taking the linked locks releases the ones already taken.
+
+    Waiting for a second linked token's lock is where a superseded or
+    disconnected event gets cancelled; the first token's lock must not leak,
+    or every client linked to that token hangs on it.
+
+    Args:
+        monkeypatch: Restore root metadata changed by defining shared states.
+        clean_registration_context: Isolate the temporary shared state classes.
+    """
+    links = State.get_fields()["_reflex_internal_links"]
+    monkeypatch.setattr(links, "default", links.default)
+    monkeypatch.setattr(links, "default_factory", links.default_factory)
+    monkeypatch.setattr(
+        State, "_always_dirty_substates", State._always_dirty_substates.copy()
+    )
+
+    class HeldState(rx.SharedState):
+        value: int = 0
+
+    class ContendedState(rx.SharedState):
+        value: int = 0
+
+    released: list[str] = []
+
+    @asynccontextmanager
+    async def linked_lock(token: str):
+        try:
+            yield
+        finally:
+            released.append(token)
+
+    async def patch_linked_state(self, token: str, full_delta: bool = False):
+        if token == "contended":
+            raise asyncio.CancelledError
+        exit_stack = self._linked_locks_holder()._exit_stack
+        await exit_stack.enter_async_context(linked_lock(token))
+        return self
+
+    monkeypatch.setattr(
+        SharedStateBaseInternal, "_internal_patch_linked_state", patch_linked_state
+    )
+
+    root_state = State.get_root_state()(_reflex_internal_init=True)
+    await root_state.get_state(HeldState)
+    await root_state.get_state(ContendedState)
+    root_state._reflex_internal_links = {
+        HeldState.get_full_name(): "held",
+        ContendedState.get_full_name(): "contended",
+    }
+    shared_base = root_state.substates[SharedStateBaseInternal.get_name()]
+    assert isinstance(shared_base, SharedStateBaseInternal)
+
+    with pytest.raises(asyncio.CancelledError):
+        async with shared_base._modify_linked_states():
+            pytest.fail("The event must not run without its linked states.")
+
+    assert released == ["held"]
+    assert shared_base._exit_stack is None
+    assert shared_base._held_locks is None
 
 
 class PatchRoot(BaseState):
