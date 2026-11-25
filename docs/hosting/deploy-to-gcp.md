@@ -76,7 +76,7 @@ When it's done, you'll get a service URL like `https://my-reflex-app-<project-nu
 | `--envfile` | _none_ | Path to a `.env` file loaded into the service. Takes precedence over `--env`. |
 | `--source` | `.` | Directory containing the Reflex app. Uploaded to Cloud Build as the build context; the source tree itself is not modified. |
 | `--token` | _from `~/.reflex` config_ | Reflex authentication token. |
-| `--interactive / --no-interactive` | `--interactive` | Whether to prompt before running the deploy script. |
+| `--interactive / --no-interactive` | _on when stdout is a terminal, off otherwise (CI, pipes)_ | Whether to prompt for confirmations, including before running the deploy script. |
 | `--dry-run` | _off_ | Print the manifest, the generated `cloudbuild.yaml`, and the rewritten script without writing the tempfile or running the script. |
 | `--loglevel` | `info` | Log verbosity. |
 
@@ -154,8 +154,8 @@ Pass the project ID (e.g. `my-app-123456`), not the numeric project number.
 **`No active GCP account found.`**
 Run `gcloud auth login` and `gcloud auth application-default login`.
 
-**`The 'gcloud' / 'docker' / 'bash' CLI was not found on PATH.`**
-Install the missing tool and ensure it's on `PATH` for the shell you're invoking the CLI from.
+**A required tool was not found on `PATH`.**
+The CLI checks for `bash`, `gcloud`, and `docker`, in that order, and stops at the first one that is missing with an error that names the tool and says it `was not found on PATH`. Install the missing tool and ensure it's on `PATH` for the shell you're invoking the CLI from.
 
 **`Dockerfile content contains the reserved heredoc marker 'REFLEX_DOCKERFILE_EOF'.`**
 Vanishingly unlikely — the Dockerfile from Reflex Cloud happens to contain a line that exactly matches the heredoc terminator the CLI uses to embed it. Re-run after the next CLI release, or open an issue.

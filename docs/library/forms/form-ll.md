@@ -98,9 +98,7 @@ import reflex.components.radix.primitives as rdxp
 ```
 
 ```md alert warning
-# Low Level Form is Experimental
-
-Please use the High Level Form for now for production.
+# Low Level Form is experimental. Please use the High Level Form for now for production.
 ```
 
 Forms are used to collect information from your users. Forms group the inputs and submit them together.
