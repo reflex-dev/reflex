@@ -104,6 +104,8 @@ The following props are available for customization:
 - `id`: `str | Var`: Custom id for the toast.
 - `unstyled`: `bool`: Removes the default styling, which allows for easier customization.
 - `style`: `Style`: Custom style for the toast.
+- `action_button_style`: `Style`: Custom style for the button that `action` renders.
+- `cancel_button_style`: `Style`: Custom style for the button that `cancel` renders.
 - `on_dismiss`: `Any`: The function gets called when either the close button is clicked, or the toast is swiped.
 - `on_auto_close`: `Any`: Function that gets called when the toast disappears automatically after it's timeout (`duration` prop).
 
