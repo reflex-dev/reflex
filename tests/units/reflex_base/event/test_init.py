@@ -203,6 +203,38 @@ def test_a_required_keyword_only_parameter_of_a_handler_still_counts_as_required
     )
 
 
+class VarargsState(rx.State):
+    """A state whose handler takes ``*args`` before a keyword-only argument."""
+
+    def handle(self, value: str, *args: str, required: str):
+        """Take the trigger's values by the names of the named parameters.
+
+        Args:
+            value: The trigger's first value.
+            *args: Takes no value: a handler's arguments are sent by name.
+            required: The trigger's second value.
+        """
+
+
+def test_a_handler_gets_the_trigger_arguments_by_its_named_parameters() -> None:
+    """``*args`` has no name to send a value by, so the next parameter gets it.
+
+    That holds whether the trigger passes every value or the handler has some
+    bound already.
+    """
+    handle = cast(EventHandler, VarargsState.handle)
+    every = call_event_handler(handle, lambda a, b: [a, b], key="on_key_down")
+    partly = call_event_handler(handle("v"), lambda a: [a], key="on_change")
+
+    assert [
+        [(str(name), str(value)) for name, value in spec.args]
+        for spec in (every, partly)
+    ] == [
+        [("value", "_a"), ("required", "_b")],
+        [("value", '"v"'), ("required", "_a")],
+    ]
+
+
 def test_a_callable_with_a_required_keyword_only_parameter_is_rejected() -> None:
     """A callable gets the trigger's arguments by position, so it never gets one.
 
