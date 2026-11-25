@@ -1,0 +1,1 @@
+`StringVar.split()` with the default or an explicit empty separator now splits by Unicode code points, like the other string operations, instead of breaking emoji and other characters outside the Basic Multilingual Plane into surrogate halves.

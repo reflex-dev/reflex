@@ -325,7 +325,7 @@ def test_basic_operations(TestObj):
     assert str(LiteralNumberVar.create(1) * 2) == "(1 * 2)"
     assert str(LiteralNumberVar.create(1) / 2) == "(1 / 2)"
     assert str(LiteralNumberVar.create(1) // 2) == "Math.floor(1 / 2)"
-    assert str(LiteralNumberVar.create(1) % 2) == "(1 % 2)"
+    assert str(LiteralNumberVar.create(1) % 2) == "pyMod(1, 2)"
     assert str(LiteralNumberVar.create(1) ** 2) == "(1 ** 2)"
     assert str(LiteralNumberVar.create(1) & v(2)) == "pyAnd(1, () => (2))"
     assert str(LiteralNumberVar.create(1) | v(2)) == "pyOr(1, () => (2))"
@@ -1162,6 +1162,26 @@ def test_string_operations():
     )
 
 
+def test_string_split_uses_code_points_for_empty_separator():
+    """Test that splitting by an empty separator yields code points, not UTF-16 units."""
+    basic_string = LiteralStringVar.create("a😀b")
+    literal = str(basic_string)
+    code_point_split = f"pyStrChars({literal})"
+    assert str(basic_string.split()) == code_point_split
+    assert str(basic_string.split("")) == code_point_split
+    assert str(basic_string.split(" ")) == f'{literal}.split(" ")'
+    sep_var = Var(_js_expr="state.sep").to(str)
+    assert str(basic_string.split(sep_var)) == f"pyStrSplit({literal}, state.sep)"
+    for split_var, tag in (
+        (basic_string.split(), "pyStrChars"),
+        (basic_string.split(sep_var), "pyStrSplit"),
+    ):
+        var_data = split_var._get_all_var_data()
+        assert var_data is not None
+        assert dict(var_data.imports)[f"$/{Dirs.STATE_PATH}"] == (ImportVar(tag=tag),)
+    assert basic_string.split(" ")._get_all_var_data() is None
+
+
 def test_all_number_operations():
     starting_number = LiteralNumberVar.create(-5.4)
 
@@ -1169,7 +1189,7 @@ def test_all_number_operations():
 
     assert (
         str(complicated_number)
-        == "((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2)"
+        == "(pyMod(Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2), 3) ** 2)"
     )
 
     even_more_complicated_number = ~(
@@ -1178,7 +1198,7 @@ def test_all_number_operations():
 
     assert (
         str(even_more_complicated_number)
-        == "!(isTrue(pyOr(Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))), () => (pyAnd(2, () => (Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))))))))"
+        == "!(isTrue(pyOr(Math.abs(Math.floor((pyMod(Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2), 3) ** 2))), () => (pyAnd(2, () => (Math.round((pyMod(Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2), 3) ** 2))))))))"
     )
 
     assert str(LiteralNumberVar.create(5) > False) == "(5 > 0)"
@@ -1331,20 +1351,52 @@ def test_array_operations():
     assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].slice().reverse()"
     assert (
         str(ArrayVar.range(10))
-        == "Array.from({ length: Math.ceil((10 - 0) / 1) }, (_, i) => 0 + i * 1)"
+        == "Array.from({ length: Math.ceil((10 - 0) / (1 || 1)) }, (_, i) => 0 + i * (1 || 1))"
     )
     assert (
         str(ArrayVar.range(1, 10))
-        == "Array.from({ length: Math.ceil((10 - 1) / 1) }, (_, i) => 1 + i * 1)"
+        == "Array.from({ length: Math.ceil((10 - 1) / (1 || 1)) }, (_, i) => 1 + i * (1 || 1))"
     )
     assert (
         str(ArrayVar.range(1, 10, 2))
-        == "Array.from({ length: Math.ceil((10 - 1) / 2) }, (_, i) => 1 + i * 2)"
+        == "Array.from({ length: Math.ceil((10 - 1) / (2 || 1)) }, (_, i) => 1 + i * (2 || 1))"
     )
     assert (
         str(ArrayVar.range(1, 10, -1))
-        == "Array.from({ length: Math.ceil((10 - 1) / -1) }, (_, i) => 1 + i * -1)"
+        == "Array.from({ length: Math.ceil((10 - 1) / (-1 || 1)) }, (_, i) => 1 + i * (-1 || 1))"
     )
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
+def test_range_with_state_step():
+    """A range with a state step evaluates like Python range, with 1 for a zero step."""
+
+    class RangeState(BaseState):
+        start: int = 0
+        stop: int = 0
+        step: int = 1
+
+    fields = cast(
+        tuple[NumberVar, NumberVar, NumberVar],
+        (RangeState.start, RangeState.stop, RangeState.step),
+    )
+    iterable = rx.Var.range(*fields)
+    assert iterable._get_all_var_data() == VarData.merge(
+        *(field._get_all_var_data() for field in fields)
+    )
+
+    owner = str(RangeState.step).rsplit(".", 1)[0]
+    keys = [str(field).rsplit(".", 1)[1] for field in fields]
+    cases = [(0, 10, 2), (10, 0, -2), (4, 4, 2), (0, 5, 0), (5, 0, 0)]
+    statements = [f"const {owner} = {{}};"]
+    statements.extend(
+        f"Object.assign({owner}, {json.dumps(dict(zip(keys, case, strict=True)))}); "
+        f"console.log(JSON.stringify({iterable!s}));"
+        for case in cases
+    )
+    assert _eval_js_lines(statements) == [
+        list(range(start, stop, step or 1)) for start, stop, step in cases
+    ]
 
 
 def _assert_var_imports(var: Var, tag: str):
@@ -1407,7 +1459,7 @@ def test_array_filter():
     # non-boolean results are evaluated with python truthiness
     truthy_predicate = array_var.filter(lambda x: x % 2)
     assert re.fullmatch(
-        r"\[1, 2, 3\]\.filter\(\(\((\w+)\) => isTrue\(\(\1 % 2\)\)\)\)",
+        r"\[1, 2, 3\]\.filter\(\(\((\w+)\) => isTrue\(pyMod\(\1, 2\)\)\)\)",
         str(truthy_predicate),
     )
     _assert_var_imports(truthy_predicate, "isTrue")

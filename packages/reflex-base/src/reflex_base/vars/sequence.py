@@ -9,7 +9,9 @@ import inspect
 import json
 import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, get_args, overload
+from datetime import date
+from functools import lru_cache
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast, get_args, overload
 
 from typing_extensions import TypeVar as TypingExtensionsTypeVar
 
@@ -283,7 +285,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
         Args:
             first_endpoint: The end of the range if second_endpoint is not provided, otherwise the start of the range.
             second_endpoint: The end of the range.
-            step: The step of the range.
+            step: The step of the range. Omitted and zero steps use 1.
 
         Returns:
             The range of numbers.
@@ -303,7 +305,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
             start = first_endpoint
             end = second_endpoint
 
-        return array_range_operation(start, end, step or 1)
+        return array_range_operation(start, end, 1 if step is None else step)
 
     @overload
     def contains(self, other: Any) -> BooleanVar: ...
@@ -1231,6 +1233,10 @@ _PY_STR_CHARS_IMPORT: ImportDict = {
     f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyStrChars")],
 }
 
+_PY_STR_SPLIT_IMPORT: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyStrSplit")],
+}
+
 _PY_STR_LENGTH_IMPORT: ImportDict = {
     f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyStrLength")],
 }
@@ -1764,10 +1770,19 @@ def string_split_operation(string: StringVar[Any], sep: StringVar | str = ""):
         sep: The separator.
 
     Returns:
-        The split string.
+        The split string. An empty separator splits by code points.
     """
+    if not isinstance(sep, LiteralStringVar):
+        js_expression = f"pyStrSplit({string!s}, {sep!s})"
+        var_data = VarData(imports=_PY_STR_SPLIT_IMPORT)
+    elif sep._var_value == "":
+        js_expression = f"pyStrChars({string!s})"
+        var_data = VarData(imports=_PY_STR_CHARS_IMPORT)
+    else:
+        js_expression = f"{string!s}.split({sep!s})"
+        var_data = None
     return var_operation_return(
-        js_expression=f"{string!s}.split({sep!s})", var_type=list[str]
+        js_expression=js_expression, var_type=list[str], var_data=var_data
     )
 
 
@@ -1904,6 +1919,67 @@ def array_reverse_operation(
     )
 
 
+_COMPARE_ARRAYS_IMPORT = {
+    "$/utils/helpers/array.js": [
+        ImportVar(tag="compareArrays", is_default=True, install=False)
+    ],
+}
+_ARRAY_COMPARE_VAR_DATA = VarData(imports=_COMPARE_ARRAYS_IMPORT)
+_DATE_ARRAY_COMPARE_VAR_DATA = VarData(
+    imports={
+        **_COMPARE_ARRAYS_IMPORT,
+        "$/utils/helpers/datetime.js": [
+            ImportVar(tag="compareDatetime", is_default=True, install=False)
+        ],
+    }
+)
+
+
+@lru_cache(maxsize=1024)
+def _holds_dates(array_type: GenericType) -> bool:
+    """Check whether the innermost items of an array type are dates or datetimes.
+
+    Args:
+        array_type: The type of the array, possibly nested.
+
+    Returns:
+        Whether its leaf item type is a date, which serializes to a string.
+    """
+    item_type = _determine_value_of_array_index(array_type)
+    while (inner := _determine_value_of_array_index(item_type)) is not Any:
+        item_type = inner
+    return types.safe_issubclass(item_type, date)
+
+
+def _array_compare_operation(
+    lhs: ArrayVar | list | tuple,
+    rhs: ArrayVar | list | tuple,
+    operator: Literal["<", "<=", ">", ">="],
+) -> CustomVarOperationReturn[bool]:
+    """Order two arrays element-wise with Python list semantics.
+
+    Args:
+        lhs: The left-hand side array.
+        rhs: The right-hand side array.
+        operator: The comparison operator.
+
+    Returns:
+        The result of the comparison.
+    """
+    # var_operation has already turned list and tuple operands into Vars.
+    if _holds_dates(cast(Var, lhs)._var_type) or _holds_dates(cast(Var, rhs)._var_type):
+        return var_operation_return(
+            f"(compareArrays({lhs!s}, {rhs!s}, compareDatetime) {operator} 0)",
+            bool,
+            _DATE_ARRAY_COMPARE_VAR_DATA,
+        )
+    return var_operation_return(
+        f"(compareArrays({lhs!s}, {rhs!s}) {operator} 0)",
+        bool,
+        _ARRAY_COMPARE_VAR_DATA,
+    )
+
+
 @var_operation
 def array_lt_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tuple):
     """Check if an array is less than another array.
@@ -1915,7 +1991,7 @@ def array_lt_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tupl
     Returns:
         The array less than operation.
     """
-    return var_operation_return(js_expression=f"{lhs!s} < {rhs!s}", var_type=bool)
+    return _array_compare_operation(lhs, rhs, "<")
 
 
 @var_operation
@@ -1929,7 +2005,7 @@ def array_gt_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tupl
     Returns:
         The array greater than operation.
     """
-    return var_operation_return(js_expression=f"{lhs!s} > {rhs!s}", var_type=bool)
+    return _array_compare_operation(lhs, rhs, ">")
 
 
 @var_operation
@@ -1943,7 +2019,7 @@ def array_le_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tupl
     Returns:
         The array less than or equal operation.
     """
-    return var_operation_return(js_expression=f"{lhs!s} <= {rhs!s}", var_type=bool)
+    return _array_compare_operation(lhs, rhs, "<=")
 
 
 @var_operation
@@ -1957,7 +2033,7 @@ def array_ge_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tupl
     Returns:
         The array greater than or equal operation.
     """
-    return var_operation_return(js_expression=f"{lhs!s} >= {rhs!s}", var_type=bool)
+    return _array_compare_operation(lhs, rhs, ">=")
 
 
 @var_operation
@@ -2090,7 +2166,7 @@ def array_range_operation(
         The range of numbers.
     """
     return var_operation_return(
-        js_expression=f"Array.from({{ length: Math.ceil(({stop!s} - {start!s}) / {step!s}) }}, (_, i) => {start!s} + i * {step!s})",
+        js_expression=f"Array.from({{ length: Math.ceil(({stop!s} - {start!s}) / ({step!s} || 1)) }}, (_, i) => {start!s} + i * ({step!s} || 1))",
         var_type=list[int],
     )
 

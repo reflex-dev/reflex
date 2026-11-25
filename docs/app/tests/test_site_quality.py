@@ -1,5 +1,7 @@
 """Regression checks for shared documentation presentation."""
 
+from typing import Literal, get_args
+
 import pytest
 import reflex as rx
 
@@ -164,3 +166,20 @@ def test_generated_preview_keeps_wide_components_scrollable():
     preview = playground.children[0]
     assert "overflow-x-auto" in str(preview.class_name)
     assert "400px" in str(preview.children[0])
+
+
+@pytest.mark.parametrize(
+    ("type_", "label"),
+    [
+        (dict[str, str | rx.Var | rx.Color], "str | Var | Color"),
+        (dict[str, str | dict[str, str]], "str | dict[str, str]"),
+        (dict[str, int], "int"),
+        (dict[str, Literal["left", "right"]], 'Literal["left", "right"]'),
+        (dict[str, Literal[1, 2] | None], "Literal[1, 2] | None"),
+    ],
+)
+def test_dict_prop_value_types_use_short_names(type_, label):
+    """Dict value types name each member without module paths on every Python."""
+    from reflex_docs.pages.docs.component import _type_label
+
+    assert _type_label(get_args(type_)[1]) == label

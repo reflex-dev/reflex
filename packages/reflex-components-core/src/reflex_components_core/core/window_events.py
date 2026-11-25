@@ -124,15 +124,18 @@ class WindowEventListener(Fragment):
         for prop_name, event_trigger in self.event_triggers.items():
             # Get JS event name: remove on_ prefix and underscores
             event_name = prop_name.removeprefix("on_").replace("_", "")
+            handler = Var.create(event_trigger)
 
+            # The handler is memoized on the state it reads, so a listener
+            # registered only once would keep calling it with its first values.
             hook_expr = f"""
 useEffect(() => {{
     if (typeof window === 'undefined') return;
-    const fn = {Var.create(event_trigger)};
+    const fn = {handler};
     window.addEventListener('{event_name}', fn);
     return () => window.removeEventListener('{event_name}', fn);
-}}, []);
-                """
+}}, [{handler}]);
+"""
 
             hooks.append(Var(hook_expr))
 
