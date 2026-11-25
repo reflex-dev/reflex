@@ -21,7 +21,7 @@ def tags_input_simple_page():
     """TagsInput demo."""
     return rxe.mantine.tags_input(
         placeholder="Enter tags",
-        label="Press Enter to ad a tag",
+        label="Press Enter to add a tag",
     )
 ```
 

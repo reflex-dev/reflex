@@ -1,5 +1,34 @@
 # Benchmarks
 
+## Sizing a benchmark
+
+CodSpeed runs each benchmark once under its CPU simulation, after one warmup
+call, and estimates time from instructions and simulated cache misses. A
+measured call of a few microseconds is mostly the cost of entering it and of
+cold cache misses, which shift with the memory and code layout left by
+unrelated changes, so its result flips between commits by several percent.
+
+- Give every measured call at least ~100 µs of uninstrumented work
+  (`--codspeed-mode walltime` reports it). For a fast operation on the hot
+  path, repeat it inside the measured function a fixed number of times, as
+  pyperf's `inner_loops` do; name the count in a module constant. The
+  simulation ignores `rounds` and `iterations` of `benchmark.pedantic`, so
+  those cannot do the repeating.
+- Measure what production pays. A benchmark called once before it is measured
+  sees warm caches: the router's `lru_cache`, for instance, made
+  `test_route_matching` measure three cache hits until it called the scan it
+  wraps.
+- Benchmark code that runs per event, per update or per connection. Code that
+  runs once per page or at compile time belongs in the page and compilation
+  benchmarks, which exercise it at a realistic size.
+- This writes one callgrind dump per benchmark, a close local approximation
+  of the simulation; running a module alone and after another one shows how
+  much its counts depend on what ran before:
+
+  ```sh
+  CODSPEED_ENV=1 PYTHONHASHSEED=0 valgrind --tool=callgrind --instr-atstart=no --cache-sim=yes .venv/bin/python -m pytest tests/benchmarks/<module>.py --codspeed
+  ```
+
 ## Event processing benchmarks
 
 ```sh

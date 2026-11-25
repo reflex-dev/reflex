@@ -36,6 +36,10 @@ class Avatar(RadixThemesComponent):
 
     src: Var[str] = field(doc="The src of the avatar image")
 
+    alt: Var[str] = field(
+        doc='Alternative text for the avatar image. Use "" for a decorative image whose name is already shown next to it.'
+    )
+
     fallback: Var[str] = field(doc="The rendered fallback text")
 
 
