@@ -162,7 +162,7 @@ def pyplot_bar_example():
 
 ## Stateful Example
 
-Lets create a scatter plot of random data. We'll also allow the user to randomize the data and change the number of points.
+Let's create a scatter plot of random data. We'll also allow the user to randomize the data and change the number of points.
 
 In this example, we'll use a `color_mode_cond` to display the plot in both light and dark mode. We need to do this manually here because the colors are determined by the matplotlib chart and not the theme.
 

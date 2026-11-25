@@ -142,7 +142,7 @@ def test_get_reflex_package_versions_reports_only_first_party(mocker: MockerFixt
             "reflex-base>=0.9.4",
             "reflex-components-radix>=0.9.2",
             "reflex-hosting-cli>=0.1.66",
-            "httpx<1.0,>=0.26",
+            "httpx2<3.0,>=2.15.1",
             'pydantic>=2.12.0; extra == "db"',
         ],
     )
@@ -150,7 +150,7 @@ def test_get_reflex_package_versions_reports_only_first_party(mocker: MockerFixt
         "reflex-base": "0.9.4",
         "reflex-components-radix": "0.9.2",
         # reflex-hosting-cli is a declared dependency but is not installed here.
-        "httpx": "0.27.0",
+        "httpx2": "2.15.1",
         "pydantic": "2.12.0",
         # A third-party reflex-* package installed separately by the user.
         "reflex-enterprise": "1.2.3",
@@ -948,10 +948,10 @@ def test_shutdown_executor_without_executor_is_a_noop():
     assert telemetry._executor is None
 
 
-def test_send_event_posts_json_without_httpx(mocker: MockerFixture):
-    """Delivery goes through urllib, so backend workers never import httpx."""
+def test_send_event_posts_json_without_http_clients(mocker: MockerFixture):
+    """Delivery goes through urllib, so backend workers never import httpx2."""
     urlopen = mocker.patch("reflex.utils.telemetry.urllib.request.urlopen")
-    mocker.patch.dict(sys.modules, {"httpx": None})
+    mocker.patch.dict(sys.modules, {"httpx": None, "httpx2": None})
 
     assert telemetry._send_event({"api_key": "k", "event": "e"})  # pyright: ignore[reportArgumentType]
 

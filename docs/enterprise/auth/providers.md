@@ -336,7 +336,7 @@ awaitable Var, never exposed to the browser, and kept fresh by background
 refresh.
 
 ```python
-import httpx
+import httpx2
 import reflex as rx
 from reflex_enterprise.auth import OIDCAuthState
 
@@ -347,7 +347,7 @@ class OktaAuthState(OIDCAuthState, rx.State):
     @rx.event
     async def fetch_profile(self):
         access_token = await self._access_token
-        async with httpx.AsyncClient() as client:
+        async with httpx2.AsyncClient() as client:
             resp = await client.get(
                 "https://api.example.com/me",
                 headers={"Authorization": f"Bearer {access_token}"},

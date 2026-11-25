@@ -1,0 +1,1 @@
+`rx.foreach` accepts a bound method (a classmethod or an instance method) as its render function: its `cls`/`self` no longer counts as a render argument. Only positional parameters take the item and its index; keyword-only parameters and `**kwargs` never receive the index.
