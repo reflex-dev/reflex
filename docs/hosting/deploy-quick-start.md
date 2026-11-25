@@ -8,7 +8,7 @@ So far, we have been running our apps locally on our own machines.
 But what if we want to share our apps with the world? This is where
 the hosting service comes in.
 
-For hosting options and configuration guides, see the [Reflex Cloud overview](/docs/overview/).
+For hosting options and configuration guides, see the [Reflex Cloud overview](/docs/hosting/overview/).
 
 ## Quick Start
 

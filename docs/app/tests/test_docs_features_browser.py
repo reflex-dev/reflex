@@ -181,7 +181,7 @@ def test_enterprise_sidebar_links_match_group_color(page: Page, width: int):
         ("/ai/overview/best-practices/", "docs/ai_builder/overview/best_practices.md"),
         ("/enterprise/components/", "docs/enterprise/components.md"),
         ("/changelog/", "CHANGELOG.md"),
-        ("/overview/", "docs/app/reflex_docs/pages/docs/cloud.py"),
+        ("/hosting/overview/", "docs/app/reflex_docs/pages/docs/cloud.py"),
     ],
 )
 def test_edit_page_navigates_to_source(page: Page, path: str, source: str):
