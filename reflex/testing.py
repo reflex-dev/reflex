@@ -314,7 +314,9 @@ class AppHarness:
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
             app_package = config.module.partition(".")[0]
-            self._restore_cached_app_module_states(app_package)
+            self._restore_cached_app_module_states(
+                app_package, initialize_var_dependencies=False
+            )
             # Ensure we compile generated apps, and reload pre-existing app modules
             # that were already imported so they can re-register memo definitions.
             should_reload_app = (
@@ -358,11 +360,14 @@ class AppHarness:
             key = (str(self.app_path.resolve()), app_package)
             self._cached_app_state_modules.setdefault(key, set()).update(module_names)
 
-    def _restore_cached_app_module_states(self, app_package: str) -> None:
+    def _restore_cached_app_module_states(
+        self, app_package: str, *, initialize_var_dependencies: bool = True
+    ) -> None:
         """Re-register cached state classes from this app's submodules.
 
         Args:
             app_package: Top-level package name for the app being initialized.
+            initialize_var_dependencies: Whether to rebuild cached var dependencies.
         """
         key = (str(self.app_path.resolve()), app_package)
         module_names = self._cached_app_state_modules.get(key, set())
@@ -398,11 +403,14 @@ class AppHarness:
 
         if stale_classes:
             replacements = {}
-            for old_classes in stale_module_classes.values():
+            for module_name, old_classes in stale_module_classes.items():
+                reloaded_classes = {
+                    state_cls.__name__: state_cls
+                    for state_cls in self._get_app_module_state_classes(module_name)
+                }
                 for old_class in old_classes:
-                    module = sys.modules[old_class.__module__]
                     if (
-                        replacement := getattr(module, old_class.__name__, None)
+                        replacement := reloaded_classes.get(old_class.__name__)
                     ) is not None:
                         replacements[id(old_class)] = replacement
             app_package_prefix = f"{app_package}."
@@ -421,6 +429,11 @@ class AppHarness:
                 if (replacement := replacements.get(id(app_state))) is not None:
                     self.app_instance._state = replacement
 
+        cached_classes = {
+            state_cls.get_full_name(): state_cls
+            for module_name in module_names
+            for state_cls in self._get_app_module_state_classes(module_name)
+        }
         restored: dict[str, type[BaseState]] = {}
         for module_name in module_names:
             for state_cls in self._get_app_module_state_classes(module_name):
@@ -434,12 +447,18 @@ class AppHarness:
         if restored:
             for state_cls in sorted(restored.values(), key=lambda cls: len(cls.mro())):
                 context._register_base_state(state_cls)
+        if restored or initialize_var_dependencies:
             BaseState.get_class_substate.cache_clear()
-            for full_name, state_cls in restored.items():
+            for full_name in restored:
                 all_base_state_classes[full_name] = None
-                state_cls._var_dependencies = {}
-            for state_cls in sorted(restored.values(), key=lambda cls: len(cls.mro())):
-                state_cls._init_var_dependency_dicts()
+            if initialize_var_dependencies:
+                dependency_states = {**cached_classes, **restored}
+                for state_cls in dependency_states.values():
+                    state_cls._var_dependencies = {}
+                for state_cls in sorted(
+                    dependency_states.values(), key=lambda cls: len(cls.mro())
+                ):
+                    state_cls._init_var_dependency_dicts()
 
     @staticmethod
     def _get_app_module_state_classes(module_name: str) -> tuple[type[BaseState], ...]:

@@ -356,7 +356,7 @@ def test_app_harness_restarts_multi_module_app_without_reimporting_states(
         monkeypatch: Pytest fixture for registration and import isolation.
     """
     import reflex as rx
-    from reflex.state import all_base_state_classes
+    from reflex.state import all_base_state_classes, reload_state_module
 
     app_package = "restartable_harness_app"
     harness_mocks.config.module = f"{app_package}.main"
@@ -369,6 +369,7 @@ def test_app_harness_restarts_multi_module_app_without_reimporting_states(
     package_module.__path__ = []
     package_module.__dict__["rx"] = rx
     app_module = ModuleType(f"{app_package}.main")
+    app_module.__dict__["rx"] = rx
     state_module = ModuleType(f"{app_package}.states")
     state_module.__dict__["rx"] = rx
     monkeypatch.setitem(sys.modules, app_package, package_module)
@@ -391,6 +392,10 @@ def test_app_harness_restarts_multi_module_app_without_reimporting_states(
             )
             state_module.__dict__["AppState"] = package_module.AppState
             exec(
+                "class MainState(rx.State):\n    count: int = 0\n",
+                app_module.__dict__,
+            )
+            exec(
                 "class CachedMixin(rx.State, mixin=True):\n"
                 "    pass\n"
                 "class ChildState(AppState, CachedMixin):\n"
@@ -399,21 +404,33 @@ def test_app_harness_restarts_multi_module_app_without_reimporting_states(
                 "        self.count += 1\n",
                 state_module.__dict__,
             )
+            state_module.__dict__["MainState"] = app_module.MainState
+            exec(
+                "class DataState(rx.State):\n"
+                "    @rx.var(cache=True)\n"
+                "    async def main_count(self) -> int:\n"
+                "        main = await self.get_state(MainState)\n"
+                "        return main.count\n",
+                state_module.__dict__,
+            )
         else:
             app_module.__dict__.update(
                 rx=rx,
                 AppState=package_module.AppState,
                 ChildState=state_module.ChildState,
             )
+            previous_main_state = app_module.MainState
+            reload_state_module(app_module.__name__)
             exec(
-                "class MainState(AppState):\n"
+                "class MainState(rx.State):\n"
+                "    count: int = 0\n"
                 "    @rx.var(cache=True)\n"
                 "    async def child_count(self) -> int:\n"
                 "        child = await self.get_state(ChildState)\n"
                 "        return child.count\n",
                 app_module.__dict__,
             )
-            app_module.MainState._init_var_dependency_dicts()
+            assert app_module.MainState is not previous_main_state
         return app_info
 
     harness_mocks.get_and_validate_app.side_effect = load_or_check_app
@@ -449,6 +466,10 @@ def test_app_harness_restarts_multi_module_app_without_reimporting_states(
         assert context.base_states[app_state.get_full_name()] is app_state
         assert context.base_states[child_state.get_full_name()] is child_state
         assert "child_count" in app_module.MainState.computed_vars
+        assert (
+            state_module.DataState.get_full_name(),
+            "main_count",
+        ) in app_module.MainState._var_dependencies["count"]
         assert state_module.CachedMixin.get_full_name() not in context.base_states
         assert any(
             handler.handler is child_state.event_handlers["increment"]
