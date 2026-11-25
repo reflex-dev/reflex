@@ -22,6 +22,7 @@ from playwright.sync_api import Page, Route, expect
 from reflex_base.config import get_config
 
 from reflex.testing import AppHarness
+from reflex.utils.token_manager import TokenManager
 
 
 def BackendPathApp():
@@ -415,6 +416,13 @@ def test_session_backend_restart(backend_path_app: AppHarness, page: Page):
     backend_path_app.backend.should_exit = True
     backend_path_app.backend_thread.join(timeout=10)
     assert not backend_path_app.backend_thread.is_alive()
+    # A restarted backend is a new process with a new token manager. The
+    # harness keeps the app object, whose manager belongs to the stopped
+    # event loop.
+    assert backend_path_app.app_instance is not None
+    namespace = backend_path_app.app_instance.event_namespace
+    assert namespace is not None
+    namespace._token_manager = TokenManager.create()
     backend_path_app._start_backend(port=port)
     backend_path_app._poll_for_servers(timeout=10)
     page.click("#bump-btn")
