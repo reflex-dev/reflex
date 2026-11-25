@@ -41,7 +41,7 @@ def button(
     return rx.el.button(
         text,
         *children,
-        onclick=onclick,
+        on_click=onclick,
         style=style if style is not None else {},
         class_name=default_class_name
         + " "
@@ -66,7 +66,7 @@ def button_with_icon(
         get_icon(icon, class_name="[&>svg]:size-5"),
         text,
         *children,
-        onclick=onclick,
+        on_click=onclick,
         style=style if style is not None else {},
         class_name=default_class_name
         + " "

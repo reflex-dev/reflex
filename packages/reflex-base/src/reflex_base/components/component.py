@@ -1064,10 +1064,16 @@ class Component(BaseComponent, ABC):
 
         fields_style = self.get_fields()["style"]
 
+        style_props = {
+            attr: value for attr, value in kwargs.items() if attr not in fields
+        }
+        if style_props:
+            self._raise_for_html_attribute_names(style_props)
+
         kwargs["style"] = Style({
             **fields_style.default_value(),
             **style,
-            **{attr: value for attr, value in kwargs.items() if attr not in fields},
+            **style_props,
         })
 
         # Convert class_name to str if it's list
@@ -1217,6 +1223,46 @@ class Component(BaseComponent, ABC):
             The unique fields.
         """
         return cls.get_js_fields()
+
+    @classmethod
+    @functools.cache
+    def _get_props_by_html_attribute_name(cls) -> Mapping[str, str]:
+        """Map the HTML spelling of each multi-word prop and event trigger to its name.
+
+        HTML spells ``href_lang`` and ``on_click`` as ``hreflang`` and ``onclick``.
+
+        Returns:
+            The prop and event trigger names containing an underscore, keyed by
+            the name without underscores.
+        """
+        return {
+            name.replace("_", ""): name
+            for name in (*cls.get_props(), *cls.get_event_triggers())
+            if "_" in name
+        }
+
+    def _raise_for_html_attribute_names(self, style_props: Mapping[str, Any]) -> None:
+        """Reject style properties that are a prop or event trigger spelled as in HTML.
+
+        Every keyword argument that is not a field becomes a style property, so
+        ``rx.el.link(hreflang="en")`` would otherwise render the invalid CSS
+        ``hreflang: en`` instead of the attribute.
+
+        Args:
+            style_props: The keyword arguments that would become style properties.
+
+        Raises:
+            TypeError: If one of them is a prop or event trigger spelled as in HTML.
+        """
+        html_names = self._get_props_by_html_attribute_name()
+        for key in style_props:
+            if (name := html_names.get(key)) is not None:
+                msg = (
+                    f"{type(self).__name__} got `{key}`, the HTML spelling of `{name}`. "
+                    f"Pass `{name}=` instead: keyword arguments that are not props "
+                    "or event triggers become style properties."
+                )
+                raise TypeError(msg)
 
     @classmethod
     @functools.cache

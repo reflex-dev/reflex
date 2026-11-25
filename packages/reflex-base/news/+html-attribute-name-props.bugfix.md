@@ -1,0 +1,1 @@
+Passing a prop or event trigger by its HTML attribute name, such as `rx.el.link(hreflang="en")` for `href_lang` or `onclick=` for `on_click`, now raises a `TypeError` naming the prop instead of silently rendering an invalid CSS property.
