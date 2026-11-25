@@ -828,9 +828,9 @@ class EventHandler(EventActionsMixin):
         # Get the function args.
         if self.state is not None:
             # Skip the `self` arg for state-bound event handlers.
-            fn_args = list(self._parameters)[1:]
+            fn_args = _named_parameters(self._parameters)[1:]
         else:
-            fn_args = list(self._parameters)
+            fn_args = _named_parameters(self._parameters)
 
         if not isinstance(
             repeated_arg := next(
@@ -1046,7 +1046,9 @@ class EventSpec(EventActionsMixin):
         n_self_args = 1 if self.handler.state is not None else 0
 
         # Get the remaining unfilled function args.
-        fn_args = list(self.handler._parameters)[n_self_args + len(self.args) :]
+        fn_args = _named_parameters(self.handler._parameters)[
+            n_self_args + len(self.args) :
+        ]
         fn_args = (Var(_js_expr=arg) for arg in fn_args)
 
         # Construct the payload.
@@ -2397,7 +2399,7 @@ def call_event_handler(
             event_callback.handler.fn.__qualname__,
         )
 
-        event_callback_spec_args = list(parameters)
+        event_callback_spec_args = _named_parameters(parameters)
 
         type_hints_of_provided_callback = event_callback.handler._get_type_hints()
 
@@ -2432,7 +2434,7 @@ def call_event_handler(
     )
 
     if event_spec_return_types:
-        event_callback_spec_args = list(parameters)
+        event_callback_spec_args = _named_parameters(parameters)
 
         type_hints_of_provided_callback = event_callback._get_type_hints()
 
@@ -2629,6 +2631,24 @@ _VARIADIC_PARAMETER_KINDS = (
     inspect.Parameter.VAR_POSITIONAL,
     inspect.Parameter.VAR_KEYWORD,
 )
+
+
+def _named_parameters(parameters: Mapping[str, inspect.Parameter]) -> list[str]:
+    """Get the names an event handler's arguments are sent by.
+
+    ``*args`` and ``**kwargs`` take no argument by their own name.
+
+    Args:
+        parameters: The parameters of the event handler's function.
+
+    Returns:
+        The names of its other parameters, in order.
+    """
+    return [
+        name
+        for name, parameter in parameters.items()
+        if parameter.kind not in _VARIADIC_PARAMETER_KINDS
+    ]
 
 
 def _max_positional_args(parameters: Mapping[str, inspect.Parameter]) -> int | None:
