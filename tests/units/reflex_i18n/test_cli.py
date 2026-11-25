@@ -10,6 +10,7 @@ import click
 import pytest
 from babel.messages.pofile import read_po, write_po
 from reflex_base.config import get_config
+from reflex_base.utils import log
 from reflex_base.utils.exceptions import ConfigError
 from reflex_i18n import I18nPlugin
 from reflex_i18n.cli import (
@@ -166,6 +167,57 @@ def test_catalog_stats_counts_missing_and_obsolete(tmp_path: Path):
     assert stats.missing == 2  # both extracted messages untranslated
     assert stats.obsolete == 1
     assert stats.locale == "de"
+
+
+def test_read_only_entries_are_left_untranslated_through_an_extraction(
+    tmp_path: Path,
+):
+    """Extracting keeps the flag, and the stats count those entries apart."""
+    app_dir = tmp_path / "myapp"
+    _write_app_source(app_dir)
+    po_path = tmp_path / "de.po"
+    template = extract_catalog(app_dir, (MessageKey("Imprint"),))
+    merge_into_locale(template, po_path, "de")
+    with po_path.open("rb") as f:
+        catalog = read_po(f, locale="de")
+    catalog.get("Imprint").flags.add("read-only")  # pyright: ignore[reportOptionalMemberAccess]
+    with po_path.open("wb") as f:
+        write_po(f, catalog)
+
+    stats = merge_into_locale(template, po_path, "de")
+
+    # The app's gettext and ngettext messages are still missing.
+    assert stats == LocaleStats("de", missing=2, left_untranslated=1)
+    with po_path.open("rb") as f:
+        assert read_po(f).get("Imprint").flags == {"read-only"}  # pyright: ignore[reportOptionalMemberAccess]
+
+
+@pytest.mark.parametrize(
+    ("stats", "expected"),
+    [
+        (
+            LocaleStats("en", obsolete=1, left_untranslated=3),
+            (log.SUCCESS, "  en: complete (3 left untranslated, 1 obsolete)"),
+        ),
+        (
+            LocaleStats("en", missing=2, left_untranslated=3),
+            (
+                logging.WARNING,
+                "  en: 2 missing, 0 fuzzy, 3 left untranslated, 0 obsolete",
+            ),
+        ),
+        (
+            LocaleStats("en", missing=2, fuzzy=1),
+            (logging.WARNING, "  en: 2 missing, 1 fuzzy, 0 obsolete"),
+        ),
+    ],
+)
+def test_report_counts_messages_left_untranslated_apart(
+    caplog: pytest.LogCaptureFixture, stats: LocaleStats, expected: tuple[int, str]
+):
+    caplog.set_level(logging.DEBUG)
+    _report(stats)
+    assert [(r.levelno, r.getMessage()) for r in caplog.records] == [expected]
 
 
 def test_init_rejects_a_locale_that_is_not_a_language_tag():

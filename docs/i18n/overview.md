@@ -522,6 +522,20 @@ A typical workflow: run `reflex i18n extract` after adding or changing strings,
 fill in the `msgstr` values in each locale's `.po` file, and add
 `reflex i18n check` to CI to catch missing translations.
 
+A message that a locale shows in the source language on purpose, e.g. a legal
+text you do not translate yet, carries the `read-only` flag in that locale's
+catalog. `reflex i18n check` accepts it untranslated, `extract` keeps the flag,
+and [Weblate](https://weblate.org) keeps such a string from being edited:
+
+```po
+#, read-only
+msgid "Privacy policy"
+msgstr ""
+```
+
+When its source text changes, the entry starts over without the flag, so
+`check` asks again.
+
 ## Translating a library
 
 A package that other apps install marks its text the same way: `rx.t` in

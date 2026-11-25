@@ -20,6 +20,7 @@ from reflex_base.config import get_config
 from reflex_base.plugins.base import get_plugin
 from reflex_base.utils import log
 
+from .catalog import is_left_untranslated
 from .config import PACKAGE_CATALOG_DIR, find_package_dir, validate_locale
 from .plugin import I18nPlugin
 from .registry import MessageKey, collected_messages
@@ -85,6 +86,8 @@ class LocaleStats:
     missing: int = 0
     fuzzy: int = 0
     obsolete: int = 0
+    # Untranslated on purpose: flagged read-only, so not missing.
+    left_untranslated: int = 0
 
     @property
     def incomplete(self) -> bool:
@@ -412,6 +415,8 @@ def _catalog_stats(catalog: Catalog, locale: str) -> LocaleStats:
             continue
         if "fuzzy" in message.flags:
             stats.fuzzy += 1
+        elif is_left_untranslated(message):
+            stats.left_untranslated += 1
         elif not message.string or (
             isinstance(message.string, (list, tuple)) and not all(message.string)
         ):
@@ -427,15 +432,17 @@ def _report(stats: LocaleStats, *, is_source: bool = False) -> None:
         is_source: Whether this is the default locale, whose catalog holds the
             source text and is expected to have empty ``msgstr`` entries.
     """
-    detail = f"{stats.missing} missing, {stats.fuzzy} fuzzy, {stats.obsolete} obsolete"
+    rest = f"{stats.obsolete} obsolete"
+    if stats.left_untranslated:
+        rest = f"{stats.left_untranslated} left untranslated, {rest}"
     if is_source:
         logger.info(f"  {stats.locale}: source catalog ({stats.obsolete} obsolete)")
     elif stats.incomplete:
-        logger.warning(f"  {stats.locale}: {detail}")
-    else:
-        logger.log(
-            log.SUCCESS, f"  {stats.locale}: complete ({stats.obsolete} obsolete)"
+        logger.warning(
+            f"  {stats.locale}: {stats.missing} missing, {stats.fuzzy} fuzzy, {rest}"
         )
+    else:
+        logger.log(log.SUCCESS, f"  {stats.locale}: complete ({rest})")
 
 
 def _app_source_dir() -> Path:
