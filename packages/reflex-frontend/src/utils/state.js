@@ -711,7 +711,7 @@ const MAX_ERROR_TEXT = 4000;
  * @returns {string} The text, cut and ended with an ellipsis when too long.
  */
 const clipErrorText = (text) =>
-  text.length > MAX_ERROR_TEXT ? `${text.slice(0, MAX_ERROR_TEXT)}…` : text;
+  text.length > MAX_ERROR_TEXT ? `${text.slice(0, MAX_ERROR_TEXT - 1)}…` : text;
 
 /**
  * Describe an error a script threw, for the backend that awaits its result.

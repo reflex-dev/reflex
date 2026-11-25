@@ -363,12 +363,12 @@ describe("awaited script results", () => {
       ),
     );
     const sent = await outcome();
-    expect(sent.error.stack.length).toBe(4001);
+    expect(sent.error.stack.length).toBe(4000);
     expect(withoutStack(sent)).toEqual({
       rid: "r1",
       error: {
-        name: `${"N".repeat(4000)}…`,
-        message: `${"m".repeat(4000)}…`,
+        name: `${"N".repeat(3999)}…`,
+        message: `${"m".repeat(3999)}…`,
         stack: "<stack>",
       },
     });
