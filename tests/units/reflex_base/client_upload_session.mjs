@@ -115,3 +115,43 @@ test("a ready upload starts once and cleans up its controller", async () => {
   assert.equal((await pending).status, 200);
   assert.equal(upload.refs.__upload_controllers_test, undefined);
 });
+
+test("an upload that the server rejects shows the user an error", async (t) => {
+  t.mock.method(console, "log", () => {});
+  const upload = await pendingUpload();
+  const shown = [];
+  upload.refs.__toast = { error: (...args) => shown.push(args) };
+  const pending = upload.start();
+  upload.finish();
+  await new Promise((resolve) => setImmediate(resolve));
+  const request = upload.requests[0];
+  request.status = 403;
+  request.responseText = "The session does not authorize this client token.";
+  request.onload();
+  assert.equal(await pending, false);
+  // The options object comes from the module's own realm, so compare by value.
+  assert.deepEqual(JSON.parse(JSON.stringify(shown)), [
+    [
+      "Upload failed.",
+      {
+        description:
+          "The server rejected the upload (403): The session does not authorize this client token.",
+        position: "top-center",
+        id: "upload_error",
+      },
+    ],
+  ]);
+});
+
+test("a cancelled upload shows no error", async (t) => {
+  t.mock.method(console, "log", () => {});
+  const upload = await pendingUpload();
+  const shown = [];
+  upload.refs.__toast = { error: (...args) => shown.push(args) };
+  const pending = upload.start();
+  upload.finish();
+  await new Promise((resolve) => setImmediate(resolve));
+  upload.requests[0].abort();
+  assert.equal(await pending, false);
+  assert.deepEqual(shown, []);
+});
