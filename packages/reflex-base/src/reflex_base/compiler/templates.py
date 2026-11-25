@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from reflex_base import constants
 from reflex_base.utils import memo_paths
 from reflex_base.utils.format import json_dumps
-from reflex_base.vars.base import VarData
+from reflex_base.vars.base import Var, VarData
 
 if TYPE_CHECKING:
     from reflex.compiler.utils import _ImportDict
@@ -653,6 +653,7 @@ def page_template(
     render: dict[str, Any],
     route: str = "",
     client_state_owns: Sequence[str] = (),
+    links: Var | None = None,
 ):
     """Template for a single react page.
 
@@ -684,6 +685,8 @@ def page_template(
             given, the exported component is ``Component`` wrapped in a client
             state scope claiming them, so hooks in the page body resolve inside
             it.
+        links: The link descriptors the route module exports as ``links``,
+            which React Router renders in the head while the route is shown.
 
     Returns:
         Rendered React page component as string.
@@ -703,6 +706,7 @@ def page_template(
         if client_state_owns
         else "Component"
     )
+    links_str = f"export const links = () => {links!s};\n" if links is not None else ""
     return f"""{imports_str}
 
 {dynamic_imports_str}
@@ -716,7 +720,7 @@ function Component() {{
     {_RenderUtils.render(render)}
   )
 }}
-{display_name_str}
+{display_name_str}{links_str}
 export default {export_str};
 """
 

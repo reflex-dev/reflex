@@ -323,6 +323,7 @@ class UnevaluatedPage:
     on_load: EventType[()] | None = None
     meta: Sequence[Mapping[str, Any] | Component] = ()
     context: Mapping[str, Any] = dataclasses.field(default_factory=dict)
+    stylesheets: Sequence[str] = ()
     _source_module: str | None = None
 
     def merged_with(self, other: UnevaluatedPage) -> UnevaluatedPage:
@@ -1522,6 +1523,7 @@ class App(MiddlewareMixin, LifespanMixin):
         on_load: EventType[()] | None = None,
         meta: Sequence[Mapping[str, Any] | Component] = constants.DefaultPage.META_LIST,
         context: dict[str, Any] | None = None,
+        stylesheets: Sequence[str] = (),
     ):
         """Add a page to the app.
 
@@ -1537,6 +1539,9 @@ class App(MiddlewareMixin, LifespanMixin):
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
             context: Values passed to page for custom page-specific logic.
+            stylesheets: Stylesheets only this page loads, after the app's, as
+                ``App.stylesheets`` takes them: files or directories in the
+                assets directory, or URLs.
 
         Raises:
             BackendVarFormatError: When title, description or image is a field with no frontend var.
@@ -1554,6 +1559,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 on_load,
                 meta,
                 context,
+                stylesheets=stylesheets,
             )
         )
 
@@ -1567,6 +1573,7 @@ class App(MiddlewareMixin, LifespanMixin):
         on_load: EventType[()] | None = None,
         meta: Sequence[Mapping[str, Any] | Component] = constants.DefaultPage.META_LIST,
         context: dict[str, Any] | None = None,
+        stylesheets: Sequence[str] = (),
     ) -> _PreparedPage:
         """Validate and normalize a page without mutating app route state.
 
@@ -1583,6 +1590,7 @@ class App(MiddlewareMixin, LifespanMixin):
             on_load: The event handler(s) called each time the page loads.
             meta: The metadata of the page.
             context: Values passed to page for custom page-specific logic.
+            stylesheets: Stylesheets only this page loads, after the app's.
 
         Returns:
             The validated page descriptor and its dynamic route arguments.
@@ -1635,6 +1643,7 @@ class App(MiddlewareMixin, LifespanMixin):
             on_load=on_load,
             meta=meta,
             context=context or {},
+            stylesheets=tuple(stylesheets),
             _source_module=source_module,
         )
 

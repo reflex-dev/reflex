@@ -33,6 +33,20 @@ Without a leading slash the path is considered relative to the current page rout
 not work for routes containing more than one path component, like `/blog/my-cool-post`.
 ```
 
+## Page Stylesheets
+
+A stylesheet that only one page needs can be passed to `add_page` (or `@rx.page`) instead. It takes the same files and URLs as `rx.App`:
+
+```python
+app.add_page(
+    pricing,
+    route="/pricing",
+    stylesheets=["/pages/pricing.css"],  # This path is relative to assets/
+)
+```
+
+The page links its stylesheets in the `<head>` after the app's, so its rules win over the app's rules of equal specificity. On client-side navigation the stylesheets load before the page renders, and they are removed when the user leaves the page.
+
 ## Styling with CSS
 
 You can use CSS variables directly in your Reflex app by passing them alongside the appropriae props. Create a `style.css` file inside the `assets` folder with the following lines:

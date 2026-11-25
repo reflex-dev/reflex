@@ -328,6 +328,91 @@ def test_compile_stylesheets(tmp_path: Path, mocker: MockerFixture):
     ).read_text()
 
 
+def test_page_stylesheets(tmp_path: Path, mocker: MockerFixture):
+    """A page's stylesheets become its route module's ``links`` export.
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+    """
+    project = tmp_path / "test_project"
+    assets_dir = project / "assets"
+    (assets_dir / "pages").mkdir(parents=True)
+    (assets_dir / "pages" / "pricing.css").write_text(".pricing { color: red; }")
+    (assets_dir / "pages" / "pricing.txt").write_text("not a stylesheet")
+    (assets_dir / "shared.css").write_text(".shared { color: blue; }")
+    web_dir = project / constants.Dirs.WEB
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+    mocker.patch("reflex.compiler.compiler.get_web_dir", return_value=web_dir)
+    mocker.patch("reflex.compiler.utils.get_web_dir", return_value=web_dir)
+
+    app = rx.App()
+    app.add_page(
+        rx.el.div("pricing"),
+        route="/pricing",
+        title="Pricing",
+        image="https://example.com/pricing.png",
+        stylesheets=[
+            "/shared.css",
+            "https://fonts.example.com/font.css",
+            "/pages",
+            "/shared.css",
+        ],
+    )
+    app.add_page(rx.el.div("plain"), route="/plain", title="Plain")
+    compile_ctx = CompileContext(
+        app=app,
+        pages=list(app._unevaluated_pages.values()),
+        hooks=CompilerHooks(plugins=default_page_plugins()),
+    )
+    with compile_ctx:
+        compiled = compile_ctx.compile()
+
+    assert compiled["pricing"].output_code == (
+        'import {Fragment,useEffect} from "react"\n'
+        'import {jsx} from "@emotion/react"\n'
+        'import reflexPageStylesheet0 from "$/styles/shared.css?url"\n'
+        'import reflexPageStylesheet2 from "$/styles/pages/pricing.css?url"\n'
+        "\n\n\n\n\n"
+        "function Component() {\n"
+        "\n\n"
+        "  return (\n"
+        '    jsx(Fragment,{},jsx("div",{},"pricing"),jsx("title",{},"Pricing"),'
+        'jsx("meta",{content:"https://example.com/pricing.png",property:"og:image"},))\n'
+        "  )\n"
+        "}\n"
+        'Component.displayName = "Component(pricing)";\n'
+        "export const links = () => ["
+        '({ ["rel"] : "stylesheet", ["href"] : reflexPageStylesheet0 }), '
+        '({ ["rel"] : "stylesheet", ["href"] : "https://fonts.example.com/font.css" }), '
+        '({ ["rel"] : "stylesheet", ["href"] : reflexPageStylesheet2 })];\n'
+        "\n"
+        "export default Component;\n"
+    )
+    assert "export const links" not in (compiled["plain"].output_code or "")
+    assert (web_dir / "styles" / "shared.css").read_text() == ".shared { color: blue; }"
+    assert (web_dir / "styles" / "pages" / "pricing.css").read_text() == (
+        ".pricing { color: red; }"
+    )
+
+
+def test_page_stylesheet_not_found(tmp_path: Path, mocker: MockerFixture):
+    """A page stylesheet missing from the assets directory fails the compile.
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+    """
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=tmp_path)
+
+    with pytest.raises(FileNotFoundError) as err:
+        compiler.compile_page_stylesheets(["/missing.css"])
+
+    assert str(err.value) == (
+        f"The stylesheet file {tmp_path / 'assets' / 'missing.css'} does not exist."
+    )
+
+
 def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
     if importlib.util.find_spec("sass") is None:
         pytest.skip(

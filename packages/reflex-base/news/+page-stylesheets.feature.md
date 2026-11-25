@@ -1,0 +1,1 @@
+`page_template` takes `links`, exported from the route module as React Router's `links`, `PageContext` carries the page's `stylesheets`, and the `add_page` a plugin's `register_route` receives takes `stylesheets=`.
