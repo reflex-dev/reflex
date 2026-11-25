@@ -2304,7 +2304,8 @@ class App(MiddlewareMixin, LifespanMixin):
                 the initial state.
 
         Raises:
-            ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
+            ReflexRuntimeError: When any compiled frontend component uses rx.State
+                while state is disabled (``enable_state=False``).
             FileNotFoundError: When a plugin requires a file that does not exist.
         """
         from reflex_base.utils.deterministic_hash import clear_hash_caches
