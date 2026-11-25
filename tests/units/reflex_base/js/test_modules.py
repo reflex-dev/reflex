@@ -153,7 +153,11 @@ def test_handler_and_bound_event_arguments_send_the_same_values_from_a_trigger_o
     )
     (event,) = Event.from_event_type(report(*args))
     sent = json.loads(format.json_dumps(event.payload["args"]))
-    assert f'["args"] : {LiteralVar.create(sent)!s} }}' in trigger
+    assert trigger == (
+        '((_e) => (addEvents([(ReflexEvent("_call_js", ({ ["module"] : '
+        '"app.scripts.party", ["function"] : "report", ["args"] : '
+        f"{LiteralVar.create(sent)!s} }}), ({{  }})))], [_e], ({{  }}))))"
+    )
 
 
 def test_an_uncalled_function_in_a_cond_is_called_with_no_arguments():
