@@ -700,6 +700,19 @@ const runEventScript = (event, socket, navigate, params) => {
   return fn();
 };
 
+// The most characters of an error's name, message or stack sent to the
+// backend: a longer error would not fit in one message, and the server would
+// drop the connection instead of raising it.
+const MAX_ERROR_TEXT = 4000;
+
+/**
+ * Cut a text about an error a script threw to at most MAX_ERROR_TEXT characters.
+ * @param {string} text The text.
+ * @returns {string} The text, cut and ended with an ellipsis when too long.
+ */
+const clipErrorText = (text) =>
+  text.length > MAX_ERROR_TEXT ? `${text.slice(0, MAX_ERROR_TEXT)}…` : text;
+
 /**
  * Describe an error a script threw, for the backend that awaits its result.
  *
@@ -707,14 +720,17 @@ const runEventScript = (event, socket, navigate, params) => {
  * Proxy, an object without a prototype that String() rejects). The backend
  * still gets an error then, or it would wait for its timeout.
  * @param error The thrown value, which need not be an Error.
- * @returns The error's name, message and stack.
+ * @returns The error's name, message and stack, each cut to MAX_ERROR_TEXT
+ *   characters.
  */
 const describeScriptError = (error) => {
   try {
     return {
-      name: String(error?.name ?? "Error"),
-      message: String(error instanceof Error ? error.message : error),
-      stack: String(error?.stack ?? ""),
+      name: clipErrorText(String(error?.name ?? "Error")),
+      message: clipErrorText(
+        String(error instanceof Error ? error.message : error),
+      ),
+      stack: clipErrorText(String(error?.stack ?? "")),
     };
   } catch {
     return { name: "Error", message: UNDESCRIBABLE_ERROR, stack: "" };

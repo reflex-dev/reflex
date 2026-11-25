@@ -356,6 +356,25 @@ describe("awaited script results", () => {
     expect(onerror).not.toHaveBeenCalled();
   });
 
+  test("cuts a long error to fit a message to the backend", async () => {
+    const { socket, outcome } = awaited(
+      script(
+        'const e = new Error("m".repeat(1e6)); e.name = "N".repeat(1e6); throw e',
+      ),
+    );
+    const sent = await outcome();
+    expect(sent.error.stack.length).toBe(4001);
+    expect(withoutStack(sent)).toEqual({
+      rid: "r1",
+      error: {
+        name: `${"N".repeat(4000)}…`,
+        message: `${"m".repeat(4000)}…`,
+        stack: "<stack>",
+      },
+    });
+    expect(socket.emit).toHaveBeenCalledTimes(1);
+  });
+
   test("sends a rejected promise as an error", async () => {
     const { outcome } = awaited(
       script('Promise.reject(new TypeError("refused"))'),
