@@ -1,6 +1,6 @@
 """Post messages to Slack channels through the site's Slack bot."""
 
-import httpx
+import httpx2
 
 from reflex_site_shared.constants import SLACK_BOT_TOKEN
 
@@ -37,7 +37,7 @@ async def post_to_slack(text: str, channel: str) -> bool:
         Whether Slack confirmed the post.
     """
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx2.AsyncClient() as client:
             response = await client.post(
                 SLACK_POST_MESSAGE_URL,
                 headers={"Authorization": f"Bearer {SLACK_BOT_TOKEN}"},
@@ -50,6 +50,6 @@ async def post_to_slack(text: str, channel: str) -> bool:
             )
             response.raise_for_status()
             payload = response.json()
-    except (httpx.HTTPError, ValueError):
+    except (httpx2.HTTPError, ValueError):
         return False
     return isinstance(payload, dict) and payload.get("ok") is True
