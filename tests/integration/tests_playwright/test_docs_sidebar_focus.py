@@ -1,5 +1,4 @@
 from collections.abc import Generator
-from typing import Any
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -11,6 +10,7 @@ def DocsSidebarFocusApp():
     """Render the shared active sidebar leaf for focus geometry checks."""
     from reflex_site_shared.components.docs_shell import docs_sidebar_leaf
     from reflex_site_shared.plugins import SharedSiteStylesPlugin
+    from typing import Any
 
     import reflex as rx
 
