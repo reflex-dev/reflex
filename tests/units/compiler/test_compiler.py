@@ -112,6 +112,7 @@ def _compile_stateless_app(
     *,
     enable_state: bool = False,
     head_components: list[rx.Component] | None = None,
+    hydrate_fallback: rx.Component | None = None,
 ) -> None:
     """Compile a one-page app without writing it.
 
@@ -122,11 +123,16 @@ def _compile_stateless_app(
         page: The page to compile.
         enable_state: Whether the app has state.
         head_components: The components of the document head.
+        hydrate_fallback: The component shown while a page hydrates.
     """
     monkeypatch.chdir(tmp_path)
     config = rx.Config(app_name="transport_guard", plugins=[])
     mocker.patch("reflex_base.config._get_config", return_value=config)
-    app = rx.App(enable_state=enable_state, head_components=head_components or [])
+    app = rx.App(
+        enable_state=enable_state,
+        head_components=head_components or [],
+        hydrate_fallback=hydrate_fallback,
+    )
     app.add_page(lambda: page, route="files")
     mocker.patch.object(app, "_get_frontend_packages")
     compiler.compile_app(app, dry_run=True, use_rich=False)
@@ -195,6 +201,27 @@ def test_stateless_app_rejects_backend_imports_in_the_document_head(
         )
     assert str(error.value) == _backend_imports_error(
         "the document head: getBackendURL"
+    )
+
+
+@pytest.mark.usefixtures("clean_registration_context", "preserve_memo_registries")
+def test_stateless_app_rejects_backend_imports_in_the_hydrate_fallback(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """The check covers the hydrate fallback, which the app root re-exports.
+
+    Args:
+        tmp_path: The temporary application directory.
+        monkeypatch: Fixture for selecting the application directory.
+        mocker: Fixture for avoiding frontend dependency installation.
+    """
+    fallback = rx.el.img(src=rx.get_upload_url("spinner.gif"))
+    with pytest.raises(ReflexRuntimeError) as error:
+        _compile_stateless_app(
+            tmp_path, monkeypatch, mocker, rx.el.p("Text"), hydrate_fallback=fallback
+        )
+    assert str(error.value) == _backend_imports_error(
+        "the hydrate fallback: getBackendURL"
     )
 
 

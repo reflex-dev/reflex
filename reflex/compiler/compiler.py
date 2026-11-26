@@ -1314,18 +1314,21 @@ def _backend_imports(
     app_root_imports: ParsedImportDict,
     document_imports: ParsedImportDict,
     memos: Iterable[MemoDefinition],
+    hydrate_fallback: MemoDefinition | None = None,
 ) -> list[str]:
     """List the compiled modules that import the backend transport.
 
     Memos register for the whole process, so only those the pages, the app
-    root and the document head import, directly or through another memo, are
-    checked.
+    root, the document head and the hydrate fallback import, directly or
+    through another memo, are checked.
 
     Args:
         compile_ctx: The compile context holding the compiled pages.
         app_root_imports: The imports of the app root.
         document_imports: The imports of the document head components.
         memos: Every memo the compile emits.
+        hydrate_fallback: The memo the app root re-exports as its hydrate
+            fallback, which no import names.
 
     Returns:
         One line per module, naming it and what it imports from the transport.
@@ -1343,6 +1346,12 @@ def _backend_imports(
         ("the document head", document_imports),
     ))
     unreached = {id(memo): memo for memo in memos}
+    if hydrate_fallback is not None:
+        unreached.pop(id(hydrate_fallback), None)
+        modules.append((
+            "the hydrate fallback",
+            _memo_symbol_and_imports(hydrate_fallback)[1],
+        ))
     checked = 0
     while checked < len(modules):
         imported = {
@@ -1557,6 +1566,7 @@ def compile_app(
 
     hydrate_fallback = app._resolve_hydrate_fallback()
     hydrate_fallback_export = None
+    hydrate_fallback_definition = None
     if hydrate_fallback is not None:
         hydrate_fallback._add_style_recursive(app.style)
         # Compile the fallback through the memo pipeline so it lands in its own
@@ -1595,6 +1605,7 @@ def compile_app(
                 *(component._get_all_imports() for component in app.head_components)
             ),
             (*memos, *compile_ctx.auto_memo_components.values()),
+            hydrate_fallback_definition,
         )
     ):
         progress.stop()
