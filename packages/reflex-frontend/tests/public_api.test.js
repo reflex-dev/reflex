@@ -85,6 +85,7 @@ const PUBLIC_API = {
   "$/utils/helpers/array": ["default"],
   "$/utils/helpers/datetime": ["default"],
   "$/utils/helpers/debounce": ["default"],
+  "$/utils/helpers/element_observer": ["default"],
   "$/utils/helpers/json": ["parseJson"],
   "$/utils/helpers/paste": ["default"],
   "$/utils/helpers/range": ["default"],

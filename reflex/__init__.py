@@ -95,6 +95,7 @@ _COMPONENTS_CORE_MAPPING: lazy_loader.SubmodAttrsType = {
     "reflex_components_core.core.cond": ["cond", "color_mode_cond"],
     "reflex_components_core.core.foreach": ["foreach"],
     "reflex_components_core.core.debounce": ["debounce_input"],
+    "reflex_components_core.core.element_observer": ["element_observer"],
     "reflex_components_core.core.html": ["html"],
     "reflex_components_core.core.match": ["match"],
     "reflex_components_core.core.clipboard": ["clipboard"],

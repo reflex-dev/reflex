@@ -23,6 +23,7 @@ _SUBMOD_ATTRS: dict[str, list[str]] = {
     ],
     "cond": ["Cond", "color_mode_cond", "cond"],
     "debounce": ["DebounceInput", "debounce_input"],
+    "element_observer": ["ElementObserver", "element_observer"],
     "foreach": [
         "foreach",
         "Foreach",
