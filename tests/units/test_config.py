@@ -1,9 +1,11 @@
+import hashlib
 import importlib
 import importlib.util
 import logging
 import multiprocessing
 import os
 import pickle
+import re
 import sys
 import textwrap
 import threading
@@ -1254,6 +1256,152 @@ def test_get_config_keeps_caller_owned_cwd_entry(
     assert sys.path.count(cwd) == caller_owned
 
 
+def test_rx_asset_after_config_in_rxconfig_uses_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """rx.asset below `config = rx.Config(...)` in rxconfig.py reads that config.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets" / "favicon.ico").write_bytes(b"")
+    (tmp_path / "rxconfig.py").write_text(
+        textwrap.dedent(
+            """
+            import reflex as rx
+
+            config = rx.Config(app_name="asset_in_config", frontend_path="/sub")
+            ASSET = rx.asset("favicon.ico")
+            """
+        )
+    )
+    monkeypatch.chdir(tmp_path)
+
+    with RegistrationContext():
+        assert reflex_base.config.get_config().app_name == "asset_in_config"
+    expected_hash = hashlib.sha256(b"").hexdigest()[:8]
+    asset = sys.modules["rxconfig"].ASSET
+    assert asset == f"/sub/favicon.ico?v={expected_hash}"
+
+
+def test_rxconfig_failing_after_a_read_is_not_cached(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """A config read during an rxconfig.py import that then fails is not cached.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets" / "favicon.ico").write_bytes(b"")
+    (tmp_path / "rxconfig.py").write_text(
+        textwrap.dedent(
+            """
+            import reflex as rx
+
+            config = rx.Config(app_name="fails_after_read")
+            ASSET = rx.asset("favicon.ico")
+            raise RuntimeError("rxconfig failed")
+            """
+        )
+    )
+    monkeypatch.chdir(tmp_path)
+
+    with RegistrationContext():
+        for _ in range(2):
+            with pytest.raises(RuntimeError, match=r"\Arxconfig failed\Z"):
+                reflex_base.config.get_config()
+
+
+def test_rx_asset_before_config_in_rxconfig_raises(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """rx.asset above `config = rx.Config(...)` in rxconfig.py raises ConfigError.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets" / "favicon.ico").write_bytes(b"")
+    (tmp_path / "rxconfig.py").write_text(
+        textwrap.dedent(
+            """
+            import reflex as rx
+
+            ASSET = rx.asset("favicon.ico")
+            config = rx.Config(app_name="asset_in_config")
+            """
+        )
+    )
+    monkeypatch.chdir(tmp_path)
+
+    expected_error = (
+        "rxconfig.py read the config (for example with rx.asset) before"
+        " `config = rx.Config(...)` ran. Move that call below the config"
+        " assignment, or into the app module."
+    )
+    with (
+        RegistrationContext(),
+        pytest.raises(ConfigError, match=rf"\A{re.escape(expected_error)}\Z"),
+    ):
+        reflex_base.config.get_config()
+
+
+def test_module_imported_by_rxconfig_reads_its_config(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """Modules rxconfig.py imports before assigning `config` read that config.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    readers = ("config_reading_module", "second_config_reading_module")
+    for name in readers:
+        (tmp_path / f"{name}.py").write_text(
+            textwrap.dedent(
+                """
+                from reflex_base.config import get_config
+
+                FRONTEND_PATH = get_config().frontend_path
+                """
+            )
+        )
+    (tmp_path / "rxconfig.py").write_text(
+        textwrap.dedent(
+            """
+            import reflex as rx
+
+            import config_reading_module
+            import second_config_reading_module
+            config = rx.Config(app_name="reads_config", frontend_path="/sub")
+            """
+        )
+    )
+    monkeypatch.chdir(tmp_path)
+
+    with RegistrationContext():
+        assert reflex_base.config.get_config().app_name == "reads_config"
+    for name in readers:
+        assert sys.modules[name].FRONTEND_PATH == "/sub"
+
+
 def test_get_config_accepts_explicit_project_root(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
 ):
@@ -1295,6 +1443,8 @@ def clean_config_modules() -> Generator[None, None, None]:
         "failed_only_helper",
         "initial_dep_module",
         "later_dep_module",
+        "config_reading_module",
+        "second_config_reading_module",
     )
     try:
         yield
