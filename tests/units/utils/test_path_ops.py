@@ -936,6 +936,25 @@ def test_write_file_updates_changed_file(tmp_path: Path) -> None:
     assert path.read_text(encoding="utf-8") == "after"
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="symlinks need a privilege on Windows"
+)
+def test_write_file_replaces_a_link(tmp_path: Path) -> None:
+    """A link at the path, like a linked stylesheet, is replaced, not written through."""
+    source = tmp_path / "assets" / "tailwind.css"
+    source.parent.mkdir()
+    source.write_text("source", encoding="utf-8")
+    path = tmp_path / "styles" / "tailwind.css"
+    path.parent.mkdir()
+    path.symlink_to(source)
+
+    write_file(path, "generated")
+
+    assert not path.is_symlink()
+    assert path.read_text(encoding="utf-8") == "generated"
+    assert source.read_text(encoding="utf-8") == "source"
+
+
 def test_update_directory_tree_reports_only_copied_files(tmp_path: Path) -> None:
     """Copy callbacks include nested files and omit files skipped on later updates.
 
