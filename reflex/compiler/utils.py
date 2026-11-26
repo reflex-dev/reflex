@@ -613,8 +613,10 @@ def compile_experimental_component_memo(
         hooks = _root_only_hooks(render, analysis=analysis)
         custom_code = _root_only_custom_code(render, analysis=analysis)
         if analysis is None:
+            added_imports = _root_only_added_imports(render)
             dynamic_imports = _root_only_dynamic_imports(render)
         else:
+            added_imports = []
             dynamic_imports = (
                 {analysis.dynamic_import} if analysis.dynamic_import else set()
             )
@@ -639,8 +641,10 @@ def compile_experimental_component_memo(
                 for data in hooks.values()
                 if data is not None and data.imports
             ]
-            if hook_imports:
-                all_imports = merge_parsed_imports(all_imports, *hook_imports)
+            if added_imports or hook_imports:
+                all_imports = merge_parsed_imports(
+                    all_imports, *added_imports, *hook_imports
+                )
         if analysis is None:
             rendered = render.render()
         else:
@@ -801,6 +805,25 @@ def _root_only_dynamic_imports(component: Component) -> set[str]:
     """
     own = component._get_dynamic_imports()
     return {own} if own else set()
+
+
+def _root_only_added_imports(component: Component) -> list[ParsedImportDict]:
+    """Return imports contributed by ``component``'s ``add_imports`` hooks.
+
+    Args:
+        component: The root component whose ``add_imports`` methods to collect.
+
+    Returns:
+        Parsed import dicts from each ``add_imports`` method on the root.
+    """
+    added: list[ParsedImportDict] = []
+    for clz in component._iter_parent_classes_with_method("add_imports"):
+        import_dicts = clz.add_imports(component)
+        if isinstance(import_dicts, list):
+            added.extend(imports.parse_imports(item) for item in import_dicts)
+        else:
+            added.append(imports.parse_imports(import_dicts))
+    return added
 
 
 def compile_experimental_function_memo(

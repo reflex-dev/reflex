@@ -4200,13 +4200,31 @@ def test_auto_memo_passthrough_does_not_import_memoized_descendant() -> None:
         if isinstance(definition.component, WithProp)
     )
 
-    page_output = page_ctx.output_code or ""
-    assert (
-        f'import {{{plain_tag}}} from "$/utils/components/{plain_tag}"' in page_output
+    normalized_page = (
+        (page_ctx.output_code or "")
+        .replace(plain_tag, "PLAIN")
+        .replace(with_prop_tag, "WITH_PROP")
     )
-    assert (
-        f'import {{{with_prop_tag}}} from "$/utils/components/{with_prop_tag}"'
-        in page_output
+    assert normalized_page == (
+        'import {WITH_PROP} from "$/utils/components/WITH_PROP"\n'
+        'import {PLAIN} from "$/utils/components/PLAIN"\n'
+        'import {Fragment,useEffect} from "react"\n'
+        'import {jsx} from "@emotion/react"\n'
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "function Component() {\n"
+        "\n"
+        "\n"
+        "  return (\n"
+        '    jsx(Fragment,{},jsx(PLAIN,{},jsx(WITH_PROP,{},)),jsx("title",{}," | P"),jsx("meta",{content:"",property:"og:image"},))\n'
+        "  )\n"
+        "}\n"
+        'Component.displayName = "Component(/p)";\n'
+        "\n"
+        "export default Component;\n"
     )
     assert files_by_stem[plain_tag].replace(plain_tag, "PLAIN") == (
         "\n"

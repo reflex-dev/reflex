@@ -317,7 +317,11 @@ def test_passthrough_memo_retains_root_add_hooks_and_form_refs():
 
     class RootWithChildHook(Div):
         def add_imports(self):
-            return {"root-added-lib": [ImportVar(tag="rootAddedHelper")]}
+            return (
+                {"root-added-lib": [ImportVar(tag="rootAddedHelper")]}
+                if self.children
+                else {}
+            )
 
         def add_hooks(self):
             return [
