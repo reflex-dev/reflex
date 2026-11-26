@@ -1,0 +1,1 @@
+`rx.App(scroll_restoration=False)` leaves React Router's `ScrollRestoration` out of the document, for a site whose links all load a new document and whose scroll positions the browser restores itself.

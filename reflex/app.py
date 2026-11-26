@@ -927,6 +927,7 @@ class App(MiddlewareMixin, LifespanMixin):
         sio: The Socket.IO AsyncServer instance.
         html_lang: The language to add to the html root tag of every page.
         html_custom_attrs: Attributes to add to the html root tag of every page.
+        scroll_restoration: Whether React Router restores the scroll position of pages revisited through the history and resets it on navigation. Turn it off for a site whose links all load a new document, where the browser restores scroll positions itself.
         enable_state: Whether to enable [state](https://reflex.dev/docs/state/overview/) for the app. If False, the app will not use state.
         admin_dash: Removed. rx.AdminDash raises with a link to the migration guide.
         frontend_exception_handler: Frontend [error handler](https://reflex.dev/docs/utility-methods/exception-handlers/) function.
@@ -970,6 +971,8 @@ class App(MiddlewareMixin, LifespanMixin):
     html_lang: str | None = None
 
     html_custom_attrs: dict[str, str] | None = None
+
+    scroll_restoration: bool = dataclasses.field(default=True, kw_only=True)
 
     # A map from a route to an unevaluated page.
     _unevaluated_pages: dict[str, UnevaluatedPage] = dataclasses.field(

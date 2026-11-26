@@ -951,6 +951,53 @@ def test_create_document_root():
     assert isinstance(root.children[0].children[5], Links)
 
 
+def test_document_root_without_scroll_restoration():
+    """An app can leave React Router's ScrollRestoration out of the document."""
+    with_restoration = compiler._compile_document_root(utils.create_document_root())
+    without_restoration = compiler._compile_document_root(
+        utils.create_document_root(scroll_restoration=False)
+    )
+
+    assert without_restoration == with_restoration.replace(
+        'import {Links,Meta,Scripts,ScrollRestoration} from "react-router"',
+        'import {Links,Meta,Scripts} from "react-router"',
+    ).replace("jsx(ScrollRestoration,{},),", "")
+    assert with_restoration.count("jsx(ScrollRestoration,{},),") == 1
+
+
+@pytest.mark.parametrize("scroll_restoration", [True, False])
+def test_compile_app_passes_scroll_restoration(
+    scroll_restoration: bool,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+):
+    """compile_app renders the document with the app's scroll_restoration.
+
+    Args:
+        scroll_restoration: The app's option.
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory.
+        mocker: Pytest mocker object.
+    """
+    monkeypatch.chdir(tmp_path)
+    compile_document_root = mocker.patch(
+        "reflex.compiler.compiler.compile_document_root",
+        side_effect=compiler.compile_document_root,
+    )
+    with RegistrationContext():
+        config = rx.Config(app_name="scroll_test", plugins=[])
+        mocker.patch("reflex_base.config._get_config", return_value=config)
+        app = rx.App(scroll_restoration=scroll_restoration)
+        app.add_page(lambda: rx.el.div("page"), route="/")
+
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+
+    assert compile_document_root.call_args.kwargs["scroll_restoration"] is (
+        scroll_restoration
+    )
+
+
 def test_add_meta_accepts_dynamic_description():
     """Dynamic page descriptions should be represented as component Vars."""
 

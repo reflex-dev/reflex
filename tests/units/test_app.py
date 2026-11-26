@@ -241,6 +241,12 @@ def test_default_app(app: App):
     assert app.admin_dash is None
 
 
+def test_scroll_restoration_is_keyword_only():
+    """scroll_restoration keeps the positions of App's older positional fields."""
+    field = next(f for f in dataclasses.fields(App) if f.name == "scroll_restoration")
+    assert field.kw_only is True
+
+
 def test_multiple_states_error(
     monkeypatch: pytest.MonkeyPatch,
     test_state: BaseState,

@@ -688,6 +688,7 @@ def compile_document_root(
     html_lang: str | None = None,
     html_custom_attrs: dict[str, Var | Any] | None = None,
     default_color_mode: str = "system",
+    scroll_restoration: bool = True,
 ) -> tuple[str, str]:
     """Compile the document root.
 
@@ -697,6 +698,7 @@ def compile_document_root(
         html_custom_attrs: custom attributes added to the html root element.
         default_color_mode: The color mode applied before hydration when no theme
             is saved in the browser.
+        scroll_restoration: Whether to render React Router's ScrollRestoration.
 
     Returns:
         The path and code of the compiled document root.
@@ -712,6 +714,7 @@ def compile_document_root(
         html_lang=html_lang,
         html_custom_attrs=html_custom_attrs,
         default_color_mode=default_color_mode,
+        scroll_restoration=scroll_restoration,
     )
 
     # Compile the document root.
@@ -1518,6 +1521,7 @@ def compile_app(
             default_color_mode=_resolve_default_color_mode(
                 radix_themes_plugin.get_theme()
             ),
+            scroll_restoration=app.scroll_restoration,
         )
     )
     progress.advance(task)
