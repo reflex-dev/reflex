@@ -41,7 +41,7 @@ from reflex_base.utils.imports import (
     ImportVar,
     ParsedImportDict,
 )
-from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.base import _HOISTED_VARS, LiteralVar, Var
 from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_core.base.app_wrap import AppWrap
 from reflex_components_core.base.fragment import Fragment
@@ -848,6 +848,31 @@ def compile_memo_components(
     return _compile_memo_components(memos)
 
 
+def compile_hoisted_vars() -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
+    """Compile a module exporting each hoisted literal.
+
+    Returns:
+        A list of ``(path, code)`` pairs (one per hoisted literal) alongside the
+        aggregated imports across all of these modules.
+    """
+    output_files: list[tuple[str, str]] = []
+    aggregate_imports: dict[str, list[ImportVar]] = {}
+    for name, literal in _HOISTED_VARS.items():
+        var_data = literal._get_all_var_data()
+        imports = (
+            {lib: list(fields) for lib, fields in var_data.imports} if var_data else {}
+        )
+        output_files.append((
+            utils.get_hoisted_var_path(name),
+            templates.memo_single_function_template(
+                imports=utils.compile_imports(imports),
+                function={"name": name, "function": str(literal)},
+            ),
+        ))
+        _extend_imports_in_place(aggregate_imports, imports)
+    return output_files, aggregate_imports
+
+
 def purge_web_pages_dir():
     """Empty out .web/pages directory."""
     if not is_prod_mode() and environment.REFLEX_PERSIST_WEB_DIR.get():
@@ -1597,12 +1622,18 @@ def compile_app(
 
     progress.stop()
 
+    # Last, so every literal hoisted while rendering the output above is in.
+    hoisted_var_files, hoisted_vars_imports = compile_hoisted_vars()
+    compile_results.extend(hoisted_var_files)
+    all_imports = utils.merge_imports(all_imports, hoisted_vars_imports)
+
     if dry_run:
         return True
 
     # Delete memo files this compile no longer emits. Done here (not before the
     # dry-run return) so ``--dry`` never mutates ``.web`` or the manifest.
     utils.prune_stale_memo_files(path for path, _ in memo_component_files)
+    utils.prune_stale_hoisted_var_files(path for path, _ in hoisted_var_files)
     # A leftover ``.js`` module would win extensionless resolution of
     # ``$/utils/context`` over the ``.jsx`` file written below.
     Path(utils.get_context_path()).with_suffix(constants.Ext.JS).unlink(missing_ok=True)

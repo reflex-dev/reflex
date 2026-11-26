@@ -1103,6 +1103,20 @@ def get_memo_module_path(segments: tuple[str, ...]) -> str:
     return str(memo_paths.mirrored_jsx_path(get_web_dir(), segments))
 
 
+def get_hoisted_var_path(name: str) -> str:
+    """Get the on-disk path for the module of a hoisted literal.
+
+    Args:
+        name: The name the module exports the literal as.
+
+    Returns:
+        The path pages import as ``$/utils/hoisted/<name>``.
+    """
+    return str(
+        get_web_dir() / constants.Dirs.HOISTED_PATH / f"{name}{constants.Ext.JS}"
+    )
+
+
 def add_meta(
     page: Component,
     title: str | Var,
@@ -1156,6 +1170,7 @@ def resolve_path_of_web_dir(path: str | Path) -> Path:
 
 
 _MEMO_MANIFEST_FILENAME = ".memo-manifest.json"
+_HOISTED_VAR_MANIFEST_FILENAME = ".hoisted-var-manifest.json"
 _ASSET_MANIFEST_FILENAME = ".asset-manifest.json"
 
 
@@ -1335,6 +1350,30 @@ def prune_stale_memo_files(emitted_paths: Iterable[str | Path]) -> None:
             pipeline, as built by joining :func:`get_web_dir` (so they share
             its prefix — relative by default, absolute when overridden).
     """
+    _prune_unemitted_files(_MEMO_MANIFEST_FILENAME, emitted_paths)
+
+
+def prune_stale_hoisted_var_files(emitted_paths: Iterable[str | Path]) -> None:
+    """Delete hoisted literal modules that this compile no longer emits.
+
+    Args:
+        emitted_paths: Paths the current compile produced for hoisted literals,
+            as built by :func:`get_hoisted_var_path`.
+    """
+    _prune_unemitted_files(_HOISTED_VAR_MANIFEST_FILENAME, emitted_paths)
+
+
+def _prune_unemitted_files(
+    manifest_filename: str, emitted_paths: Iterable[str | Path]
+) -> None:
+    """Delete the files a manifest lists that this compile no longer emits.
+
+    Args:
+        manifest_filename: The manifest, in ``.web``, of the files the previous
+            compile emitted.
+        emitted_paths: Paths the current compile emitted, as built by joining
+            :func:`get_web_dir`.
+    """
     web_dir = get_web_dir()
 
     # Emitted paths are built by joining ``web_dir`` (see Args), so each is
@@ -1344,7 +1383,7 @@ def prune_stale_memo_files(emitted_paths: Iterable[str | Path]) -> None:
         for path in emitted_paths
     }
 
-    manifest_path = web_dir / _MEMO_MANIFEST_FILENAME
+    manifest_path = web_dir / manifest_filename
     previous = set(_read_file_manifest(manifest_path))
     _prune_stale_files(web_dir, previous - emitted_relative)
     if emitted_relative != previous:

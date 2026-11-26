@@ -1,11 +1,14 @@
 """Tests for trigger-argument placeholders and the event chains built on them."""
 
+from collections.abc import Callable
 from typing import Any, cast
 
+import pytest
 from reflex_base.client_state import client_state
 from reflex_base.event import (
     EventArgVar,
     EventChain,
+    EventSpec,
     LambdaEventCallback,
     event_arg_placeholder,
     event_args_signature,
@@ -13,7 +16,7 @@ from reflex_base.event import (
     parse_args_spec,
     passthrough_event_spec,
 )
-from reflex_base.vars.base import Var
+from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.number import NumberVar
 
 import reflex as rx
@@ -97,4 +100,25 @@ def test_cond_between_function_and_none_inside_lambda_is_a_no_op_when_false() ->
     assert (
         str(chain)
         == '((_ev_0) => (((_ev_0?.valueOf?.() === "go"?.valueOf?.()) ? ((_ev_0) => (flagRxClientStateSet(_ev_0))) : null)?.(_ev_0)))'
+    )
+
+
+@pytest.mark.parametrize("script", [rx.call_script, rx.call_function])
+def test_scripts_write_out_hoisted_literals(
+    hoisted_vars: dict[str, LiteralVar], script: Callable[..., EventSpec]
+) -> None:
+    """The browser runs a script and its callback outside any module.
+
+    So both get a hoisted literal written out in full, exactly like the literal.
+    """
+    literal = Var.create(["a", "b"])
+    hoisted = literal.hoist()
+
+    assert (
+        script(
+            hoisted.length(), callback=lambda result: rx.console_log(hoisted[0])
+        )._to_event()
+        == script(
+            literal.length(), callback=lambda result: rx.console_log(literal[0])
+        )._to_event()
     )

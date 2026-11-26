@@ -13,7 +13,7 @@ from reflex_base.constants import Templates
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import serializers
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
-from reflex_base.vars.base import Var
+from reflex_base.vars.base import LiteralVar, Var
 
 import reflex as rx
 from reflex.compiler import compiler
@@ -545,3 +545,18 @@ def test_dynamic_component_codegen_wires_state_var_counter_events() -> None:
     assert '({ ["count"] : -1 }), ({  })' in code
     assert '({ ["count"] : 1 }), ({  })' in code
     assert 'jsx(RadixThemesText, ({as:"p",size:"9"}), 0)' in code
+
+
+def test_dynamic_component_codegen_writes_out_hoisted_literals(
+    hoisted_vars: dict[str, LiteralVar],
+) -> None:
+    """The browser evaluates a dynamic component outside any module.
+
+    So the component gets a hoisted literal written out in full, exactly like the
+    literal, instead of an import it could not resolve.
+    """
+    literal = Var.create(["a", "b"])
+
+    assert serializers.serialize(
+        rx.el.span(literal.hoist().length())
+    ) == serializers.serialize(rx.el.span(literal.length()))

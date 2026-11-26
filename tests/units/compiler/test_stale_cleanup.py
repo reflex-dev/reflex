@@ -167,3 +167,28 @@ def test_prune_ignores_corrupt_manifest(fake_web_dir: Path):
     compiler_utils.prune_stale_memo_files([survivor])
 
     assert survivor.exists()
+
+
+def test_hoisted_var_prune_keeps_to_its_own_manifest(fake_web_dir: Path):
+    """Hoisted literal modules and memo modules are pruned independently."""
+    memo, hoisted = _seed_files(
+        fake_web_dir, ["myapp/widgets.jsx", "utils/hoisted/hoisted_0.js"]
+    )
+    _seed_manifest(fake_web_dir, ["myapp/widgets.jsx"])
+    (fake_web_dir / compiler_utils._HOISTED_VAR_MANIFEST_FILENAME).write_text(
+        json.dumps(["utils/hoisted/hoisted_0.js"]), encoding="utf-8"
+    )
+
+    compiler_utils.prune_stale_hoisted_var_files([])
+
+    assert memo.exists()
+    assert not hoisted.exists()
+    assert json.loads(
+        (fake_web_dir / compiler_utils._MEMO_MANIFEST_FILENAME).read_text()
+    ) == ["myapp/widgets.jsx"]
+    assert (
+        json.loads(
+            (fake_web_dir / compiler_utils._HOISTED_VAR_MANIFEST_FILENAME).read_text()
+        )
+        == []
+    )

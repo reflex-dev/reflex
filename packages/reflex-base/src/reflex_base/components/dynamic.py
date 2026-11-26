@@ -12,7 +12,12 @@ from reflex_base.utils.format import format_library_name
 from reflex_base.utils.imports import ParsedImportDict
 from reflex_base.utils.serializers import serializer
 from reflex_base.vars import Var, get_unique_variable_name
-from reflex_base.vars.base import VarData, transform
+from reflex_base.vars.base import (
+    _HOISTED_LIBRARY_PREFIX,
+    VarData,
+    _inline_hoisted_vars,
+    transform,
+)
 
 if TYPE_CHECKING:
     from reflex_base.components.component import Component
@@ -199,6 +204,11 @@ def load_dynamic_serializer():
 
         component_imports = component._get_all_imports()
         compiler._apply_common_imports(component_imports)
+        # The browser evaluates the component outside any module, so hoisted
+        # literals are written out in full instead of imported.
+        for lib in list(component_imports):
+            if lib.startswith(_HOISTED_LIBRARY_PREFIX):
+                del component_imports[lib]
 
         imports = {}
         for lib, names in component_imports.items():
@@ -250,7 +260,9 @@ def load_dynamic_serializer():
                 bundled_declarations.append(
                     f"const {{{','.join(named_imports)}}} = {window_library}"
                 )
-        bundled_declarations.extend(rendered_components)
+        bundled_declarations.extend(
+            _inline_hoisted_vars(code) for code in rendered_components
+        )
 
         module_code_lines = templates.dynamic_components_module_template(
             imports=module_imports,

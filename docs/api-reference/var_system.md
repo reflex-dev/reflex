@@ -54,6 +54,39 @@ rx.Var("2", _var_type=int).guess_type()  # NumberVar
 In the example above, `.guess_type()` will attempt to downcast from a generic `Var` type into `NumberVar`.
 For this example, calling the function `.to(int)` can also be used in place of `.guess_type()`.
 
+## Hoisting Large Literals
+
+A `Var` created from a Python value is written out in full wherever it is used.
+A large literal, such as a search index, referenced from several components or pages repeats in the compiled JavaScript at every reference.
+`.hoist()` moves the value into a module of its own and returns a `Var` that renders as an import of it, so the value ships once:
+
+```py
+SEARCH_INDEX = rx.Var.create([
+    {"title": post.title, "text": post.text} for post in POSTS
+]).hoist()
+
+
+def search_results(query: rx.Var[str]) -> rx.Component:
+    return rx.foreach(
+        SEARCH_INDEX,
+        lambda post: rx.cond(
+            post["text"].contains(query),
+            rx.text(post["title"]),
+        ),
+    )
+```
+
+The hoisted `Var` supports the same operations as the literal, and every page and memoized component rendering it imports the module.
+Equal literals hoist to the same module.
+
+Only constant literals can be hoisted: a literal holding a state var or another value only known at runtime raises an error, because the module cannot reach it.
+A hoisted literal may hold other hoisted literals.
+
+The browser evaluates code the backend sends at runtime outside any module: `rx.call_script` and `rx.call_function` returned from an event handler, the callbacks of both, and dynamic components.
+There, hoisted literals are written out in full.
+
+Every reference shares the same object, so JavaScript passed to the frontend must not mutate a hoisted value.
+
 ## Operations
 
 The `Var` system also supports some other basic operations.

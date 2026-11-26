@@ -34,6 +34,7 @@ from reflex_base.utils.exceptions import (
     MixinVarNameConflictError,
     ReflexRuntimeError,
     StateValueError,
+    VarTypeError,
 )
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import get_field_type
@@ -3010,3 +3011,82 @@ def test_optional_collection_computed_vars_are_typed_by_collection():
         assert isinstance(var, SetVar)
     assert str(OptionalCollectionState.opt_list.length()).endswith(" ?? []).length")
     assert str(OptionalCollectionState.opt_set.length()).endswith(" ?? []).length")
+
+
+def test_hoist_imports_the_literal_from_a_module_of_its_own(
+    hoisted_vars: dict[str, LiteralVar],
+) -> None:
+    """A hoisted literal renders as a name its own module exports."""
+    literal = Var.create(["a", "b"])
+    hoisted = literal.hoist()
+
+    # The name hashes the rendered literal, so it is the same in every process.
+    name = "hoisted_a95b3e948646c9e7"
+    assert isinstance(hoisted, ArrayVar)
+    assert not isinstance(hoisted, LiteralVar)
+    assert str(hoisted) == name
+    assert hoisted._var_type == literal._var_type
+    assert hoisted._get_all_var_data() == VarData(
+        imports={f"$/utils/hoisted/{name}": [ImportVar(tag=name)]}
+    )
+    assert str(hoisted[0].contains("x")) == f'{name}?.at?.(0).includes("x")'
+    assert hoisted_vars == {name: literal}
+
+
+def test_hoist_shares_one_module_between_equal_literals(
+    hoisted_vars: dict[str, LiteralVar],
+) -> None:
+    """Equal literals hoist to the same module, different ones to their own."""
+    first = Var.create(["a", "b"]).hoist()
+    again = Var.create(["a", "b"]).hoist()
+    other = Var.create(["a", "c"]).hoist()
+
+    assert str(first) == str(again)
+    assert str(first) != str(other)
+    assert list(hoisted_vars) == [str(first), str(other)]
+
+
+def test_hoist_nests_hoisted_literals(hoisted_vars: dict[str, LiteralVar]) -> None:
+    """A hoisted literal may hold another one, which its module then imports."""
+    inner = Var.create(["a", "b"]).hoist()
+    outer = Var.create({"inner": inner, "n": 1}).hoist()
+
+    outer_literal = hoisted_vars[str(outer)]
+    assert str(outer_literal) == f'({{ ["inner"] : {inner!s}, ["n"] : 1 }})'
+    assert outer_literal._get_all_var_data() == inner._get_all_var_data()
+    assert outer._get_all_var_data() == VarData(
+        imports={f"$/utils/hoisted/{outer!s}": [ImportVar(tag=str(outer))]}
+    )
+
+
+@pytest.mark.parametrize(
+    "leaf",
+    [
+        Var(_js_expr="item"),
+        Var(_js_expr="state.n").to(int),
+        LiteralVar.create(rx.console_log("hi")),
+    ],
+)
+def test_hoist_rejects_a_literal_reading_other_vars(
+    hoisted_vars: dict[str, LiteralVar], leaf: Var
+) -> None:
+    """A module cannot reach anything a literal reads besides other hoisted ones."""
+    with pytest.raises(VarTypeError) as err:
+        LiteralVar.create({"items": ["a", leaf]}).hoist()
+
+    assert str(err.value) == (
+        f"Only constant literals can be hoisted, but this one reads {leaf!s}."
+    )
+    assert hoisted_vars == {}
+
+
+def test_decode_writes_out_hoisted_literals(
+    hoisted_vars: dict[str, LiteralVar],
+) -> None:
+    """Code the backend sends runs outside any module, so it gets the values."""
+    inner = Var.create(["a", "b"]).hoist()
+    outer = Var.create({"inner": inner}).hoist()
+
+    assert inner._decode() == ["a", "b"]
+    assert inner.length()._decode() == '["a", "b"].length'
+    assert outer["inner"]._decode() == '({ ["inner"] : ["a", "b"] })?.["inner"]'

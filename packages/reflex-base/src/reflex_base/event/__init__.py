@@ -63,6 +63,7 @@ from reflex_base.vars.base import (
     LiteralVar,
     ToOperation,
     Var,
+    _inline_hoisted_vars,
     _operands,
     _owner_state,
 )
@@ -2083,6 +2084,23 @@ def download(
     )
 
 
+def _format_script_callback(callback: "EventType[Any] | None") -> str | None:
+    """Format the callback of a script as code the browser evaluates later.
+
+    Args:
+        callback: EventHandler that will receive the result of the script.
+
+    Returns:
+        The code queueing the callback's events, or None without a callback.
+    """
+    if callback is None:
+        return None
+    queue_events = format.format_queue_events(
+        callback, args_spec=lambda result: [result]
+    )
+    return _inline_hoisted_vars(str(queue_events))
+
+
 def call_script(
     javascript_code: str | Var[str],
     callback: "EventType[Any] | None" = None,
@@ -2096,16 +2114,7 @@ def call_script(
     Returns:
         EventSpec: An event that will execute the client side javascript.
     """
-    callback_kwargs = {"callback": None}
-    if callback is not None:
-        callback_kwargs = {
-            "callback": str(
-                format.format_queue_events(
-                    callback,
-                    args_spec=lambda result: [result],
-                )
-            ),
-        }
+    callback_kwargs = {"callback": _format_script_callback(callback)}
     if isinstance(javascript_code, str):
         # When there is VarData, include it and eval the JS code inline on the client.
         javascript_code, original_code = (
@@ -2137,16 +2146,7 @@ def call_function(
     Returns:
         EventSpec: An event that will execute the client side javascript.
     """
-    callback_kwargs = {"callback": None}
-    if callback is not None:
-        callback_kwargs = {
-            "callback": str(
-                format.format_queue_events(
-                    callback,
-                    args_spec=lambda result: [result],
-                ),
-            )
-        }
+    callback_kwargs = {"callback": _format_script_callback(callback)}
 
     javascript_code = (
         Var(javascript_code) if isinstance(javascript_code, str) else javascript_code
