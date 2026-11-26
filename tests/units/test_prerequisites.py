@@ -2679,6 +2679,98 @@ app.add_page(index)
     )
 
 
+def _run_rename(app_root: Path, config_args: str) -> tuple[str, str]:
+    """Rename the app ``foo`` in ``app_root`` to ``bar``.
+
+    Args:
+        app_root: The app root, containing the ``foo`` app package.
+        config_args: Extra arguments of the ``rx.Config`` call.
+
+    Returns:
+        The renamed app's rxconfig.py and the command output.
+    """
+    (app_root / "foo").mkdir()
+    (app_root / "foo" / "__init__.py").touch()
+    (app_root / "foo" / "foo.py").write_text("import reflex as rx\n")
+    config_file = app_root / "rxconfig.py"
+    config_file.write_text(
+        "from pathlib import Path\n\nimport reflex as rx\n\n"
+        f'config = rx.Config(app_name="foo", {config_args})\n'
+    )
+    try:
+        with chdir(app_root):
+            result = runner.invoke(cli, ["rename", "bar"])
+    finally:
+        log._reset()
+    assert result.exit_code == 0, result.output
+    return config_file.read_text(), result.output
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_cli_rename_moves_configured_dirs_inside_the_app(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Directories configured inside the app package follow it to its new name.
+
+    Args:
+        tmp_path: The app root.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv(log._MANAGED_ENV_VAR, raising=False)
+
+    config, _ = _run_rename(
+        tmp_path,
+        "assets_dir=Path('foo/assets'), lockfile_dir=\"foo/reflex.lock\"",
+    )
+
+    assert config.endswith(
+        "config = rx.Config(app_name=\"bar\", assets_dir=Path('bar/assets'), "
+        'lockfile_dir="bar/reflex.lock")\n'
+    )
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_cli_rename_keeps_configured_dirs_outside_the_app(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Directories configured next to the app package stay where they are.
+
+    Args:
+        tmp_path: The app root.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv(log._MANAGED_ENV_VAR, raising=False)
+
+    config, _ = _run_rename(
+        tmp_path, 'assets_dir=Path("foo_assets"), lockfile_dir="foo.lock"'
+    )
+
+    assert config.endswith(
+        'config = rx.Config(app_name="bar", assets_dir=Path("foo_assets"), '
+        'lockfile_dir="foo.lock")\n'
+    )
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_cli_rename_warns_about_a_moved_dir_it_cannot_update(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """A moved directory that is not a literal in rxconfig.py is left to the user.
+
+    Args:
+        tmp_path: The app root.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv(log._MANAGED_ENV_VAR, raising=False)
+
+    config, output = _run_rename(tmp_path, 'assets_dir=Path("foo") / "assets"')
+
+    assert config.endswith(
+        'config = rx.Config(app_name="bar", assets_dir=Path("foo") / "assets")\n'
+    )
+    assert "assets_dir foo/assets moved to bar/assets" in " ".join(output.split())
+
+
 def test_has_uuid_distinct_id_semantics_absent(
     tmp_path, monkeypatch: pytest.MonkeyPatch
 ):

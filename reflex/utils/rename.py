@@ -7,13 +7,15 @@ import tokenize
 from pathlib import Path
 
 from reflex_base import constants
-from reflex_base.config import get_config
+from reflex_base.config import Config, get_config
 from reflex_base.utils import console, log
 from rich.markup import escape
 
 from reflex.utils.misc import get_module_path
 
 logger = logging.getLogger(__name__)
+
+_CONFIG_DIR_FIELDS = ("assets_dir", "lockfile_dir")
 
 
 def rename_path_up_tree(full_path: str | Path, old_name: str, new_name: str) -> Path:
@@ -81,6 +83,7 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
         raise SystemExit(1)
 
     logger.info(f"Renaming app directory to {new_app_name}.")
+    moved_dirs = _config_dirs_moved_by_rename(config, module_path, new_app_name)
     process_directory(
         Path.cwd(),
         config.app_name,
@@ -89,6 +92,7 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
     )
 
     rename_path_up_tree(module_path, config.app_name, new_app_name)
+    _update_moved_config_dirs(moved_dirs)
 
     logger.log(
         log.SUCCESS,
@@ -106,13 +110,7 @@ def rename_imports_and_app_name(file_path: str | Path, old_name: str, new_name: 
         new_name: The new name to use.
     """
     file_path = Path(file_path)
-    if file_path.suffix == constants.Ext.PY:
-        with file_path.open("rb") as source:
-            encoding = tokenize.detect_encoding(source.readline)[0]
-    else:
-        encoding = "utf-8"
-    with file_path.open("r", encoding=encoding, newline="") as source:
-        content = source.read()
+    content, encoding = _read_source(file_path)
 
     # Replace `from old_name.` or `from old_name` with `from new_name`
     content = re.sub(
@@ -143,6 +141,89 @@ def rename_imports_and_app_name(file_path: str | Path, old_name: str, new_name: 
     )
 
     file_path.write_text(content, encoding=encoding, newline="")
+
+
+def _config_dirs_moved_by_rename(
+    config: Config, module_path: Path, new_app_name: str
+) -> dict[str, tuple[Path, Path]]:
+    """Find the configured directories inside the app directories a rename moves.
+
+    Args:
+        config: The app config.
+        module_path: The path of the app module.
+        new_app_name: The new name for the app.
+
+    Returns:
+        The old and new path, relative to the app root, of each moved directory by config field.
+    """
+    root = Path.cwd()
+    if not module_path.is_relative_to(root):
+        return {}
+    module_dir_parts = module_path.parent.relative_to(root).parts
+    moved = {}
+    for field in _CONFIG_DIR_FIELDS:
+        configured = root / getattr(config, field)
+        if not configured.is_relative_to(root):
+            continue
+        old = configured.relative_to(root)
+        new_parts = list(old.parts)
+        for i, (part, module_dir_part) in enumerate(
+            zip(old.parts, module_dir_parts, strict=False)
+        ):
+            if part != module_dir_part:
+                break
+            if part == config.app_name:
+                new_parts[i] = new_app_name
+        new = Path(*new_parts)
+        if new != old:
+            moved[field] = (old, new)
+    return moved
+
+
+def _update_moved_config_dirs(moved_dirs: dict[str, tuple[Path, Path]]):
+    """Point configured directories that moved with the app at their new location.
+
+    Only string literals in rxconfig.py are rewritten, any other source is left to the user.
+
+    Args:
+        moved_dirs: The old and new path of each moved directory by config field.
+    """
+    if not moved_dirs:
+        return
+    config_file = constants.Config.FILE
+    content, encoding = _read_source(config_file)
+    for field, (old, new) in moved_dirs.items():
+        literals = [
+            (f"{quote}{old.as_posix()}{quote}", f"{quote}{new.as_posix()}{quote}")
+            for quote in "\"'"
+        ]
+        if not any(old_literal in content for old_literal, _ in literals):
+            logger.warning(
+                f"{field} {old.as_posix()} moved to {new.as_posix()} with the app "
+                "directory. Update it in your config."
+            )
+            continue
+        for old_literal, new_literal in literals:
+            content = content.replace(old_literal, new_literal)
+    config_file.write_text(content, encoding=encoding, newline="")
+
+
+def _read_source(file_path: Path) -> tuple[str, str]:
+    """Read a file in its declared encoding, keeping its line endings.
+
+    Args:
+        file_path: The file to read.
+
+    Returns:
+        The content and the encoding of the file.
+    """
+    if file_path.suffix == constants.Ext.PY:
+        with file_path.open("rb") as source:
+            encoding = tokenize.detect_encoding(source.readline)[0]
+    else:
+        encoding = "utf-8"
+    with file_path.open("r", encoding=encoding, newline="") as source:
+        return source.read(), encoding
 
 
 def process_directory(
