@@ -100,18 +100,22 @@ const isOpaque = (type) => {
   ) {
     return true;
   }
-  // Every object type has a symbol: `__type` for a type literal.
+  // A type literal's symbol is `__type`; the object type of an un-annotated
+  // destructured parameter, `{ id, color }`, has none.
   const symbol = type.getSymbol();
+  if (!symbol) return false;
   if (symbol.flags & ts.SymbolFlags.Class) return true;
   return (
     Boolean(symbol.flags & ts.SymbolFlags.Interface) &&
-    symbol.declarations.some((declaration) => {
-      const file = declaration.getSourceFile();
-      return (
-        program.isSourceFileDefaultLibrary(file) ||
-        program.isSourceFileFromExternalLibrary(file)
-      );
-    })
+    Boolean(
+      symbol.declarations?.some((declaration) => {
+        const file = declaration.getSourceFile();
+        return (
+          program.isSourceFileDefaultLibrary(file) ||
+          program.isSourceFileFromExternalLibrary(file)
+        );
+      }),
+    )
   );
 };
 
@@ -203,25 +207,43 @@ const describeParameter = (parameter, location) => {
         declaration.initializer ||
         checker.isOptionalParameter(declaration)),
   );
+  let described;
+  try {
+    described = describeType(parameter, location, optional, rest);
+  } catch {
+    // A type the classification has no case for, as TypeScript's internals
+    // can make: one parameter that accepts any value, not a failed run.
+    described = "any";
+  }
+  return { name: parameter.getName(), type: described, optional, rest };
+};
+
+/**
+ * Classify the type of one parameter.
+ * @param {any} parameter The parameter symbol.
+ * @param {any} location The node to resolve its type at.
+ * @param {boolean} optional Whether the parameter is optional.
+ * @param {boolean} rest Whether it is a rest parameter.
+ * @returns {JsonType} Its JSON type: of each item, for a rest parameter.
+ */
+const describeType = (parameter, location, optional, rest) => {
   /** @type {any} */
   const type = checker.getTypeOfSymbolAtLocation(parameter, location);
-  let described;
   if (rest) {
     // A rest parameter's element type; a tuple's elements have no single type.
-    described = checker.isArrayType(type)
+    return checker.isArrayType(type)
       ? classify(checker.getTypeArguments(type)[0])
       : "any";
-  } else if (optional && type.isUnion()) {
+  }
+  if (optional && type.isUnion()) {
     // The checker adds `undefined` to an optional parameter's type; Python
     // leaves the argument out instead.
     const defined = type.types.filter(
       (member) => !(member.flags & ts.TypeFlags.Undefined),
     );
-    described = union(defined.map(classify));
-  } else {
-    described = classify(type);
+    return union(defined.map(classify));
   }
-  return { name: parameter.getName(), type: described, optional, rest };
+  return classify(type);
 };
 
 /** @type {Record<string, Record<string, any[]>>} */

@@ -7,10 +7,12 @@
  * render, so both sides are held to the same contract.
  */
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { basename } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test, vi } from "vitest";
 
+const require = createRequire(import.meta.url);
 const fixtures = fileURLToPath(
   new URL("./fixtures/signatures/", import.meta.url),
 );
@@ -150,4 +152,74 @@ test("a type that contains itself stops at its first repeat", async () => {
     },
     files: { "recursive.ts": ["recursive.ts"] },
   });
+});
+
+test("an un-annotated destructured parameter is an object or a list of any value", async () => {
+  // The type of `{ id, color }` is an object type TypeScript makes up, with no
+  // symbol; the module's other functions are typed as ever.
+  const setup = [
+    {
+      parameters: [
+        {
+          name: "__0",
+          type: { kind: "mapping", value: "any" },
+          optional: false,
+          rest: false,
+        },
+        {
+          name: "__1",
+          type: { kind: "list", item: "any" },
+          optional: false,
+          rest: false,
+        },
+      ],
+    },
+  ];
+  const resize = [
+    {
+      parameters: [
+        { name: "size", type: "float", optional: false, rest: false },
+      ],
+    },
+  ];
+  expect(await signatures(["destructured.js", "destructured.ts"])).toEqual({
+    format: 1,
+    modules: {
+      "destructured.js": { setup, resize },
+      "destructured.ts": { setup, resize },
+    },
+    files: {
+      "destructured.js": ["destructured.js"],
+      "destructured.ts": ["destructured.ts"],
+    },
+  });
+});
+
+test("a parameter whose type cannot be classified accepts any value", async () => {
+  // Stands in for a type the classification has no case for, which throws:
+  // only that parameter is any, and the rest of the run goes on.
+  const Type = require("typescript").objectAllocator.getTypeConstructor();
+  const getSymbol = Type.prototype.getSymbol;
+  const spy = vi.spyOn(Type.prototype, "getSymbol").mockImplementation(
+    /** @this {any} */
+    function () {
+      if (this.symbol?.escapedName === "Options") throw new Error("boom");
+      return getSymbol.call(this);
+    },
+  );
+  try {
+    const output = await signatures(["types.ts"]);
+    const expected = JSON.parse(
+      readFileSync(`${fixtures}signatures.json`, "utf-8"),
+    );
+    // `containers(..., options: Options, ...)`.
+    expected.modules["types.ts"].containers[0].parameters[4].type = "any";
+    expect(output).toEqual({
+      format: 1,
+      modules: { "types.ts": expected.modules["types.ts"] },
+      files: { "types.ts": expected.files["types.ts"] },
+    });
+  } finally {
+    spy.mockRestore();
+  }
 });
