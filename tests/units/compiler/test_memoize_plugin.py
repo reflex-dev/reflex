@@ -16,6 +16,7 @@ from reflex_base.components.memo import (
     MemoComponentDefinition,
     MemoParamKind,
     create_passthrough_component_memo,
+    memo_body_hooks,
 )
 from reflex_base.components.memoize_helpers import (
     MemoizationStrategy,
@@ -610,6 +611,37 @@ def test_foreach_form_submit_handler_receives_loop_index() -> None:
     before_loop, _, loop_body = foreach.partition("Array.prototype.map.call(")
     assert "index_rx_state_" not in before_loop
     assert "indexRxState:index_rx_state_" in loop_body
+
+
+def test_loop_item_hooks_in_a_snapshot_boundary_run_in_a_wrapper() -> None:
+    """A hook of a loop item inside a snapshot boundary runs once per item.
+
+    The boundary compiles its subtree into one function, at whose top the hook
+    would read a loop variable that does not exist there.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    ctx, _page_ctx = _compile_single_page(
+        lambda: rx.el.svg(
+            rx.foreach(
+                SpecialFormMemoState.items,
+                lambda item: rx.el.text(item, on_mount=rx.console_log(item)),
+            )
+        )
+    )
+    memo_files, _memo_imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+    )
+    definitions = "".join(code for _path, code in memo_files).split("\nexport const ")
+    svg = next(d for d in definitions if d.startswith("Svg_"))
+    text = next(d for d in definitions if d.startswith("Text_"))
+
+    signature = text.partition("memo((")[2].partition("=> {")[0]
+    loop_body = svg.partition("Array.prototype.map.call(")[2]
+    assert "useEffect(() => {" not in svg
+    assert "useEffect(() => {" in text
+    assert "itemRxState:item_rx_state_" in signature
+    assert "itemRxState:item_rx_state_" in loop_body
 
 
 class SlotHolder(Component):
@@ -3838,6 +3870,43 @@ def test_memo_body_cond_branch_hooks_compile_into_a_wrapper() -> None:
             "})();",
         ),
     }
+
+
+@pytest.mark.parametrize("auto_memoize", [True, False])
+def test_snapshot_boundary_branch_hooks_compile_into_a_wrapper(
+    auto_memoize: bool,
+) -> None:
+    """A lifecycle event under ``rx.cond`` in a sealed boundary gets its own component.
+
+    A snapshot boundary compiles its whole subtree into one memo function, so
+    the branch's effect ran when the boundary mounted, whatever branch was
+    shown. The boundary's own root keeps its effect.
+    """
+    ctx = CompileContext(
+        pages=[
+            FakePage(
+                route="/p",
+                component=lambda: LeafComponent.create(
+                    rx.cond(
+                        SpecialFormMemoState.flag,
+                        Plain.create(on_mount=rx.console_log("shown")),
+                    ),
+                    on_mount=rx.console_log("root"),
+                ),
+            )
+        ],
+        hooks=CompilerHooks(plugins=default_page_plugins(auto_memoize=auto_memoize)),
+    )
+    with ctx:
+        ctx.compile()
+
+    body_hooks = [
+        "".join(memo_body_hooks(definition))
+        for definition in ctx.auto_memo_components.values()
+    ]
+    [boundary] = [hooks for hooks in body_hooks if '"root"' in hooks]
+    assert '"shown"' not in boundary
+    assert any('"shown"' in hooks for hooks in body_hooks)
 
 
 def test_memo_body_match_case_hooks_compile_into_a_wrapper() -> None:
