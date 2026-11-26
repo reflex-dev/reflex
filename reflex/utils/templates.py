@@ -94,11 +94,15 @@ def initialize_app_directory(
     ]:
         shutil.rmtree(pycache_dir, ignore_errors=True)
 
+    # initialize_app made sure nothing has the app's name yet.
+    shutil.copytree(template_dir / template_code_dir_name, app_name)
     for file in template_dir.iterdir():
-        if file.name == template_code_dir_name:
-            # initialize_app made sure no directory has the app's name yet.
-            shutil.copytree(file, app_name)
-        elif file.is_dir():
+        if file.name == template_code_dir_name or (
+            Path(file.name).exists() and Path(file.name).samefile(app_name)
+        ):
+            # The app's code takes the app's name, as it always has.
+            continue
+        if file.is_dir():
             # Add the template's files to a directory that may already hold the
             # user's, keeping any the user has.
             shutil.copytree(

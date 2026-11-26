@@ -366,6 +366,50 @@ def test_initialize_app_directory_keeps_existing_files(tmp_working_dir, tmp_path
     }
 
 
+@pytest.mark.parametrize("reverse", [False, True])
+@pytest.mark.parametrize("app_name", ["assets", "Assets", "readme"])
+def test_initialize_app_directory_named_like_a_template_entry(
+    tmp_working_dir, tmp_path, mocker: MockerFixture, app_name: str, reverse: bool
+):
+    """An app named like a template entry gets only its code there, in either order.
+
+    Args:
+        tmp_working_dir: a new directory that is the current working directory
+            for the duration of the test.
+        tmp_path: pytest tmp_path fixture, which holds the template.
+        mocker: Mocker object.
+        app_name: the app's name, which may match a template entry on this file system.
+        reverse: whether the template's entries are listed in reverse order.
+    """
+    template = tmp_path / "template"
+    (template / "code").mkdir(parents=True)
+    (template / "code" / "__init__.py").write_text("")
+    (template / "code" / "tmpl.py").write_text("from tmpl import x\n")
+    (template / "assets").mkdir()
+    (template / "assets" / "favicon.ico").write_bytes(b"\xa8 not text")
+    (template / "README").write_text("template readme")
+
+    iterdir = Path.iterdir
+
+    def ordered_iterdir(self: Path):
+        entries = list(iterdir(self))
+        return iter(sorted(entries, reverse=reverse) if self == template else entries)
+
+    mocker.patch.object(Path, "iterdir", ordered_iterdir)
+
+    templates.initialize_app_directory(
+        app_name,
+        template_name="tmpl",
+        template_code_dir_name="code",
+        template_dir=template,
+    )
+
+    assert {p.name: p.read_text() for p in (tmp_working_dir / app_name).iterdir()} == {
+        "__init__.py": "",
+        f"{app_name}.py": f"from {app_name} import x\n",
+    }
+
+
 def test_initialize_app_refuses_an_existing_app_directory(
     tmp_working_dir, mocker: MockerFixture, caplog: pytest.LogCaptureFixture
 ):
