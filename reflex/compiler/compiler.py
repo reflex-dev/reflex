@@ -1332,7 +1332,10 @@ def _walk_page_with_plugins(
         compile_context.hooks = CompilerHooks(plugins=plugins)
     hooks = compile_context.hooks
     page_context = PageContext(
-        name=page.route, route=page.route, root_component=component
+        name=page.route,
+        route=page.route,
+        root_component=component,
+        stylesheets=page.stylesheets,
     )
     with compile_context, page_context:
         if any(
