@@ -1,8 +1,8 @@
 /**
  * Unit tests for `utils/helpers/element_observer.js`: when the hook reports,
- * what it reports again and when it observes anew. jsdom has no layout and no
- * observers, so the element's rect and the observers are stand-ins the tests
- * drive by hand.
+ * what it reports again and when it observes anew. jsdom has no layout, no
+ * observers and no frames, so the element's rect, the observers and the
+ * animation frames are stand-ins the tests drive by hand.
  */
 import { act, createElement, Fragment, useEffect } from "react";
 import { createRoot } from "react-dom/client";
@@ -60,15 +60,37 @@ class FakeIntersectionObserver {
   }
 }
 
+/** Animation frame callbacks waiting for the next frame. */
+let frames;
+
+/** Run the callbacks waiting for the next frame. */
+const nextFrame = () => {
+  const due = [...frames.values()];
+  frames.clear();
+  act(() => {
+    for (const callback of due) {
+      callback(0);
+    }
+  });
+};
+
 /** The roots still mounted, unmounted after each test so none follows its id on. */
 let roots;
 
 beforeEach(() => {
   resizeObservers = [];
   intersectionObservers = [];
+  frames = new Map();
   roots = new Set();
+  let handle = 0;
   vi.stubGlobal("ResizeObserver", FakeResizeObserver);
   vi.stubGlobal("IntersectionObserver", FakeIntersectionObserver);
+  vi.stubGlobal("requestAnimationFrame", (callback) => {
+    handle += 1;
+    frames.set(handle, callback);
+    return handle;
+  });
+  vi.stubGlobal("cancelAnimationFrame", (id) => frames.delete(id));
 });
 
 afterEach(() => {
@@ -228,6 +250,20 @@ describe("timing", () => {
     }));
     expect(log).toEqual(["effect", "resize"]);
   });
+
+  test("a resize is reported in the next frame, outside the observer's callback", () => {
+    const widths = [];
+    mount(() => ({
+      handlers: { onResize: (width) => widths.push(width) },
+      options: {},
+    }));
+    layOut({ width: 120 });
+    resizeObservers[0].callback([{ target: document.getElementById("box") }]);
+    expect(widths).toEqual([100]);
+
+    nextFrame();
+    expect(widths).toEqual([100, 120]);
+  });
 });
 
 describe("on_resize", () => {
@@ -245,12 +281,15 @@ describe("on_resize", () => {
 
     // The observer's first callback, and a move, keep the size.
     observer.resize();
+    nextFrame();
     layOut({ y: 30 });
     observer.resize();
+    nextFrame();
     expect(sizes).toEqual([[100, 50]]);
 
     layOut({ height: 80 });
     observer.resize();
+    nextFrame();
     expect(sizes).toEqual([
       [100, 50],
       [100, 80],
@@ -278,8 +317,10 @@ describe("on_move", () => {
     // A resize that keeps the position, then one that moves it, as centering does.
     layOut({ height: 70 });
     resizeObservers[0].resize();
+    nextFrame();
     layOut({ x: 8, width: 84 });
     resizeObservers[0].resize();
+    nextFrame();
     expect(positions).toEqual([
       [0, 10],
       [0, -20],
@@ -311,9 +352,12 @@ describe("on_move", () => {
       options: {},
     }));
     const removed = vi.spyOn(window, "removeEventListener");
+    layOut({ height: 70 });
+    resizeObservers[0].resize();
     unmount();
     layOut({ y: -20 });
     window.dispatchEvent(new Event("scroll"));
+    expect(frames.size).toBe(0);
     expect(tops).toEqual([10]);
     expect(resizeObservers[0].disconnected).toBe(true);
     expect(removed.mock.calls.map(([type]) => type)).toEqual([
@@ -447,6 +491,7 @@ describe("observing anew", () => {
     }));
     layOut({ width: 120 });
     resizeObservers[0].resize();
+    nextFrame();
 
     expect(resizeObservers).toHaveLength(1);
     expect(calls).toEqual(["first", "second"]);

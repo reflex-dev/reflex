@@ -27,6 +27,8 @@ def ElementObserverApp():
     item_widths = rx.client_state("", name="item_widths")
     shown = rx.client_state(False, name="shown")
     late_width = rx.client_state(0.0, name="late_width")
+    squeezed = rx.client_state(False, name="squeezed")
+    narrow = rx.client_state(False, name="narrow")
 
     def readout(label: str, value: rx.Var) -> rx.Component:
         return rx.el.p(value, id=label)
@@ -40,12 +42,14 @@ def ElementObserverApp():
                 readout("ended", ended.value),
                 readout("item_widths", item_widths.value),
                 readout("late_width", late_width.value),
+                readout("direction", rx.cond(narrow.value, "column", "row")),
                 style={"position": "fixed", "right": "0", "top": "0"},
             ),
             rx.el.button("Widen", id="widen", on_click=wide.set(True)),
             rx.el.button("Stop", id="stop", on_click=tracking.set(False)),
             rx.el.button("Expand", id="expand", on_click=expanded.set(True)),
             rx.el.button("Show", id="show", on_click=shown.set(True)),
+            rx.el.button("Squeeze", id="squeeze", on_click=squeezed.set(True)),
             rx.element_observer(
                 rx.el.div(
                     id="box",
@@ -100,6 +104,19 @@ def ElementObserverApp():
                         lambda widths: widths.to(str) + w.to_string() + ";"
                     ),
                 ),
+            ),
+            # Stacks its items once narrower than 400px, which makes it taller.
+            rx.element_observer(
+                rx.el.div(
+                    rx.el.div("One", style={"width": "150px"}),
+                    rx.el.div("Two", style={"width": "150px"}),
+                    style={
+                        "display": "flex",
+                        "flexDirection": rx.cond(narrow.value, "column", "row"),
+                        "width": rx.cond(squeezed.value, "300px", "500px"),
+                    },
+                ),
+                on_resize=lambda w, h: narrow.set(w.to(float) < 400),
             ),
             rx.el.div(style={"height": "200vh"}),
             rx.element_observer(
@@ -166,6 +183,26 @@ def test_on_resize_reports_size_changes(observer_page: Page):
     """on_resize reports the size when observing starts and after a change."""
     observer_page.click("#widen")
     expect(observer_page.locator("#width")).to_have_text("300")
+
+
+def test_on_resize_resizing_its_element_raises_no_error(
+    element_observer_app: AppHarness, page: Page
+):
+    """A report that resizes its own element raises no ResizeObserver loop error."""
+    page.add_init_script(
+        "window.__errors = [];"
+        "window.addEventListener('error', (event) => window.__errors.push(event.message));"
+    )
+    assert element_observer_app.frontend_url is not None
+    page.goto(element_observer_app.frontend_url)
+    expect(page.locator("#direction")).to_have_text("row")
+    page.click("#squeeze")
+    expect(page.locator("#direction")).to_have_text("column")
+    # The loop error is raised at the end of the frame the element resized in.
+    page.evaluate(
+        "new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))"
+    )
+    assert page.evaluate("window.__errors") == []
 
 
 def test_on_move_follows_scrolling_until_disabled(observer_page: Page):

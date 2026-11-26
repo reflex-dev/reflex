@@ -79,17 +79,29 @@ const refresh = (trackers) => {
 const resizeTrackers = new Map();
 /** @type {ResizeObserver | null} */
 let resizeObserver = null;
+/** @type {Set<Tracker>} The trackers of the elements resized since the last frame. */
+const resized = new Set();
+let resizedFrame = 0;
+
+const refreshResized = () => {
+  resizedFrame = 0;
+  const due = [...resized];
+  resized.clear();
+  refresh(due);
+};
 
 /** @param {ResizeObserverEntry[]} entries The elements that resized. */
 const onResized = (entries) => {
-  /** @type {Set<Tracker>} */
-  const due = new Set();
   for (const { target } of entries) {
     for (const tracker of resizeTrackers.get(target) ?? []) {
-      due.add(tracker);
+      resized.add(tracker);
     }
   }
-  refresh(due);
+  // Reported in the next frame: client state set from here commits before the
+  // browser leaves this ResizeObserver loop, so a report that resizes its
+  // element again would raise "ResizeObserver loop completed with undelivered
+  // notifications".
+  resizedFrame ||= requestAnimationFrame(refreshResized);
 };
 
 /**
@@ -109,6 +121,7 @@ const refreshOnResize = (tracker) => {
   trackers.add(tracker);
   return () => {
     trackers.delete(tracker);
+    resized.delete(tracker);
     if (trackers.size > 0) {
       return;
     }
@@ -117,6 +130,8 @@ const refreshOnResize = (tracker) => {
     if (resizeTrackers.size === 0) {
       resizeObserver?.disconnect();
       resizeObserver = null;
+      cancelAnimationFrame(resizedFrame);
+      resizedFrame = 0;
     }
   };
 };

@@ -146,3 +146,10 @@ enabled the observer, before that commit's effects run and before the browser
 paints. Use it where the first measurement has to come before anything else
 reacts to the render, such as a header measured while it is still in the flow,
 before it is fixed to the top of the viewport.
+
+After the first report, a change of the element's size fires `on_resize`, and
+`on_move` if it moved the element, in the animation frame after the browser
+laid it out. So a handler may resize the element it observes, such as a flex
+row that stacks its items once it is narrow, without the browser raising a
+`ResizeObserver` loop error. Scrolls and window resizes fire `on_move` right
+away.
