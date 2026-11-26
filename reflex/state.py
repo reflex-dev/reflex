@@ -5,16 +5,27 @@ from __future__ import annotations
 import builtins
 import contextlib
 import dataclasses
+import decimal
 import functools
 import hashlib
 import inspect
 import json
 import logging
+import math
 import operator
 import pickle
 import re
 import sys
-from collections.abc import Callable, Iterable, Iterator, Sequence
+from collections.abc import (
+    Callable,
+    Iterable,
+    Iterator,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
+    Sequence,
+)
+from collections.abc import Set as AbstractSet
 from datetime import timedelta
 from hashlib import md5
 from types import FunctionType
@@ -56,6 +67,7 @@ from reflex_base.utils.exceptions import (
     StateSerializationError,
     StateTooLargeError,
     UnretrievableVarValueError,
+    UnsettableVarValueError,
 )
 from reflex_base.utils.exceptions import ImmutableStateError as ImmutableStateError
 from reflex_base.utils.log import dedupe_once
@@ -66,7 +78,6 @@ from reflex_base.vars.base import (
     ComputedVar,
     DynamicRouteVar,
     EvenMoreBasicBaseState,
-    ToOperation,
     Var,
     _declared_value,
     _inherited_value,
@@ -78,6 +89,8 @@ from reflex_base.vars.base import (
     dispatch,
     is_computed_var,
 )
+from reflex_base.vars.object import var_access_path
+from reflex_base.vars.set import _ordered
 from rich.markup import escape
 
 import reflex.istate.dynamic
@@ -416,6 +429,123 @@ def _bind_attr(cls: type, name: str, value: Any) -> None:
     """
     type.__setattr__(cls, name, value)
     value.__set_name__(cls, name)
+
+
+_UNSET = object()
+
+
+def _array_index(key: Any) -> int | None:
+    """Get the index ``Array.prototype.at`` reads for a key.
+
+    It truncates a number toward zero and reads NaN as 0. A Decimal reads as
+    the float state sends it as.
+
+    Args:
+        key: The key.
+
+    Returns:
+        The index, or None for a key that is no finite number.
+    """
+    if isinstance(key, int):
+        return key
+    if isinstance(key, decimal.Decimal):
+        key = float(key)
+    if isinstance(key, float):
+        if math.isnan(key):
+            return 0
+        return int(key) if math.isfinite(key) else None
+    return None
+
+
+def _js_number_string(number: float) -> str:
+    """Format a number the way JS ``Number.prototype.toString`` does.
+
+    Args:
+        number: The number.
+
+    Returns:
+        The string JS makes of the number.
+    """
+    if math.isnan(number):
+        return "NaN"
+    if math.isinf(number):
+        return "Infinity" if number > 0 else "-Infinity"
+    if number == 0:
+        return "0"
+    # repr has the shortest digits that round-trip, as JS does, in another notation.
+    _, raw_digits, exponent = decimal.Decimal(repr(abs(number))).as_tuple()
+    assert isinstance(exponent, int)
+    # The number is 0.<digits> times 10 to the power of point.
+    point = len(raw_digits) + exponent
+    digits = "".join(map(str, raw_digits)).rstrip("0")
+    sign = "-" if number < 0 else ""
+    if len(digits) <= point <= 21:
+        return sign + digits + "0" * (point - len(digits))
+    if 0 < point <= 21:
+        return f"{sign}{digits[:point]}.{digits[point:]}"
+    if -6 < point <= 0:
+        return f"{sign}0.{'0' * -point}{digits}"
+    mantissa = f"{digits[0]}.{digits[1:]}" if len(digits) > 1 else digits
+    return f"{sign}{mantissa}e{'+' if point > 0 else '-'}{abs(point - 1)}"
+
+
+def _js_property_key(key: Any) -> Any:
+    """Get the property name a JS object gives a key.
+
+    A literal renders a mapping as a JS object literal, which names each key with
+    a string: keys equal in Python, such as 1 and True, may differ there, and
+    keys that differ in Python, such as 1 and "1", may be one.
+
+    Args:
+        key: The key.
+
+    Returns:
+        The property name, or the key itself if it is no string, number, bool
+        or None.
+    """
+    if isinstance(key, str):
+        return key
+    if key is None:
+        return "null"
+    if isinstance(key, bool):
+        return "true" if key else "false"
+    if isinstance(key, int):
+        return str(int(key))
+    if isinstance(key, (float, decimal.Decimal)):
+        return _js_number_string(float(key))
+    return key
+
+
+def _read_key(value: Any, key: Any, from_literal: bool = False) -> Any:
+    """Read a key off a value the way the frontend reads it with optional chaining.
+
+    A set reads as the array the frontend gets: sorted where it can be if it is
+    in a literal, which renders it that way, and in its own order if it is held
+    in state, which serializes it that way.
+
+    Args:
+        value: The value to read from.
+        key: The attribute name, mapping key or sequence index.
+        from_literal: Whether the value is read from a literal var.
+
+    Returns:
+        The value at the key, or None if the key is missing or the value is None.
+    """
+    if value is None:
+        return None
+    # A MutableProxy reports the class it wraps. Testing that class skips the
+    # failed check of the proxy's own type that isinstance makes first.
+    cls = value.__class__
+    if issubclass(cls, Mapping):
+        return value.get(key)
+    if issubclass(cls, AbstractSet):
+        value = _ordered(value) if from_literal else tuple(value)
+    elif not issubclass(cls, Sequence):
+        return getattr(value, key, None) if isinstance(key, str) else None
+    index = _array_index(key)
+    if index is None or not -len(value) <= index < len(value):
+        return None
+    return value[index]
 
 
 def _router_fget(self: BaseState) -> RouterData:
@@ -1981,8 +2111,39 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         # Slow case - fetch missing parent states from redis.
         return await self._get_state_from_redis(state_cls)
 
+    async def _get_field_owner(self, root: Var) -> tuple[BaseState, str] | None:
+        """Get the state holding the field a root var stands for, and its name.
+
+        Args:
+            root: A var as ``var_access_path`` splits it off.
+
+        Returns:
+            The state and the field name, or None if the var is no state field.
+        """
+        # The var's *own* var data, not the recursive _get_all_var_data(): an
+        # operation such as State.a + State.b merges in the var data of its
+        # operands, so it would pass for State.a. Only a plain field or
+        # computed var reference carries state + field_name on its own.
+        var_data = root._var_data
+        if var_data is None:
+            return None
+        state_name, field_name = var_data.state, var_data.field_name
+        if not state_name or not field_name:
+            return None
+        if state_name == self.get_full_name():
+            return self, field_name
+        other_state = await self.get_state(
+            self._get_root_state().get_class_substate(state_name)
+        )
+        return other_state, field_name
+
     async def get_var_value(self, var: Var[VAR_TYPE]) -> VAR_TYPE:
-        """Get the value of an rx.Var from another state.
+        """Get the value of an rx.Var, possibly from another state.
+
+        Besides a state field or computed var, the var may read into one by
+        attribute access, item access or array indexing, as in
+        ``State.user.tags[0]`` or ``State.mapping[State.key]``. Like on the
+        frontend, a missing key or a None on the way reads as None.
 
         Args:
             var: The var to get the value for.
@@ -1997,44 +2158,128 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         # Oopsie case: you didn't give me a Var... so get what you give.
         if not isinstance(var, Var):
             return var
-
-        unset = object()
-
-        # Fast case: this is a literal var and the value is known.
-        if (
-            var_value := getattr(var, "_var_value", unset)
-        ) is not unset and not isinstance(var_value, Var):
-            return var_value  # pyright: ignore [reportReturnType]
-
-        # Unwrap any cast wrappers and resolve via the underlying var's *own*
-        # var data, not the recursive _get_all_var_data(). For an operation or
-        # derived var (e.g. State.a + State.b or State.items[0]), the recursive
-        # merge back-fills state/field_name from the first operand, which would
-        # make us silently return that operand's value instead of the operation's
-        # result. Only a plain field or computed var reference carries
-        # state + field_name on its own var data.
-        inner_var = var
-        while isinstance(inner_var, ToOperation):
-            inner_var = inner_var._original
-        var_data = inner_var._var_data
-        if var_data is None or not var_data.state or not var_data.field_name:
-            msg = f"Unable to retrieve value for {var._js_expr}: not associated with any state."
-            raise UnretrievableVarValueError(msg)
-        # Fastish case: this var belongs to this state
-        if var_data.state == self.get_full_name():
-            value = getattr(self, var_data.field_name)
-            if inspect.isawaitable(value):
-                return await value
-            return value
-
-        # Slow case: this var belongs to another state
-        other_state = await self.get_state(
-            self._get_root_state().get_class_substate(var_data.state)
-        )
-        value = getattr(other_state, var_data.field_name)
-        if inspect.isawaitable(value):
-            return await value
+        value, _ = await self._resolve_var_value(var)
         return value
+
+    async def _resolve_var_value(self, var: Var) -> tuple[Any, bool]:
+        """Resolve a var to its value, and whether that value is read from a literal.
+
+        Args:
+            var: The var to resolve.
+
+        Returns:
+            The value, and whether it is read from a literal var.
+
+        Raises:
+            UnretrievableVarValueError: If the var does not have a literal value
+                or associated state.
+        """
+        root, keys = var_access_path(var)
+        # Fast case: the var reads from a literal whose value is known.
+        value: Any = getattr(root, "_var_value", _UNSET)
+        from_literal = value is not _UNSET and not isinstance(value, Var)
+        if not from_literal:
+            owner = await self._get_field_owner(root)
+            if owner is None:
+                msg = f"Unable to retrieve value for {var._js_expr}: not associated with any state."
+                raise UnretrievableVarValueError(msg)
+            state, field_name = owner
+            value = getattr(state, field_name)
+            if inspect.isawaitable(value):
+                value = await value
+        for key in keys:
+            if isinstance(key, Var):
+                key = await self.get_var_value(key)
+            if from_literal and isinstance(value, Mapping):
+                value = await self._literal_object(value)
+                key = _js_property_key(key)
+            value = _read_key(value, key, from_literal)
+            # A literal container holds vars, which the frontend reads as their values.
+            if isinstance(value, Var):
+                value, from_literal = await self._resolve_var_value(value)
+        return value, from_literal
+
+    async def _literal_object(self, mapping: Mapping) -> dict:
+        """Get the object the frontend makes of a mapping a literal var holds.
+
+        Each key that is a var is resolved, and every key is named as a JS object
+        names it. A later entry wins over an earlier one with the same name, as
+        in a JS object literal.
+
+        Args:
+            mapping: The mapping a literal var holds.
+
+        Returns:
+            The mapping keyed by property names.
+        """
+        return {
+            _js_property_key(
+                await self.get_var_value(key) if isinstance(key, Var) else key
+            ): item
+            for key, item in mapping.items()
+        }
+
+    async def set_var_value(self, var: Var[VAR_TYPE], value: VAR_TYPE) -> None:
+        """Set the value of an rx.Var, possibly in another state.
+
+        The counterpart of ``get_var_value``: the var may be a state field or
+        read into one, as in ``State.user.tags[0]``. A nested value is set
+        through the field, which marks the field dirty.
+
+        Args:
+            var: The var to set.
+            value: The value to set.
+
+        Raises:
+            UnsettableVarValueError: If the var is no state field and reads into
+                none, if it reads into a computed var, or if the object to set
+                the value on is None, is not tracked for changes, or takes no
+                item at the key.
+        """
+        root, keys = var_access_path(var)
+        owner = await self._get_field_owner(root)
+        if owner is None:
+            msg = f"Unable to set value for {var._js_expr}: not associated with any state."
+            raise UnsettableVarValueError(msg)
+        state, field_name = owner
+        if field_name in state.computed_vars:
+            msg = (
+                f"Unable to set value for {var._js_expr}: computed vars are read-only."
+            )
+            raise UnsettableVarValueError(msg)
+        if not keys:
+            setattr(state, field_name, value)
+            return
+
+        *parent_keys, last_key = [
+            await self.get_var_value(key) if isinstance(key, Var) else key
+            for key in keys
+        ]
+        target = getattr(state, field_name)
+        for key in parent_keys:
+            target = _read_key(target, key)
+        if target is None:
+            msg = f"Unable to set value for {var._js_expr}: the object to set it on is None."
+            raise UnsettableVarValueError(msg)
+        # Only a change made through a MutableProxy marks the field dirty: one
+        # made to an object inside a tuple, for instance, reaches no frontend.
+        if not isinstance(target, MutableProxy):
+            msg = f"Unable to set value for {var._js_expr}: the object to set it on is not tracked for changes."
+            raise UnsettableVarValueError(msg)
+        if isinstance(target, MutableMapping):
+            target[last_key] = value
+        elif isinstance(target, MutableSequence):
+            # Checked first, as MutableProxy marks the field dirty before it assigns.
+            index = _array_index(last_key)
+            if index is None or not -len(target) <= index < len(target):
+                msg = f"Unable to set value for {var._js_expr}: {last_key!r} is not an index of its {len(target)} items."
+                raise UnsettableVarValueError(msg)
+            target[index] = value
+        elif isinstance(last_key, str):
+            setattr(target, last_key, value)
+        else:
+            msg = f"Unable to set value for {var._js_expr}: {target.__class__.__name__} values do not support item assignment."
+            raise UnsettableVarValueError(msg)
 
     def _mark_dirty_computed_vars(
         self, var_names: Iterable[str] | None = None, *, invalidate: bool = True

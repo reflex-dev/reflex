@@ -318,6 +318,10 @@ class UnretrievableVarValueError(ReflexError):
     """Raised when the value of a var is not retrievable."""
 
 
+class UnsettableVarValueError(ReflexError):
+    """Raised when the value of a var cannot be set."""
+
+
 class HybridPropertyError(ReflexError):
     """Raised when a hybrid property is misused while building its frontend var."""
 

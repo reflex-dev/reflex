@@ -1225,7 +1225,7 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         self._mark_dirty(super().__delattr__, args=(name,))
 
-    def __delitem__(self, key: str):
+    def __delitem__(self, key: Any):
         """Delete the item on the proxied object and mark state dirty.
 
         Args:
@@ -1233,7 +1233,7 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         self._mark_dirty(super().__delitem__, args=(key,))  # pyright: ignore[reportAttributeAccessIssue]
 
-    def __setitem__(self, key: str, value: Any):
+    def __setitem__(self, key: Any, value: Any):
         """Set the item on the proxied object and mark state dirty.
 
         Args:

@@ -66,6 +66,17 @@ def test_optional_array_operation_results():
     assert str(maybe.is_none()) == "!(isNotNullOrUndefined(state.maybe))"
 
 
+def test_array_index_renders_the_index_as_javascript():
+    """An int, a bool and a var index each render as the JavaScript they stand for."""
+    items = _array(list[str], "state.items")
+    index = Var(_js_expr="state.index").to(int)
+
+    assert str(items[-1]) == "state.items?.at?.(-1)"
+    assert str(items[True]) == "state.items?.at?.(true)"
+    assert str(items[index]) == "state.items?.at?.(state.index)"
+    assert items[0]._var_type is str
+
+
 _COMPARE_ARRAYS = ImportVar(tag="compareArrays", is_default=True, install=False)
 _COMPARE_DATETIME = ImportVar(tag="compareDatetime", is_default=True, install=False)
 

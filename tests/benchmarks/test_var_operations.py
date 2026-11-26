@@ -302,7 +302,7 @@ def test_array_index_operation(benchmark: BenchmarkFixture):
     """Benchmark building array indexing, the hot operation in a foreach body.
 
     Kept apart from the other array operations because it is built differently:
-    ``array_item_operation`` renders its operands with ``!s``, which calls
+    ``ArrayItemOperation`` renders its operands with ``!s``, which calls
     ``str()`` rather than ``__format__``, so indexing never interpolates an
     operand the way the rest of the family does.
 
@@ -320,9 +320,9 @@ def test_array_index_operation(benchmark: BenchmarkFixture):
 def test_array_range_operation(benchmark: BenchmarkFixture):
     """Benchmark building ``ArrayVar.range``, which backs a counted foreach.
 
-    The sibling of ``test_array_index_operation``: ``array_range_operation`` is
-    the other ``@var_operation`` rendering its operands with ``!s``, so it is
-    built without interpolating one either.
+    The sibling of ``test_array_index_operation``: ``array_range_operation``
+    renders its operands with ``!s`` too, so it is built without interpolating
+    one either.
 
     Args:
         benchmark: The codspeed benchmark fixture.
