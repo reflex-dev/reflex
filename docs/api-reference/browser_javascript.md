@@ -148,7 +148,7 @@ whose members stay the same across Reflex versions:
 
 | Member | What it does |
 | --- | --- |
-| `reflex.ref(id)` | The ref of the component with that `id`. `undefined` until a component with that `id` renders; its `current` is `null` until React attaches the element, then the element. |
+| `reflex.ref(id)` | The ref of the component with that `id`. `undefined` until a component with that `id` renders, and always for a component whose `id` is a var, which registers no ref; its `current` is `null` until React attaches the element, then the element. |
 | `reflex.addEvents(events)` | Dispatch events, as an event trigger does. |
 | `reflex.event(name, payload)` | Build an event for `reflex.addEvents`: `name` is the event handler's full name, `payload` its arguments by name. |
 

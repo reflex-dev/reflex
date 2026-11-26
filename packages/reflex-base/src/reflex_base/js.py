@@ -49,6 +49,7 @@ def ref(id: str | Var[str]) -> ObjectVar[Mapping[str, Mapping[str, Any]]]:
 
     Returns:
         The ref, whose ``current`` is the mounted element, or undefined if no
-        component with that id has mounted.
+        component with that id has mounted or the component's id is a Var,
+        which registers no ref.
     """
     return _call("ref", id).to(ObjectVar, Mapping[str, Mapping[str, Any]])

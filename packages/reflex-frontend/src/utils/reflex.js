@@ -21,8 +21,9 @@ export const reflex = Object.freeze({
    * Get the ref of a component by its id.
    * @param {string} id The component id.
    * @returns {{current: any} | undefined} The ref, or undefined if no
-   *   component with that id has rendered. Its `current` is null until React
-   *   attaches the element.
+   *   component with that id has rendered or the component's id is a Var,
+   *   which registers no ref. Its `current` is null until React attaches the
+   *   element.
    */
   ref: (id) => refs[refName(id)],
 
