@@ -61,8 +61,10 @@ def write_file(path: str | Path, code: str, *, atomic: bool = False):
     """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    if path.exists() and path.read_text(encoding="utf-8") == code:
-        return
+    # A file that is not UTF-8 differs from any code.
+    with contextlib.suppress(FileNotFoundError, UnicodeDecodeError):
+        if path.read_text(encoding="utf-8") == code:
+            return
     if atomic:
         # Ending as the file does, so a watcher that ignores its type, as the
         # backend's reloader ignores a type stub, ignores the temporary file too.

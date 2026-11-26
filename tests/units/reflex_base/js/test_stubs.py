@@ -195,6 +195,13 @@ def test_render_stub_maps_types_without_json_form_to_any():
             '_Literal["say \\"hi\\" 🎉"]',
             {"Literal"},
         ),
+        # A lone surrogate, which a JavaScript string can hold and UTF-8 cannot
+        # encode, is escaped as Python reads it; the rest is kept as it is.
+        (
+            {"kind": "literal", "value": "\\\ud800 🎉"},
+            '_Literal["\\\\\\ud800 🎉"]',
+            {"Literal"},
+        ),
         (
             {
                 "kind": "union",

@@ -218,9 +218,12 @@ def _render_literal(value: str | int | bool) -> str:
 
     Returns:
         The source: a double-quoted string, ``True``, ``False`` or a number.
+        A lone surrogate, which a JavaScript string can hold and UTF-8 cannot
+        encode, is escaped as Python reads it back.
     """
     if isinstance(value, str):
-        return json.dumps(value, ensure_ascii=False)
+        rendered = json.dumps(value, ensure_ascii=False)
+        return rendered.encode(errors="backslashreplace").decode()
     return repr(value)
 
 

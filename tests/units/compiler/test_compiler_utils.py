@@ -1906,6 +1906,46 @@ def test_write_script_stubs_warns_when_a_stub_cannot_be_written(
     ]
 
 
+def test_write_stub_warns_when_a_stub_cannot_be_encoded(
+    stub_app: tuple[Path, dict[Path, Any]], monkeypatch: pytest.MonkeyPatch
+):
+    """A stub UTF-8 cannot encode is warned about, and the compile goes on.
+
+    Args:
+        stub_app: the module, and what was read of it.
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    party, _ = stub_app
+    warnings: list[str] = []
+    monkeypatch.setattr(utils.console, "warn", warnings.append)
+    assert utils._write_stub(party, "# A lone surrogate: \ud800\n") is False
+    assert warnings == [
+        (
+            f"Reflex could not write the type stub {party.with_suffix('.pyi')}: "
+            "surrogates not allowed. Type checkers do not see the functions of "
+            "party.js until it is written; the app still runs. Report the error "
+            "at https://github.com/reflex-dev/reflex/issues."
+        )
+    ]
+    # Nor is a temporary file left beside the module.
+    assert [path.name for path in party.parent.iterdir()] == ["party.js"]
+
+
+def test_write_script_stubs_rewrites_a_stub_of_its_own_that_is_not_utf8(
+    stub_app: tuple[Path, dict[Path, Any]],
+):
+    """A stub with Reflex's header and bytes UTF-8 cannot decode after it is made again.
+
+    Args:
+        stub_app: the module, and what was read of it.
+    """
+    party, modules = stub_app
+    stub = party.with_suffix(".pyi")
+    stub.write_bytes(_PARTY_STUB.encode() + b"# \xff\n")
+    _fake_signatures(_print_signatures(_GO_SIGNATURES, "[sys.argv[1]]"))
+    assert _write_stubs(modules) == [(str(stub), _PARTY_STUB)]
+
+
 def test_write_script_stubs_keeps_a_stub_written_by_hand(
     stub_app: tuple[Path, dict[Path, Any]],
 ):

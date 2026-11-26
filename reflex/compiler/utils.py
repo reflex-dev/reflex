@@ -692,14 +692,19 @@ def _write_stub(module: Path, code: str) -> bool:
     try:
         write_file(stub, code, atomic=True)
     except OSError as error:
-        console.warn(
-            f"Reflex could not write the type stub {stub}: {error.strerror}. Type "
-            f"checkers do not see the functions of {module.name} until it is "
-            f"written; the app still runs. Make {module.parent} writable, and the "
-            "next compile writes it."
-        )
-        return False
-    return True
+        reason = error.strerror
+        fix = f"Make {module.parent} writable, and the next compile writes it."
+    except UnicodeEncodeError as error:
+        reason = error.reason
+        fix = "Report the error at https://github.com/reflex-dev/reflex/issues."
+    else:
+        return True
+    console.warn(
+        f"Reflex could not write the type stub {stub}: {reason}. Type checkers "
+        f"do not see the functions of {module.name} until it is written; the "
+        f"app still runs. {fix}"
+    )
+    return False
 
 
 class _StubRecord(TypedDict):
