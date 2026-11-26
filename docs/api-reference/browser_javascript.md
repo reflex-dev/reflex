@@ -232,7 +232,7 @@ search_saver_path = rx.asset("./search_saver.jsx", shared=True)
 
 
 class SearchSaver(rx.Component):
-    library = f"$/public{search_saver_path}"
+    library = search_saver_path.importable_path
     tag = "SearchSaver"
 
     # The full name of the event handler to send the value to.
