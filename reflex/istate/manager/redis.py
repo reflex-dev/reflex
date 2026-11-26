@@ -29,6 +29,7 @@ from reflex.istate.manager import (
     _default_token_expiration,
     _dev_hot_reload_active,
     _drop_cached_var_values,
+    _save_after_failure,
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 from reflex.state import BaseState
@@ -642,14 +643,9 @@ class StateManagerRedis(StateManager):
             yield state
         except (Exception, asyncio.CancelledError):
             # A handler may already have yielded these writes to the client.
-            save = asyncio.create_task(
+            await _save_after_failure(
                 self.set_state(token, state, lock_id=lock_id, **context)
             )
-            # Keep the lock until the save finishes, even during shutdown.
-            while not save.done():
-                with contextlib.suppress(asyncio.CancelledError):
-                    await asyncio.shield(save)
-            save.result()
             raise
         await self.set_state(token, state, lock_id=lock_id, **context)
 

@@ -197,12 +197,12 @@ def test_chat_ignores_empty_or_duplicate_submissions(
 
 def test_chat_api_error_restores_controls(chat_module, monkeypatch):
     """A failed request leaves no unanswered turn and makes retry possible."""
-    import httpx
+    import httpx2
     from openai import APIConnectionError
 
     _, client, _ = fake_client(monkeypatch, chat_module, [])
     client.chat.completions.create.side_effect = APIConnectionError(
-        request=httpx.Request("POST", OPENAI_CHAT_ENDPOINT)
+        request=httpx2.Request("POST", OPENAI_CHAT_ENDPOINT)
     )
     state = SimpleNamespace(
         question="Hello", chat_history=[], processing=False, error=""
@@ -1114,7 +1114,7 @@ def test_document_real_sdk_protocol(document_demo, monkeypatch, outcome):
     """The installed SDK parses the real Responses JSON format without network I/O."""
     import json
 
-    import httpx
+    import httpx2
     from openai import AsyncOpenAI
 
     module = document_demo
@@ -1125,7 +1125,7 @@ def test_document_real_sdk_protocol(document_demo, monkeypatch, outcome):
         payload = json.loads(request.content)
         requests.append(payload)
         if outcome == "api-error":
-            return httpx.Response(500, json={"error": {"message": "offline failure"}})
+            return httpx2.Response(500, json={"error": {"message": "offline failure"}})
         text = json.dumps({"claims": [{"text": "20 days", "source_ids": ["leave"]}]})
         if outcome == "invalid-json":
             text = "not json"
@@ -1134,7 +1134,7 @@ def test_document_real_sdk_protocol(document_demo, monkeypatch, outcome):
             if outcome == "refusal"
             else {"type": "output_text", "text": text, "annotations": []}
         )
-        return httpx.Response(
+        return httpx2.Response(
             200,
             json={
                 "id": "resp_offline",
@@ -1157,7 +1157,7 @@ def test_document_real_sdk_protocol(document_demo, monkeypatch, outcome):
     def client(**kwargs):
         return AsyncOpenAI(
             **kwargs,
-            http_client=httpx.AsyncClient(transport=httpx.MockTransport(respond)),
+            http_client=httpx2.AsyncClient(transport=httpx2.MockTransport(respond)),
         )
 
     monkeypatch.setenv("REFLEX_DEMO_READER", "alice")

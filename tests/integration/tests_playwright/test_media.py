@@ -13,7 +13,7 @@ def MediaApp():
     """Reflex app with generated images."""
     import io
 
-    import httpx
+    import httpx2
     from PIL import Image
 
     import reflex as rx
@@ -52,7 +52,7 @@ def MediaApp():
         @rx.var
         def img_from_url(self) -> Image.Image:
             img_url = "https://raw.githubusercontent.com/reflex-dev/reflex/dd96aea556948ea95217ef1d8b5431546dc58363/docs/images/reflex-image-generation-app.png"
-            img_resp = httpx.get(img_url, follow_redirects=True)
+            img_resp = httpx2.get(img_url, follow_redirects=True)
             return Image.open(io.BytesIO(img_resp.content))
 
         @rx.var
