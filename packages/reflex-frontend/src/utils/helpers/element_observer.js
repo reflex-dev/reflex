@@ -191,6 +191,8 @@ const refreshOnScroll = (tracker) => {
  * @property {Set<IntersectionCallback>} callbacks The element's callbacks.
  * @property {Set<IntersectionCallback>} waiting The callbacks waiting for
  *   their first entry, which the element was observed anew for.
+ * @property {boolean} reobserved Whether the element was observed anew since
+ *   its latest entry, whose callbacks may have unmounted since.
  * @property {IntersectionObserverEntry} [entry] The element's latest entry.
  */
 
@@ -236,14 +238,15 @@ const shareIntersectionObserver = (thresholds, rootMargin) => {
         }
       }
       for (const [target, entry] of latest) {
-        const { callbacks, waiting, entry: previous } = target;
+        const { callbacks, waiting, reobserved, entry: previous } = target;
         target.entry = entry;
         target.waiting = new Set();
+        target.reobserved = false;
         // Observed anew for the waiting callbacks, the element is reported
         // whether or not it crossed a threshold; the others only get the
         // entry if it did, as they would have from an observer of their own.
         const crossed =
-          waiting.size === 0 ||
+          !reobserved ||
           previous === undefined ||
           entry.isIntersecting !== previous.isIntersecting ||
           reached(entry) !== reached(previous);
@@ -281,7 +284,7 @@ const onIntersection = (element, callback, thresholds, rootMargin) => {
   const { observer, targets } = shared;
   let target = targets.get(element);
   if (target === undefined) {
-    target = { callbacks: new Set(), waiting: new Set() };
+    target = { callbacks: new Set(), waiting: new Set(), reobserved: false };
     targets.set(element, target);
     observer.observe(element);
   } else if (target.entry !== undefined) {
@@ -289,6 +292,7 @@ const onIntersection = (element, callback, thresholds, rootMargin) => {
     // when it crosses a threshold; observing it anew makes the browser
     // measure it and report it again.
     target.waiting.add(callback);
+    target.reobserved = true;
     observer.unobserve(element);
     observer.observe(element);
   }

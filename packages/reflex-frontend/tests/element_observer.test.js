@@ -552,6 +552,39 @@ describe("observing anew", () => {
     ]);
   });
 
+  test("an observer that joins and leaves before its fresh entry repeats nothing to the others", () => {
+    const reports = [];
+    mountTwo((id) => [
+      { onIntersect: (...args) => reports.push([id, ...args]) },
+      {},
+    ]);
+    const [observer] = intersectionObservers;
+    const a = document.getElementById("a");
+    observer.callback([
+      { target: a, isIntersecting: true, intersectionRatio: 1 },
+    ]);
+
+    const Second = () => {
+      useElementObserver(
+        "a",
+        { onIntersect: (...args) => reports.push(["second", ...args]) },
+        {},
+      );
+      return null;
+    };
+    renderRoot(createElement(Second)).unmount();
+    observer.callback([
+      { target: a, isIntersecting: true, intersectionRatio: 1 },
+    ]);
+    observer.callback([
+      { target: a, isIntersecting: false, intersectionRatio: 0 },
+    ]);
+    expect(reports).toEqual([
+      ["a", true, 1],
+      ["a", false, 0],
+    ]);
+  });
+
   test("an element that is not on the page is not observed", () => {
     const calls = [];
     mount(() => ({
