@@ -345,6 +345,8 @@ def test_upload_callbacks(
     expect(page.locator("#upload-count")).to_have_text("1")
     expect(page.locator("#uploaded")).to_have_text('["current.txt:current"]')
 
+    if action is not None:
+        expect(page.get_by_role("button", name=action, exact=True)).to_have_count(0)
     page.locator("#clear-selection").click()
     expect(page.locator("#selected-upload")).to_have_text("[]")
     page.locator(f"#{trigger}").click()
