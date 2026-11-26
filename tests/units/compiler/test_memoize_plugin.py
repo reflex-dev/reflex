@@ -1317,9 +1317,10 @@ def test_shared_subtree_in_distinct_source_modules_registers_once() -> None:
     tag = next(iter(ctx.memoize_wrappers))
     assert list(ctx.auto_memo_components) == [(tag, None)]
     for route in ("/a", "/b"):
-        assert ctx.compiled_pages[route].frontend_imports[
-            memo_paths.AUTO_MEMO_LIBRARY
-        ] == [ImportVar(tag=tag)]
+        output = ctx.compiled_pages[route].output_code or ""
+        assert [
+            line for line in output.splitlines() if '"$/utils/components/' in line
+        ] == [f'import {{{tag}}} from "{get_route_memo_specifier(route)}"']
 
 
 def test_shared_parent_instance_across_pages_preserves_original() -> None:

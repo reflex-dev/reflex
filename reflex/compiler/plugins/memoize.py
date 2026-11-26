@@ -11,7 +11,8 @@ Each unique subtree shape contributes:
 
 - One generated experimental memo component definition. Pages import it from
   their own route module; after every page compiled, the compiler defines it
-  there when one route uses it, or in a module shared by the routes using it.
+  there when one route uses it, in the app root's module when the app root
+  uses it, or else in a module shared by the routes using it.
 - ``useCallback`` hook lines for each non-lifecycle event trigger, emitted into
   the generated memo body so handler hooks stay inside that rendering domain.
 
