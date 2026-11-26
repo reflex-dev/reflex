@@ -1285,17 +1285,44 @@ def _read_stateful_pages_marker() -> list[str] | None:
         raise
 
 
+def _memo_symbol_and_imports(
+    memo: MemoDefinition,
+) -> tuple[str, ParsedImportDict]:
+    """Get the symbol modules import a memo by and the imports of its body.
+
+    Args:
+        memo: The memo.
+
+    Returns:
+        The symbol and the body's imports.
+    """
+    if isinstance(memo, MemoComponentDefinition):
+        name, imports = memo.export_name, memo.component._get_all_imports()
+    elif isinstance(memo, MemoFunctionDefinition):
+        var_data = memo.function._get_all_var_data()
+        name = memo.python_name
+        imports = (
+            {lib: list(fields) for lib, fields in var_data.imports} if var_data else {}
+        )
+    else:
+        name, imports = memo.python_name, {}
+    return memo_paths.library_and_symbol(memo.source_module, name)[1], imports
+
+
 def _backend_imports(
     compile_ctx: CompileContext,
     app_root_imports: ParsedImportDict,
-    memo_imports: ParsedImportDict,
+    memos: Iterable[MemoDefinition],
 ) -> list[str]:
     """List the compiled modules that import the backend transport.
+
+    Memos register for the whole process, so only those the pages and the app
+    root import, directly or through another memo, are checked.
 
     Args:
         compile_ctx: The compile context holding the compiled pages.
         app_root_imports: The imports of the app root.
-        memo_imports: The imports of every memo module.
+        memos: Every memo the compile emits.
 
     Returns:
         One line per module, naming it and what it imports from the transport.
@@ -1308,7 +1335,22 @@ def _backend_imports(
         )
         for route, page_ctx in compile_ctx.compiled_pages.items()
     ]
-    modules += [("the app root", app_root_imports), ("a memo", memo_imports)]
+    modules.append(("the app root", app_root_imports))
+    unreached = {id(memo): memo for memo in memos}
+    checked = 0
+    while checked < len(modules):
+        imported = {
+            var.tag
+            for _, imports in modules[checked:]
+            for fields in imports.values()
+            for var in fields
+        }
+        checked = len(modules)
+        for key, memo in list(unreached.items()):
+            symbol, imports = _memo_symbol_and_imports(memo)
+            if symbol in imported:
+                del unreached[key]
+                modules.append((f"memo {symbol!r}", imports))
     return [
         f"{module}: {', '.join(sorted({var.tag for var in imports[transport] if var.tag}))}"
         for module, imports in modules
@@ -1541,7 +1583,9 @@ def compile_app(
     # fail in the browser; utils/transport.js is where all of it lives.
     if app._state is None and (
         backend_imports := _backend_imports(
-            compile_ctx, app_root_imports, memo_components_imports
+            compile_ctx,
+            app_root_imports,
+            (*memos, *compile_ctx.auto_memo_components.values()),
         )
     ):
         progress.stop()

@@ -12,13 +12,14 @@ from pytest_mock import MockerFixture
 from reflex_base import constants
 from reflex_base.components.component import BaseComponent, Component
 from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
-from reflex_base.components.memo import MEMOS
+from reflex_base.components.memo import MEMOS, MemoComponentDefinition
 from reflex_base.constants.base import LiteralColorMode
 from reflex_base.constants.compiler import PageNames
 from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.plugins.sitemap import SitemapPlugin
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils import memo_paths
 from reflex_base.utils.console import PoorProgress
 from reflex_base.utils.exceptions import (
     DynamicRouteArgShadowsStateVarError,
@@ -84,6 +85,25 @@ def test_compile_progress_ends_at_its_total(
     assert task["current"] == task["total"]
 
 
+def _backend_imports_error(*modules: str) -> str:
+    """Build the error a compile without state raises for backend imports.
+
+    Args:
+        *modules: The lines naming each module and what it imports.
+
+    Returns:
+        The complete error message.
+    """
+    return (
+        "These modules use the backend, which an app with state disabled "
+        "(`rx.App(enable_state=False)`) does not have:\n  "
+        + "\n  ".join(modules)
+        + "\nThey import these names from $/utils/transport, for example through "
+        "`rx.get_upload_url`. Remove `enable_state=False` or the components and "
+        "vars that use the backend."
+    )
+
+
 def _compile_stateless_app(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -124,10 +144,7 @@ def test_stateless_app_rejects_backend_imports(
     page = rx.el.a("Download", href=rx.get_upload_url("report.pdf"))
     with pytest.raises(ReflexRuntimeError) as error:
         _compile_stateless_app(tmp_path, monkeypatch, mocker, page)
-    message = str(error.value)
-    assert "page 'files': getBackendURL" in message
-    assert "enable_state=False" in message
-    assert "$/utils/transport" in message
+    assert str(error.value) == _backend_imports_error("page 'files': getBackendURL")
 
 
 @pytest.mark.usefixtures("clean_registration_context", "preserve_memo_registries")
@@ -146,10 +163,38 @@ def test_stateless_app_rejects_backend_imports_in_memos(
     def download_link(name: rx.Var[str]) -> rx.Component:
         return rx.el.a(name, href=rx.get_upload_url("report.pdf"))
 
-    with pytest.raises(ReflexRuntimeError, match="a memo: getBackendURL"):
+    with pytest.raises(ReflexRuntimeError) as error:
         _compile_stateless_app(
             tmp_path, monkeypatch, mocker, download_link(name="Download")
         )
+    definition = next(d for d in MEMOS.values() if d.python_name == "download_link")
+    assert isinstance(definition, MemoComponentDefinition)
+    symbol = memo_paths.library_and_symbol(
+        definition.source_module, definition.export_name
+    )[1]
+    assert str(error.value) == _backend_imports_error(f"memo {symbol!r}: getBackendURL")
+
+
+@pytest.mark.usefixtures("clean_registration_context", "preserve_memo_registries")
+def test_stateless_app_ignores_memos_it_does_not_render(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """A memo that needs the backend but that no page renders does not fail the compile.
+
+    Memos register for the whole process, such as those of a component library
+    or of an app compiled earlier in the same process.
+
+    Args:
+        tmp_path: The temporary application directory.
+        monkeypatch: Fixture for selecting the application directory.
+        mocker: Fixture for avoiding frontend dependency installation.
+    """
+
+    @rx.memo
+    def unused_download_link(name: rx.Var[str]) -> rx.Component:
+        return rx.el.a(name, href=rx.get_upload_url("report.pdf"))
+
+    _compile_stateless_app(tmp_path, monkeypatch, mocker, rx.el.p("No downloads"))
 
 
 @pytest.mark.parametrize("enable_state", [False, True])
