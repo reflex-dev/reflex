@@ -124,3 +124,191 @@ def test_root_breadcrumb_has_one_location(path, monkeypatch):
             "item": "https://reflex.dev/docs/",
         }
     ]
+
+
+@pytest.mark.parametrize(
+    ("path", "names", "routes", "expected"),
+    [
+        (
+            "/changelog/upgrading/upgrading-to-0-11/",
+            ("Upgrading to Reflex 0.11", "Upgrading to 0.11"),
+            {"/changelog/", "/changelog/upgrading/upgrading-to-0-11/"},
+            [
+                ("Changelog", "/changelog/"),
+                ("Upgrading", None),
+                ("Upgrading to 0.11", "/changelog/upgrading/upgrading-to-0-11/"),
+            ],
+        ),
+        (
+            "/api-reference/cli/",
+            ("Cli", "CLI"),
+            {"/api-reference/overview/", "/api-reference/cli/"},
+            [
+                ("API Reference", "/api-reference/overview/"),
+                ("CLI", "/api-reference/cli/"),
+            ],
+        ),
+        (
+            "/workflows/fan-out/",
+            ("Fan-Out", "Fan Out"),
+            {"/workflows/overview/", "/workflows/fan-out/"},
+            [
+                ("Workflows", "/workflows/overview/"),
+                ("Fan-Out", "/workflows/fan-out/"),
+            ],
+        ),
+        (
+            "/recipes/",
+            ("Overview", "Recipes Overview"),
+            {"/recipes/"},
+            [("Recipes", "/recipes/")],
+        ),
+        (
+            "/getting-started/chatapp-tutorial/",
+            ("Build a Streaming AI Chatbot in Python with Reflex", "Chat App Tutorial"),
+            {"/getting-started/chatapp-tutorial/"},
+            [
+                ("Getting Started", None),
+                ("Chat App Tutorial", "/getting-started/chatapp-tutorial/"),
+            ],
+        ),
+        (
+            "/ai/integrations/overview/",
+            (),
+            {"/ai/integrations/overview/"},
+            [
+                ("AI", None),
+                ("Integrations", "/ai/integrations/overview/"),
+                ("Overview", "/ai/integrations/overview/"),
+            ],
+        ),
+        (
+            "/enterprise/mcp/authentication/",
+            ("MCP Authentication", "Authentication"),
+            {"/enterprise/overview/", "/enterprise/mcp/authentication/"},
+            [
+                ("Enterprise", "/enterprise/overview/"),
+                ("MCP", None),
+                ("Authentication", "/enterprise/mcp/authentication/"),
+            ],
+        ),
+        (
+            "/library/html/html/",
+            ("HTML Elements", "HTML"),
+            {"/library/html/html/"},
+            [("Components", None), ("HTML", None), ("HTML", "/library/html/html/")],
+        ),
+        (
+            "/hosting/custom-domains/",
+            ("Custom Domains",),
+            {"/hosting/overview/", "/hosting/custom-domains/"},
+            [
+                ("Cloud", "/hosting/overview/"),
+                ("Custom Domains", "/hosting/custom-domains/"),
+            ],
+        ),
+        (
+            "/ai/organization/sso/",
+            ("Sso", "SSO"),
+            {"/ai/organization/sso/"},
+            [("AI", None), ("Organization", None), ("SSO", "/ai/organization/sso/")],
+        ),
+        (
+            "/ai/integrations/github/",
+            ("Github",),
+            {"/ai/integrations/github/"},
+            [
+                ("AI", None),
+                ("Integrations", None),
+                ("GitHub", "/ai/integrations/github/"),
+            ],
+        ),
+    ],
+)
+def test_breadcrumb_labels_spell_the_route_and_keep_acronyms(
+    monkeypatch, path, names, routes, expected
+):
+    """The last crumb takes the first page name that spells its route segment.
+
+    A name with other words, such as an SEO title or a generic sidebar label, is
+    skipped so the crumb keeps naming the route.
+    """
+    docpage_module = importlib.import_module("reflex_docs.templates.docpage.docpage")
+    monkeypatch.setattr(docpage_module, "_REGISTERED_DOC_ROUTES", routes)
+
+    assert docpage_module._breadcrumb_items(path, names) == expected
+
+
+def test_sidebar_label_finds_the_page_entry():
+    """The sidebar label lookup returns each page's label, with or without slashes."""
+    from reflex_docs.templates.docpage.sidebar import sidebar_label
+
+    assert sidebar_label("/changelog/upgrading/upgrading-to-0-11/") == (
+        "Upgrading to 0.11"
+    )
+    assert sidebar_label("api-reference/cli") == "CLI"
+    assert sidebar_label("/not-a-docs-page/") is None
+
+
+@pytest.mark.parametrize(
+    ("route", "title", "label"),
+    [
+        (
+            "/ai/integrations/github/",
+            "GitHub · Integrations · AI · Reflex Docs",
+            "GitHub",
+        ),
+        (
+            "/ai/integrations/openai/",
+            "OpenAI · Integrations · AI · Reflex Docs",
+            "OpenAI",
+        ),
+        (
+            "/ai/features/connect-to-github/",
+            "Connect To GitHub · Features · AI · Reflex Docs",
+            "Connect To GitHub",
+        ),
+        (
+            "/library/other/html-embed/",
+            "rx.html: Python HTML Embed Component · Reflex Docs",
+            "HTML Embed",
+        ),
+        ("/hosting/cli/vmtypes/", "VM Types", "VM Types"),
+        (
+            "/ai/integrations/custom-oidc/",
+            "Custom OIDC · Integrations · AI · Reflex Docs",
+            "Custom OIDC",
+        ),
+        (
+            "/ai/integrations/microsoft-entra-id/",
+            "Microsoft Entra ID · Integrations · AI · Reflex Docs",
+            "Microsoft Entra ID",
+        ),
+    ],
+)
+def test_page_titles_and_sidebar_labels_keep_acronyms(route, title, label):
+    """Page titles and sidebar labels spell acronyms and brands like the page."""
+    from reflex_docs.pages import routes
+    from reflex_docs.templates.docpage.sidebar import sidebar_label
+
+    page = next(page for page in routes if page.path.strip("/") == route.strip("/"))
+    assert page.title == title
+    assert sidebar_label(route) == label
+
+
+def test_structured_breadcrumb_parents_keep_acronyms(monkeypatch):
+    """Structured breadcrumbs label multi-word parents like the visible ones."""
+    docpage_module = importlib.import_module("reflex_docs.templates.docpage.docpage")
+    monkeypatch.setattr(
+        "reflex_site_shared.utils.url.get_config",
+        lambda: SimpleNamespace(deploy_url="https://reflex.dev", frontend_path="/docs"),
+    )
+    monkeypatch.setattr(
+        docpage_module,
+        "_REGISTERED_DOC_ROUTES",
+        {"/api-reference/overview/", "/api-reference/cli/"},
+    )
+    items = docpage_module.breadcrumb_data("/api-reference/cli/", "CLI")[
+        "itemListElement"
+    ]
+    assert [item["name"] for item in items] == ["Documentation", "API Reference", "CLI"]

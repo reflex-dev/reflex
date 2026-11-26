@@ -9,7 +9,7 @@ import sys
 import threading
 import time
 import traceback
-from collections.abc import AsyncIterator, Mapping
+from collections.abc import AsyncIterator, Generator, Mapping
 from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
@@ -27,6 +27,7 @@ from reflex_base.event.processor.event_processor import (
 )
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegistrationContext
+from reflex_base.session import SessionToken
 
 from reflex.event import Event, EventHandler, EventSpec
 from tests.units.conftest import active_tracer
@@ -48,14 +49,22 @@ async def _slow_handler(delay: float = 0.5):
     await asyncio.sleep(delay)
 
 
+# Set once the blocking monitor warns. The blocking handlers hold the loop until
+# then, at most _MAX_BLOCK_SECONDS, so a slow runner cannot unblock it first.
+_BLOCKING_REPORTED = threading.Event()
+_MAX_BLOCK_SECONDS = 5
+
+
 def _blocking_sync_handler():
-    """Block the event loop briefly for the detector integration test."""
-    time.sleep(0.12)
+    """Block the event loop in sleeps until the detector reports it."""
+    deadline = time.monotonic() + _MAX_BLOCK_SECONDS
+    while not _BLOCKING_REPORTED.is_set() and time.monotonic() < deadline:
+        time.sleep(0.01)
 
 
 def _blocking_stdlib_handler():
-    """Block the event loop inside a stdlib call for the detector test."""
-    threading.Event().wait(0.12)
+    """Block the event loop inside a stdlib call until the detector reports it."""
+    _BLOCKING_REPORTED.wait(_MAX_BLOCK_SECONDS)
 
 
 async def _error_handler():  # noqa: RUF029
@@ -660,19 +669,52 @@ async def test_events_are_processed(
     assert _CALL_LOG == [{"value": "hello"}]
 
 
+@pytest.fixture
+def blocking_caplog(
+    caplog: pytest.LogCaptureFixture,
+) -> Generator[pytest.LogCaptureFixture, None, None]:
+    """Capture the blocking monitor's warnings and release the blocking handlers at the first.
+
+    Yields:
+        The log capture fixture.
+    """
+    caplog.set_level(logging.WARNING, logger="reflex_base.event.processor.blocking")
+
+    class _ReleaseOnWarning(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            """Release the blocking handlers.
+
+            Args:
+                record: The log record.
+            """
+            _BLOCKING_REPORTED.set()
+
+    _BLOCKING_REPORTED.clear()
+    handler = _ReleaseOnWarning(level=logging.WARNING)
+    blocking_logger = logging.getLogger("reflex_base.event.processor.blocking")
+    blocking_logger.addHandler(handler)
+    try:
+        yield caplog
+    finally:
+        blocking_logger.removeHandler(handler)
+
+
 async def test_processor_reports_blocking_sync_handler(
     mock_event_processor: EventProcessor,
     token: str,
     monkeypatch: pytest.MonkeyPatch,
-    caplog: pytest.LogCaptureFixture,
+    blocking_caplog: pytest.LogCaptureFixture,
 ):
     """Report blocking handlers executed through the event queue."""
     monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
     mock_event_processor.event_loop_blocking_threshold = 0.04
-    caplog.set_level(logging.WARNING, logger="reflex_base.event.processor.blocking")
 
     async with mock_event_processor as ep:
-        await ep.enqueue(token, Event.from_event_type(blocking_sync_event())[0])
+        await ep.enqueue(
+            token,
+            Event.from_event_type(blocking_sync_event())[0],
+            session_token=SessionToken.SYSTEM,
+        )
 
     # The probe that times the block lands up to a polling gap into it, so only
     # the report of a total is checked here; test_blocking checks its length
@@ -681,7 +723,7 @@ async def test_processor_reports_blocking_sync_handler(
         re.sub(
             r"(?<=line )\d+|(?<=\.py:)\d+|(?<=for )\d+\.\d+s", "N", record.getMessage()
         )
-        for record in caplog.records
+        for record in blocking_caplog.records
     ]
     subject = "Event handler _blocking_sync_handler"
     # The stack of the event task ends at the blocking line, without loop frames.
@@ -697,7 +739,7 @@ async def test_processor_reports_blocking_sync_handler(
             f'  File "{processor_module.__file__}", line N, in _execute_event\n'
             "    result = registered_handler.handler.fn(**event.payload)\n"
             f'  File "{__file__}", line N, in _blocking_sync_handler\n'
-            "    time.sleep(0.12)"
+            "    time.sleep(0.01)"
         ),
         f"{subject} blocked the event loop for N in total.",
     ]
@@ -707,12 +749,11 @@ async def test_processor_reports_innermost_app_frame(
     mock_event_processor: EventProcessor,
     token: str,
     monkeypatch: pytest.MonkeyPatch,
-    caplog: pytest.LogCaptureFixture,
+    blocking_caplog: pytest.LogCaptureFixture,
 ):
     """Name the app line that called the blocking library code."""
     monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
     mock_event_processor.event_loop_blocking_threshold = 0.04
-    caplog.set_level(logging.WARNING, logger="reflex_base.event.processor.blocking")
 
     async with mock_event_processor as ep:
         await ep.enqueue(token, Event.from_event_type(blocking_stdlib_event())[0])
@@ -720,34 +761,57 @@ async def test_processor_reports_innermost_app_frame(
     path = Path(
         "tests", "units", "reflex_base", "event", "processor", "test_event_processor.py"
     )
-    assert f"is blocking the event loop at {path}:" in caplog.text
-    assert "in _blocking_stdlib_handler (threshold" in caplog.text
+    assert f"is blocking the event loop at {path}:" in blocking_caplog.text
+    assert "in _blocking_stdlib_handler (threshold" in blocking_caplog.text
 
 
 async def test_processor_reports_blocking_after_handler_returns(
     mock_event_processor: EventProcessor,
     token: str,
     monkeypatch: pytest.MonkeyPatch,
-    caplog: pytest.LogCaptureFixture,
+    blocking_caplog: pytest.LogCaptureFixture,
 ):
     """Attribute blocking in post-handler processing (e.g. computed vars) to the event."""
     execute_event = EventProcessor._execute_event
 
     async def _execute_event(self: EventProcessor, **kwargs):
         await execute_event(self, **kwargs)
-        time.sleep(0.12)  # noqa: ASYNC251
+        _blocking_sync_handler()
 
     monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
     monkeypatch.setattr(EventProcessor, "_execute_event", _execute_event)
     mock_event_processor.event_loop_blocking_threshold = 0.04
-    caplog.set_level(logging.WARNING, logger="reflex_base.event.processor.blocking")
 
     async with mock_event_processor as ep:
-        await ep.enqueue(token, Event.from_event_type(noop_event())[0])
+        await ep.enqueue(
+            token,
+            Event.from_event_type(noop_event())[0],
+            session_token=SessionToken.SYSTEM,
+        )
 
-    assert "_noop_handler" in caplog.text
-    assert "blocked the event loop" in caplog.text
-    assert "time.sleep(0.12)  # noqa: ASYNC251" in caplog.text
+    messages = [
+        re.sub(
+            r"(?<=line )\d+|(?<=\.py:)\d+|(?<=for )\d+\.\d+s", "N", record.getMessage()
+        )
+        for record in blocking_caplog.records
+    ]
+    subject = "Event handler _noop_handler"
+    assert messages == [
+        (
+            f"{subject} is blocking the event loop at "
+            f"{Path(__file__).relative_to(Path.cwd())}:N in _blocking_sync_handler "
+            "(threshold: 0.040s), including state updates such as computed vars. "
+            "Move blocking I/O to a thread pool or use a non-blocking async API.\n"
+            "Stack when the threshold was reached (most recent call last):\n"
+            f'  File "{processor_module.__file__}", line N, in _process_event_queue_entry\n'
+            "    return await self._execute_event(\n"
+            f'  File "{__file__}", line N, in _execute_event\n'
+            "    _blocking_sync_handler()\n"
+            f'  File "{__file__}", line N, in _blocking_sync_handler\n'
+            "    time.sleep(0.01)"
+        ),
+        f"{subject} blocked the event loop for N in total.",
+    ]
 
 
 async def test_enqueue_returns_future(
@@ -1072,6 +1136,26 @@ async def test_stream_delta_yields_single_delta(token: str):
         event = Event.from_event_type(delta_event())[0]
         collected = [d async for d in ep.enqueue_stream_delta(token, event)]
     assert collected == [{"state": {"x": 1}}]
+
+
+async def test_stream_delta_forks_ambient_transaction(mocker: MockerFixture):
+    """A buffered upload must not reuse the root transaction ID.
+
+    Args:
+        mocker: The mock fixture.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2).configure()
+    enqueue = mocker.spy(EventProcessor, "enqueue")
+    async with ep:
+        parent = EventContext.get().fork(token="upload")
+        with parent:
+            event = Event.from_event_type(delta_event())[0]
+            assert [d async for d in ep.enqueue_stream_delta("upload", event)]
+        upload_context = enqueue.call_args.kwargs["ev_ctx"]
+        assert ep._root_context is not None
+        assert upload_context.txid != ep._root_context.txid
+        assert upload_context.txid != parent.txid
+        assert upload_context.parent_txid == parent.txid
 
 
 async def test_stream_delta_yields_multiple_deltas(token: str):

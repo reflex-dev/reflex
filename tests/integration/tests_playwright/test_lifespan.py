@@ -9,6 +9,7 @@ from playwright.sync_api import Page, expect
 from reflex.testing import AppHarness
 from reflex.utils.prerequisites import get_redis_sync
 from reflex.utils.token_manager import RedisTokenManager
+from tests.integration.utils import CLIENT_TOKEN_JS
 
 pytest.importorskip("fastapi")
 
@@ -246,7 +247,7 @@ def test_lifespan_modify_state(lifespan_app: AppHarness, page: Page):
     assert lifespan_app.app_instance is not None, "app is not running"
     assert lifespan_app.frontend_url is not None
     page.goto(lifespan_app.frontend_url)
-    page.wait_for_function("() => sessionStorage.getItem('token') !== null")
+    page.wait_for_function(f"() => {CLIENT_TOKEN_JS} !== null")
 
     modify_count = page.locator("#modify_count")
     expect(modify_count).not_to_have_text("0")
@@ -268,7 +269,7 @@ def test_lifespan_raw_asyncio_task(lifespan_app: AppHarness, page: Page):
     assert lifespan_app.app_instance is not None, "app is not running"
     assert lifespan_app.frontend_url is not None
     page.goto(lifespan_app.frontend_url)
-    page.wait_for_function("() => sessionStorage.getItem('token') !== null")
+    page.wait_for_function(f"() => {CLIENT_TOKEN_JS} !== null")
 
     asyncio_task_global = page.locator("#asyncio_task_global")
     expect(asyncio_task_global).not_to_have_text("0")
@@ -293,7 +294,7 @@ def test_lifespan(lifespan_app: AppHarness, page: Page):
     assert lifespan_app.app_instance is not None, "app is not running"
     assert lifespan_app.frontend_url is not None
     page.goto(lifespan_app.frontend_url)
-    page.wait_for_function("() => sessionStorage.getItem('token') !== null")
+    page.wait_for_function(f"() => {CLIENT_TOKEN_JS} !== null")
 
     context_global = page.locator("#context_global")
     task_global = page.locator("#task_global")
@@ -315,7 +316,7 @@ def test_lifespan(lifespan_app: AppHarness, page: Page):
     # Disconnect the page and wait until the server has dropped its token. A
     # disconnect still running at shutdown deletes the token from redis after
     # the event loop stops, which logs an error.
-    token = page.evaluate("() => sessionStorage.getItem('token')")
+    token = page.evaluate(f"() => {CLIENT_TOKEN_JS}")
     token_manager = lifespan_app.token_manager()
     page.close()
     assert lifespan_app._poll_for(lambda: token not in token_manager.token_to_sid)

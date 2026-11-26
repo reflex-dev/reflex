@@ -9,7 +9,7 @@ from collections.abc import Generator
 from pathlib import Path
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 from playwright.sync_api import Page, expect
 from reflex_base.constants.event import Endpoint
@@ -733,7 +733,7 @@ def test_uploaded_file_security_headers(
     opened_page.locator("#upload_button_tertiary").click()
     _upload_done(opened_page)
     upload_url = f"{Endpoint.UPLOAD.get_url()}/{filename}"
-    response = httpx.get(upload_url)
+    response = httpx2.get(upload_url)
     assert response.status_code == 200
     assert response.text == contents
     assert response.headers["x-content-type-options"] == "nosniff"

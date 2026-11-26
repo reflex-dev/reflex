@@ -7,6 +7,7 @@ __lazy_modules__ = ["click"]
 
 import contextlib
 import functools
+import gc
 import hashlib
 import importlib.util
 import json
@@ -534,13 +535,20 @@ def _backend_app():
     """Load the config, then import the app and create its ASGI app.
 
     Backend workers import this factory instead of the app module, so the config
-    exists before the app defines its State classes.
+    exists before the app defines its State classes. A prod worker keeps the app
+    for its whole life, so it then freezes the heap: full collections skip what
+    the build left alive instead of walking it on every pass.
 
     Returns:
         The backend ASGI app.
     """
     app_module = importlib.import_module(get_app_module())
-    return getattr(app_module, constants.CompileVars.APP)()
+    asgi_app = getattr(app_module, constants.CompileVars.APP)()
+    if is_prod_mode():
+        # Collect first, so the build's garbage is freed rather than frozen.
+        gc.collect()
+        gc.freeze()
+    return asgi_app
 
 
 def get_app_instance():
@@ -1118,8 +1126,6 @@ def _freeze_for_fork() -> bool:
     Returns:
         Whether forking is safe; False when a telemetry thread is still alive.
     """
-    import gc
-
     from reflex.utils import telemetry
 
     if not telemetry._shutdown_executor():
