@@ -352,6 +352,7 @@ class UnevaluatedPage:
             else other.description,
             on_load=self.on_load if self.on_load is not None else other.on_load,
             context=self.context if self.context is not None else other.context,
+            stylesheets=self.stylesheets or other.stylesheets,
             _source_module=self._source_module
             if self._source_module is not None
             else other._source_module,
