@@ -41,7 +41,13 @@ const modules = vi.hoisted(() => {
   const hangingLoaded = new Promise((resolve) => {
     releaseHanging = resolve;
   });
+  let releaseDirect = () => {};
+  const directLoaded = new Promise((resolve) => {
+    releaseDirect = resolve;
+  });
   return {
+    releaseDirect,
+    directLoaded,
     seen: [],
     answer,
     answered,
@@ -115,6 +121,10 @@ vi.mock("$/utils/scripts", () => ({
           modules.seen.push(["waiting"]);
           return new Promise(() => {});
         },
+      })),
+    "app.scripts.direct": () =>
+      modules.directLoaded.then(() => ({
+        ping: (value) => modules.seen.push(["direct", value]),
       })),
     "app.scripts.broken": () =>
       Promise.reject(new Error("Failed to fetch the module.")),
@@ -320,6 +330,20 @@ test("a function of a module still loading runs once it has loaded", async () =>
   modules.releaseSlow();
   await call;
   expect(modules.seen).toEqual([["ping", "late"]]);
+});
+
+test("applyEvent called directly waits for a module still loading", async () => {
+  // processEvent waits for the load itself; applyEvent is exported, and a
+  // caller that does not wait must not get an error for the unloaded module.
+  const onerror = vi.fn();
+  window.onerror = onerror;
+  const call = callJs("app.scripts.direct", "ping", ["direct"]);
+  await Promise.resolve();
+  expect(modules.seen).toEqual([]);
+  modules.releaseDirect();
+  await call;
+  expect(modules.seen).toEqual([["direct", "direct"]]);
+  expect(onerror.mock.calls).toEqual([]);
 });
 
 test("reports a missing module, function or non-function export", async () => {
