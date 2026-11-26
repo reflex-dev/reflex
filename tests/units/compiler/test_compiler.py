@@ -2436,7 +2436,7 @@ def test_compile_hoisted_vars(hoisted_vars: dict[str, LiteralVar]):
 def _compile_texts_app(
     texts: ArrayVar[list[str]], root: Path, mocker: MockerFixture
 ) -> dict[str, str]:
-    """Compile an app whose pages and memos render ``texts``.
+    """Compile an app whose pages and memos render ``texts`` into a fresh ``.web``.
 
     Args:
         texts: The list the app renders.
@@ -2462,8 +2462,8 @@ def _compile_texts_app(
             first_text(),
         )
 
-    root.mkdir()
     with chdir(root), RegistrationContext():
+        shutil.rmtree(prerequisites.get_web_dir(), ignore_errors=True)
         app = rx.App(enable_state=False)
         app.add_page(index, route="index")
         app.add_page(lambda: rx.el.span(texts[1]), route="other")
@@ -2489,7 +2489,7 @@ def test_compile_app_emits_a_hoisted_literal_once(
     the literal written out where the hoisted one has its name and no import.
 
     Args:
-        tmp_path: The temporary directory to compile the apps in.
+        tmp_path: The temporary directory to compile both apps in.
         mocker: Fixture for avoiding frontend dependency installation.
         hoisted_vars: The emptied hoisted literal registry.
     """
@@ -2502,8 +2502,9 @@ def test_compile_app_emits_a_hoisted_literal_once(
     name = str(hoisted)
     import_line = f'import {{{name}}} from "$/utils/hoisted/{name}"\n'
 
-    plain_modules = _compile_texts_app(literal, tmp_path / "plain", mocker)
-    hoisted_modules = _compile_texts_app(hoisted, tmp_path / "hoisted", mocker)
+    # One directory for both, as a compile may write its own into the output.
+    plain_modules = _compile_texts_app(literal, tmp_path, mocker)
+    hoisted_modules = _compile_texts_app(hoisted, tmp_path, mocker)
 
     assert hoisted_modules.pop(f"utils/hoisted/{name}.js") == (
         f'\n\n\nexport const {name} = ["only in the hoisted module", "b"];\n'
