@@ -181,8 +181,8 @@ writing to `.web` are outside this lock, so avoid running them during an
 export.
 
 The export also writes a pre-compressed `.gz` copy of the compressible text
-assets (JS, CSS, HTML, JSON, SVG, and similar), so configure the static host
-to serve those directly where it supports it. Set the
+assets (JS, CSS, HTML, JSON, SVG, and similar) and of WebAssembly modules, so
+configure the static host to serve those directly where it supports it. Set the
 `frontend_compression_formats` config option to also generate `brotli` or
 `zstd` copies.
 

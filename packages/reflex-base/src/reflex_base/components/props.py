@@ -345,9 +345,7 @@ class PropsBase(metaclass=PropsBaseMeta):
                     continue
 
                 # Recursively convert nested structures
-                value = self._convert_to_camel_case(
-                    value, exclude_none, include, exclude
-                )
+                value = self._convert_to_camel_case(value, exclude_none)
 
                 # Convert key to camelCase
                 camel_key = format.to_camel_case(field_name)
@@ -355,44 +353,29 @@ class PropsBase(metaclass=PropsBaseMeta):
 
         return result
 
-    def _convert_to_camel_case(
-        self,
-        value: Any,
-        exclude_none: bool = True,
-        include: set[str] | None = None,
-        exclude: set[str] | None = None,
-    ) -> Any:
+    def _convert_to_camel_case(self, value: Any, exclude_none: bool = True) -> Any:
         """Recursively convert nested dictionaries and lists to camelCase.
 
         Args:
             value: The value to convert.
             exclude_none: Whether to exclude None values.
-            include: Fields to include in the output.
-            exclude: Fields to exclude from the output.
 
         Returns:
             The converted value with camelCase keys.
         """
         if isinstance(value, PropsBase):
             # Convert nested PropsBase objects
-            return value.dict(
-                exclude_none=exclude_none, include=include, exclude=exclude
-            )
+            return value.dict(exclude_none=exclude_none)
         if isinstance(value, dict):
             # Convert dictionary keys to camelCase
             return {
-                format.to_camel_case(k): self._convert_to_camel_case(
-                    v, exclude_none, include, exclude
-                )
+                format.to_camel_case(k): self._convert_to_camel_case(v, exclude_none)
                 for k, v in value.items()
                 if not (exclude_none and v is None)
             }
         if isinstance(value, (list, tuple)):
             # Convert list/tuple items recursively
-            return [
-                self._convert_to_camel_case(item, exclude_none, include, exclude)
-                for item in value
-            ]
+            return [self._convert_to_camel_case(item, exclude_none) for item in value]
         # Return primitive values as-is
         return value
 

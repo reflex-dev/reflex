@@ -3,6 +3,7 @@ from reflex_site_shared.constants import OG_IMAGE_URL
 from reflex_site_shared.route import Route
 from reflex_site_shared.views.marketing_footer import marketing_footer
 
+from reflex_docs import sections
 from reflex_docs.pages.docs_landing.views import (
     ai_builder_section,
     divider,
@@ -24,7 +25,7 @@ def _docs_landing() -> rx.Component:
         The documentation landing page component.
     """
     return rx.el.div(
-        docs_navbar(),
+        docs_navbar(active_tab=sections.OVERVIEW),
         rx.el.main(
             rx.el.div(
                 hero(),

@@ -11,8 +11,10 @@ from reflex_base.components.component import Component
 from reflex_base.components.memo import MEMOS
 from reflex_base.components.memoize_helpers import get_memoized_event_triggers
 from reflex_base.constants import Dirs
+from reflex_base.event import Event
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import ClientStateConflictError, VarTypeError
+from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import LiteralVar, Var, VarData
 from reflex_base.vars.function import FunctionVar
 
@@ -725,16 +727,24 @@ def test_push_plain_value_uses_json_payload() -> None:
 def test_push_var_is_evaluated_on_the_client() -> None:
     """A Var is a client-side expression, so it must not be sent as its text.
 
-    A JSON payload would deliver the literal source (``"Date.now()"``), so a Var
-    keeps the evaluated path, reaching the store through ``refs``.
+    A JSON payload would deliver the literal source, so a Var keeps the evaluated
+    path, reaching the store through ``refs``. The imports of both sides come
+    along, for a page that compiles the push into a trigger instead of receiving
+    it as a script.
     """
-    from reflex_base.event import fix_events
-
     cs = client_state(0, name="counter")
-    event = fix_events([cs.push(Var("Date.now()"))], token="tok")[0]
-    assert event.name.endswith("_call_function")
-    assert 'refs["__client_state"].set("counter", Date.now())' in str(
-        event.payload["function"]
+    other = client_state("", name="other")
+    spec = cs.push(other.global_value.to(str) + "!")
+    (event,) = Event.from_event_type(spec)
+    assert event.name == "_call_function"
+    assert event.payload == {
+        "function": '(() => (refs["__client_state"].set("counter", (getClientState("other")+"!"))))',
+        "callback": None,
+    }
+    (_, function), _ = spec.args
+    assert function._get_all_var_data() == VarData.merge(
+        VarData(imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag="refs")]}),
+        other.global_value._get_all_var_data(),
     )
 
 
