@@ -80,6 +80,7 @@ rx.button(
     on_click=rx.toast(
         "Custom Toast!",
         position="top-right",
+        icon=rx.icon("check"),
         style={
             "background-color": "green",
             "color": "white",
@@ -90,6 +91,11 @@ rx.button(
 )
 ```
 
+For a toast icon created in a backend handler, register any libraries the icon
+needs at app setup. For example, call `bundle_library(rx.icon("check"))` with
+`bundle_library` from `reflex.components.dynamic` to make that Lucide icon
+available to the browser.
+
 The following props are available for customization:
 
 - `description`: `str | Var`: Toast's description, renders underneath the title.
@@ -99,6 +105,7 @@ The following props are available for customization:
 - `duration`: `int`: Time in milliseconds that should elapse before automatically closing the toast.
 - `position`: `LiteralPosition`: Position of the toast.
 - `dismissible`: `bool`: If false, it'll prevent the user from dismissing the toast.
+- `icon`: `Component | Var`: Custom icon displayed next to the toast text.
 - `action`: `dict`: A dict with `label` and `on_click` keys. Renders a primary button, clicking it will close the toast.
 - `cancel`: `dict`: A dict with `label` and `on_click` keys. Renders a secondary button, clicking it will close the toast.
 - `id`: `str | Var`: Custom id for the toast.

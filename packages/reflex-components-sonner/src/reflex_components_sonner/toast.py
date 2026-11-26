@@ -4,19 +4,25 @@ from __future__ import annotations
 
 import builtins
 import dataclasses
+from collections.abc import Callable
 from typing import Any, Literal
 
-from reflex_base.components.component import Component, ComponentNamespace, field
+from reflex_base.components.component import (
+    Component,
+    ComponentNamespace,
+    LiteralComponentVar,
+    field,
+)
 from reflex_base.components.props import NoExtrasAllowedProps
 from reflex_base.constants.base import Dirs
-from reflex_base.event import EventSpec, run_script
+from reflex_base.event import EventSpec, call_function, run_script
 from reflex_base.style import Style, resolved_color_mode
 from reflex_base.utils import format
 from reflex_base.utils.imports import ImportVar
-from reflex_base.utils.serializers import serializer
+from reflex_base.utils.serializers import serialize, serializer
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
-from reflex_base.vars.function import FunctionVar
+from reflex_base.vars.function import ArgsFunctionOperation, FunctionVar
 from reflex_base.vars.number import ternary_operation
 from reflex_base.vars.object import ObjectVar
 from reflex_components_lucide.icon import Icon
@@ -76,7 +82,7 @@ def _toast_callback_signature(toast: Var) -> list[Var]:
     """
     return [
         Var(
-            _js_expr=f"(() => {{let {{action, cancel, onDismiss, onAutoClose, ...rest}} = {toast!s}; return rest}})()"
+            _js_expr=f"(() => {{let {{action, cancel, icon, onDismiss, onAutoClose, ...rest}} = {toast!s}; return rest}})()"
         )
     ]
 
@@ -163,8 +169,6 @@ class ToastProps(NoExtrasAllowedProps):
             d["cancel"] = self.cancel
             if isinstance(self.cancel, dict):
                 d["cancel"] = ToastAction(**self.cancel)
-        if "icon" in d:
-            d["icon"] = self.icon
         if "onDismiss" in d:
             d["onDismiss"] = format.format_queue_events(
                 self.on_dismiss, _toast_callback_signature
@@ -174,6 +178,31 @@ class ToastProps(NoExtrasAllowedProps):
                 self.on_auto_close, _toast_callback_signature
             )
         return d
+
+
+@dataclasses.dataclass(frozen=True, eq=False, kw_only=True)
+class _ToastWithComponentIcon(Var):
+    """A toast function with a self-contained component for backend events."""
+
+    _icon: Component
+    _render_toast: Callable[[Var], Var]
+
+    def _decode(self) -> str:
+        """Encode the function evaluated by the browser's event loop.
+
+        Returns:
+            JavaScript that renders the icon through the dynamic component loader.
+        """
+        source = LiteralVar.create(serialize(self._icon))
+        icon = Var(
+            "(() => {"
+            "const {createElement, lazy, Suspense} = window.__reflex.react;"
+            f"const Icon = lazy(() => evalReactComponent({source!s})"
+            ".then(component => ({default: component})));"
+            "return createElement(Suspense, null, createElement(Icon));"
+            "})()"
+        )
+        return str(ArgsFunctionOperation.create((), self._render_toast(icon)))
 
 
 class Toaster(Component):
@@ -278,28 +307,57 @@ class Toaster(Component):
             msg = "Toast message or title or description must be provided."
             raise ValueError(msg)
 
-        if props:
-            args = LiteralVar.create(ToastProps(component_name="rx.toast", **props))  # pyright: ignore [reportCallIssue]
-            toast = toast_command.call(message, args)
-        else:
-            toast = toast_command.call(message)
-
+        options = ToastProps(component_name="rx.toast", **props) if props else None  # pyright: ignore [reportCallIssue]
+        toast_props = options.dict() if options is not None else None
+        fallback = None
         if fallback_to_alert:
-            toast = ternary_operation(
-                toast_ref.bool(),
-                toast,
-                FunctionVar("window.alert").call(
-                    Var
-                    .create(
-                        message
-                        if isinstance(message, str) and message
-                        else props.get("title", props.get("description", ""))
-                    )
-                    .to(str)
-                    .replace("<br/>", "\n")
-                ),
+            fallback = FunctionVar("window.alert").call(
+                Var
+                .create(
+                    message
+                    if isinstance(message, str) and message
+                    else props.get("title", props.get("description", ""))
+                )
+                .to(str)
+                .replace("<br/>", "\n")
             )
 
+        def render_toast(icon: Var | None = None) -> Var:
+            """Render the toast call with an optional backend icon expression.
+
+            Args:
+                icon: Replacement for the original icon when sent from the backend.
+
+            Returns:
+                The toast call, with an alert fallback if requested.
+            """
+            if toast_props is None:
+                toast = toast_command.call(message)
+            else:
+                args = (
+                    {**toast_props, "icon": icon} if icon is not None else toast_props
+                )
+                toast = toast_command.call(message, args)
+            return (
+                ternary_operation(toast_ref.bool(), toast, fallback)
+                if fallback is not None
+                else toast
+            )
+
+        toast = render_toast()
+        icon = options.icon if options is not None else None
+        if isinstance(icon, LiteralComponentVar):
+            icon = icon._var_value
+        if isinstance(icon, Component):
+            # Compiled events use the page's imports. Backend events invoke _decode().
+            return call_function(
+                _ToastWithComponentIcon(
+                    _js_expr=str(ArgsFunctionOperation.create((), toast)),
+                    _var_data=toast._get_all_var_data(),
+                    _icon=icon,
+                    _render_toast=render_toast,
+                )
+            )
         return run_script(toast)
 
     @staticmethod
