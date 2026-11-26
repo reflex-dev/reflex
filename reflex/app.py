@@ -7,6 +7,7 @@ import contextlib
 import copy
 import dataclasses
 import functools
+import gc
 import importlib
 import inspect
 import ipaddress
@@ -26,6 +27,7 @@ from collections.abc import (
     Collection,
     Coroutine,
     Iterable,
+    Iterator,
     Mapping,
     Sequence,
 )
@@ -893,6 +895,37 @@ def _socket_cors_allowed_origins() -> list[str] | _SocketOriginCheck:
         same_origin=not _cors_origins_explicit(config),
         trusted_proxy_hops=config.trusted_proxy_hops,
     )
+
+
+# Above any count a compile reaches, so no automatic full collection starts.
+_DEFERRED_FULL_COLLECTION_THRESHOLD = 1 << 30
+# CPython 3.14.0 to 3.14.4 collect the old generation incrementally: they ignore
+# threshold2 and pace the old generation's increments by threshold1.
+_INCREMENTAL_GC = (3, 14) <= sys.version_info[:3] < (3, 14, 5)
+
+
+@contextlib.contextmanager
+def _defer_full_collections() -> Iterator[None]:
+    """Hold back the cyclic GC's automatic full collections for the block.
+
+    A compile keeps every page's component tree alive until it returns, so each
+    full collection during it walks a heap that only grows. Young collections
+    still free the short-lived cycles, and the first full collection after the
+    block walks the compiled app once.
+
+    Yields:
+        None.
+    """
+    thresholds = gc.get_threshold()
+    threshold0, threshold1, threshold2 = thresholds
+    if _INCREMENTAL_GC:
+        gc.set_threshold(threshold0, _DEFERRED_FULL_COLLECTION_THRESHOLD, threshold2)
+    else:
+        gc.set_threshold(threshold0, threshold1, _DEFERRED_FULL_COLLECTION_THRESHOLD)
+    try:
+        yield
+    finally:
+        gc.set_threshold(*thresholds)
 
 
 @dataclasses.dataclass()
@@ -2310,7 +2343,11 @@ class App(MiddlewareMixin, LifespanMixin):
         from reflex_base.utils.deterministic_hash import clear_hash_caches
 
         # One record of client state declarations spans the whole compile.
-        with otel.compile_span(trigger, dry_run), _collect_declarations():
+        with (
+            otel.compile_span(trigger, dry_run),
+            _collect_declarations(),
+            _defer_full_collections(),
+        ):
             ctx = TelemetryContext.start(trigger=trigger)
             try:
                 if ctx is None:

@@ -5,6 +5,7 @@ import contextlib
 import contextvars
 import dataclasses
 import functools
+import gc
 import io
 import json
 import logging
@@ -70,6 +71,7 @@ import reflex as rx
 from reflex import constants
 from reflex._upload import upload
 from reflex.app import (
+    _DEFERRED_FULL_COLLECTION_THRESHOLD,
     App,
     ComponentCallable,
     EventNamespace,
@@ -4997,6 +4999,57 @@ def test_compile_reports_exception_and_reraises(
     assert len(compile_calls) == 1
     payload = compile_calls[0].kwargs["properties"]
     assert payload["exception"] == {"type": "_BoomError"}
+
+
+@pytest.mark.parametrize("fails", [False, True])
+@pytest.mark.parametrize("incremental", [False, True])
+def test_compile_defers_full_collections(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    fails: bool,
+    incremental: bool,
+):
+    """A compile runs without automatic full collections and restores them after.
+
+    The incremental collector of CPython 3.14.0 to 3.14.4 paces its old generation
+    by threshold1 instead of threshold2, and reports no threshold2 at all, so the
+    test checks the thresholds set rather than the ones read back.
+    """
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mocker.patch("reflex.app._INCREMENTAL_GC", incremental)
+    original = gc.get_threshold()
+    threshold0, threshold1, threshold2 = original
+    set_threshold = gc.set_threshold
+    calls = []
+
+    def record(*thresholds: int) -> None:
+        calls.append(thresholds)
+        set_threshold(*thresholds)
+
+    mocker.patch("reflex.app.gc.set_threshold", side_effect=record)
+    seen = []
+
+    def compile_app(*args, **kwargs) -> bool:
+        seen.append(list(calls))
+        if fails:
+            raise RuntimeError
+        return True
+
+    mocker.patch("reflex.compiler.compiler.compile_app", side_effect=compile_app)
+
+    with pytest.raises(RuntimeError) if fails else contextlib.nullcontext():
+        app._compile()
+
+    deferred = _DEFERRED_FULL_COLLECTION_THRESHOLD
+    expected = (
+        (threshold0, deferred, threshold2)
+        if incremental
+        else (threshold0, threshold1, deferred)
+    )
+    assert seen == [[expected]]
+    assert calls == [expected, original]
+    assert gc.get_threshold() == original
 
 
 def test_compile_skips_telemetry_when_compile_app_short_circuits(
