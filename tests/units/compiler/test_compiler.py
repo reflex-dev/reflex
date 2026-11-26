@@ -111,6 +111,7 @@ def _compile_stateless_app(
     page: rx.Component,
     *,
     enable_state: bool = False,
+    head_components: list[rx.Component] | None = None,
 ) -> None:
     """Compile a one-page app without writing it.
 
@@ -120,11 +121,12 @@ def _compile_stateless_app(
         mocker: Fixture for avoiding frontend dependency installation.
         page: The page to compile.
         enable_state: Whether the app has state.
+        head_components: The components of the document head.
     """
     monkeypatch.chdir(tmp_path)
     config = rx.Config(app_name="transport_guard", plugins=[])
     mocker.patch("reflex_base.config._get_config", return_value=config)
-    app = rx.App(enable_state=enable_state)
+    app = rx.App(enable_state=enable_state, head_components=head_components or [])
     app.add_page(lambda: page, route="files")
     mocker.patch.object(app, "_get_frontend_packages")
     compiler.compile_app(app, dry_run=True, use_rich=False)
@@ -173,6 +175,27 @@ def test_stateless_app_rejects_backend_imports_in_memos(
         definition.source_module, definition.export_name
     )[1]
     assert str(error.value) == _backend_imports_error(f"memo {symbol!r}: getBackendURL")
+
+
+@pytest.mark.usefixtures("clean_registration_context", "preserve_memo_registries")
+def test_stateless_app_rejects_backend_imports_in_the_document_head(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """The check covers the document head, which compiles into the document root.
+
+    Args:
+        tmp_path: The temporary application directory.
+        monkeypatch: Fixture for selecting the application directory.
+        mocker: Fixture for avoiding frontend dependency installation.
+    """
+    head = rx.el.link(rel="preload", href=rx.get_upload_url("font.woff2"))
+    with pytest.raises(ReflexRuntimeError) as error:
+        _compile_stateless_app(
+            tmp_path, monkeypatch, mocker, rx.el.p("Text"), head_components=[head]
+        )
+    assert str(error.value) == _backend_imports_error(
+        "the document head: getBackendURL"
+    )
 
 
 @pytest.mark.usefixtures("clean_registration_context", "preserve_memo_registries")
