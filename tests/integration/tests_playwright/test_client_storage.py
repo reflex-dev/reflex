@@ -11,6 +11,7 @@ from playwright.sync_api import Page, expect
 from reflex_base.constants.state import FIELD_MARKER
 
 from reflex.testing import AppHarness
+from tests.integration.utils import CLIENT_TOKEN_KEY_JS, SESSION_REFRESH_KEY_JS
 
 
 def ClientSide():
@@ -34,7 +35,9 @@ def ClientSide():
         @rx.event
         def reset_token_no_hydrate(self):
             return rx.run_script(
-                f"{{token = '{uuid.uuid4()}'; window.sessionStorage.setItem('token', token);}}"
+                "{window.sessionStorage.setItem("
+                "Object.keys(sessionStorage).find((key) => key.endsWith(':token')), "
+                f"'{uuid.uuid4()}');}}"
             )
 
     class ClientSideSubState(ClientSideState):
@@ -189,7 +192,9 @@ def _storage(page: Page, name: str) -> dict[str, str]:
 
 
 def _cookie_map(page: Page) -> dict[str, Any]:
-    """Return the cookies visible to the page's current URL, indexed by name.
+    """Return the app's cookies visible to the page's current URL, indexed by name.
+
+    The framework's own browser session cookie is left out.
 
     Args:
         page: Playwright page.
@@ -199,7 +204,7 @@ def _cookie_map(page: Page) -> dict[str, Any]:
     """
     cookies: dict[str, Any] = {}
     for cookie in page.context.cookies(page.url):
-        if name := cookie.get("name"):
+        if (name := cookie.get("name")) and "reflex_session_" not in name:
             cookies[name] = cookie
     return cookies
 
@@ -310,6 +315,7 @@ def test_client_side_state(client_side: AppHarness, opened_page: Page):
     assert not _cookie_map(page)
     local_storage = _storage(page, "localStorage")
     local_storage.pop("last_compiled_theme", None)
+    local_storage.pop(page.evaluate(SESSION_REFRESH_KEY_JS), None)
     local_storage.pop("theme", None)
     assert local_storage == {}
 
@@ -373,6 +379,7 @@ def test_client_side_state(client_side: AppHarness, opened_page: Page):
 
     local_storage = _storage(page, "localStorage")
     local_storage.pop("last_compiled_theme", None)
+    local_storage.pop(page.evaluate(SESSION_REFRESH_KEY_JS), None)
     local_storage.pop("theme", None)
     assert local_storage == {
         f"{sub_state}.l1{FIELD_MARKER}": "l1 value",
@@ -382,7 +389,7 @@ def test_client_side_state(client_side: AppHarness, opened_page: Page):
         f"{sub_sub_state}.l1s{FIELD_MARKER}": "l1s value",
     }
     session_storage = _storage(page, "sessionStorage")
-    session_storage.pop("token", None)
+    session_storage.pop(page.evaluate(CLIENT_TOKEN_KEY_JS), None)
     assert session_storage == {
         f"{sub_state}.s1{FIELD_MARKER}": "s1 value",
         f"{sub_state}.s2{FIELD_MARKER}": "s2 value",
@@ -438,7 +445,7 @@ def test_client_side_state(client_side: AppHarness, opened_page: Page):
     )
     expect(page.locator("#c5")).to_have_text("c5 value")
 
-    page.evaluate("sessionStorage.setItem('token', '')")
+    page.evaluate(f"sessionStorage.setItem({CLIENT_TOKEN_KEY_JS}, '')")
     page.reload()
     token = _wait_for_token(page)
     _expect_displayed_values(

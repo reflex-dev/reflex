@@ -17,6 +17,10 @@ import {
 import debounce from "$/utils/helpers/debounce";
 import throttle from "$/utils/helpers/throttle";
 
+// What `ClientStateVar.global_value` and `global_set` compile to, exported so
+// the server-provided scripts runScript evaluates can call them too.
+export { getClientState, setClientState };
+
 // Dictionary holding component references. Internal: not covered by any
 // compatibility guarantee. Framework vars reach it through `Var._as_ref()`,
 // whose var data imports `refs`. It is also published as a global, only so
@@ -44,7 +48,7 @@ if (typeof document !== "undefined") {
 }
 
 /**
- * Generate a UUID (Used for session tokens).
+ * Generate a UUID for component identifiers.
  * Taken from: https://stackoverflow.com/questions/105034/how-do-i-create-a-guid-uuid
  * @returns A UUID.
  */

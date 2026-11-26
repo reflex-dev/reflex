@@ -1,0 +1,1 @@
+Production builds now also pre-compress WebAssembly (`.wasm`) modules, writing the same sidecars as for the text assets in every `frontend_compression_formats` format, so hosts that serve the sidecars send them compressed.
