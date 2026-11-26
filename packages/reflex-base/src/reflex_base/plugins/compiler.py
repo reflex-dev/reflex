@@ -285,8 +285,11 @@ class CompilerHooks:
         """
         with contextlib.ExitStack() as stack:
             for hook_impl in self._eval_page_scope_hooks:
-                if (scope := hook_impl(page, **kwargs)) is not None:
-                    page = stack.enter_context(scope) or page
+                scope = hook_impl(page, **kwargs)
+                if scope is None:
+                    continue
+                if (replacement := stack.enter_context(scope)) is not None:
+                    page = replacement
             yield page
 
     def eval_page(

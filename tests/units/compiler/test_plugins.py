@@ -376,6 +376,25 @@ def test_eval_page_scope_can_have_a_copy_of_the_page_evaluated() -> None:
     assert page.title == "Demo"
 
 
+def test_eval_page_scope_evaluates_a_falsy_replacement_page() -> None:
+    @dataclasses.dataclass(slots=True)
+    class EmptyPage(FakePage):
+        def __bool__(self) -> bool:
+            return False
+
+    class ReplacingPlugin(StubPlugin):
+        @contextlib.contextmanager
+        def eval_page_scope(
+            self, page: PageDefinition, /, **kwargs: Any
+        ) -> Iterator[Any]:
+            yield EmptyPage(route=page.route, component=Fragment.create)
+
+    with CompilerHooks(plugins=(ReplacingPlugin(),)).eval_page_scope(
+        FakePage(route="demo", component=Fragment.create)
+    ) as page:
+        assert isinstance(page, EmptyPage)
+
+
 def test_eval_page_scope_copy_gives_the_backend_page_its_head(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
