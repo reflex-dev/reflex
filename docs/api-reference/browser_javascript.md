@@ -324,6 +324,11 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
   re-exported from another file. Python cannot call a value: an exported
   class or enum, or a `const` set to a literal, an object, an array or a class
   expression. A default export and TypeScript types are left out.
+- Any lookup of a name on the module counts as using it, not only an import
+  or a call: Python does not read the JavaScript file, so `hasattr(party,
+  "launch")` or `getattr(party, "launch", None)` always finds a function, and
+  then the compile fails if the module exports no function named `launch`. Do
+  not test for an export from Python; export every name you look up.
 - A name used only inside an event handler is looked up when the handler runs,
   after the compile, so a wrong name there is reported in the browser.
 - Arguments are sent as JSON. A var is sent as its value in the browser. An

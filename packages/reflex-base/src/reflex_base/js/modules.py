@@ -261,7 +261,10 @@ def _get_function(module: ModuleType, names: set[str], name: str) -> _JsFunction
 
     Installed as the module's ``__getattr__``. The module is not read when it is
     imported, so the name is recorded for the compiler to check, and the
-    function is cached on the module.
+    function is cached on the module. Any lookup records it, so
+    ``hasattr(module, "x")`` or ``getattr(module, "x", None)`` before the
+    compile succeeds, and then fails the compile if the module exports no
+    function ``x``.
 
     Args:
         module: The module.
