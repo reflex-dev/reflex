@@ -6,6 +6,7 @@ import collections
 import dataclasses
 import json
 import logging
+import re
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getattr_static, getmodule
 from pathlib import Path
@@ -41,7 +42,13 @@ from reflex_base.utils.imports import (
     ImportVar,
     ParsedImportDict,
 )
-from reflex_base.vars.base import _HOISTED_VARS, LiteralVar, Var
+from reflex_base.vars.base import (
+    _HOISTED_LIBRARY_PREFIX,
+    _HOISTED_VARS,
+    LiteralVar,
+    Var,
+    _hoisted_var_names,
+)
 from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_core.base.app_wrap import AppWrap
 from reflex_components_core.base.fragment import Fragment
@@ -59,6 +66,11 @@ from reflex.utils.prerequisites import get_web_dir
 logger = logging.getLogger(__name__)
 
 RADIX_THEMES_STYLESHEET = "@radix-ui/themes/styles.css"
+
+# The library of a hoisted literal's module, in the import statements it renders.
+_HOISTED_IMPORT = re.compile(
+    rf'from "({re.escape(_HOISTED_LIBRARY_PREFIX)}hoisted_[0-9a-f]{{16}})"'
+)
 
 
 def _set_progress_total(
@@ -848,8 +860,16 @@ def compile_memo_components(
     return _compile_memo_components(memos)
 
 
-def compile_hoisted_vars() -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
-    """Compile a module exporting each hoisted literal.
+def compile_hoisted_vars(
+    emitted_code: Iterable[str],
+) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
+    """Compile a module for each hoisted literal the emitted code imports.
+
+    Only these and the literals they hold are written: the registry keeps every
+    literal a module of the process hoisted, which the current app may not use.
+
+    Args:
+        emitted_code: The code of every other file this compile writes.
 
     Returns:
         A list of ``(path, code)`` pairs (one per hoisted literal) alongside the
@@ -857,7 +877,11 @@ def compile_hoisted_vars() -> tuple[list[tuple[str, str]], dict[str, list[Import
     """
     output_files: list[tuple[str, str]] = []
     aggregate_imports: dict[str, list[ImportVar]] = {}
-    for name, literal in _HOISTED_VARS.items():
+    imported = {
+        library for code in emitted_code for library in _HOISTED_IMPORT.findall(code)
+    }
+    for name in sorted(_hoisted_var_names(imported)):
+        literal = _HOISTED_VARS[name]
         var_data = literal._get_all_var_data()
         imports = (
             {lib: list(fields) for lib, fields in var_data.imports} if var_data else {}
@@ -1622,8 +1646,10 @@ def compile_app(
 
     progress.stop()
 
-    # Last, so every literal hoisted while rendering the output above is in.
-    hoisted_var_files, hoisted_vars_imports = compile_hoisted_vars()
+    # Last, so every module importing a hoisted literal is rendered.
+    hoisted_var_files, hoisted_vars_imports = compile_hoisted_vars(
+        code for _, code in compile_results
+    )
     compile_results.extend(hoisted_var_files)
     all_imports = utils.merge_imports(all_imports, hoisted_vars_imports)
 

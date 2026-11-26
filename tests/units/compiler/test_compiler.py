@@ -2405,15 +2405,18 @@ def test_custom_code_may_declare_refs(auto_memoize: bool):
 
 
 def test_compile_hoisted_vars(hoisted_vars: dict[str, LiteralVar]):
-    """Each hoisted literal compiles to a module exporting it under its name."""
+    """The literals the emitted code imports, and those they hold, get a module."""
     inner = Var.create(["a", "b"]).hoist()
     outer = Var.create({"inner": inner}).hoist()
+    Var.create(["unused"]).hoist()
     inner_library = f"$/utils/hoisted/{inner!s}"
 
-    files, imports = compiler.compile_hoisted_vars()
+    files, imports = compiler.compile_hoisted_vars([
+        f'import {{{outer!s}}} from "$/utils/hoisted/{outer!s}"\n'
+    ])
 
     hoisted_dir = prerequisites.get_web_dir() / "utils" / "hoisted"
-    assert files == [
+    assert files == sorted([
         (
             str(hoisted_dir / f"{inner!s}.js"),
             f'\n\n\nexport const {inner!s} = ["a", "b"];\n',
@@ -2425,7 +2428,7 @@ def test_compile_hoisted_vars(hoisted_vars: dict[str, LiteralVar]):
                 f'export const {outer!s} = ({{ ["inner"] : {inner!s} }});\n'
             ),
         ),
-    ]
+    ])
     assert imports == {inner_library: [ImportVar(tag=str(inner))]}
 
 
@@ -2501,7 +2504,9 @@ def test_compile_app_prunes_hoisted_literals_no_longer_emitted(
     mocker: MockerFixture,
     hoisted_vars: dict[str, LiteralVar],
 ):
-    """A compile deletes the module of a literal the previous one hoisted only.
+    """A compile deletes the module of a literal its pages no longer render.
+
+    The literal stays registered, as a module-level constant would.
 
     Args:
         tmp_path: The temporary application directory.
@@ -2514,31 +2519,27 @@ def test_compile_app_prunes_hoisted_literals_no_longer_emitted(
         "reflex_base.config._get_config",
         return_value=rx.Config(app_name="hoist_prune_test", plugins=[]),
     )
-    hoist = [True]
+    texts = Var.create(["a", "b"]).hoist()
+    render = [True]
     app = rx.App(enable_state=False)
     app.add_page(
-        lambda: rx.el.span(
-            Var.create(["a", "b"]).hoist().length() if hoist[0] else "none"
-        ),
-        route="index",
+        lambda: rx.el.span(texts.length() if render[0] else "none"), route="index"
     )
     mocker.patch.object(app, "_get_frontend_packages")
     web_dir = prerequisites.get_web_dir()
     manifest = web_dir / utils._HOISTED_VAR_MANIFEST_FILENAME
+    module = web_dir / "utils" / "hoisted" / f"{texts!s}.js"
 
     compiler.compile_app(app, use_rich=False)
-    (name,) = hoisted_vars
-    module = web_dir / "utils" / "hoisted" / f"{name}.js"
     assert module.is_file()
-    assert json.loads(manifest.read_text()) == [f"utils/hoisted/{name}.js"]
+    assert json.loads(manifest.read_text()) == [f"utils/hoisted/{texts!s}.js"]
 
-    # A new process starts with an empty registry.
-    hoisted_vars.clear()
-    hoist[0] = False
+    render[0] = False
     compiler.compile_app(app, dry_run=True, use_rich=False)
     assert module.is_file()
 
     compiler.compile_app(app, use_rich=False)
+    assert list(hoisted_vars) == [str(texts)]
     assert not module.exists()
     assert not module.parent.exists()
     assert json.loads(manifest.read_text()) == []
