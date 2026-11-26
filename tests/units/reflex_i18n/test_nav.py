@@ -106,7 +106,7 @@ def translated_news(monkeypatch: pytest.MonkeyPatch):
     plugin = I18nPlugin(
         locales=["de", "en"], default_locale="de", routing=PathPrefixRouting()
     )
-    plugin._page_paths = {"/neuigkeiten": {"en": "/news"}}
+    plugin._add_page_paths("/neuigkeiten", {"en": "/news"})
     monkeypatch.setattr(get_config(), "plugins", [plugin])
 
 

@@ -841,8 +841,7 @@ def test_client_follows_a_pages_translated_paths(
     plugin = I18nPlugin(
         locales=["de", "en"], default_locale="de", routing=PathPrefixRouting()
     )
-    plugin._page_paths = {"/neuigkeiten": {"en": "/news"}}
-    plugin._base_paths = {("en", "/news"): "/neuigkeiten"}
+    plugin._add_page_paths("/neuigkeiten", {"en": "/news"})
     assert list(plugin._alternates(pathname).values()) == expected[:3]
 
 

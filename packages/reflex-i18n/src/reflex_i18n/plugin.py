@@ -317,8 +317,12 @@ class I18nPlugin(Plugin):
     _page_paths: dict[str, dict[str, str]] = dataclasses.field(
         default_factory=dict, init=False, repr=False, compare=False
     )
-    # The other way round, matched case-insensitively as the router matches
-    # paths: (locale, lowered translated path) -> base path.
+    # The lookups below match paths case-insensitively, as the router does.
+    # Lowered base path -> {locale: path}.
+    _paths_by_base: dict[str, dict[str, str]] = dataclasses.field(
+        default_factory=dict, init=False, repr=False, compare=False
+    )
+    # (locale, lowered translated path) -> base path.
     _base_paths: dict[tuple[str, str], str] = dataclasses.field(
         default_factory=dict, init=False, repr=False, compare=False
     )
@@ -403,6 +407,7 @@ class I18nPlugin(Plugin):
             return
         add_page = context["add_page"]
         self._page_paths = {}
+        self._paths_by_base = {}
         self._base_paths = {}
         self._page_urls = set()
         for page in context["pages"]:
@@ -418,9 +423,7 @@ class I18nPlugin(Plugin):
                 )
                 raise RouteValueError(msg)
             if paths := self._translated_paths(base_path, page.context or {}):
-                self._page_paths[base_path] = paths
-                for locale, path in paths.items():
-                    self._base_paths[locale, path.lower()] = base_path
+                self._add_page_paths(base_path, paths)
             for locale in self.locales:
                 localized = self._localize(base_path, locale)
                 self._page_urls.add(localized.lower())
@@ -475,6 +478,18 @@ class I18nPlugin(Plugin):
             result[locale] = normalized
         return result
 
+    def _add_page_paths(self, base_path: str, paths: dict[str, str]) -> None:
+        """Record the paths a page has in other locales.
+
+        Args:
+            base_path: The page's own path, which its default locale serves.
+            paths: Each other locale's path for the page.
+        """
+        self._page_paths[base_path] = paths
+        self._paths_by_base[base_path.lower()] = paths
+        for locale, path in paths.items():
+            self._base_paths[locale, path.lower()] = base_path
+
     def _localize(self, path: str, locale: str) -> str:
         """The URL path of a page in a locale, under its translated path if any.
 
@@ -486,17 +501,7 @@ class I18nPlugin(Plugin):
             The localized URL path.
         """
         assert self.routing is not None
-        # Matched case-insensitively, as the router matches paths.
-        lowered = path.lower()
-        paths = next(
-            (
-                paths
-                for base, paths in self._page_paths.items()
-                if base.lower() == lowered
-            ),
-            {},
-        )
-        translated = paths.get(locale, path)
+        translated = self._paths_by_base.get(path.lower(), {}).get(locale, path)
         return self.routing.localize(translated, locale, self.default_locale)
 
     def _alternates(self, path: str) -> dict[str, str]:
