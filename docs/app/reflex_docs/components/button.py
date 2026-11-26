@@ -32,7 +32,7 @@ variant_styles = {
 def button(
     text: str,
     variant: LiteralButtonVariant = "primary",
-    onclick: Callable | None = None,
+    on_click: Callable | None = None,
     style: dict | None = None,
     class_name: str = "",
     *children,
@@ -41,7 +41,7 @@ def button(
     return rx.el.button(
         text,
         *children,
-        on_click=onclick,
+        on_click=on_click,
         style=style if style is not None else {},
         class_name=default_class_name
         + " "
@@ -56,7 +56,7 @@ def button_with_icon(
     text: str,
     icon: str,
     variant: LiteralButtonVariant = "primary",
-    onclick: Callable | None = None,
+    on_click: Callable | None = None,
     style: dict | None = None,
     class_name: str = "",
     *children,
@@ -66,7 +66,7 @@ def button_with_icon(
         get_icon(icon, class_name="[&>svg]:size-5"),
         text,
         *children,
-        on_click=onclick,
+        on_click=on_click,
         style=style if style is not None else {},
         class_name=default_class_name
         + " "
