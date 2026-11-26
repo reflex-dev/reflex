@@ -5,6 +5,7 @@ import os
 import re
 import shutil
 import sys
+from collections.abc import Sequence
 from pathlib import Path, PureWindowsPath
 
 import pytest
@@ -1526,7 +1527,7 @@ def _compile_backend_only_app(
     mocker: MockerFixture,
     plugins: list[rx.plugins.Plugin],
 ) -> list[str]:
-    """Run a backend-only compile with no registry over two Radix pages.
+    """Run a backend-only compile with no registry over two Radix pages, one with a stylesheet.
 
     Args:
         tmp_path: A temporary project directory without a frontend build.
@@ -1552,7 +1553,7 @@ def _compile_backend_only_app(
 
     app = rx.App(_state=BackendWalkState)
     app.add_page(radix_page, route="/radix")
-    app.add_page(radix_page, route="/radix-2")
+    app.add_page(radix_page, route="/radix-2", stylesheets=["/radix.css"])
     mocker.patch.object(app, "_apply_decorated_pages")
     mocker.patch.object(app, "_should_compile", return_value=False)
     mocker.patch.object(app, "_add_optional_endpoints")
@@ -1638,7 +1639,7 @@ def test_backend_compile_runs_radix_plugin_subclass_hooks(
 def test_backend_compile_gives_page_hooks_the_compile_view(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
 ):
-    """Page hooks see the replaced root and every page, as in a frontend compile.
+    """Page hooks see the replaced root, the stylesheets and every page, as in a frontend compile.
 
     Args:
         tmp_path: A temporary project directory without a frontend build.
@@ -1647,6 +1648,7 @@ def test_backend_compile_gives_page_hooks_the_compile_view(
     """
     replacements: dict[str, Component] = {}
     page_roots: dict[str, BaseComponent] = {}
+    page_stylesheets: dict[str, Sequence[str]] = {}
     page_routes: dict[str, list[str]] = {}
 
     class RootReplacingPlugin(rx.plugins.Plugin):
@@ -1678,13 +1680,14 @@ def test_backend_compile_gives_page_hooks_the_compile_view(
             return replacements[page_context.route]
 
         def compile_page(self, page_ctx: PageContext, /, **kwargs) -> None:
-            """Record the page root and the pages of the compile run.
+            """Record the page root, its stylesheets and the pages of the compile run.
 
             Args:
                 page_ctx: The page being compiled.
                 kwargs: The compile hook context.
             """
             page_roots[page_ctx.route] = page_ctx.root_component
+            page_stylesheets[page_ctx.route] = page_ctx.stylesheets
             page_routes[page_ctx.route] = [
                 page.route for page in kwargs["compile_context"].pages
             ]
@@ -1694,6 +1697,10 @@ def test_backend_compile_gives_page_hooks_the_compile_view(
     )
 
     assert page_roots == replacements
+    assert page_stylesheets == {
+        **dict.fromkeys(routes, ()),
+        "radix-2": ("/radix.css",),
+    }
     assert page_routes == dict.fromkeys(routes, routes)
 
 
