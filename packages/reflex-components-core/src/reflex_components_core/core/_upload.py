@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING, Any, BinaryIO, Self, cast
 
 from python_multipart.multipart import MultipartParser, parse_options_header
 from reflex_base.registry import RegistrationContext
+from reflex_base.session import authorize
 from reflex_base.utils import exceptions
 from reflex_base.utils.format import json_dumps
 from reflex_base.utils.streaming_response import DisconnectAwareStreamingResponse
@@ -705,7 +706,9 @@ async def _upload_buffered_file(
         if disconnect_seen:
             return
         # Enqueue the task on the main event loop, but emit deltas to the local queue.
-        updates = app.event_processor.enqueue_stream_delta(token, event)
+        updates = app.event_processor.enqueue_stream_delta(
+            token, event, session_token=request.scope.get("reflex.session")
+        )
         sent = False
         while True:
             try:
@@ -783,7 +786,9 @@ async def _upload_chunk_file(
                 handler_upload_param[0]: chunk_iter,
             },
         )
-        task_future = await app.event_processor.enqueue(token, event)
+        task_future = await app.event_processor.enqueue(
+            token, event, session_token=request.scope.get("reflex.session")
+        )
         chunk_iter.set_consumer_task(task_future)
 
     parser = _UploadChunkMultipartParser(
@@ -902,6 +907,10 @@ def upload(app: App):
         )
 
         token, handler_name = _require_upload_headers(request)
+        try:
+            authorize(request.scope.get("reflex.session"), token)
+        except exceptions.SessionAuthorizationError as error:
+            raise HTTPException(status_code=403, detail=str(error)) from error
         registered_event_handler = RegistrationContext.get().event_handlers.get(
             handler_name
         )

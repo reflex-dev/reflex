@@ -7,6 +7,7 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
+from tests.integration.utils import CLIENT_TOKEN_JS
 
 
 def NavigationApp():
@@ -64,7 +65,7 @@ def test_navigation_app(navigation_app: AppHarness, page: Page) -> None:
     """
     assert navigation_app.frontend_url is not None
     page.goto(navigation_app.frontend_url)
-    page.wait_for_function("() => sessionStorage.getItem('token') !== null")
+    page.wait_for_function(f"() => {CLIENT_TOKEN_JS} !== null")
 
     page.locator("#internal").click()
     expect(page).to_have_url(re.compile(r".*/internal/?$"))
