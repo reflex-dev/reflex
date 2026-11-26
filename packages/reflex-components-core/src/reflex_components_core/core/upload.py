@@ -166,7 +166,7 @@ uploaded_files_url_prefix = Var(
     _js_expr="getBackendURL(env.UPLOAD)",
     _var_data=VarData(
         imports={
-            f"$/{Dirs.STATE_PATH}": "getBackendURL",
+            f"$/{Dirs.TRANSPORT_PATH}": "getBackendURL",
             "$/env.json": ImportVar(tag="env", is_default=True),
         }
     ),

@@ -50,13 +50,13 @@
       }
     },
     {
-      // state.js evaluates event code with `eval`, which resolves names from
-      // the enclosing scopes. A binding or parameter the linter sees no use of
-      // (`addEvents`, `socket`, `navigate`, `params`) may be all that code can
-      // reach, so nothing here is removed on the linter's word. Its effects
-      // also leave dependencies out on purpose: `addEvents` must keep one
-      // identity for the life of the loop.
-      "includes": ["src/utils/state.js"],
+      // runtime.js and transport.js evaluate event code with `eval`, which
+      // resolves names from the enclosing scopes. A binding or parameter the
+      // linter sees no use of (`addEvents`, `socket`, `navigate`, `params`)
+      // may be all that code can reach, so nothing here is removed on the
+      // linter's word. Their effects also leave dependencies out on purpose:
+      // `addEvents` must keep one identity for the life of the loop.
+      "includes": ["src/utils/runtime.js", "src/utils/transport.js"],
       "linter": {
         "rules": {
           "security": {

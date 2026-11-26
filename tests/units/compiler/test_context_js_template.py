@@ -44,11 +44,15 @@ export const createContext = (value) => {
 };
 """,
     "$/utils/state": """
-export const applyDelta = () => {};
 export const ReflexEvent = () => ({});
+export const refs = {};
+export const useLocalEventLoop = () => [];
+""",
+    "$/utils/transport": """
+export const applyDelta = () => {};
 export const hydrateClientStorage = () => ({});
 export const useEventLoop = () => [];
-export const refs = {};
+export const warmUpTransport = () => {};
 """,
     "$/utils/context-registry": """
 export const ColorModeContext = {};
@@ -234,7 +238,7 @@ export const createElement = (type, props, ...children) => ({
 });
 export const setContextValue = (context, value) => contextValues.set(context, value);
 """
-    state_stub = """
+    transport_stub = """
 // Shares structure like the real applyDelta: equal values keep the old object.
 export const applyDelta = (state, delta) => {
   let out;
@@ -246,10 +250,9 @@ export const applyDelta = (state, delta) => {
   }
   return out ?? state;
 };
-export const ReflexEvent = () => ({});
 export const hydrateClientStorage = () => ({});
 export const useEventLoop = () => [];
-export const refs = {};
+export const warmUpTransport = () => {};
 """
     registry_path = Templates.Dirs.WEB_TEMPLATE / "utils" / "context-registry.js"
     registry_source = registry_path.read_text().replace(
@@ -257,7 +260,8 @@ export const refs = {};
     )
     for specifier, source in (
         ("react", react_stub),
-        ("$/utils/state", state_stub),
+        ("$/utils/state", _STUB_MODULES["$/utils/state"]),
+        ("$/utils/transport", transport_stub),
         ("$/utils/context-registry", registry_source),
         ("@emotion/react", "export const jsx = () => null;\n"),
     ):
@@ -430,3 +434,132 @@ process.stdout.write(JSON.stringify({
         "unreadKeepsSnapshot": True,
         "readTakesSnapshot": True,
     }
+
+
+_CONTEXT_REGISTRY_IMPORTS = (
+    "import { ColorModeContext, UploadFilesContext, DispatchContext, "
+    "EventLoopContext, StateStoreContext, registerApp, eventLoop } "
+    'from "$/utils/context-registry"\n'
+    'import { jsx } from "@emotion/react";'
+)
+
+_EVENT_LOOP_PROVIDER_TAIL = """\
+  // Publish the dispatchers so JSX literals constructed outside the
+  // React-tree path (e.g. ``ErrorBoundary.onError``) can call ``addEvents``.
+  eventLoop.addEvents = addEventsLocal;
+  eventLoop.connectErrors = connectErrors;
+  return useMemo(
+    () =>
+      createElement(
+        EventLoopContext.Provider,
+        { value: [addEventsLocal, connectErrors] },
+        children
+      ),
+    [addEventsLocal, connectErrors, children],
+  );
+}
+"""
+
+_SERVER_STATE_PROVIDERS = """\
+function StateStoreProviders({ children, store }) {
+  return createElement(
+    StateStoreContext,
+    { value: store },
+    createElement(DispatchContext, { value: store.dispatchers }, children),
+  );
+}
+
+// The server renders once and never applies a delta, so it only reads the
+// initial state.
+const serverStateStore = {
+  dispatchers: {},
+  getSnapshot: (substateName) => initialState[substateName],
+  subscribe: () => () => {},
+};
+
+function ServerStateProvider({ children }) {
+  return createElement(StateStoreProviders, { children, store: serverStateStore });
+}
+"""
+
+
+def test_stateless_context_runs_the_local_event_loop() -> None:
+    """Without state, context.js applies events in the browser and never loads the transport."""
+    rendered = context_template(is_dev_mode=False, default_color_mode='"light"')
+
+    assert rendered.split("\n\n")[0] == (
+        'import { useContext, useMemo, useState, createElement, useEffect } from "react"\n'
+        'import { refs, useLocalEventLoop } from "$/utils/state"\n'
+        + _CONTEXT_REGISTRY_IMPORTS
+    )
+    # No deltas arrive, so the server's static store serves the browser too.
+    assert rendered[rendered.index("export function EventLoopProvider") :] == (
+        "export function EventLoopProvider({ children }) {\n"
+        "  const [addEventsLocal, connectErrors] = useLocalEventLoop()\n"
+        + _EVENT_LOOP_PROVIDER_TAIL
+        + "\n"
+        + _SERVER_STATE_PROVIDERS
+        + "\n// Without state the client never applies a delta either.\n"
+        "export const StateProvider = ServerStateProvider;"
+    )
+
+
+def test_stateful_context_connects_through_the_transport() -> None:
+    """With state, context.js runs the transport's event loop and warms it up."""
+    rendered = context_template(
+        is_dev_mode=False,
+        default_color_mode='"light"',
+        initial_state={"state": {}},
+        state_name="state",
+    )
+    blocks = rendered.split("\n\n")
+
+    assert blocks[0] == (
+        'import { useContext, useMemo, useState, createElement, useEffect } from "react"\n'
+        'import { ReflexEvent, refs } from "$/utils/state"\n'
+        "import { applyDelta, hydrateClientStorage, useEventLoop, warmUpTransport } "
+        'from "$/utils/transport"\n' + _CONTEXT_REGISTRY_IMPORTS
+    )
+    # The transport warms up once the app is registered, before React mounts.
+    registration = next(i for i, block in enumerate(blocks) if "registerApp({" in block)
+    assert blocks[registration + 1] == "warmUpTransport();"
+    start = rendered.index("export function EventLoopProvider")
+    assert rendered[start : rendered.index("// Dispatch updates", start)] == (
+        "export function EventLoopProvider({ children }) {\n"
+        "  const dispatch = useContext(DispatchContext)\n"
+        "  const [addEventsLocal, connectErrors] = useEventLoop(\n"
+        "    dispatch,\n"
+        "    initialEvents,\n"
+        "    clientStorage,\n"
+        "  )\n" + _EVENT_LOOP_PROVIDER_TAIL + "\n"
+    )
+    assert rendered[rendered.index("function StateStoreProviders") :] == (
+        _SERVER_STATE_PROVIDERS + "\nexport const StateProvider =\n"
+        '  typeof document === "undefined" ? ServerStateProvider : ClientStateProvider;'
+    )
+
+
+@requires_node
+def test_stateless_state_provider_renders_without_a_store(tmp_path: Path):
+    """The stateless provider tree is the server's, in the browser as well."""
+    rendered = context_template(is_dev_mode=True, default_color_mode='"light"')
+    for specifier, source in _STUB_MODULES.items():
+        stub = tmp_path / (specifier.replace("/", "_").replace("$", "") + ".mjs")
+        stub.write_text(source)
+        rendered = rendered.replace(f'from "{specifier}"', f'from "./{stub.name}"')
+    module = tmp_path / "context.mjs"
+    module.write_text(rendered)
+    driver = tmp_path / "driver.mjs"
+    driver.write_text("globalThis.document = {};\n" + _SERVER_RENDER_DRIVER)
+
+    result = subprocess.run(
+        ["node", str(driver), str(module), "missing", "missing"],
+        capture_output=True,
+        encoding="utf-8",
+    )
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout) == [
+        {"component": "StateStoreProviders"},
+        {"context": "StateStoreContext"},
+        {"context": "DispatchContext"},
+    ]

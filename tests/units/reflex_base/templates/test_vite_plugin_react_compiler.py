@@ -57,7 +57,10 @@ CONFIG_STUBS = {
     "package.json": '{"type": "module"}',
     "vite-plugin-safari-cachebust.js": 'export default () => ({name: "safari"});',
     "node_modules/vite/package.json": '{"type": "module", "exports": "./index.js"}',
-    "node_modules/vite/index.js": "export const defineConfig = (config) => config;",
+    "node_modules/vite/index.js": (
+        "export const defineConfig = (config) => config;\n"
+        'export const normalizePath = (id) => id.replaceAll("\\\\", "/");'
+    ),
     "node_modules/@react-router/dev/package.json": (
         '{"type": "module", "exports": {"./vite": "./index.js"}}'
     ),
@@ -344,3 +347,42 @@ def test_prebundle_merges_with_production_react(
         "define": {"process.env.REFLEX_DEV_PROD_REACT": '"1"'},
         "prebundle": ["reflex-prod-react-prebundle"],
     }
+
+
+def test_vite_config_declares_only_the_transport_side_effect_free(tmp_path: Path):
+    """A build may drop utils/transport.js when nothing uses it, and nothing else.
+
+    Args:
+        tmp_path: The app's ``.web`` directory.
+    """
+    files = {
+        **CONFIG_STUBS,
+        "vite.config.js": _compile_vite_config(Config(app_name="test")),
+        "driver.mjs": """
+const { default: userConfig } = await import("./vite.config.js");
+const { moduleSideEffects } = userConfig({}).build.rollupOptions.treeshake;
+process.stdout.write(
+  JSON.stringify(process.argv.slice(2).map((id) => moduleSideEffects(id))),
+);
+""",
+    }
+    for name, content in files.items():
+        (tmp_path / name).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / name).write_text(content)
+    web = tmp_path.as_posix()
+
+    result = subprocess.run(
+        [
+            "node",
+            "driver.mjs",
+            f"{web}/utils/transport.js",
+            f"{web}/utils/state.js",
+            f"{web}/node_modules/socket.io-client/build/esm/index.js",
+            f"{web}/node_modules/some-package/utils/transport.js",
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert json.loads(result.stdout) == [False, True, True, True]

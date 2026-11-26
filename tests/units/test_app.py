@@ -5631,11 +5631,11 @@ def test_client_error_event_name_matches_handler():
 
 
 def test_client_error_constants_match_frontend():
-    """The socket event and error types are duplicated as literals in state.js.
+    """The socket event and error types are duplicated as literals in transport.js.
 
     Nothing at runtime keeps the two definitions in sync, so pin them here.
     """
-    state_js = (Templates.Dirs.WEB_TEMPLATE / "utils/state.js").read_text()
+    state_js = (Templates.Dirs.WEB_TEMPLATE / "utils/transport.js").read_text()
     assert (
         f'const CLIENT_ERROR_EVENT = "{constants.SocketEvent.CLIENT_ERROR}"' in state_js
     )

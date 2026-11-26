@@ -3,16 +3,20 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import vm from "node:vm";
 
-const source = await readFile(
-  new URL(
-    "../../../packages/reflex-frontend/src/utils/state.js",
-    import.meta.url,
-  ),
-  "utf8",
-);
+const readUtil = (name) =>
+  readFile(
+    new URL(
+      `../../../packages/reflex-frontend/src/utils/${name}.js`,
+      import.meta.url,
+    ),
+    "utf8",
+  );
+const stateSource = await readUtil("state");
+const runtimeSource = await readUtil("runtime");
+const transportSource = await readUtil("transport");
 const tokenKey = "reflex:ws://localhost:8000/_event:token";
 
-/** Evaluate the actual frontend module with controlled transport and browser APIs. */
+/** Evaluate the actual frontend modules with controlled transport and browser APIs. */
 async function setup({
   browser = true,
   stateful = true,
@@ -239,7 +243,7 @@ async function setup({
     "$/utils/helpers/throttle": { default() {} },
     "$/utils/helpers/upload": { uploadFiles() {} },
   };
-  const module = new vm.SourceTextModule(source, {
+  const transportModule = new vm.SourceTextModule(transportSource, {
     context,
     initializeImportMeta(meta) {
       meta.hot = {
@@ -249,20 +253,35 @@ async function setup({
       };
     },
   });
-  await module.link((name) => {
-    // state.js imports itself to hand its exports to server-provided scripts.
-    if (name === "$/utils/state") return module;
-    assert.ok(imports[name], `unexpected import: ${name}`);
-    return new vm.SyntheticModule(
-      Object.keys(imports[name]),
-      function () {
-        for (const [key, value] of Object.entries(imports[name]))
-          this.setExport(key, value);
-      },
-      { context },
-    );
-  });
+  // state.js re-exports runtime.js and transport.js, so its namespace has
+  // every name an app imports.
+  const module = new vm.SourceTextModule(stateSource, { context });
+  const linked = new Map([
+    ["$/utils/state", module],
+    ["$/utils/runtime", new vm.SourceTextModule(runtimeSource, { context })],
+    ["$/utils/transport", transportModule],
+  ]);
+  const link = (name) => {
+    if (!linked.has(name)) {
+      assert.ok(imports[name], `unexpected import: ${name}`);
+      linked.set(
+        name,
+        new vm.SyntheticModule(
+          Object.keys(imports[name]),
+          function () {
+            for (const [key, value] of Object.entries(imports[name]))
+              this.setExport(key, value);
+          },
+          { context },
+        ),
+      );
+    }
+    return linked.get(name);
+  };
+  await module.link(link);
   await module.evaluate();
+  // The context module of an app with state starts the transport.
+  module.namespace.warmUpTransport();
   const socket = { current: null };
   return {
     sockets,
