@@ -340,7 +340,7 @@ def route_memo_segments(stem: str) -> tuple[str, ...]:
     Returns:
         The segments to join under ``.web/``.
     """
-    return (*Dirs.COMPONENTS_PATH.split("/"), "routes", stem)
+    return (*Dirs.COMPONENTS_PATH.split("/"), Dirs.ROUTES, stem)
 
 
 def shared_memo_segments(tags: Iterable[str]) -> tuple[str, ...]:

@@ -2447,6 +2447,11 @@ def _stateful(name: str) -> Component:
 
 
 def _chrome() -> Component:
+    """Chrome every page renders: two components with an auto memo each.
+
+    Returns:
+        The chrome.
+    """
     return Fragment.create(_stateful("nav"), _stateful("footer"))
 
 
@@ -2459,6 +2464,14 @@ _MEMO_MODULE_IMPORT = re.compile(
 
 
 def _memo_names(names: str) -> tuple[str, ...]:
+    """Split the names of an import or export statement.
+
+    Args:
+        names: The text between its braces.
+
+    Returns:
+        The names.
+    """
     return tuple(name.strip() for name in names.split(","))
 
 
@@ -2581,10 +2594,26 @@ def _compile_memo_layout(
 
 
 def _route_module(route: str | None) -> str:
+    """The specifier of a route's auto-memo module.
+
+    Args:
+        route: The route, or None for the app root.
+
+    Returns:
+        The specifier.
+    """
     return utils.get_route_memo_specifier(route)
 
 
 def _shared_module(tags: Iterable[str]) -> str:
+    """The specifier of the module holding memos several routes share.
+
+    Args:
+        tags: The tags of the memos it holds.
+
+    Returns:
+        The specifier.
+    """
     return memo_paths.generated_library_specifier(memo_paths.shared_memo_segments(tags))
 
 
@@ -2640,6 +2669,14 @@ def test_auto_memo_placement_is_deterministic_and_stable_when_pages_are_added():
 
 
 def _loop_item(value: Var) -> Component:
+    """A loop item whose lifecycle event gets it an auto memo inside the loop's.
+
+    Args:
+        value: The item.
+
+    Returns:
+        The item's component.
+    """
     return rx.text(value, on_mount=rx.console_log(value))
 
 

@@ -24,6 +24,14 @@ ENCODING_CASES: tuple[tuple[str, str, str, bytes | None], ...] = (
 )
 ENCODING_IDS = [case[0] for case in ENCODING_CASES]
 
+# The marker in the auto memos of each page, by its id in the react-router manifest.
+_PAGE_MARKERS = {
+    "routes/_index": "only-on-index",
+    "routes/[b]._index": "only-on-b",
+    "routes/[c]._index": "only-on-c",
+}
+_MARKERS = (*_PAGE_MARKERS.values(), "shared-marker")
+
 
 def ProdBuildPipelineApp():
     """A small app for build pipeline testing.
@@ -232,24 +240,21 @@ def _route_code(harness: AppHarness, route_id: str) -> str:
 
 def test_pages_load_only_their_own_auto_memos(prod_app: AppHarness):
     """A page's chunks hold its own memos and the shared ones, not another page's."""
-    markers = {
-        "_index": "only-on-index",
-        "[b]._index": "only-on-b",
-        "[c]._index": "only-on-c",
+    loaded = {
+        route_id: {
+            marker for marker in _MARKERS if marker in _route_code(prod_app, route_id)
+        }
+        for route_id in _PAGE_MARKERS
     }
-    for stem, marker in markers.items():
-        code = _route_code(prod_app, f"routes/{stem}")
-        assert marker in code
-        assert "shared-marker" in code
-        for other in set(markers.values()) - {marker}:
-            assert other not in code, (stem, other)
+    assert loaded == {
+        route_id: {marker, "shared-marker"}
+        for route_id, marker in _PAGE_MARKERS.items()
+    }
 
 
-def test_shared_auto_memos_are_emitted_once(prod_app: AppHarness):
-    """A memo several pages use is in one chunk, not copied into each page's."""
-    chunks = [
-        path.name
-        for path in _find_build_files(prod_app, "assets/*.js")
-        if "shared-marker" in path.read_text()
-    ]
-    assert len(chunks) == 1, chunks
+def test_auto_memos_are_emitted_once(prod_app: AppHarness):
+    """Every memo is in one chunk: a memo several pages use is not copied into each."""
+    chunks = [path.read_text() for path in _find_build_files(prod_app, "assets/*.js")]
+    assert {
+        marker: sum(marker in code for code in chunks) for marker in _MARKERS
+    } == dict.fromkeys(_MARKERS, 1)
