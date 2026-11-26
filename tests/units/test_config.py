@@ -74,6 +74,7 @@ def test_frontend_css_minifier(base_config_values, monkeypatch: pytest.MonkeyPat
         base_config_values: Config values.
         monkeypatch: Fixture for setting environment variables.
     """
+    monkeypatch.delenv("REFLEX_FRONTEND_CSS_MINIFIER", raising=False)
     assert rx.Config(**base_config_values).frontend_css_minifier == "lightningcss"
     monkeypatch.setenv("REFLEX_FRONTEND_CSS_MINIFIER", "esbuild")
     assert rx.Config(**base_config_values).frontend_css_minifier == "esbuild"
