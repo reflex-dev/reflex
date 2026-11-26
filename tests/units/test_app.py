@@ -5002,14 +5002,21 @@ def test_compile_reports_exception_and_reraises(
 
 
 @pytest.mark.parametrize("fails", [False, True])
+@pytest.mark.parametrize("incremental", [False, True])
 def test_compile_defers_full_collections(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
     fails: bool,
+    incremental: bool,
 ):
-    """A compile runs without automatic full collections and restores them after."""
+    """A compile runs without automatic full collections and restores them after.
+
+    The incremental collector of CPython 3.14.0 to 3.14.4 paces its old generation
+    by threshold1 instead of threshold2.
+    """
     app, web_dir = compilable_app
     mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mocker.patch("reflex.app._INCREMENTAL_GC", incremental)
     threshold0, threshold1, threshold2 = gc.get_threshold()
     seen = []
 
@@ -5024,7 +5031,12 @@ def test_compile_defers_full_collections(
     with pytest.raises(RuntimeError) if fails else contextlib.nullcontext():
         app._compile()
 
-    assert seen == [(threshold0, threshold1, _DEFERRED_FULL_COLLECTION_THRESHOLD)]
+    deferred = _DEFERRED_FULL_COLLECTION_THRESHOLD
+    assert seen == [
+        (threshold0, deferred, threshold2)
+        if incremental
+        else (threshold0, threshold1, deferred)
+    ]
     assert gc.get_threshold() == (threshold0, threshold1, threshold2)
 
 

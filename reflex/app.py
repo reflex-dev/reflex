@@ -899,6 +899,9 @@ def _socket_cors_allowed_origins() -> list[str] | _SocketOriginCheck:
 
 # Above any count a compile reaches, so no automatic full collection starts.
 _DEFERRED_FULL_COLLECTION_THRESHOLD = 1 << 30
+# CPython 3.14.0 to 3.14.4 collect the old generation incrementally: they ignore
+# threshold2 and pace the old generation's increments by threshold1.
+_INCREMENTAL_GC = (3, 14) <= sys.version_info[:3] < (3, 14, 5)
 
 
 @contextlib.contextmanager
@@ -913,12 +916,16 @@ def _defer_full_collections() -> Iterator[None]:
     Yields:
         None.
     """
-    threshold0, threshold1, threshold2 = gc.get_threshold()
-    gc.set_threshold(threshold0, threshold1, _DEFERRED_FULL_COLLECTION_THRESHOLD)
+    thresholds = gc.get_threshold()
+    threshold0, threshold1, threshold2 = thresholds
+    if _INCREMENTAL_GC:
+        gc.set_threshold(threshold0, _DEFERRED_FULL_COLLECTION_THRESHOLD, threshold2)
+    else:
+        gc.set_threshold(threshold0, threshold1, _DEFERRED_FULL_COLLECTION_THRESHOLD)
     try:
         yield
     finally:
-        gc.set_threshold(threshold0, threshold1, threshold2)
+        gc.set_threshold(*thresholds)
 
 
 @dataclasses.dataclass()

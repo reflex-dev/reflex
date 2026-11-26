@@ -292,6 +292,7 @@ def test_run_exports_secret_key_before_backend_starts(
     assert (generated_key in os.environ) is generated
 
 
+@pytest.mark.parametrize("fails", [False, True])
 @pytest.mark.parametrize(
     ("command", "target"),
     [
@@ -304,18 +305,26 @@ def test_one_shot_commands_freeze_the_heap_before_exit(
     monkeypatch: pytest.MonkeyPatch,
     command: str,
     target: str,
+    fails: bool,
 ):
     """Commands that exit right after compiling spare the exit collections the app."""
-    monkeypatch.delenv(environment.REFLEX_COMPILE_CONTEXT.name, raising=False)
+    # export sets these; set and delete them so pytest restores their absence
+    for name in (
+        environment.REFLEX_COMPILE_CONTEXT.name,
+        environment.REFLEX_SSR.name,
+    ):
+        monkeypatch.setenv(name, "unset")
+        monkeypatch.delenv(name)
     mocker.patch("reflex.utils.prerequisites.needs_reinit", return_value=False)
     mocker.patch("reflex.utils.prerequisites.assert_in_reflex_dir")
-    compiled = mocker.patch(target)
+    compiled = mocker.patch(target, side_effect=RuntimeError if fails else None)
     freeze = mocker.patch("reflex.reflex.gc.freeze")
     freeze.side_effect = lambda: compiled.assert_called_once()
 
     result = click.testing.CliRunner().invoke(reflex.cli, [command])
 
-    assert result.exit_code == 0, result.output
+    assert result.exit_code == (1 if fails else 0), result.output
+    assert type(result.exception) is (RuntimeError if fails else type(None))
     freeze.assert_called_once_with()
 
 

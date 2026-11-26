@@ -918,8 +918,8 @@ def _skip_exit_collections() -> None:
     The compiled pages stay alive until the process ends, and the full
     collections the interpreter runs while it shuts down walk all of them again,
     which for an app with many pages takes as long as the compile. Only for
-    commands that exit right after: a long-lived process must not keep garbage
-    frozen.
+    commands that exit right after, whether they succeeded or not: a long-lived
+    process must not keep garbage frozen.
     """
     gc.freeze()
 
@@ -949,10 +949,14 @@ def compile(dry: bool, rich: bool):
         _init(name=get_config().app_name)
     reload_config()
     starting_time = time.monotonic()
-    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger="cli_compile")
+    try:
+        prerequisites.get_compiled_app(
+            dry_run=dry, use_rich=rich, trigger="cli_compile"
+        )
+    finally:
+        _skip_exit_collections()
     elapsed_time = time.monotonic() - starting_time
     logger.log(log.SUCCESS, f"App compiled successfully in {elapsed_time:.3f} seconds.")
-    _skip_exit_collections()
 
 
 @cli.command()
@@ -1040,18 +1044,20 @@ def export(
     if running_mode.has_frontend() and prerequisites.needs_reinit():
         _init(name=config.app_name)
 
-    export_utils.export(
-        zipping=zip,
-        frontend=running_mode.has_frontend(),
-        backend=running_mode.has_backend(),
-        zip_dest_dir=zip_dest_dir,
-        upload_db_file=upload_db_file,
-        env=constants.Env.DEV if env == constants.Env.DEV else constants.Env.PROD,
-        loglevel=config.loglevel.subprocess_level(),
-        backend_excluded_dirs=backend_excluded_dirs,
-        prerender_routes=ssr,
-    )
-    _skip_exit_collections()
+    try:
+        export_utils.export(
+            zipping=zip,
+            frontend=running_mode.has_frontend(),
+            backend=running_mode.has_backend(),
+            zip_dest_dir=zip_dest_dir,
+            upload_db_file=upload_db_file,
+            env=constants.Env.DEV if env == constants.Env.DEV else constants.Env.PROD,
+            loglevel=config.loglevel.subprocess_level(),
+            backend_excluded_dirs=backend_excluded_dirs,
+            prerender_routes=ssr,
+        )
+    finally:
+        _skip_exit_collections()
 
 
 @cli.command()
