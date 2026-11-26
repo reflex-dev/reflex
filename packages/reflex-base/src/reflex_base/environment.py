@@ -798,6 +798,19 @@ class EnvironmentVariables:
     # their `--env` option, so do not set it yourself.
     REFLEX_ENV_MODE: EnvVar[constants.Env] = env_var(constants.Env.DEV)
 
+    # App secret keys, newest first, separated by commas. `reflex run` generates
+    # one when unset; set it for any other launch, so all workers share keys.
+    REFLEX_SECRET_KEY: EnvVar[str | None] = env_var(None)
+
+    # The key that `reflex run` generated because REFLEX_SECRET_KEY is not set.
+    # Workers inherit it; an environment file cannot replace it.
+    REFLEX_GENERATED_SECRET_KEY: EnvVar[str | None] = env_var(None, internal=True)
+
+    # Rollout mode for session-bound client tokens.
+    REFLEX_SESSION_TOKEN_MODE: EnvVar[Literal["off", "warn", "enforce"]] = env_var(
+        "warn"
+    )
+
     # Whether to keep React's development-build owner-stack capture in dev mode.
     # Reflex disables it by default because the per-element Error() capture
     # dominates dev-mode render CPU on large pages; enable it to restore full

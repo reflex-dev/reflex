@@ -25,6 +25,7 @@ from reflex_base import constants
 from reflex_base.components.component import LiteralComponentVar
 from reflex_base.constants import RouteArgType
 from reflex_base.constants.colors import Color
+from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import _load_dotenv_from_files, environment
 from reflex_base.event import LiteralEventChainVar, LiteralEventVar
 from reflex_base.utils import serializers
@@ -89,6 +90,7 @@ import reflex as rx
 from reflex.istate.data import ReflexURLCastedVar, RouterDataVar
 from reflex.istate.proxy import MutableProxy
 from reflex.state import BaseState, State, _override_base_method
+from tests.units.field_errors import backend_var_error, mixin_var_error
 
 _MARKER_ATTR = "_marker"
 
@@ -205,6 +207,24 @@ def test_custom_attr_is_carried_by_reference():
 
     rebuilt = MyState.get_fields()["name"]
     assert rebuilt._check is check  # pyright: ignore[reportAttributeAccessIssue]
+
+
+@pytest.mark.parametrize(
+    ("name", "annotated"),
+    [("item", True), ("item", False), ("_item", True), ("_item", False)],
+)
+def test_dataclasses_field_default_raises(name: str, annotated: bool):
+    """A dataclasses.field(...) default names the var and points to rx.field.
+
+    Args:
+        name: A frontend or backend var name.
+        annotated: Whether the var has a type annotation.
+    """
+    namespace = {"__module__": __name__, name: dataclasses.field(default_factory=list)}
+    if annotated:
+        namespace["__annotations__"] = {name: list}
+    with pytest.raises(StateValueError, match=rf"MyState\.{name}.*rx\.field"):
+        type("MyState", (EvenMoreBasicBaseState,), namespace)
 
 
 def _type_alias_types() -> list[type]:
@@ -1932,6 +1952,62 @@ def test_backend_field_literal_var_raises_format_error(
         use(Model._secret)
 
 
+@pytest.mark.parametrize(
+    "use",
+    [
+        lambda f: f == "x",
+        lambda f: f != "x",
+        lambda f: f in ["x", "y"],
+        lambda f: bool(f),
+    ],
+    ids=["eq", "ne", "in_list", "bool"],
+)
+def test_backend_field_comparison_raises_format_error(
+    use: typing.Callable[[Any], Any],
+):
+    """Comparing or truth-testing a backend var raises instead of a plain bool.
+
+    Args:
+        use: Compares or truth-tests the backend field.
+    """
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: str = "s"
+
+    with pytest.raises(BackendVarFormatError) as exc_info:
+        use(Model._secret)
+    assert str(exc_info.value) == backend_var_error("Model._secret")
+
+
+def test_backend_field_identity_and_hash_unchanged():
+    """Fields still compare and hash by identity with other fields."""
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: str = "s"
+        _other: str = "o"
+
+    secret, other = Model._secret, Model._other
+    assert secret == secret
+    assert secret != other
+    assert {secret: 1, other: 2}[secret] == 1
+    assert secret in [other, secret]
+    assert len({secret, other, secret}) == 2
+
+
+def test_mixin_field_comparison_raises_format_error():
+    """Comparing or truth-testing a mixin's field says to use the including state."""
+
+    class Mixin(EvenMoreBasicBaseState, mixin=True):
+        count: int = 0
+
+    with pytest.raises(BackendVarFormatError) as eq_info:
+        Mixin.count == 1  # noqa: B015
+    with pytest.raises(BackendVarFormatError) as bool_info:
+        bool(Mixin.count)
+    assert str(eq_info.value) == mixin_var_error("Mixin.count")
+    assert str(bool_info.value) == mixin_var_error("Mixin.count")
+
+
 def test_mixin_field_literal_var_raises_format_error():
     """A mixin's field inside a LiteralVar says to use the including state."""
 
@@ -2735,6 +2811,28 @@ def test_new_default_for_inherited_private_field_stays_a_field():
         assert child_field.default == 2
         assert isinstance(vars(child)["__counter__"], Field)
         assert child().__counter__ == 2
+
+
+def test_from_state_hook_subscribes_to_the_field():
+    """A state field's hook names the field, so its readers skip other changes."""
+    assert VarData.from_state("s", "a").hooks == (
+        f'const s = useStateContext("s", ["a{FIELD_MARKER}"])',
+    )
+    assert VarData.from_state("s").hooks == ('const s = useStateContext("s")',)
+
+
+@pytest.mark.parametrize("js_expr", ["value", "items_rx_state_[0]"])
+def test_var_set_state_subscribes_to_the_whole_substate(js_expr: str):
+    """The expression may read any key, so its only hook reads the whole substate.
+
+    Args:
+        js_expr: The expression read from the state.
+    """
+    var = Var(_js_expr=js_expr, _var_type=str)._var_set_state("s")
+    var_data = var._get_all_var_data()
+    assert var_data is not None
+    assert var_data.hooks == ('const s = useStateContext("s")',)
+    assert var_data.field_dependencies == {"s": (js_expr,)}
 
 
 def _identical(leaves: Sequence[Var], *expected: Var) -> bool:
