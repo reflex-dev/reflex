@@ -1644,7 +1644,10 @@ class App(MiddlewareMixin, LifespanMixin):
             on_load=on_load,
             meta=meta,
             context=context or {},
-            stylesheets=tuple(stylesheets),
+            # A string is a sequence of strings too, one per character.
+            stylesheets=(stylesheets,)
+            if isinstance(stylesheets, str)
+            else tuple(stylesheets),
             _source_module=source_module,
         )
 
