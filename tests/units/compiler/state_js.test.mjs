@@ -10,6 +10,14 @@ const source = await readFile(
   ),
   "utf8",
 );
+// Dependency-free, so evaluated for real rather than stubbed.
+const eventResultsSource = await readFile(
+  new URL(
+    "../../../packages/reflex-frontend/src/utils/event_results.js",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const tokenKey = "reflex:ws://localhost:8000/_event:token";
 
 /** Evaluate the actual frontend module with controlled transport and browser APIs. */
@@ -252,6 +260,9 @@ async function setup({
   await module.link((name) => {
     // state.js imports itself to hand its exports to server-provided scripts.
     if (name === "$/utils/state") return module;
+    if (name === "$/utils/event_results") {
+      return new vm.SourceTextModule(eventResultsSource, { context });
+    }
     assert.ok(imports[name], `unexpected import: ${name}`);
     return new vm.SyntheticModule(
       Object.keys(imports[name]),

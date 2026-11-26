@@ -96,6 +96,25 @@ class EmitDeltaProtocol(Protocol):
         ...
 
 
+class EmitResultProtocol(Protocol):
+    """Protocol for the emit_result function in the event context."""
+
+    async def __call__(
+        self,
+        token: str,
+        results: Sequence[Mapping[str, Any]],
+        delta: Mapping[str, Mapping[str, Any]] | None = None,
+    ) -> Any:
+        """Emit result records to the frontend, with the delta that precedes them.
+
+        Args:
+            token: The client token to emit the records to.
+            results: The result records, each keyed by the request id it answers.
+            delta: A delta to apply before the records, in the same message.
+        """
+        ...
+
+
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True, eq=False)
 class EventContext(BaseContext):
     """The context for an event."""
@@ -125,6 +144,17 @@ class EventContext(BaseContext):
     emit_event_impl: EmitEventProtocol | None = dataclasses.field(
         default=None, repr=False
     )
+    emit_result_impl: EmitResultProtocol | None = dataclasses.field(
+        default=None, repr=False
+    )
+    # The id the frontend gave the event it dispatched, so the values its
+    # handler yields or returns can be routed back to the caller. Kept apart
+    # from txid, which keys processor bookkeeping and must not be chosen by a
+    # client. Never inherited by fork(): chained events report nothing.
+    request_id: str | None = None
+    # Whether the request's completion record was already sent with the
+    # handler's final delta, so the event processor does not send another.
+    result_sent: bool = dataclasses.field(default=False, init=False, repr=False)
     # The app middleware an event passes through before its handler runs,
     # whether it is queued or awaited inline.
     middleware: MiddlewareMixin | None = dataclasses.field(default=None, repr=False)
@@ -161,6 +191,7 @@ class EventContext(BaseContext):
         self,
         token: str | None = None,
         router_data: dict[str, Any] | None = None,
+        request_id: str | None = None,
         *,
         session_token: SessionToken | MISSING_TYPE | None = dataclasses.MISSING,
     ) -> EventContext:
@@ -169,6 +200,7 @@ class EventContext(BaseContext):
         Args:
             token: The client token for the new context.
             router_data: The routing data for the new context, inherited from this context if empty.
+            request_id: The frontend's id for the new context's event, if it has one.
             session_token: The session to use, or omitted to inherit this context's session.
 
         Returns:
@@ -185,10 +217,16 @@ class EventContext(BaseContext):
             enqueue_impl=self.enqueue_impl,
             emit_delta_impl=self.emit_delta_impl,
             emit_event_impl=self.emit_event_impl,
+            emit_result_impl=self.emit_result_impl,
+            request_id=request_id,
             middleware=self.middleware,
             router_data=router_data or self.router_data,
             otel_context=otel.capture_context(),
         )
+
+    def mark_result_sent(self) -> None:
+        """Record that the request's completion record went out with the final delta."""
+        object.__setattr__(self, "result_sent", True)
 
     def set_locked_root(self, root_state: BaseState | None) -> None:
         """Record the state tree the current task holds the lock on, or None.
@@ -262,6 +300,25 @@ class EventContext(BaseContext):
         """
         if self.emit_event_impl is not None:
             await self.emit_event_impl(self.token, *events)
+
+    async def emit_result(
+        self,
+        *records: Mapping[str, Any],
+        delta: Mapping[str, Mapping[str, Any]] | None = None,
+    ) -> None:
+        """Emit result records to the frontend, after the delta that precedes them.
+
+        Without a result channel (a context not connected to a frontend), the
+        records are dropped and the delta is emitted on its own.
+
+        Args:
+            records: The result records, each keyed by the request id it answers.
+            delta: A delta to apply before the records, in the same message.
+        """
+        if self.emit_result_impl is not None:
+            await self.emit_result_impl(self.token, records, delta)
+        elif delta:
+            await self.emit_delta(delta)
 
     async def enqueue(self, *event: Event) -> Sequence[EventFuture]:
         """Enqueue an event handler to be executed.

@@ -735,7 +735,7 @@ async def test_processor_reports_blocking_sync_handler(
             "Move blocking I/O to a thread pool or use a non-blocking async API.\n"
             "Stack when the threshold was reached (most recent call last):\n"
             f'  File "{processor_module.__file__}", line N, in _process_event_queue_entry\n'
-            "    return await self._execute_event(\n"
+            "    return await run(entry=entry, registered_handler=registered_handler)\n"
             f'  File "{processor_module.__file__}", line N, in _execute_event\n'
             "    result = registered_handler.handler.fn(**event.payload)\n"
             f'  File "{__file__}", line N, in _blocking_sync_handler\n'
@@ -804,7 +804,7 @@ async def test_processor_reports_blocking_after_handler_returns(
             "Move blocking I/O to a thread pool or use a non-blocking async API.\n"
             "Stack when the threshold was reached (most recent call last):\n"
             f'  File "{processor_module.__file__}", line N, in _process_event_queue_entry\n'
-            "    return await self._execute_event(\n"
+            "    return await run(entry=entry, registered_handler=registered_handler)\n"
             f'  File "{__file__}", line N, in _execute_event\n'
             "    _blocking_sync_handler()\n"
             f'  File "{__file__}", line N, in _blocking_sync_handler\n'
