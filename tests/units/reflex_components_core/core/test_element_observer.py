@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from reflex_base.components.memoize_helpers import is_snapshot_boundary
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
@@ -8,6 +10,18 @@ from reflex_components_core.core.element_observer import ElementObserver
 import reflex as rx
 from reflex.compiler import compiler
 from reflex.compiler.plugins import default_page_plugins
+
+
+def _code(*lines: str) -> str:
+    """Join the lines of compiled code.
+
+    Args:
+        lines: The lines.
+
+    Returns:
+        The code.
+    """
+    return "\n".join(lines)
 
 
 def test_element_observer_reports_to_its_handlers_with_its_options():
@@ -136,15 +150,49 @@ def test_element_observer_in_a_loop_observes_its_own_item(
             compile_ctx.auto_memo_components.values()
         )
 
-    [observer] = [
-        code
+    # Content digests, also camel-cased in prop names, change with the code.
+    modules = [
+        re.sub(r"_?[0-9a-fA-F]{32}", "", block).strip()
         for _path, code in memo_files
-        if "useElementObserver(" in code and "Array.prototype.map.call(" not in code
+        for block in code.split("export const ")[1:]
     ]
     # The observer, called once per item, takes its id from useId and renders
     # the child with it.
-    assert "const abc = useId_abc();\nuseElementObserver(abc, " in observer
-    assert 'jsx("div",{id:abc},item_rx_state_)' in observer
+    assert modules == [
+        _code(
+            "Elementobserver_fragment = /*#__PURE__*/ (() => {",
+            "const Elementobserver_fragment = memo(({children, index:index, "
+            "itemRxState:item_rx_state_}) => {",
+            "    const [heightRxClientState, heightRxClientStateSet] = "
+            'useClientState(0.0, "height", true)',
+            "const on_resize = useCallback(((_ev_0, _ev_1) => (((_ev_0, _ev_1) => "
+            "(heightRxClientStateSet(_ev_1)))(_ev_0, _ev_1))), "
+            "[heightRxClientState, heightRxClientStateSet])",
+            "const abc = useId_abc();",
+            'useElementObserver(abc, ({ ["onResize"] : on_resize }), ({  }));',
+            "    return(",
+            '        jsx(Fragment,{key:index},jsx("div",{id:abc},item_rx_state_))',
+            "    )",
+            "});",
+            'Elementobserver_fragment.displayName = "ElementObserver";',
+            "return Elementobserver_fragment;",
+            "})();",
+        ),
+        _code(
+            "Foreach_comp = /*#__PURE__*/ (() => {",
+            "const Foreach_comp = memo(({children}) => {",
+            "    ",
+            "    return(",
+            '        Array.prototype.map.call(["a", "b"] ?? [],((item_rx_state_,index)=>'
+            "(jsx(Elementobserver_fragment,{index:index,itemRxState:item_rx_state_,"
+            "key:index},))))",
+            "    )",
+            "});",
+            'Foreach_comp.displayName = "Foreach";',
+            "return Foreach_comp;",
+            "})();",
+        ),
+    ]
 
 
 @pytest.mark.parametrize(

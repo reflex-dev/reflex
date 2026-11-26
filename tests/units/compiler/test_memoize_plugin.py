@@ -16,7 +16,6 @@ from reflex_base.components.memo import (
     MemoComponentDefinition,
     MemoParamKind,
     create_passthrough_component_memo,
-    memo_body_hooks,
 )
 from reflex_base.components.memoize_helpers import (
     MemoizationStrategy,
@@ -613,35 +612,97 @@ def test_foreach_form_submit_handler_receives_loop_index() -> None:
     assert "indexRxState:index_rx_state_" in loop_body
 
 
-def test_loop_item_hooks_in_a_snapshot_boundary_run_in_a_wrapper() -> None:
-    """A hook of a loop item inside a snapshot boundary runs once per item.
+@pytest.mark.parametrize("auto_memoize", [True, False])
+def test_branch_and_loop_hooks_in_a_snapshot_boundary_run_in_wrappers(
+    auto_memoize: bool,
+) -> None:
+    """A lifecycle event under a loop or branch in a snapshot boundary gets its own component.
 
-    The boundary compiles its subtree into one function, at whose top the hook
-    would read a loop variable that does not exist there.
+    The boundary compiles its subtree into one function, at whose top the loop
+    item's effect would read a loop variable that does not exist there, and the
+    branch's effect would run whatever branch is shown.
     """
     from reflex.compiler.compiler import compile_memo_components
 
-    ctx, _page_ctx = _compile_single_page(
-        lambda: rx.el.svg(
-            rx.foreach(
-                SpecialFormMemoState.items,
-                lambda item: rx.el.text(item, on_mount=rx.console_log(item)),
+    ctx = CompileContext(
+        pages=[
+            FakePage(
+                route="/p",
+                component=lambda: rx.el.svg(
+                    rx.foreach(
+                        SpecialFormMemoState.items,
+                        lambda item: rx.el.text(item, on_mount=rx.console_log(item)),
+                    ),
+                    rx.cond(
+                        SpecialFormMemoState.flag,
+                        rx.el.circle(on_mount=rx.console_log("shown")),
+                    ),
+                ),
             )
-        )
+        ],
+        hooks=CompilerHooks(plugins=default_page_plugins(auto_memoize=auto_memoize)),
     )
-    memo_files, _memo_imports = compile_memo_components(
+    with ctx:
+        ctx.compile()
+    files, _imports = compile_memo_components(
         memos=tuple(ctx.auto_memo_components.values()),
     )
-    definitions = "".join(code for _path, code in memo_files).split("\nexport const ")
-    svg = next(d for d in definitions if d.startswith("Svg_"))
-    text = next(d for d in definitions if d.startswith("Text_"))
+    # Content digests, also camel-cased in prop names, change with the code.
+    modules = {
+        re.sub(r"_[0-9a-f]{32}", "", name): re.sub(
+            r"_?[0-9a-fA-F]{32}", "", block
+        ).strip()
+        for name, block in _module_by_export(files).items()
+    }
 
-    signature = text.partition("memo((")[2].partition("=> {")[0]
-    loop_body = svg.partition("Array.prototype.map.call(")[2]
-    assert "useEffect(() => {" not in svg
-    assert "useEffect(() => {" in text
-    assert "itemRxState:item_rx_state_" in signature
-    assert "itemRxState:item_rx_state_" in loop_body
+    state = SpecialFormMemoState.get_full_name().replace(".", "__")
+    assert modules == {
+        "Svg_svg": _code(
+            "Svg_svg = /*#__PURE__*/ (() => {",
+            "const Svg_svg = memo(({children, ...rest}) => {",
+            f'    const {state} = useStateContext("{state}", '
+            '["items_rx_state_", "flag_rx_state_"])',
+            "    return(",
+            '        jsx("svg",{...mergeSlotProps(rest, ({  }))},'
+            f"Array.prototype.map.call({state}.items_rx_state_ ?? [],"
+            "((item_rx_state_,index)=>(jsx(Text_text,"
+            "{index:index,itemRxState:item_rx_state_,key:index},item_rx_state_)))),"
+            f"jsx(Fragment,{{}},({state}.flag_rx_state_?"
+            "(jsx(Fragment,{},jsx(Circle_circle,{},))):(jsx(Fragment,{},)))))",
+            "    )",
+            "});",
+            'Svg_svg.displayName = "Svg";',
+            "return Svg_svg;",
+            "})();",
+        ),
+        "Text_text": _code(
+            "Text_text = /*#__PURE__*/ (() => {",
+            "const Text_text = memo(({children, itemRxState:item_rx_state_, "
+            "index:index, ...rest}) => {",
+            "    ",
+            *_mount_effect(_console_log("item_rx_state_")),
+            "    return(",
+            '        jsx("text",{...mergeSlotProps(rest, ({ key:index }))},children)',
+            "    )",
+            "});",
+            'Text_text.displayName = "Text";',
+            "return Text_text;",
+            "})();",
+        ),
+        "Circle_circle": _code(
+            "Circle_circle = /*#__PURE__*/ (() => {",
+            "const Circle_circle = memo(({children, ...rest}) => {",
+            "    ",
+            *_mount_effect(_console_log('"shown"')),
+            "    return(",
+            '        jsx("circle",{...mergeSlotProps(rest, ({  }))},)',
+            "    )",
+            "});",
+            'Circle_circle.displayName = "Circle";',
+            "return Circle_circle;",
+            "})();",
+        ),
+    }
 
 
 class SlotHolder(Component):
@@ -3870,43 +3931,6 @@ def test_memo_body_cond_branch_hooks_compile_into_a_wrapper() -> None:
             "})();",
         ),
     }
-
-
-@pytest.mark.parametrize("auto_memoize", [True, False])
-def test_snapshot_boundary_branch_hooks_compile_into_a_wrapper(
-    auto_memoize: bool,
-) -> None:
-    """A lifecycle event under ``rx.cond`` in a sealed boundary gets its own component.
-
-    A snapshot boundary compiles its whole subtree into one memo function, so
-    the branch's effect ran when the boundary mounted, whatever branch was
-    shown. The boundary's own root keeps its effect.
-    """
-    ctx = CompileContext(
-        pages=[
-            FakePage(
-                route="/p",
-                component=lambda: LeafComponent.create(
-                    rx.cond(
-                        SpecialFormMemoState.flag,
-                        Plain.create(on_mount=rx.console_log("shown")),
-                    ),
-                    on_mount=rx.console_log("root"),
-                ),
-            )
-        ],
-        hooks=CompilerHooks(plugins=default_page_plugins(auto_memoize=auto_memoize)),
-    )
-    with ctx:
-        ctx.compile()
-
-    body_hooks = [
-        "".join(memo_body_hooks(definition))
-        for definition in ctx.auto_memo_components.values()
-    ]
-    [boundary] = [hooks for hooks in body_hooks if '"root"' in hooks]
-    assert '"shown"' not in boundary
-    assert any('"shown"' in hooks for hooks in body_hooks)
 
 
 def test_memo_body_match_case_hooks_compile_into_a_wrapper() -> None:
