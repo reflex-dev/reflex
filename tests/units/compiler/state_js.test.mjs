@@ -14,6 +14,7 @@ const readUtil = (name) =>
 const stateSource = await readUtil("state");
 const runtimeSource = await readUtil("runtime");
 const transportSource = await readUtil("transport");
+const tokenKey = "reflex:ws://localhost:8000/_event:token";
 
 /** Evaluate the actual frontend modules with controlled transport and browser APIs. */
 async function setup({
@@ -38,6 +39,7 @@ async function setup({
   const sockets = [];
   const microtasks = [];
   const timers = new Map();
+  const sessionTimers = new Map();
   const firstHydrates = [];
   const onLoadInternalEvent = `${stateName}.test_on_load_internal`;
   const updates = [];
@@ -46,13 +48,18 @@ async function setup({
   const errorUpdates = [];
   const window = new EventTarget();
   window.location = new URL("http://localhost:3000/page?query=value");
-  const storage = new Map(storedToken ? [["token", storedToken]] : []);
+  const storage = new Map(storedToken ? [[tokenKey, storedToken]] : []);
   window.sessionStorage = {
     getItem: (key) => storage.get(key),
     setItem: (key, value) => storage.set(key, value),
   };
   const localStorage = {
-    items: new Map(),
+    // A tab with a saved token has a session cookie that is not yet due.
+    items: new Map(
+      storedToken
+        ? [[tokenKey.replace(/token$/, "expires_at"), Date.now() + 3600000]]
+        : [],
+    ),
     getItem(key) {
       return this.items.get(key) ?? null;
     },
@@ -60,6 +67,7 @@ async function setup({
       this.items.set(key, String(value));
     },
   };
+  window.localStorage = localStorage;
   const document = new EventTarget();
   document.cookie = disabled ? "backend-enabled=false" : "";
   document.visibilityState = hidden ? "hidden" : "visible";
@@ -74,10 +82,12 @@ async function setup({
     ...(browser ? { window, document } : {}),
     queueMicrotask: (fn) => microtasks.push(fn),
     setTimeout: (fn, ms) => {
-      timers.set(fn, ms);
+      // The session refresh waits about an hour here; these tests count the
+      // timers of the connection lifecycle, which are far shorter.
+      (ms > 60000 ? sessionTimers : timers).set(fn, ms);
       return fn;
     },
-    clearTimeout: (fn) => timers.delete(fn),
+    clearTimeout: (fn) => timers.delete(fn) || sessionTimers.delete(fn),
   });
   window.setTimeout = context.setTimeout;
   window.clearTimeout = context.clearTimeout;
@@ -120,6 +130,7 @@ async function setup({
       on(name, handler) {
         handlers.set(name, handler);
       },
+      emit() {},
       connect() {
         // A ready transport can deliver these synchronously on namespace connect.
         for (const name of [
@@ -320,7 +331,7 @@ test("warm the transport without hydrating, then reuse it with every handler att
   assert.deepEqual(app.updates, [7]);
   assert.deepEqual(app.firstHydrates, [true]);
   assert.equal(app.timers.size, 0);
-  assert.equal(app.window.sessionStorage.getItem("token"), "assigned-token");
+  assert.equal(app.window.sessionStorage.getItem(tokenKey), "assigned-token");
   assert.equal(app.socket.current.auth.event.router_data.pathname, "/page");
   assert.deepEqual(app.socket.current.auth.state_schema, { version: "test" });
 });
@@ -576,14 +587,11 @@ test("an oversized full hydrate on reconnect is reported, not retried", async ()
   assert.match(app.connectErrors[0].message, /exceeds/);
 });
 
-test("a new session's token is saved only once the mounted app connects", async () => {
+test("a cold session stores only the token assigned by the server", async () => {
   const app = await setup({ storedToken: null });
   app.flush();
-  const warm = app.sockets[0];
-  const token = warm.io.opts.query.token;
-  assert.ok(token);
-  // Waiting for the token in session storage must mean the app has mounted.
-  assert.equal(app.window.sessionStorage.getItem("token"), undefined);
+  assert.equal(app.sockets.length, 0);
+  assert.equal(app.window.sessionStorage.getItem(tokenKey), undefined);
   const saved = [];
   const setItem = app.window.sessionStorage.setItem;
   app.window.sessionStorage.setItem = (key, value) => {
@@ -591,15 +599,15 @@ test("a new session's token is saved only once the mounted app connects", async 
     setItem(key, value);
   };
   await app.connect();
-  assert.equal(app.socket.current, warm);
-  assert.deepEqual(saved, [token, "assigned-token"]);
+  assert.equal(app.socket.current.io.opts.query.token, "");
+  assert.deepEqual(saved, ["assigned-token"]);
 });
 
 test("a warm transport carrying another session's token is replaced", async () => {
   const app = await setup();
   app.flush();
   const warm = app.sockets[0];
-  app.window.sessionStorage.setItem("token", "replaced-token");
+  app.window.sessionStorage.setItem(tokenKey, "replaced-token");
   await app.connect();
   assert.equal(warm.disconnects, 1);
   assert.equal(app.sockets.length, 2);

@@ -12,14 +12,27 @@ const transportSource = readUtil("transport.js");
 /** Evaluate the complete frontend modules with isolated dependency stubs. */
 export async function createQueueRuntime(
   source,
-  { uploadFiles, throttle, dependencies: dependencyOverrides } = {},
+  {
+    uploadFiles,
+    throttle,
+    dependencies: dependencyOverrides,
+    io,
+    env,
+    browser,
+    initialState = {},
+  } = {},
 ) {
   const unused = () => {
     throw new Error("Unexpected frontend dependency in queue test");
   };
   const app = {
-    initialEvents: () => [],
-    initialState: {},
+    initialEvents: (first) => [
+      {
+        name: "reflex___state.test.hydrate_and_load",
+        payload: first ? { hashes: { test_state: "compiled-defaults" } } : {},
+      },
+    ],
+    initialState,
     onLoadInternalEvent: unused,
     state_name: "test_state",
     exception_state_name: "test_exception_state",
@@ -32,10 +45,11 @@ export async function createQueueRuntime(
       document: {},
       localStorage: { clear() {}, removeItem() {} },
       sessionStorage: { clear() {}, removeItem() {} },
+      ...browser,
     },
-    "socket.io-client": { default: unused },
+    "socket.io-client": { default: io ?? unused },
     mergician: { mergician: unused },
-    "$/env.json": { default: {} },
+    "$/env.json": { default: env ?? {} },
     "universal-cookie": {
       default: class {
         remove() {}
@@ -74,11 +88,11 @@ export async function createQueueRuntime(
     ...dependencyOverrides,
   };
   // Let Node parse the unchanged modules; only expose private state to tests.
-  const browser =
+  const globals =
     'import { window, document, localStorage, sessionStorage } from "test:browser";';
   const module = new SourceTextModule(source);
   const transport = new SourceTextModule(
-    `${browser}
+    `${globals}
 ${transportSource}
 export { event_queue };
 `,
@@ -86,7 +100,7 @@ export { event_queue };
   // state.js re-exports runtime.js and transport.js.
   const linked = new Map([
     ["$/utils/state", module],
-    ["$/utils/runtime", new SourceTextModule(`${browser}\n${runtimeSource}`)],
+    ["$/utils/runtime", new SourceTextModule(`${globals}\n${runtimeSource}`)],
     ["$/utils/transport", transport],
   ]);
   await module.link((specifier) => {
