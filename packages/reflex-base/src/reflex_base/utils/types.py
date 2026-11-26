@@ -1112,7 +1112,8 @@ def _get_column_access_type(cls: type, name: str) -> GenericType | None:
     # A parametrized python type, e.g. `List[int]` of an ARRAY column, is kept.
     # Type parameters and TypedDict keys refine a bare one; a subclass such as
     # `bool` over `int` does not, as the database returns `type_` itself. A
-    # parametrized generic TypedDict does not either: its keys are not resolved.
+    # parametrized generic TypedDict (`P[int]`) does not either, as it is an
+    # alias rather than a TypedDict class.
     elif (
         isinstance(type_, type)
         and (declared := _get_mapped_annotation(cls, name)) is not None
@@ -1231,7 +1232,14 @@ def get_attribute_access_type(
             if declares_annotation(cls, name):
                 hints = get_type_hints(cls)  # pyright: ignore [reportArgumentType]
                 if name in hints:
-                    return hints[name]
+                    hint = hints[name]
+                    # A field inherited from a specialized generic TypedDict
+                    # (`class R(P[str])`) still names the base's type parameters.
+                    if typing_extensions.is_typeddict(cls) and (
+                        isinstance(hint, TypeVar) or getattr(hint, "__parameters__", ())
+                    ):
+                        return get_typed_dict_field_types(cls).get(name)
+                    return hint
         except NameError as e:
             logger.warning(f"Failed to resolve ForwardRefs for {cls}.{name} due to {e}")
     return None  # Attribute is not accessible.

@@ -876,11 +876,7 @@ def test_declarative_json_column_typing_extensions_typed_dict() -> None:
 
 
 def test_declarative_json_column_generic_typed_dict() -> None:
-    """A parametrized generic TypedDict annotation keeps a bare dict column.
-
-    Key access on a parametrized generic TypedDict is unsupported, so refining
-    the column to it would turn working item access into a compile error.
-    """
+    """A parametrized generic TypedDict annotation keeps a bare dict column."""
     assert get_attribute_access_type(OtherTypedDictJsonModel, "generic_prefs") is dict
     prefs = rx.Var(_js_expr="model").to(OtherTypedDictJsonModel).generic_prefs
     assert prefs["value"]._var_type is Any
@@ -945,3 +941,60 @@ def test_generic_typed_dict_var_item_access() -> None:
         f"The State var `{payload!s}` of type {_GenericPayload[int]} has no "
         "attribute 'missing' or may have been annotated wrongly."
     )
+
+
+class _StrPayload(_GenericPayload[str]):
+    pass
+
+
+class _NestedStrPayload(_StrPayload):
+    extra: list[_StrPayload]
+
+
+class _ExtensionsGenericPayload(typing_extensions.TypedDict, Generic[_T]):
+    value: _T
+
+
+class _ExtensionsStrPayload(_ExtensionsGenericPayload[str]):
+    pass
+
+
+class _ExtensionsNestedStrPayload(_ExtensionsStrPayload):
+    extra: int
+
+
+def test_get_attribute_access_type_generic_typed_dict_subclass() -> None:
+    """A subclass of a specialized generic TypedDict resolves inherited fields."""
+    assert get_attribute_access_type(_StrPayload, "value") is str
+    assert get_attribute_access_type(_StrPayload, "label") is str
+    assert get_attribute_access_type(_StrPayload, "missing") is None
+    assert get_attribute_access_type(_ExtensionsNestedStrPayload, "value") is str
+    assert get_attribute_access_type(_ExtensionsNestedStrPayload, "extra") is int
+
+
+def test_generic_typed_dict_subclass_var_item_access() -> None:
+    """A var typed as a subclass of a specialized generic TypedDict can be indexed."""
+
+    class GenericTypedDictSubclassState(rx.State):
+        payload: rx.Field[_StrPayload] = rx.field({"value": "a", "label": "b"})
+
+    assert GenericTypedDictSubclassState.payload["value"]._var_type is str
+    assert GenericTypedDictSubclassState.payload["label"]._var_type is str
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 12),
+    reason="a typing.TypedDict subclass drops its bases' type arguments on 3.11",
+)
+def test_generic_typed_dict_multi_level_subclass_var_item_access() -> None:
+    """A var typed as a deeper subclass of a specialized generic TypedDict too."""
+
+    class GenericTypedDictNestedState(rx.State):
+        nested: rx.Field[_NestedStrPayload] = rx.field({
+            "value": "a",
+            "label": "b",
+            "extra": [],
+        })
+
+    assert GenericTypedDictNestedState.nested["value"]._var_type is str
+    assert GenericTypedDictNestedState.nested["extra"]._var_type == list[_StrPayload]
