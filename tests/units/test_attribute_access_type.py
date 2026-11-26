@@ -998,3 +998,39 @@ def test_generic_typed_dict_multi_level_subclass_var_item_access() -> None:
 
     assert GenericTypedDictNestedState.nested["value"]._var_type is str
     assert GenericTypedDictNestedState.nested["extra"]._var_type == list[_StrPayload]
+
+
+class _BareGenericFieldPayload(TypedDict):
+    inner: _GenericPayload
+
+
+class _GenericBareGenericFieldPayload(TypedDict, Generic[_T]):
+    inner: _GenericPayload
+    value: _T
+
+
+def test_get_attribute_access_type_bare_generic_typed_dict_field() -> None:
+    """A field typed as a bare generic TypedDict keeps that class as its type."""
+    assert (
+        get_attribute_access_type(_BareGenericFieldPayload, "inner") is _GenericPayload
+    )
+    assert (
+        get_attribute_access_type(_GenericBareGenericFieldPayload[int], "inner")
+        is _GenericPayload
+    )
+    assert (
+        get_attribute_access_type(_GenericBareGenericFieldPayload[int], "value") is int
+    )
+
+
+def test_bare_generic_typed_dict_field_var_item_access() -> None:
+    """A var with a field typed as a bare generic TypedDict can be indexed."""
+
+    class BareGenericFieldState(rx.State):
+        payload: rx.Field[_BareGenericFieldPayload] = rx.field({
+            "inner": {"value": 1, "label": "a"}
+        })
+
+    inner = BareGenericFieldState.payload["inner"]
+    assert inner._var_type is _GenericPayload
+    assert inner["label"]._var_type is str  # pyright: ignore[reportIndexIssue]

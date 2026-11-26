@@ -468,6 +468,23 @@ def get_required_typed_dict_keys(typed_dict: Any) -> frozenset[str]:
     }
 
 
+def _field_type_params(hint: Any) -> tuple[Any, ...]:
+    """Get the type parameters a field type leaves free.
+
+    A bare generic class (``inner: Inner``) is not counted: its parameters are
+    its own, not ones the enclosing TypedDict has to declare.
+
+    Args:
+        hint: The field type.
+
+    Returns:
+        The type parameters of the field type.
+    """
+    if isinstance(hint, type):
+        return ()
+    return getattr(hint, "__parameters__", ())
+
+
 def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
     """Resolve the field types of a TypedDict.
 
@@ -522,14 +539,10 @@ def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
     for name, hint in field_types.items():
         if isinstance(hint, TypeVar) and hint in substitution:
             hint = substitution[hint]
-        elif substitution and (params := getattr(hint, "__parameters__", ())):
+        elif substitution and (params := _field_type_params(hint)):
             hint = _apply_type_params(hint, params, substitution)
         hint = resolve_type_alias(hint)
-        params = (
-            (hint,)
-            if isinstance(hint, TypeVar)
-            else getattr(hint, "__parameters__", ())
-        )
+        params = (hint,) if isinstance(hint, TypeVar) else _field_type_params(hint)
         if undeclared := [param for param in params if param not in declared]:
             msg = (
                 f"Field {name!r} of TypedDict {origin.__qualname__} has type {hint}, "
@@ -1236,7 +1249,7 @@ def get_attribute_access_type(
                     # A field inherited from a specialized generic TypedDict
                     # (`class R(P[str])`) still names the base's type parameters.
                     if typing_extensions.is_typeddict(cls) and (
-                        isinstance(hint, TypeVar) or getattr(hint, "__parameters__", ())
+                        isinstance(hint, TypeVar) or _field_type_params(hint)
                     ):
                         return get_typed_dict_field_types(cls).get(name)
                     return hint
