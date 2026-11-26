@@ -369,6 +369,14 @@ The compile stops with these errors:
   outside .../my_app, the directory of the app's package, and only that
   directory is linked into the compiled app.` Move the file into your app's
   package, or publish it as an npm package and import it by name.
+- `The JavaScript file .../party.js imports .../loop/party.js through
+  .../loop, a link back to a directory its imports were already in, so the
+  bundler would import the same files again one link deeper, without end.` A
+  link to a directory that holds it, such as `loop` pointing to `.`, lets an
+  import reach the same file again at a longer path, and the bundler, which
+  reads each file where its import names it, treats each path as a module of
+  its own. Import the file by a path that does not go through the link, or
+  replace the link with a real directory.
 - `The JavaScript file .../party.js imports 'fs', a Node.js built-in module,
   which does not exist in the browser.` Remove the import, and do the work that
   needs it in a backend event handler instead.

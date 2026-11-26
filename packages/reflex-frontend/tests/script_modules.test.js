@@ -118,6 +118,7 @@ test("lists each module's files, its exports, and what each script imports", asy
       "counter.tsx": [],
     },
     errors: [],
+    loops: [],
   });
 });
 
@@ -158,6 +159,54 @@ test("lists a linked file where its import names it, and its imports from there"
     "near.js",
   ]);
   expect(imports).toEqual({ "party.js": [], "linked.js": [], "near.js": [] });
+});
+
+test("reports a file that reaches itself again through a directory link", async () => {
+  // `link` links to the directory that holds it, so `party.js` imports
+  // `link/party.js`, which imports `link/link/party.js`, and so on: each path is
+  // a module of its own to Vite, which does not follow links.
+  const directory = writeFiles({
+    "party.js": 'import "./link/party.js";\nexport function go() {}\n',
+  });
+  symlinkSync(".", join(directory, "link"));
+  expect(await readModules(directory, ["party.js"])).toEqual({
+    format: 1,
+    modules: {
+      "party.js": {
+        files: ["party.js"],
+        functions: ["go"],
+        values: [],
+        exportsAll: false,
+      },
+    },
+    imports: { "party.js": [] },
+    errors: [],
+    loops: [{ importer: "party.js", file: "link/party.js", link: "link" }],
+  });
+});
+
+test("follows a link to an ancestor until a file reaches itself again", async () => {
+  // `lib/up` links to the directory that holds `lib`. `near.js` is reached as
+  // `lib/up/near.js`, and `far.js` one link deeper, but no file repeats, so
+  // both are followed; `helper.js` reaches `party.js` again.
+  const directory = writeFiles({
+    "party.js": 'import "./helper.js";\nexport function go() {}\n',
+    "helper.js": 'import "./lib/up/party.js";\nimport "./lib/up/near.js";\n',
+    "near.js": 'import "./lib/up/far.js";\n',
+    "far.js": "",
+  });
+  mkdirSync(join(directory, "lib"));
+  symlinkSync("..", join(directory, "lib", "up"));
+  const { modules, loops } = await readModules(directory, ["party.js"]);
+  expect(modules["party.js"].files).toEqual([
+    "party.js",
+    "helper.js",
+    "lib/up/near.js",
+    "lib/up/lib/up/far.js",
+  ]);
+  expect(loops).toEqual([
+    { importer: "helper.js", file: "lib/up/party.js", link: "lib/up" },
+  ]);
 });
 
 test("lists a file that Vite loads as its text or URL without reading it", async () => {
