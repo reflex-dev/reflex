@@ -65,48 +65,40 @@ def test_element_observer_without_handlers_observes_nothing():
     assert ElementObserver.create(target="box", layout=True).add_hooks() == []
 
 
-def test_element_observer_observes_its_only_child(monkeypatch: pytest.MonkeyPatch):
+@pytest.mark.parametrize(
+    ("child", "observed_id"),
+    [(rx.el.div(id="named"), "named"), (rx.el.div(), "element_observer_abc")],
+    ids=["own id", "generated id"],
+)
+def test_element_observer_observes_its_only_child(
+    monkeypatch: pytest.MonkeyPatch, child: rx.Component, observed_id: str
+):
     """Without a target the child is observed, by its own id or a generated one."""
-    shown = rx.client_state(False, name="shown")
-
-    named = ElementObserver.create(
-        rx.el.div(id="named"), on_intersect=lambda visible, ratio: shown.set(visible)
-    )
-    assert [str(hook) for hook in named.add_hooks()] == [
-        (
-            'useElementObserver("named", '
-            '({ ["onIntersect"] : ((_ev_0, _ev_1) => '
-            "(((_ev_0) => (shownRxClientStateSet(_ev_0)))"
-            "(_ev_0, _ev_1))) }), ({  }));"
-        )
-    ]
-
     monkeypatch.setattr(
         importlib.import_module("reflex_components_core.core.element_observer"),
         "get_unique_variable_name",
         lambda: "abc",
     )
-    unnamed = ElementObserver.create(
-        rx.el.div(), on_intersect=lambda visible, ratio: shown.set(visible)
+    shown = rx.client_state(False, name="shown")
+    observer = ElementObserver.create(
+        child, on_intersect=lambda visible, ratio: shown.set(visible)
     )
-    assert [str(hook) for hook in unnamed.add_hooks()] == [
+
+    assert [str(hook) for hook in observer.add_hooks()] == [
         (
-            'useElementObserver("element_observer_abc", '
+            f'useElementObserver("{observed_id}", '
             '({ ["onIntersect"] : ((_ev_0, _ev_1) => '
             "(((_ev_0) => (shownRxClientStateSet(_ev_0)))"
             "(_ev_0, _ev_1))) }), ({  }));"
         )
     ]
-    assert unnamed.render() == {
+    assert observer.render() == {
         "name": "Fragment",
         "props": [],
         "children": [
             {
                 "name": '"div"',
-                "props": [
-                    'id:"element_observer_abc"',
-                    "ref:ref_element_observer_abc",
-                ],
+                "props": [f'id:"{observed_id}"', f"ref:ref_{observed_id}"],
                 "children": [],
             }
         ],
