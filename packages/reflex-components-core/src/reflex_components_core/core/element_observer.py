@@ -46,7 +46,7 @@ class ElementObserver(Fragment):
     )
 
     on_resize: EventHandler[passthrough_event_spec(float, float)] = field(
-        doc="Fired with the element's width and height in pixels when observing starts and whenever they change."
+        doc="Fired with the element's width and height in pixels, transforms included, when observing starts and whenever its border box changes size. A change of its transform alone does not fire it."
     )
 
     on_move: EventHandler[passthrough_event_spec(float, float)] = field(

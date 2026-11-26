@@ -3,7 +3,8 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 /**
  * @typedef {object} ElementObserverHandlers
  * @property {(width: number, height: number) => void} [onResize] Called with
- *   the element's size when observing starts and whenever it changes.
+ *   the element's size when observing starts and whenever its border box
+ *   changes size; a change of its transform alone does not call it.
  * @property {(x: number, y: number) => void} [onMove] Called with the
  *   element's position in the viewport when observing starts and whenever it
  *   changes after a scroll, a window resize or a resize of the element.

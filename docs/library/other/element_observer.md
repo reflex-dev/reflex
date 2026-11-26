@@ -27,8 +27,10 @@ takes the id over.
 ## Size
 
 `on_resize` fires with the element's width and height in pixels when observing
-starts and whenever they change. They are the size of its border box as
-`getBoundingClientRect` measures it, transforms included.
+starts and whenever its border box changes size. They are the size
+`getBoundingClientRect` measures, so a transform such as `scale` is included,
+but a change of the transform alone does not fire `on_resize`: the browser's
+`ResizeObserver` it follows ignores transforms.
 
 ```python demo exec
 def element_size_example():
