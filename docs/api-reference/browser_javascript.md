@@ -148,9 +148,14 @@ whose members stay the same across Reflex versions:
 
 | Member | What it does |
 | --- | --- |
-| `reflex.ref(id)` | The ref of the component with that `id`. `undefined` until a component with that `id` renders; its `current` is `null` until React attaches the element, then the element. |
+| `reflex.ref(id)` | The ref of the component with that `id`. `undefined` until a component with that `id` renders, and always for a component whose `id` is a var, which registers no ref; its `current` is `null` until React attaches the element, then the element. |
 | `reflex.addEvents(events)` | Dispatch events, as an event trigger does. |
 | `reflex.event(name, payload)` | Build an event for `reflex.addEvents`: `name` is the event handler's full name, `payload` its arguments by name. |
+
+An event handler's full name encodes the module and class of its state, and its
+format may change between Reflex versions, so never write one out by hand.
+Build it in Python, as `f"{State.get_full_name()}.handler_name"`, and pass it
+into the JavaScript.
 
 Prefer `reflex` over the other names a script can see, such as `refs`,
 `ReflexEvent` or `addEvents`: those are internals of the frontend and may change
@@ -184,6 +189,14 @@ def reflex_api_demo():
                     callback=ReflexApiState.set_result,
                 ),
             ),
+            rx.button(
+                "Send",
+                on_click=rx.call_script(
+                    "reflex.addEvents([reflex.event("
+                    f"'{ReflexApiState.get_full_name()}.set_result', "
+                    "{result: reflex.ref('reflex_api_search').current.value})])"
+                ),
+            ),
         ),
         rx.text(f"Result: {ReflexApiState.result}"),
     )
@@ -195,16 +208,51 @@ it: `rx.set_focus(id)`, `rx.blur_focus(id)`, `rx.set_value(id, value)` and
 
 ### From a JavaScript Module
 
-A JavaScript module, such as one a [wrapped component](/docs/wrapping-react/overview/)
-imports, imports `reflex` from `$/utils/reflex`:
+A JavaScript module, such as a [local component](/docs/wrapping-react/local-packages/),
+imports `reflex` from `$/utils/reflex`. This one sends the value of the input
+with `id="search"` to the event handler named by its `handlerName` prop:
 
 ```javascript
+// search_saver.jsx
 import { reflex } from "$/utils/reflex";
 
-export function saveSearch(handlerName) {
-  const value = reflex.ref("reflex_api_search").current.value;
-  reflex.addEvents([reflex.event(handlerName, { value })]);
+export function SearchSaver({ handlerName }) {
+  const save = () => {
+    const value = reflex.ref("search").current.value;
+    reflex.addEvents([reflex.event(handlerName, { value })]);
+  };
+  return <button onClick={save}>Save</button>;
 }
+```
+
+The Python side passes the handler's full name as that prop:
+
+```python
+search_saver_path = rx.asset("./search_saver.jsx", shared=True)
+
+
+class SearchSaver(rx.Component):
+    library = search_saver_path.importable_path
+    tag = "SearchSaver"
+
+    # The full name of the event handler to send the value to.
+    handler_name: rx.Var[str]
+
+
+class SavedState(rx.State):
+    saved: str = ""
+
+    @rx.event
+    def save(self, value: str):
+        self.saved = value
+
+
+def saved_search():
+    return rx.vstack(
+        rx.input(id="search"),
+        SearchSaver.create(handler_name=f"{SavedState.get_full_name()}.save"),
+        rx.text(SavedState.saved),
+    )
 ```
 
 ### From Python
