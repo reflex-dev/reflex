@@ -184,6 +184,7 @@ class BaseConfig:
         react_strict_mode: Whether to use React strict mode.
         react_compiler: Enable experimental React Compiler memoization for generated components in development and production. Defaults to False.
         auto_memoize: Wrap stateful page components in generated memo components. Disable only together with react_compiler, which then memoizes whole pages; without it, every state change re-renders the whole page. Defaults to True.
+        frontend_css_minifier: The minifier for the CSS of production builds: "lightningcss", Vite's default, or "esbuild", which Reflex installs when selected. Lightning CSS rounds numbers to six significant digits, so Bootstrap's `8.33333333%` becomes `8.33333%` and can shift a layout by a fraction of a pixel; esbuild keeps them as written.
         frontend_compression_formats: Pre-compressed frontend asset formats to generate for production builds. Supported values are "gzip", "brotli", and "zstd". Use an empty list to disable build-time pre-compression.
         frontend_packages: Additional frontend packages to install.
         frontend_lazy_bundled_libraries: Load optional dynamic-component libraries when a dynamic component is first evaluated, rather than importing their full namespaces on every page. Defaults to False for compatibility with scripts that read window.__reflex directly.
@@ -256,6 +257,8 @@ class BaseConfig:
     react_compiler: bool = False
 
     auto_memoize: bool = True
+
+    frontend_css_minifier: Literal["lightningcss", "esbuild"] = "lightningcss"
 
     frontend_compression_formats: Annotated[
         list[str],

@@ -67,6 +67,19 @@ def test_frozen_lockfile_default(base_config_values):
     assert config.frozen_lockfile is True
 
 
+def test_frontend_css_minifier(base_config_values, monkeypatch: pytest.MonkeyPatch):
+    """Lightning CSS minifies by default; esbuild can be chosen in code or the environment.
+
+    Args:
+        base_config_values: Config values.
+        monkeypatch: Fixture for setting environment variables.
+    """
+    monkeypatch.delenv("REFLEX_FRONTEND_CSS_MINIFIER", raising=False)
+    assert rx.Config(**base_config_values).frontend_css_minifier == "lightningcss"
+    monkeypatch.setenv("REFLEX_FRONTEND_CSS_MINIFIER", "esbuild")
+    assert rx.Config(**base_config_values).frontend_css_minifier == "esbuild"
+
+
 def test_trusted_proxy_hops_defaults_to_zero(base_config_values):
     """Do not trust client-controlled forwarded headers by default."""
     assert rx.Config(**base_config_values).trusted_proxy_hops == 0

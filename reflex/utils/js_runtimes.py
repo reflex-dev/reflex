@@ -835,6 +835,12 @@ def install_frontend_packages(packages: set[str], config: Config):
                 constants.PackageJson.REACT_COMPILER_DEV_DEPENDENCIES
             )
         )
+    if config.frontend_css_minifier == "esbuild":
+        development_dependencies.update(
+            _pinned_args_from_constants(
+                constants.PackageJson.ESBUILD_CSS_MINIFIER_DEV_DEPENDENCIES
+            )
+        )
     for plugin in config.plugins:
         development_dependencies.update(plugin.get_frontend_development_dependencies())
         packages.update(plugin.get_frontend_dependencies())

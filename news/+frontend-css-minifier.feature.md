@@ -1,0 +1,1 @@
+`rx.Config(frontend_css_minifier="esbuild")` minifies the production CSS with esbuild, which Reflex then installs, instead of Vite's default Lightning CSS. Lightning CSS rounds numbers to six significant digits, so Bootstrap's `8.33333333%` becomes `8.33333%` and a layout can shift by a fraction of a pixel; esbuild keeps numbers as written.

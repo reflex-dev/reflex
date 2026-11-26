@@ -17,6 +17,7 @@ import pytest
 from click.testing import CliRunner
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.compiler.templates import vite_config_template
 from reflex_base.config import Config
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
@@ -605,6 +606,35 @@ def test_initialise_vite_config(config, expected_output):
     assert expected_output in output
 
 
+def test_css_minifier_vite_config():
+    """The build's CSS goes through esbuild only when selected, and only when minifying."""
+    default_output = _compile_vite_config(Config(app_name="test"))
+    esbuild_output = _compile_vite_config(
+        Config(app_name="test", frontend_css_minifier="esbuild")
+    )
+    kwargs = {
+        "base": "/",
+        "hmr": True,
+        "force_full_reload": False,
+        "experimental_hmr": False,
+        "sourcemap": False,
+        "css_minifier": "esbuild",
+    }
+
+    assert [line for line in default_output.splitlines() if "cssMinify" in line] == [
+        "    cssMinify: true,"
+    ]
+    assert esbuild_output == default_output.replace(
+        "    cssMinify: true,", '    cssMinify: "esbuild",'
+    )
+    assert vite_config_template(**kwargs, minify=False) == vite_config_template(
+        **kwargs
+    ).replace(
+        '    minify: true,\n    cssMinify: "esbuild",',
+        "    minify: false,\n    cssMinify: false,",
+    )
+
+
 def test_react_compiler_vite_config():
     """Only opt-in apps load React Compiler before the router's transforms."""
     default_output = _compile_vite_config(Config(app_name="test"))
@@ -1039,6 +1069,42 @@ def test_react_compiler_dependencies_toggle(install_packages_env: InstallPackage
 
     env.install()
     assert len(calls) == 2
+
+
+def test_esbuild_css_minifier_dependency_toggle(
+    install_packages_env: InstallPackagesEnv,
+):
+    """The esbuild package is installed while it minifies the CSS, and removed after.
+
+    Args:
+        install_packages_env: The isolated install environment.
+    """
+    env = install_packages_env
+    esbuild_deps = constants.PackageJson.ESBUILD_CSS_MINIFIER_DEV_DEPENDENCIES
+    calls = _record_calls(env)
+    env.install()
+    assert calls == []
+
+    env.config.frontend_css_minifier = "esbuild"
+    env.install()
+    assert len(calls) == 1
+    assert calls[0][calls[0].index("add") :] == [
+        "add",
+        "--legacy-peer-deps",
+        "-D",
+        *(f"{name}@{version}" for name, version in esbuild_deps.items()),
+    ]
+
+    env.web_package_json.write_text(json.dumps({"devDependencies": esbuild_deps}))
+    frontend_skeleton.sync_web_lockfiles_to_root()
+    env.config.frontend_css_minifier = "lightningcss"
+    env.install()
+    assert len(calls) == 2
+    assert calls[1][calls[1].index("remove") :] == [
+        "remove",
+        "--legacy-peer-deps",
+        *esbuild_deps,
+    ]
 
 
 def test_react_compiler_dependency_versions_invalidate_cache(
