@@ -322,6 +322,182 @@ def test_create_config_e2e(tmp_working_dir):
     assert any(isinstance(plugin, RadixThemesPlugin) for plugin in config.plugins)
 
 
+def test_initialize_app_directory_keeps_existing_files(tmp_working_dir, tmp_path):
+    """A template is added beside what the directory already holds.
+
+    Args:
+        tmp_working_dir: a new directory that is the current working directory
+            for the duration of the test.
+        tmp_path: pytest tmp_path fixture, which holds the template.
+    """
+    template = tmp_path / "template"
+    (template / "code").mkdir(parents=True)
+    (template / "code" / "__init__.py").write_text("")
+    (template / "code" / "tmpl.py").write_text("from tmpl import x\n")
+    (template / "assets").mkdir()
+    (template / "assets" / "favicon.ico").write_bytes(b"template icon")
+    (template / "assets" / "new.png").write_bytes(b"new")
+    (template / "README.md").write_text("template readme")
+
+    (tmp_working_dir / "assets").mkdir()
+    (tmp_working_dir / "assets" / "favicon.ico").write_bytes(b"my icon")
+    (tmp_working_dir / "assets" / "logo.png").write_bytes(b"logo")
+    (tmp_working_dir / "README.md").write_text("my readme")
+    (tmp_working_dir / "code").mkdir()
+    (tmp_working_dir / "code" / "notes.txt").write_text("notes")
+
+    templates.initialize_app_directory(
+        "shop",
+        template_name="tmpl",
+        template_code_dir_name="code",
+        template_dir=template,
+    )
+
+    assert {p.name: p.read_bytes() for p in (tmp_working_dir / "assets").iterdir()} == {
+        "favicon.ico": b"my icon",
+        "logo.png": b"logo",
+        "new.png": b"new",
+    }
+    assert (tmp_working_dir / "README.md").read_text() == "template readme"
+    assert [p.name for p in (tmp_working_dir / "code").iterdir()] == ["notes.txt"]
+    assert {p.name: p.read_text() for p in (tmp_working_dir / "shop").iterdir()} == {
+        "__init__.py": "",
+        "shop.py": "from shop import x\n",
+    }
+
+
+def test_initialize_app_directory_uses_the_template_lockfile(tmp_working_dir, tmp_path):
+    """The template's lockfile replaces the one init wrote for the bare frontend.
+
+    Args:
+        tmp_working_dir: a new directory that is the current working directory
+            for the duration of the test.
+        tmp_path: pytest tmp_path fixture, which holds the template.
+    """
+    template = tmp_path / "template"
+    (template / "code").mkdir(parents=True)
+    (template / "code" / "tmpl.py").write_text("")
+    (template / constants.Bun.ROOT_LOCKFILE_DIR).mkdir()
+    (template / constants.Bun.ROOT_LOCKFILE_DIR / "package.json").write_text("template")
+    (template / constants.Bun.ROOT_LOCKFILE_DIR / "bun.lock").write_text("template")
+    (tmp_working_dir / constants.Bun.ROOT_LOCKFILE_DIR).mkdir()
+    (tmp_working_dir / constants.Bun.ROOT_LOCKFILE_DIR / "package.json").write_text(
+        "generated"
+    )
+
+    templates.initialize_app_directory(
+        "shop",
+        template_name="tmpl",
+        template_code_dir_name="code",
+        template_dir=template,
+    )
+
+    lockfile_dir = tmp_working_dir / constants.Bun.ROOT_LOCKFILE_DIR
+    assert {p.name: p.read_text() for p in lockfile_dir.iterdir()} == {
+        "package.json": "template",
+        "bun.lock": "template",
+    }
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+@pytest.mark.parametrize("app_name", ["assets", "Assets", "readme"])
+def test_initialize_app_directory_named_like_a_template_entry(
+    tmp_working_dir, tmp_path, mocker: MockerFixture, app_name: str, reverse: bool
+):
+    """An app named like a template entry gets only its code there, in either order.
+
+    Args:
+        tmp_working_dir: a new directory that is the current working directory
+            for the duration of the test.
+        tmp_path: pytest tmp_path fixture, which holds the template.
+        mocker: Mocker object.
+        app_name: the app's name, which may match a template entry on this file system.
+        reverse: whether the template's entries are listed in reverse order.
+    """
+    template = tmp_path / "template"
+    (template / "code").mkdir(parents=True)
+    (template / "code" / "__init__.py").write_text("")
+    (template / "code" / "tmpl.py").write_text("from tmpl import x\n")
+    (template / "assets").mkdir()
+    (template / "assets" / "favicon.ico").write_bytes(b"\xa8 not text")
+    (template / "README").write_text("template readme")
+
+    iterdir = Path.iterdir
+
+    def ordered_iterdir(self: Path):
+        entries = list(iterdir(self))
+        return iter(sorted(entries, reverse=reverse) if self == template else entries)
+
+    mocker.patch.object(Path, "iterdir", ordered_iterdir)
+
+    templates.initialize_app_directory(
+        app_name,
+        template_name="tmpl",
+        template_code_dir_name="code",
+        template_dir=template,
+    )
+
+    assert {p.name: p.read_text() for p in (tmp_working_dir / app_name).iterdir()} == {
+        "__init__.py": "",
+        f"{app_name}.py": f"from {app_name} import x\n",
+    }
+
+
+def test_initialize_app_refuses_an_existing_app_directory(
+    tmp_working_dir, mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    """A directory named after the app is left alone, and nothing is written.
+
+    Args:
+        tmp_working_dir: a new directory that is the current working directory
+            for the duration of the test.
+        mocker: Mocker object.
+        caplog: The log capture fixture.
+    """
+    mocker.patch("reflex.utils.telemetry.get_init_environment", return_value={})
+    send = mocker.patch("reflex.utils.telemetry.send")
+    (tmp_working_dir / "shop").mkdir()
+    (tmp_working_dir / "shop" / "models.py").write_text("x = 1")
+
+    with pytest.raises(SystemExit) as exc_info:
+        templates.initialize_app("shop", constants.Templates.DEFAULT)
+
+    assert exc_info.value.code == 1
+    assert [r.getMessage() for r in caplog.records if r.levelno >= logging.ERROR] == [
+        (
+            "Cannot initialize shop: shop already exists in this directory. Move it "
+            "aside, or pass --name to choose another app name."
+        )
+    ]
+    assert [p.name for p in tmp_working_dir.iterdir()] == ["shop"]
+    assert [p.name for p in (tmp_working_dir / "shop").iterdir()] == ["models.py"]
+    send.assert_not_called()
+
+
+def test_initialize_app_refuses_a_broken_symlink_named_after_the_app(
+    tmp_working_dir, mocker: MockerFixture
+):
+    """A dangling symlink with the app's name also stops init before anything is written.
+
+    Args:
+        tmp_working_dir: a new directory that is the current working directory
+            for the duration of the test.
+        mocker: Mocker object.
+    """
+    mocker.patch("reflex.utils.telemetry.get_init_environment", return_value={})
+    mocker.patch("reflex.utils.telemetry.send")
+    try:
+        (tmp_working_dir / "shop").symlink_to(tmp_working_dir / "missing")
+    except OSError:
+        pytest.skip("symlinks are not available")
+
+    with pytest.raises(SystemExit) as exc_info:
+        templates.initialize_app("shop", constants.Templates.DEFAULT)
+
+    assert exc_info.value.code == 1
+    assert [p.name for p in tmp_working_dir.iterdir()] == ["shop"]
+
+
 class DataFrame:
     """A Fake pandas DataFrame class."""
 

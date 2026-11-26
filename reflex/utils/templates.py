@@ -2,6 +2,7 @@
 
 import dataclasses
 import logging
+import os
 import shutil
 import tempfile
 import zipfile
@@ -36,6 +37,17 @@ def create_config(app_name: str):
 
     logger.debug(f"Creating {constants.Config.FILE}")
     constants.Config.FILE.write_text(templates.rxconfig_template(app_name=app_name))
+
+
+def _copy_if_missing(src: str | Path, dest: str | Path) -> None:
+    """Copy a file unless the destination already exists.
+
+    Args:
+        src: The file to copy.
+        dest: Where to copy it.
+    """
+    if not os.path.lexists(dest):
+        shutil.copy2(src, dest)
 
 
 def initialize_app_directory(
@@ -82,12 +94,28 @@ def initialize_app_directory(
     ]:
         shutil.rmtree(pycache_dir, ignore_errors=True)
 
+    # initialize_app made sure nothing has the app's name yet.
+    shutil.copytree(template_dir / template_code_dir_name, app_name)
     for file in template_dir.iterdir():
-        # Copy the file to current directory but keep the name the same.
-        path_ops.cp(str(file), file.name)
+        if file.name == template_code_dir_name or (
+            Path(file.name).exists() and Path(file.name).samefile(app_name)
+        ):
+            # The app's code takes the app's name, as it always has.
+            continue
+        if file.name == constants.Bun.ROOT_LOCKFILE_DIR:
+            # init has just written a lockfile for the bare frontend; the
+            # template's own lockfile is the one that matches its packages.
+            path_ops.cp(str(file), file.name)
+        elif file.is_dir():
+            # Add the template's files to a directory that may already hold the
+            # user's, keeping any the user has.
+            shutil.copytree(
+                file, file.name, copy_function=_copy_if_missing, dirs_exist_ok=True
+            )
+        else:
+            shutil.copyfile(file, file.name)
 
     # Rename the template app to the app name.
-    path_ops.mv(template_code_dir_name, app_name)
     path_ops.mv(
         Path(app_name) / (template_name + constants.Ext.PY),
         Path(app_name) / (app_name + constants.Ext.PY),
@@ -292,6 +320,13 @@ def initialize_app(app_name: str, template: str | None = None) -> str | None:
     if constants.Config.FILE.exists():
         telemetry.send("reinit", properties=init_environment)
         return None
+
+    if os.path.lexists(app_name):
+        logger.error(
+            f"Cannot initialize {app_name}: {app_name} already exists in this "
+            "directory. Move it aside, or pass --name to choose another app name."
+        )
+        raise SystemExit(1)
 
     if template is None:
         template = prompt_for_template_options(get_init_cli_prompt_options())

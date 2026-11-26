@@ -1,0 +1,1 @@
+`reflex init` no longer deletes files in an existing `assets/` folder or a folder named after the app. Template folders are merged without replacing files already there, and init stops with an error before writing `rxconfig.py` when a file or folder named after the app already exists.
