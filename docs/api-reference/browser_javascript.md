@@ -141,6 +141,122 @@ The `callback` parameter may be an `EventHandler` with one argument, or a lambda
 If the callback is None, then no event is triggered.
 ```
 
+## Awaiting Results
+
+A [background event handler](/docs/events/background-events/) can `await` `rx.call_script`, `rx.call_function`, or
+`rx.run_script` to get the script's result directly, instead of passing a callback. If the script returns a promise, the
+handler gets the value the promise resolves to.
+
+```python demo exec
+class ViewportState(rx.State):
+    viewport: str = ""
+
+    @rx.event(background=True)
+    async def measure(self):
+        size = await rx.call_script("({w: window.innerWidth, h: window.innerHeight})")
+        async with self:
+            self.viewport = f"{size['w']} x {size['h']}"
+
+
+def viewport_demo():
+    return rx.hstack(
+        rx.button("Measure Viewport", on_click=ViewportState.measure),
+        rx.text(ViewportState.viewport),
+    )
+```
+
+The rules:
+
+- Await the call in a background handler, outside `async with self`. While a handler holds the state lock, the tab's
+  other events would wait for the browser's answer, so a regular handler cannot await a script either.
+- Pass either `callback=` or `await` the result, not both.
+- The result travels as JSON: objects become `dict`, arrays become `list`, and `undefined` becomes `None`. Return the
+  data you need from a DOM element, not the element itself.
+- A call waits `browser_call_timeout` seconds for its result (30 by default, set in `rxconfig.py`). Pass `timeout=` to
+  one call to change it, or `timeout=None` to wait without a limit:
+
+  ```python
+  answer = await rx.call_script("askTheUser()", timeout=None)
+  ```
+
+  Like `browser_call_timeout`, `timeout=` must be a positive, finite number of seconds or `None`; any other value
+  raises `EventHandlerValueError` when the event is built: ``timeout is 0, but awaited browser calls need a positive,
+  finite number of seconds to wait for a result. Set timeout to a number of seconds such as 30, or to None to wait
+  without a limit.``
+
+- The script keeps running while the tab's socket reconnects. A tab that reconnects to the same backend worker within
+  `browser_call_grace_period` seconds (5 by default) still delivers its result. A tab that is closed, reloaded or
+  navigated away stops the script, and the call fails.
+
+The exceptions are imported from `reflex.utils.exceptions`:
+
+```python
+from reflex.utils.exceptions import (
+    BrowserDisconnectedError,
+    BrowserResultSerializationError,
+    BrowserScriptError,
+    EventHandlerTypeError,
+)
+```
+
+Each error below gives its exact message, with the values of an example call, and its fix.
+
+- `BrowserScriptError`: the script throws, or the promise it returns is rejected. It carries the Javascript error's
+  `name`, `message` and `stack`, and reads like the browser console: ``ReferenceError: missing_function is not
+  defined``. Fix the script, or catch the error.
+- `BrowserResultSerializationError`, a subclass of `BrowserScriptError`: the result cannot reach the backend as JSON.
+  - ``TypeError: The script returned a DOM node or window, which JSON cannot carry; return the data you need from it
+    instead.``
+  - ``TypeError: The script returned a function, which JSON cannot carry; return plain data (objects, arrays, strings,
+    numbers, booleans or null) instead.`` (also for a symbol)
+  - ``RangeError: The script returned 1200000 bytes of JSON, more than the 1000000 a message to the backend can carry;
+    return less data, or raise REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE on the backend.`` (with the `polling` transport, a
+    message carries about three quarters of the limit, as base64)
+  - ``The script returned a value nested too deeply for Python's JSON parser. Return a value with fewer levels of
+    nested objects and arrays.``
+  - ``The browser sent a result the backend cannot read (...). The page runs a frontend built for another version of
+    Reflex: rebuild the frontend (restart `reflex run`, or export the app again) and reload the page.``
+- `TimeoutError`: ``The browser did not return a result for `_call_script` within 30.0 seconds. If the script needs
+  longer, pass a longer `timeout=` to the call (or `timeout=None` to wait without a limit) or raise
+  `browser_call_timeout` in rxconfig.py; if it returns a promise, make sure the promise settles. A frontend built by an
+  older version of Reflex never returns a result: rebuild the frontend (restart `reflex run`, or export the app again)
+  and reload the page.``
+- `BrowserDisconnectedError`, a `ConnectionError`: the tab cannot return the result.
+  - When the call is made: `` `_call_script` cannot run in the browser tab: the tab is not connected to this backend
+    worker, because it was closed, is reconnecting, or reconnected to another worker. Catch BrowserDisconnectedError
+    where the tab may be gone; with several backend workers, route each tab to one worker (sticky sessions). ``
+  - After the grace period: ``The browser tab did not reconnect to this backend worker within
+    browser_call_grace_period (5.0 seconds), so the script's result is lost: the tab was closed, lost its connection for
+    longer, or reconnected to another backend worker, which cannot pass the result on. Catch BrowserDisconnectedError
+    where the user may close the tab, raise `browser_call_grace_period` in rxconfig.py if connections drop for longer,
+    and with several backend workers route each tab to one worker (sticky sessions).``
+  - When a reloaded page connects, if the backend already saw the old page's connection close: ``The browser tab
+    reloaded or left the page before the script returned a result, so the script stopped. Catch
+    BrowserDisconnectedError where the user may reload or leave the page while the script runs.`` If the old connection
+    still looks open, for example because the network dropped it without closing it, the backend cannot tell the
+    reloaded page from a duplicated tab: the call raises `TimeoutError` when its timeout ends, unless the timeout outlasts
+    the old connection timing out (`REFLEX_SOCKET_INTERVAL` plus `REFLEX_SOCKET_TIMEOUT`, 145 seconds by default) plus
+    the grace period; then it raises the grace period message.
+  - Without a frontend, for example in a test: `` `_call_script` cannot run in a browser: the app is running without a
+    frontend connection (for example in a test, or a process that runs only the backend), so no tab can return a
+    result. Await browser scripts in handlers triggered from a page of the running app, and catch
+    BrowserDisconnectedError where no page may be connected. ``
+- `EventHandlerTypeError`:
+  - `` `_call_script` cannot be awaited while the state lock is held, as every other event of this tab would wait for
+    the browser's answer; await it in a background event handler, outside `async with self`. ``
+  - `` `_call_script` was given a callback and awaited; pass either callback= or await its result, not both. ``
+
+```md alert info
+# Awaiting results with multiple backend workers
+
+The browser sends the result to the backend worker its tab is connected to. With several workers sharing state through
+Redis, a background task awaits results only from tabs connected to its own worker. Calls to other tabs raise
+`BrowserDisconnectedError`. A tab that reconnects, or reloads, onto another worker while a call waits fails the call
+when the grace period ends, and its result is lost. A tab that reconnects to the same worker before the backend saw
+its old connection close is given a new client token: the call still returns the result, but the handler's later
+`async with self` changes go to the state of the old token and never reach the page.
+```
+
 ## Using React Hooks
 
 To use React Hooks directly in a Reflex app, you must subclass `rx.Component`,

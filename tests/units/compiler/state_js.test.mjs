@@ -457,6 +457,10 @@ const frameSize = (frame, transport) =>
     ? [...frame].length
     : new TextEncoder().encode(frame).byteLength;
 
+/** Replace the random page id each loaded app sends, so frames of two apps compare. */
+const withPlaceholderPage = (frame) =>
+  frame.replace(/"page":"[^"]+"/, '"page":"<page>"');
+
 /** Connect an app whose first hydrate carries the payload, with the given server limit. */
 async function connectWith(transport, firstPayload, maxPayload, options = {}) {
   const app = await setup({ firstPayload, maxPayload, ...options });
@@ -484,7 +488,9 @@ for (const transport of ["websocket", "polling"]) {
 
     const fits = await connectWith(transport, payload, size, options);
     assert.equal(fits.socket.current.namespaceConnects, 1);
-    assert.deepEqual(fits.socket.current.frames, [frame]);
+    assert.deepEqual(fits.socket.current.frames.map(withPlaceholderPage), [
+      withPlaceholderPage(frame),
+    ]);
     assert.equal(fits.connectErrors.length, 0);
 
     const app = await connectWith(transport, payload, size - 1, options);

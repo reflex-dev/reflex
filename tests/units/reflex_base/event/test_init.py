@@ -10,6 +10,7 @@ from reflex_base.event import (
     EventHandler,
     EventSpec,
     LambdaEventCallback,
+    _BrowserCallSpec,
     call_event_fn,
     call_event_handler,
     event_arg_placeholder,
@@ -18,8 +19,9 @@ from reflex_base.event import (
     parse_args_spec,
     passthrough_event_spec,
 )
-from reflex_base.utils.exceptions import EventFnArgMismatchError
-from reflex_base.vars.base import Var
+from reflex_base.utils.exceptions import EventFnArgMismatchError, EventHandlerValueError
+from reflex_base.utils.types import Unset
+from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.number import NumberVar
 
 import reflex as rx
@@ -103,6 +105,64 @@ def test_cond_between_function_and_none_inside_lambda_is_a_no_op_when_false() ->
     assert (
         str(chain)
         == '((_ev_0) => (((_ev_0?.valueOf?.() === "go"?.valueOf?.()) ? ((_ev_0) => (flagRxClientStateSet(_ev_0))) : null)?.(_ev_0)))'
+    )
+
+
+def test_script_events_keep_their_timeout_off_the_wire():
+    """A script event's timeout stays on the spec: neither its payload nor its compiled trigger has it."""
+    specs = cast(
+        "list[_BrowserCallSpec]",
+        [
+            rx.call_script("1", timeout=5),
+            rx.call_function("() => 1", timeout=None),
+            rx.run_script("2", timeout=1.5),
+        ],
+    )
+    assert [(spec._to_event().payload, spec.timeout) for spec in specs] == [
+        ({"javascript_code": "1", "callback": None}, 5),
+        ({"function": "() => 1", "callback": None}, None),
+        ({"function": "(() => 2)", "callback": None}, 1.5),
+    ]
+    assert str(LiteralVar.create(specs[0])) == (
+        '(ReflexEvent("_call_script", ({ ["javascript_code"] : "1", '
+        '["callback"] : null }), ({  })))'
+    )
+    assert isinstance(cast("_BrowserCallSpec", rx.call_script("1")).timeout, Unset)
+
+
+def test_copies_of_a_script_event_keep_its_timeout():
+    """A copy with new args or event actions is still awaitable with the same timeout."""
+    spec = cast("_BrowserCallSpec", rx.call_script("1", timeout=5))
+    copies = [
+        spec.with_args(spec.args),
+        spec.add_args(),
+        spec.stop_propagation,
+        spec.debounce(10),
+    ]
+    assert [(type(copy), copy.timeout) for copy in copies] == [
+        (_BrowserCallSpec, 5)
+    ] * 4
+
+
+@pytest.mark.parametrize(
+    "timeout", [0, -5, float("inf"), float("nan"), True, "30"], ids=repr
+)
+@pytest.mark.parametrize("script", [rx.call_script, rx.call_function, rx.run_script])
+def test_script_events_reject_a_timeout_that_is_not_positive_seconds(
+    script: Any, timeout: Any
+):
+    """A call's timeout follows the rule of browser_call_timeout, checked as the event is built.
+
+    Args:
+        script: The function building the script event.
+        timeout: The invalid timeout.
+    """
+    with pytest.raises(EventHandlerValueError) as err:
+        script("1", timeout=timeout)
+    assert str(err.value) == (
+        f"timeout is {timeout!r}, but awaited browser calls need a positive, "
+        "finite number of seconds to wait for a result. Set timeout to a number "
+        "of seconds such as 30, or to None to wait without a limit."
     )
 
 

@@ -39,6 +39,7 @@ from typing_extensions import (
 
 from reflex_base import constants
 from reflex_base.components.field import BaseField
+from reflex_base.config import _check_browser_call_timeout
 from reflex_base.constants.compiler import CompileVars, Imports
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import console, format
@@ -46,6 +47,7 @@ from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
     EventFnArgMismatchError,
     EventHandlerArgTypeMismatchError,
+    EventHandlerValueError,
     MissingAnnotationError,
 )
 from reflex_base.utils.types import (
@@ -2127,29 +2129,119 @@ def download(
     )
 
 
+@dataclasses.dataclass(init=True, frozen=True, kw_only=True, eq=False)
+class _BrowserCallSpec(EventSpec):
+    """The spec of a script run in the browser, whose result a background handler can await.
+
+    Attributes:
+        timeout: Seconds an awaited call waits for the result, None for no
+            limit, or Unset for ``rx.Config.browser_call_timeout``. It is not
+            one of the args, which go to the browser, since only the backend
+            uses it.
+    """
+
+    timeout: float | Unset | None = Unset()
+
+    def with_args(self, args: tuple[tuple[Var, Var], ...]) -> "_BrowserCallSpec":
+        """Copy the spec with updated args, keeping its timeout.
+
+        Args:
+            args: The new args to pass to the function.
+
+        Returns:
+            A copy of the spec, with the new args.
+        """
+        return dataclasses.replace(
+            self, args=args, event_actions=self.event_actions.copy()
+        )
+
+    def __await__(self) -> Generator[Any, None, Any]:
+        """Run the script in the client's browser and wait for its result.
+
+        Returns:
+            The awaitable's iterator; awaiting it yields the script's result.
+        """
+        from reflex_base.event.processor.base_state_processor import _await_browser_call
+
+        return _await_browser_call(self).__await__()
+
+
+@lru_cache
+def _script_signature(fn: Callable) -> inspect.Signature:
+    """Get the signature of a script event, without the timeout of an awaited call.
+
+    The timeout is not an argument of the event: ``add_args`` must not bind to it.
+
+    Args:
+        fn: The function creating the script event.
+
+    Returns:
+        The function's signature without its ``timeout`` parameter.
+    """
+    sig = inspect.signature(fn)
+    return sig.replace(
+        parameters=[p for name, p in sig.parameters.items() if name != "timeout"]
+    )
+
+
+def _browser_call_spec(
+    name: str,
+    fn: Callable,
+    callback: "EventType[Any] | None",
+    timeout: float | Unset | None,
+    **kwargs: Any,
+) -> EventSpec:
+    """Build the spec of a script event, which a background handler can await.
+
+    Args:
+        name: The name of the event.
+        fn: The function creating the script event.
+        callback: EventHandler that will receive the result of the script.
+        timeout: Seconds an awaited call waits for the result.
+        **kwargs: The script, under the name the frontend reads it from.
+
+    Returns:
+        The spec of the script event.
+
+    Raises:
+        EventHandlerValueError: If the timeout is not None or a positive,
+            finite number of seconds.
+    """
+    if not isinstance(timeout, Unset):
+        _check_browser_call_timeout(timeout, "timeout", "", EventHandlerValueError)
+    spec = server_side(
+        name,
+        _script_signature(fn),
+        **kwargs,
+        callback=None
+        if callback is None
+        else str(
+            format.format_queue_events(callback, args_spec=lambda result: [result])
+        ),
+    )
+    return _BrowserCallSpec(handler=spec.handler, args=spec.args, timeout=timeout)
+
+
 def call_script(
     javascript_code: str | Var[str],
     callback: "EventType[Any] | None" = None,
+    *,
+    timeout: float | Unset | None = Unset(),
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
+
+    Awaited in a background event handler, outside ``async with self``, it
+    returns the script's result: ``value = await rx.call_script(...)``.
 
     Args:
         javascript_code: The code to execute.
         callback: EventHandler that will receive the result of evaluating the javascript code.
+        timeout: Seconds to wait for the result when it is awaited, or None to
+            wait until it arrives. Defaults to ``rx.Config.browser_call_timeout``.
 
     Returns:
         EventSpec: An event that will execute the client side javascript.
     """
-    callback_kwargs = {"callback": None}
-    if callback is not None:
-        callback_kwargs = {
-            "callback": str(
-                format.format_queue_events(
-                    callback,
-                    args_spec=lambda result: [result],
-                )
-            ),
-        }
     if isinstance(javascript_code, str):
         # When there is VarData, include it and eval the JS code inline on the client.
         javascript_code, original_code = (
@@ -2160,59 +2252,56 @@ def call_script(
             # Without VarData, cast to string and eval the code in the event loop.
             javascript_code = str(Var(_js_expr=original_code))
 
-    return server_side(
-        "_call_script",
-        inspect.signature(call_script),
-        javascript_code=javascript_code,
-        **callback_kwargs,
+    return _browser_call_spec(
+        "_call_script", call_script, callback, timeout, javascript_code=javascript_code
     )
 
 
 def call_function(
     javascript_code: str | Var,
     callback: "EventType[Any] | None" = None,
+    *,
+    timeout: float | Unset | None = Unset(),
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
+
+    Awaited in a background event handler, outside ``async with self``, it
+    returns the script's result: ``value = await rx.call_function(...)``.
 
     Args:
         javascript_code: The code to execute.
         callback: EventHandler that will receive the result of evaluating the javascript code.
+        timeout: Seconds to wait for the result when it is awaited, or None to
+            wait until it arrives. Defaults to ``rx.Config.browser_call_timeout``.
 
     Returns:
         EventSpec: An event that will execute the client side javascript.
     """
-    callback_kwargs = {"callback": None}
-    if callback is not None:
-        callback_kwargs = {
-            "callback": str(
-                format.format_queue_events(
-                    callback,
-                    args_spec=lambda result: [result],
-                ),
-            )
-        }
-
     javascript_code = (
         Var(javascript_code) if isinstance(javascript_code, str) else javascript_code
     )
 
-    return server_side(
-        "_call_function",
-        inspect.signature(call_function),
-        function=javascript_code,
-        **callback_kwargs,
+    return _browser_call_spec(
+        "_call_function", call_function, callback, timeout, function=javascript_code
     )
 
 
 def run_script(
     javascript_code: str | Var,
     callback: "EventType[Any] | None" = None,
+    *,
+    timeout: float | Unset | None = Unset(),
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
+
+    Awaited in a background event handler, outside ``async with self``, it
+    returns the script's result: ``value = await rx.run_script(...)``.
 
     Args:
         javascript_code: The code to execute.
         callback: EventHandler that will receive the result of evaluating the javascript code.
+        timeout: Seconds to wait for the result when it is awaited, or None to
+            wait until it arrives. Defaults to ``rx.Config.browser_call_timeout``.
 
     Returns:
         EventSpec: An event that will execute the client side javascript.
@@ -2221,7 +2310,9 @@ def run_script(
         Var(javascript_code) if isinstance(javascript_code, str) else javascript_code
     )
 
-    return call_function(ArgsFunctionOperation.create((), javascript_code), callback)
+    return call_function(
+        ArgsFunctionOperation.create((), javascript_code), callback, timeout=timeout
+    )
 
 
 def get_event(state: "BaseState", event: str):
@@ -3696,6 +3787,7 @@ class EventNamespace:
     EventHandler: TypeAlias = EventHandler
     EventSpec: TypeAlias = EventSpec
     CallableEventSpec: TypeAlias = CallableEventSpec
+    _BrowserCallSpec: TypeAlias = _BrowserCallSpec
     EventChain: TypeAlias = EventChain
     EventVar: TypeAlias = EventVar
     LiteralEventVar: TypeAlias = LiteralEventVar

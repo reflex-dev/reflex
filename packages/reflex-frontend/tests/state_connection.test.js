@@ -84,6 +84,17 @@ const sent = (socket) =>
 const navigate = () => {};
 const params = { current: {} };
 
+const appConfig = {
+  initialState: { reflex___state____state: {}, other: {} },
+  initialEvents: () => [],
+  onLoadInternalEvent: () => [],
+  on_load_internal_event: "on_load_internal",
+  state_name: "reflex___state____state",
+  exception_state_name: "reflex___state____frontend_event_exception_state",
+  stateSchema: "schema",
+  clientStorage: {},
+};
+
 let state;
 let registry;
 // Sockets connected without an event loop around them, which nothing unmounts.
@@ -99,16 +110,7 @@ beforeEach(async () => {
   // Let the import's speculative transport warmup see an app without state,
   // then give it one: an app with a single substate never connects.
   await Promise.resolve();
-  registry.registerApp({
-    initialState: { reflex___state____state: {}, other: {} },
-    initialEvents: () => [],
-    onLoadInternalEvent: () => [],
-    on_load_internal_event: "on_load_internal",
-    state_name: "reflex___state____state",
-    exception_state_name: "reflex___state____frontend_event_exception_state",
-    stateSchema: "schema",
-    clientStorage: {},
-  });
+  registry.registerApp(appConfig);
 });
 
 afterEach(() => {
@@ -309,4 +311,40 @@ test("a connection that cannot be attempted is a connection error, not a rejecti
   expect(io).not.toHaveBeenCalled();
   expect(loop.connectErrors().at(-1)).toBe(denied);
   await loop.unmount();
+});
+
+test("every connect of a page load sends its page id, and a reload sends a new one", async () => {
+  const hydrate = { name: "reflex___state____state.hydrate_and_load" };
+  // The CONNECT auth packet socket.io sends for a newly connected socket.
+  const connectAuth = async () => {
+    registry.registerApp({
+      ...appConfig,
+      initialEvents: () => [{ ...hydrate }],
+    });
+    const socketRef = await connectSocket();
+    return new Promise((resolve) => socketRef.current.auth(resolve));
+  };
+  const first = await connectAuth();
+  const again = await connectAuth();
+  vi.resetModules();
+  state = await import("$/utils/state");
+  registry = await import("$/utils/context-registry");
+  const reloaded = await connectAuth();
+
+  expect(typeof first.page).toBe("string");
+  expect(again.page).toBe(first.page);
+  expect(reloaded.page).not.toBe(first.page);
+  // The page id is random; the rest of the packet is not.
+  expect(
+    [first, again, reloaded].map((auth) => ({ ...auth, page: "<page>" })),
+  ).toEqual(
+    Array(3).fill({
+      event: {
+        ...hydrate,
+        router_data: { pathname: "/", asPath: "/" },
+      },
+      state_schema: "schema",
+      page: "<page>",
+    }),
+  );
 });

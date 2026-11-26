@@ -26,11 +26,13 @@ from reflex_base.event.processor.blocking import (
     EVENT_TASK_PREFIX,
     EventLoopBlockingMonitor,
 )
+from reflex_base.event.processor.browser_calls import BrowserCalls, ClientToken
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.event.processor.timeout import DrainTimeoutManager
 from reflex_base.registry import RegisteredEventHandler, RegistrationContext
 from reflex_base.session import SessionToken
 from reflex_base.utils.compat import MISSING_TYPE
+from reflex_base.utils.exceptions import BrowserDisconnectedError
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +106,7 @@ class EventProcessor:
         middleware: An optional middleware mixin to apply to all events processed by this processor.
         backend_exception_handler: An optional function to handle exceptions raised during event processing. The function should take an Exception as input and return an EventSpec or list of EventSpecs to be emitted in response, or None to not emit any events.
         graceful_shutdown_timeout: An optional amount of time in seconds to wait for the queue to drain before forcefully cancelling tasks when stopping the processor. If None, the processor will not wait and will cancel tasks immediately.
+        browser_call_grace_period: Seconds an awaited browser call waits for its disconnected tab to reconnect before it fails.
 
         _queue: The asyncio queue for events to be processed.
         _queue_task: The task responsible for processing the event queue.
@@ -118,6 +121,7 @@ class EventProcessor:
     ) = None
     graceful_shutdown_timeout: float | None = None
     event_loop_blocking_threshold: float = 0
+    browser_call_grace_period: float = 5.0
 
     _queue: asyncio.Queue[EventQueueEntry] | None = dataclasses.field(
         default=None, init=False
@@ -150,6 +154,9 @@ class EventProcessor:
     _blocking_monitor: EventLoopBlockingMonitor | None = dataclasses.field(
         default=None, init=False, repr=False
     )
+    _browser_calls: BrowserCalls = dataclasses.field(
+        default_factory=BrowserCalls, init=False, repr=False
+    )
 
     def configure(
         self,
@@ -179,7 +186,7 @@ class EventProcessor:
             )
             raise RuntimeError(msg)
 
-        emit_delta_impl = emit_event_impl = None
+        emit_delta_impl = emit_event_impl = call_frontend_impl = None
         if event_namespace is not None:
 
             async def emit_delta(
@@ -214,6 +221,38 @@ class EventProcessor:
 
             emit_event_impl = emit_event
 
+            async def call_frontend(
+                token: ClientToken, event: Event, timeout: float | None
+            ) -> Any:
+                """Run a frontend event in the browser and wait for its result.
+
+                Args:
+                    token: The client token whose browser runs the event.
+                    event: The frontend event to run.
+                    timeout: Seconds to wait for the result, or None to wait until it arrives.
+
+                Returns:
+                    The value the browser sent back.
+
+                Raises:
+                    BrowserDisconnectedError: If the client is not connected to this backend.
+                """
+                if (page := event_namespace._page_of(token)) is None:
+                    msg = (
+                        f"`{event.name}` cannot run in the browser tab: the tab "
+                        "is not connected to this backend worker, because it "
+                        "was closed, is reconnecting, or reconnected to another "
+                        "worker. Catch BrowserDisconnectedError where the tab may "
+                        "be gone; with several backend workers, route each tab "
+                        "to one worker (sticky sessions)."
+                    )
+                    raise BrowserDisconnectedError(msg)
+                return await self._browser_calls.call(
+                    token, page, event, timeout, emit_event
+                )
+
+            call_frontend_impl = call_frontend
+
         if state_manager is None:
             # For testing use cases, default to a new in-memory state manager if one is not provided.
             state_manager = StateManagerMemory()
@@ -228,6 +267,7 @@ class EventProcessor:
             enqueue_impl=self.enqueue_many,
             emit_delta_impl=emit_delta_impl,
             emit_event_impl=emit_event_impl,
+            call_frontend_impl=call_frontend_impl,
             middleware=self.middleware,
         )
         return self
@@ -364,6 +404,7 @@ class EventProcessor:
             if not future.done():
                 future.cancel()
         self._futures.clear()
+        self._browser_calls.close()
         if self._blocking_monitor is not None:
             self._blocking_monitor.stop()
             self._blocking_monitor = None
@@ -502,10 +543,15 @@ class EventProcessor:
         """Handle a client disconnect without cancelling independent event work.
 
         Subclasses may cancel work tied to the disconnected page's lifecycle.
+        The browser calls awaiting the client's results get a grace period to
+        reconnect in.
 
         Args:
             token: The disconnected client token.
         """
+        self._browser_calls.disconnect(
+            ClientToken(token), self.browser_call_grace_period
+        )
 
     async def enqueue_many(self, token: str, *events: Event) -> Sequence[EventFuture]:
         """Enqueue multiple events to be processed.
@@ -583,6 +629,7 @@ class EventProcessor:
                 ),
                 emit_delta_impl=_emit_delta_impl,
                 emit_event_impl=root.emit_event_impl,
+                call_frontend_impl=root.call_frontend_impl,
                 middleware=root.middleware,
                 # Like fork(): the handler span nests under the caller's span
                 # (the upload request, a custom route).

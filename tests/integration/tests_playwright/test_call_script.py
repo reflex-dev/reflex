@@ -10,12 +10,21 @@ from playwright.sync_api import Page, expect
 from reflex.testing import AppHarness
 from tests.integration.utils import CLIENT_TOKEN_JS
 
+# Seconds an awaited call waits for its tab to reconnect, short for the tests
+# that wait it out.
+GRACE_PERIOD = 2.0
+
 
 def CallScript():
     """A test app for browser javascript integration."""
     from pathlib import Path
 
     import reflex as rx
+    from reflex.utils.exceptions import (
+        BrowserDisconnectedError,
+        BrowserResultSerializationError,
+        BrowserScriptError,
+    )
 
     inline_scripts = """
     let inline_counter = 0
@@ -45,6 +54,44 @@ def CallScript():
         external_counter: rx.Field[int] = rx.field(0)
         value: str = "Initial"
         last_result: rx.Field[int] = rx.field(0)
+        awaited: rx.Field[list[str]] = rx.field([])
+
+        @rx.event(background=True)
+        async def await_results(self):
+            seen: list[str] = [
+                repr(await rx.call_script("inline3()")),
+                repr(await rx.call_script("inline4()")),
+                repr(await rx.call_function("() => [1, 'two', undefined]")),
+                repr(await rx.call_script("undefined")),
+            ]
+            for code, expected in (
+                ("missing_function()", BrowserScriptError),
+                ("document.body", BrowserResultSerializationError),
+            ):
+                try:
+                    await rx.call_script(code)
+                except expected as e:
+                    seen.append(f"{type(e).__name__}: {e}")
+            try:
+                await rx.call_script("new Promise(() => {})", timeout=0.5)
+            except TimeoutError as e:
+                seen.append(f"TimeoutError: {e}")
+            async with self:
+                self.awaited = seen
+
+        @rx.event(background=True)
+        async def await_user(self):
+            # Settled by the test, which may first drop the socket or reload.
+            try:
+                answer = repr(
+                    await rx.call_script(
+                        "new Promise((resolve) => { window.answerAwaited = resolve })"
+                    )
+                )
+            except BrowserDisconnectedError as e:
+                answer = f"BrowserDisconnectedError: {e}"
+            async with self:
+                self.awaited = [answer]
 
         @rx.event
         def call_script_callback(self, result):
@@ -293,6 +340,38 @@ def CallScript():
                 id="update_value",
             ),
             rx.button("Reset", id="reset", on_click=CallScriptState.reset_),
+            rx.button(
+                "await_results",
+                on_click=CallScriptState.await_results,
+                id="await_results",
+            ),
+            rx.button(
+                "await_user", on_click=CallScriptState.await_user, id="await_user"
+            ),
+            rx.button(
+                "drop_connection",
+                # reconnect() connects with the tab's current token, as the
+                # frontend does after a dropped connection; socket.connect()
+                # would resend the token of the socket's first connect, which
+                # a new tab leaves empty for the backend to issue one.
+                on_click=rx.call_script(
+                    "socket.disconnect();"
+                    "socket.once('connect', () => { window.reconnected = true });"
+                    "setTimeout(() => socket.reconnect(), window.reconnectAfterMs)"
+                ),
+                id="drop_connection",
+            ),
+            rx.button(
+                "set_value_busy",
+                on_click=CallScriptState.set_value("busy"),
+                id="set_value_busy",
+            ),
+            rx.text(CallScriptState.value, id="value"),
+            rx.text_area(
+                value=CallScriptState.awaited.join("\n"),
+                id="awaited",
+                read_only=True,
+            ),
             rx.input(
                 value=CallScriptState.last_result.to_string(),
                 id="last_result",
@@ -368,11 +447,13 @@ def call_script(tmp_path_factory) -> Generator[AppHarness, None, None]:
     Yields:
         running AppHarness instance
     """
-    with AppHarness.create(
-        root=tmp_path_factory.mktemp("call_script"),
-        app_source=CallScript,
-    ) as harness:
-        yield harness
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.setenv("REFLEX_BROWSER_CALL_GRACE_PERIOD", str(GRACE_PERIOD))
+        with AppHarness.create(
+            root=tmp_path_factory.mktemp("call_script"),
+            app_source=CallScript,
+        ) as harness:
+            yield harness
 
 
 @pytest.fixture
@@ -526,3 +607,156 @@ def test_call_script_w_var(
     inline_return_button.click()
     call_with_var_str_cast_wrapped_inline_button.click()
     expect(last_result).to_have_value("8")
+
+
+def test_await_call_script(call_script: AppHarness, call_script_page: Page):
+    """A background handler awaits the value, error or timeout of a browser script.
+
+    Args:
+        call_script: harness for CallScript app.
+        call_script_page: Playwright page.
+    """
+    expected_lines = (
+        "{'inline3': 42, 'a': [1, 2, 3], 's': 'js', 'o': {'a': 1, 'b': 2}}",
+        "'async inline4'",
+        "[1, 'two', None]",
+        "None",
+        "BrowserScriptError: ReferenceError: missing_function is not defined",
+        (
+            "BrowserResultSerializationError: TypeError: The script returned a DOM "
+            "node or window, which JSON cannot carry; return the data you need from "
+            "it instead."
+        ),
+        (
+            "TimeoutError: The browser did not return a result for `_call_script` "
+            "within 0.5 seconds. If the script needs longer, pass a longer "
+            "`timeout=` to the call (or `timeout=None` to wait without a limit) or "
+            "raise `browser_call_timeout` in rxconfig.py; if it returns a promise, "
+            "make sure the promise settles. A frontend built by an older version "
+            "of Reflex never returns a result: rebuild the frontend (restart "
+            "`reflex run`, or export the app again) and reload the page."
+        ),
+    )
+    call_script_page.locator("#await_results").click()
+    expect(call_script_page.locator("#awaited")).to_have_value(
+        "\n".join(expected_lines), timeout=15_000
+    )
+
+
+def _await_user(page: Page) -> None:
+    """Start the awaited script that waits for the test to answer.
+
+    Args:
+        page: Playwright page.
+    """
+    page.locator("#await_user").click()
+    page.wait_for_function("() => typeof window.answerAwaited === 'function'")
+
+
+def test_awaited_script_does_not_hold_up_other_events(
+    call_script: AppHarness, call_script_page: Page
+):
+    """While an awaited script waits on the user, the tab's other events still run.
+
+    Args:
+        call_script: harness for CallScript app.
+        call_script_page: Playwright page.
+    """
+    _await_user(call_script_page)
+    call_script_page.locator("#set_value_busy").click()
+    expect(call_script_page.locator("#value")).to_have_text("busy")
+    call_script_page.evaluate("window.answerAwaited({answer: 'yes'})")
+    expect(call_script_page.locator("#awaited")).to_have_value("{'answer': 'yes'}")
+
+
+def _drop_connection(page: Page, reconnect_after_ms: int) -> str:
+    """Drop the tab's socket and connect it again after a delay.
+
+    Args:
+        page: Playwright page.
+        reconnect_after_ms: Milliseconds until the socket connects again.
+
+    Returns:
+        The client token the tab had before the drop.
+    """
+    token = page.evaluate(CLIENT_TOKEN_JS)
+    page.evaluate(
+        f"window.reconnectAfterMs = {reconnect_after_ms}; window.reconnected = false"
+    )
+    page.locator("#drop_connection").click()
+    return token
+
+
+def _assert_reconnected_with(page: Page, token: str) -> None:
+    """Wait for the dropped socket to connect again and check it kept the tab's token.
+
+    The calls a tab awaits are filed under its client token, so a reconnect
+    that comes back with another token can never settle them.
+
+    Args:
+        page: Playwright page.
+        token: The client token the tab had before the drop.
+    """
+    page.wait_for_function("() => window.reconnected === true")
+    assert page.evaluate(CLIENT_TOKEN_JS) == token
+
+
+def test_awaited_result_arrives_after_a_reconnect_within_the_grace_period(
+    call_script: AppHarness, call_script_page: Page
+):
+    """A result sent while the socket is down reaches the backend once it reconnects in time.
+
+    Args:
+        call_script: harness for CallScript app.
+        call_script_page: Playwright page.
+    """
+    _await_user(call_script_page)
+    token = _drop_connection(call_script_page, 300)
+    call_script_page.evaluate("window.answerAwaited('after the drop')")
+    _assert_reconnected_with(call_script_page, token)
+    expect(call_script_page.locator("#awaited")).to_have_value("'after the drop'")
+
+
+def test_awaited_call_fails_when_the_tab_stays_away_past_the_grace_period(
+    call_script: AppHarness, call_script_page: Page
+):
+    """A tab that reconnects only after the grace period has its call failed.
+
+    Args:
+        call_script: harness for CallScript app.
+        call_script_page: Playwright page.
+    """
+    _await_user(call_script_page)
+    token = _drop_connection(call_script_page, int(GRACE_PERIOD * 1000) + 1500)
+    _assert_reconnected_with(call_script_page, token)
+    expect(call_script_page.locator("#awaited")).to_have_value(
+        "BrowserDisconnectedError: The browser tab did not reconnect to this "
+        "backend worker within browser_call_grace_period "
+        f"({GRACE_PERIOD} seconds), so the script's result is lost: the tab was "
+        "closed, lost its connection for longer, or reconnected to another "
+        "backend worker, which cannot pass the result on. Catch "
+        "BrowserDisconnectedError where the user may close the tab, raise "
+        "`browser_call_grace_period` in rxconfig.py if connections drop for "
+        "longer, and with several backend workers route each tab to one worker "
+        "(sticky sessions).",
+        timeout=10_000,
+    )
+
+
+def test_awaited_call_fails_at_once_when_the_page_reloads(
+    call_script: AppHarness, call_script_page: Page
+):
+    """Reloading the page stops the script, so the call fails without waiting out the grace period.
+
+    Args:
+        call_script: harness for CallScript app.
+        call_script_page: Playwright page.
+    """
+    _await_user(call_script_page)
+    call_script_page.reload()
+    expect(call_script_page.locator("#awaited")).to_have_value(
+        "BrowserDisconnectedError: The browser tab reloaded or left the page "
+        "before the script returned a result, so the script stopped. Catch "
+        "BrowserDisconnectedError where the user may reload or leave the page "
+        "while the script runs."
+    )

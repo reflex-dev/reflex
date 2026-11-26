@@ -20,6 +20,7 @@ from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.utils import types
 from reflex_base import otel
+from reflex_base.config import get_config
 from reflex_base.constants import CompileVars
 from reflex_base.event import (
     _UNDECORATED_STATE_METHOD_HINT,
@@ -27,16 +28,19 @@ from reflex_base.event import (
     Event,
     EventHandler,
     EventSpec,
+    _BrowserCallSpec,
     _is_bound_event_handler,
 )
 from reflex_base.event.context import EventContext
+from reflex_base.event.processor.browser_calls import ClientToken
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegisteredEventHandler
+from reflex_base.utils.exceptions import BrowserDisconnectedError, EventHandlerTypeError
 from reflex_base.utils.form import form_data_as_dict, transform_form_data
 from reflex_base.utils.format import format_event_handler
 from reflex_base.utils.serializers import deserializers
-from reflex_base.utils.types import is_non_string_sequence
+from reflex_base.utils.types import Unset, is_non_string_sequence
 
 logger = logging.getLogger(__name__)
 
@@ -605,6 +609,86 @@ def ensure_locked(
     return None
 
 
+def _client_context(spec: EventSpec) -> EventContext:
+    """Get the active EventContext of a client, to await an event spec in.
+
+    Args:
+        spec: The awaited event spec.
+
+    Returns:
+        The active EventContext.
+
+    Raises:
+        EventHandlerTypeError: If there is no active EventContext for a
+            client (outside an event handler and ``app.modify_state``).
+    """
+    try:
+        ctx = EventContext.get()
+    except LookupError:
+        ctx = None
+    # The event processor's root context, which every request to the app
+    # carries, belongs to no client: running there would share one state
+    # between every caller.
+    if ctx is None or not ctx.token:
+        msg = (
+            f"Event handler `{format_event_handler(spec.handler)}` can only be "
+            "awaited from an event handler or inside `app.modify_state`; use it "
+            "as an event trigger or yield it instead."
+        )
+        raise EventHandlerTypeError(msg)
+    return ctx
+
+
+async def _await_browser_call(spec: _BrowserCallSpec) -> Any:
+    """Run a script in the client's browser and wait for its result.
+
+    This is what awaiting ``rx.call_script``, ``rx.call_function`` or
+    ``rx.run_script`` does.
+
+    Args:
+        spec: The spec of the ``_call_script`` or ``_call_function`` event.
+
+    Returns:
+        The script's result.
+
+    Raises:
+        EventHandlerTypeError: If there is no active EventContext for a
+            client, the state lock is held, which would hold up every other
+            event of the client until the browser answers, or the event also
+            has a result callback.
+        BrowserDisconnectedError: If no frontend is attached to the app.
+    """
+    ctx = _client_context(spec)
+    event = spec._to_event(ctx.router_data)
+    if ctx.locked_root is not None:
+        msg = (
+            f"`{event.name}` cannot be awaited while the state lock is held, as "
+            "every other event of this tab would wait for the browser's answer; "
+            "await it in a background event handler, outside `async with self`."
+        )
+        raise EventHandlerTypeError(msg)
+    if event.payload["callback"] is not None:
+        msg = (
+            f"`{event.name}` was given a callback and awaited; pass either "
+            "callback= or await its result, not both."
+        )
+        raise EventHandlerTypeError(msg)
+    if ctx.call_frontend_impl is None:
+        msg = (
+            f"`{event.name}` cannot run in a browser: the app is running "
+            "without a frontend connection (for example in a test, or a "
+            "process that runs only the backend), so no tab can return a "
+            "result. Await browser scripts in handlers triggered from a page "
+            "of the running app, and catch BrowserDisconnectedError where no "
+            "page may be connected."
+        )
+        raise BrowserDisconnectedError(msg)
+    timeout = spec.timeout
+    if isinstance(timeout, Unset):
+        timeout = get_config().browser_call_timeout
+    return await ctx.call_frontend_impl(ClientToken(ctx.token), event, timeout)
+
+
 async def execute_event_inline(spec: EventSpec) -> Any:
     """Run the event a spec describes from inside the active EventContext.
 
@@ -628,22 +712,8 @@ async def execute_event_inline(spec: EventSpec) -> Any:
             is awaited while the state lock is held (which would deadlock).
     """
     from reflex_base.registry import RegistrationContext
-    from reflex_base.utils.exceptions import EventHandlerTypeError
 
-    try:
-        ctx = EventContext.get()
-    except LookupError:
-        ctx = None
-    # The event processor's root context, which every request to the app
-    # carries, belongs to no client: running there would share one state
-    # between every caller.
-    if ctx is None or not ctx.token:
-        msg = (
-            f"Event handler `{format_event_handler(spec.handler)}` can only be "
-            "awaited from an event handler or inside `app.modify_state`; use it "
-            "as an event trigger or yield it instead."
-        )
-        raise EventHandlerTypeError(msg)
+    ctx = _client_context(spec)
     event = spec._to_event(ctx.router_data)
     name = event.name
     if spec.client_handler_name:
@@ -920,6 +990,7 @@ class BaseStateEventProcessor(EventProcessor):
         Args:
             token: The disconnected client token.
         """
+        super()._on_disconnect(token)
         _, on_load_name = _connect_supersedes()
         for future in self._pending_hydrates.pop(token, {}).values():
             future.cancel()

@@ -53,6 +53,12 @@ from reflex_base.event import (
 )
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
+from reflex_base.event.processor.browser_calls import (
+    RID_KEY,
+    ClientToken,
+    PageId,
+    RequestId,
+)
 from reflex_base.registry import RegistrationContext
 from reflex_base.session import SessionToken, SessionTokenManager, authorize
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
@@ -1282,6 +1288,7 @@ class App(MiddlewareMixin, LifespanMixin):
             middleware=self,
             backend_exception_handler=self.backend_exception_handler,
             event_loop_blocking_threshold=get_config().event_loop_blocking_threshold,
+            browser_call_grace_period=get_config().browser_call_grace_period,
         )
         async with self._event_processor.configure(
             state_manager=state_manager,
@@ -2769,6 +2776,9 @@ class EventNamespace(AsyncNamespace):
         # connect time instead of for every event on the connection.
         self._static_router_data: dict[str, dict[str, Any]] = {}
 
+        # The page load each SID connected from, dropped as soon as the socket
+        # disconnects: a script a backend task awaits stops with its page.
+        self._sid_pages: dict[str, PageId] = {}
         self._sessions: dict[str, _SocketSession] = {}
 
         # Start time and count of the current process-wide client_error window.
@@ -2817,9 +2827,11 @@ class EventNamespace(AsyncNamespace):
             # Make sure this instance is watching for updates from other instances.
             await self._token_manager.ensure_lost_and_found_subscribed(self.emit_update)
         boot_event = frontend_schema = None
+        page = PageId("")
         if isinstance(auth, dict):
             boot_event = auth.get(constants.CompileVars.CONNECT_AUTH_EVENT)
             frontend_schema = auth.get(constants.CompileVars.CONNECT_AUTH_STATE_SCHEMA)
+            page = PageId(auth.get(constants.CompileVars.CONNECT_AUTH_PAGE, ""))
         # A frontend compiled for another state tree is told so before it
         # hydrates; an older frontend sends no hash and is left alone. The
         # backend hash is cached on the state class, so this is one lookup.
@@ -2868,9 +2880,17 @@ class EventNamespace(AsyncNamespace):
         try:
             if token:
                 # The boot event records the new sid and token under its state lock.
-                await self.link_token_to_sid(
+                new_token = await self.link_token_to_sid(
                     sid, token, update_state=boot_event is None
                 )
+                if (processor := self.app._event_processor) is not None:
+                    # A tab that reloaded or left the page stopped its scripts;
+                    # one given a new token takes them along.
+                    processor._browser_calls.connecting(
+                        ClientToken(token),
+                        page,
+                        None if new_token is None else ClientToken(new_token),
+                    )
             else:
                 logger.warning(f"No token provided in connection for session {sid}")
             if issued_session is not None:
@@ -2893,17 +2913,47 @@ class EventNamespace(AsyncNamespace):
             # Headers, client IP, and session id cannot change for the lifetime of
             # the connection; compute them once instead of on every event.
             self._static_router_data[sid] = self._build_static_router_data(sid, environ)
+            self._sid_pages[sid] = page
 
             if boot_event is not None:
                 await self.on_event(sid, boot_event)
         except Exception:
-            # A refused connect never reaches on_disconnect, so drop the token
-            # link and connection data made above before the error refuses it.
-            self._static_router_data.pop(sid, None)
-            self._sessions.pop(sid, None)
-            if (linked_token := self.sid_to_token.get(sid)) is not None:
-                await self._token_manager.disconnect_token(linked_token, sid)
+            await self._drop_refused_connect(sid)
             raise
+        self._resume_browser_calls(sid)
+
+    def _resume_browser_calls(self, sid: str) -> None:
+        """End the grace period of the browser calls of a socket's token, its connect accepted.
+
+        Args:
+            sid: The Socket.IO session id.
+        """
+        if (processor := self.app._event_processor) is not None and (
+            token := self.sid_to_token.get(sid)
+        ) is not None:
+            processor._browser_calls.connected(ClientToken(token))
+
+    async def _drop_refused_connect(self, sid: str) -> None:
+        """Undo the token link and connection data on_connect made for a refused connect.
+
+        A refused connect never reaches on_disconnect, so this runs before the
+        error refuses it.
+
+        Args:
+            sid: The Socket.IO session id.
+        """
+        self._static_router_data.pop(sid, None)
+        self._sid_pages.pop(sid, None)
+        self._sessions.pop(sid, None)
+        if (token := self.sid_to_token.get(sid)) is None:
+            return
+        if (processor := self.app._event_processor) is not None:
+            # The tab's browser calls, some maybe started by the boot event,
+            # wait for it as after a disconnect.
+            processor._browser_calls.disconnect(
+                ClientToken(token), processor.browser_call_grace_period
+            )
+        await self._token_manager.disconnect_token(token, sid)
 
     async def on_session_refresh(self, sid: str) -> None:
         """Renew credentials for the session already authenticated by this socket.
@@ -2985,6 +3035,7 @@ class EventNamespace(AsyncNamespace):
             otel.record_connection(-1)
         self._client_error_counts.pop(sid, None)
         self._static_router_data.pop(sid, None)
+        self._sid_pages.pop(sid, None)
         self._sessions.pop(sid, None)
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
@@ -3011,6 +3062,20 @@ class EventNamespace(AsyncNamespace):
             )
             return task
         return None
+
+    def _page_of(self, token: ClientToken) -> PageId | None:
+        """Get the page load of a client's tab, while it is connected to this worker.
+
+        Args:
+            token: The client token.
+
+        Returns:
+            The page id the tab connected with, or None when the token has no
+            socket on this worker. A socket loses its page as it disconnects,
+            before the token's link to it is cleaned up.
+        """
+        socket_record = self._token_manager.token_to_socket.get(token)
+        return None if socket_record is None else self._sid_pages.get(socket_record.sid)
 
     async def emit_update(
         self, update: StateUpdate, token: str, suppress_warnings: bool = False
@@ -3264,9 +3329,23 @@ class EventNamespace(AsyncNamespace):
         # handlers (e.g. error trackers) receive client errors too.
         self.app.frontend_exception_handler(Exception(report))
 
+    async def on_result(self, sid: str, data: Any = None):
+        """Settle a browser call the backend awaits with the result the browser sent.
+
+        Args:
+            sid: The Socket.IO session id.
+            data: ``{"rid": <request id>, "json": <the result as UTF-8 JSON
+                bytes>}``, or ``{"rid": <request id>, "error": {...}}`` when
+                the script failed.
+        """
+        if not isinstance(data, dict) or not isinstance(rid := data.get(RID_KEY), str):
+            logger.debug(f"Ignoring malformed result payload from SID {sid}.")
+            return
+        self.app.event_processor._browser_calls.resolve(RequestId(rid), data)
+
     async def link_token_to_sid(
         self, sid: str, token: str, *, update_state: bool = True
-    ):
+    ) -> str | None:
         """Link a token to a session id.
 
         Args:
@@ -3276,6 +3355,9 @@ class EventNamespace(AsyncNamespace):
                 now. The connect skips it when the CONNECT packet carries the
                 boot event, which records them as the connection's first event
                 without an extra load and save of the whole state tree.
+
+        Returns:
+            The new token the tab was given when its token is a duplicate, or None.
         """
         # Use TokenManager for duplicate detection and Redis support
         socket_session = self._sessions.get(sid)
@@ -3331,3 +3413,4 @@ class EventNamespace(AsyncNamespace):
                         )
                     ) != state.rx_router_session:
                         state.rx_router_session = router_session
+        return new_token

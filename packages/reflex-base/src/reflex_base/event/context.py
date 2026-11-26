@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from reflex.istate.manager import StateManager
     from reflex.state import BaseState
     from reflex_base.event import Event
+    from reflex_base.event.processor.browser_calls import ClientToken
     from reflex_base.event.processor.future import EventFuture
 
 
@@ -79,6 +80,22 @@ class EmitEventProtocol(Protocol):
         ...
 
 
+class CallFrontendProtocol(Protocol):
+    """Protocol for the call_frontend function in the event context."""
+
+    async def __call__(
+        self, token: ClientToken, event: Event, timeout: float | None
+    ) -> Any:
+        """Run a frontend event in the browser and wait for its result.
+
+        Args:
+            token: The client token whose browser runs the event.
+            event: The frontend event to run.
+            timeout: Seconds to wait for the result, or None to wait until it arrives.
+        """
+        ...
+
+
 class EmitDeltaProtocol(Protocol):
     """Protocol for the emit_delta function in the event context."""
 
@@ -123,6 +140,10 @@ class EventContext(BaseContext):
         default=None, repr=False
     )
     emit_event_impl: EmitEventProtocol | None = dataclasses.field(
+        default=None, repr=False
+    )
+    # None when no frontend is attached.
+    call_frontend_impl: CallFrontendProtocol | None = dataclasses.field(
         default=None, repr=False
     )
     # The app middleware an event passes through before its handler runs,
@@ -185,6 +206,7 @@ class EventContext(BaseContext):
             enqueue_impl=self.enqueue_impl,
             emit_delta_impl=self.emit_delta_impl,
             emit_event_impl=self.emit_event_impl,
+            call_frontend_impl=self.call_frontend_impl,
             middleware=self.middleware,
             router_data=router_data or self.router_data,
             otel_context=otel.capture_context(),

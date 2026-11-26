@@ -206,6 +206,8 @@ class BaseConfig:
         disable_plugins: List of plugin types to disable in the app.
         transport: The transport method for client-server communication.
         event_loop_blocking_threshold: Minimum event-loop blocking duration in seconds to report in development. Set to 0 to disable detection.
+        browser_call_timeout: Seconds an awaited browser call, such as `await rx.call_script(...)` in a background event handler, waits for the browser's result before raising TimeoutError, or None to wait without a limit. A call's own `timeout=` overrides it.
+        browser_call_grace_period: Seconds an awaited browser call survives its tab disconnecting: a reconnect to the same backend worker within it delivers the result, otherwise the call raises BrowserDisconnectedError.
     """
 
     app_name: str
@@ -309,6 +311,10 @@ class BaseConfig:
 
     event_loop_blocking_threshold: float = 0.2
 
+    browser_call_timeout: float | None = 30.0
+
+    browser_call_grace_period: float = 5.0
+
     # Whether to skip plugin checks.
     _skip_plugins_checks: bool = dataclasses.field(default=False, repr=False)
 
@@ -318,6 +324,50 @@ class BaseConfig:
 _PLUGINS_ENABLED_BY_DEFAULT = [
     SitemapPlugin,
 ]
+
+
+def _is_seconds(value: object, *, positive: bool) -> bool:
+    """Whether a config value is a finite, non-negative number of seconds.
+
+    Args:
+        value: The configured value.
+        positive: Whether 0 is rejected too.
+
+    Returns:
+        False for a bool, a non-number, a negative number, inf and nan.
+    """
+    return (
+        not isinstance(value, bool)
+        and isinstance(value, (int, float))
+        and (value > 0 if positive else value >= 0)
+        and value < math.inf
+    )
+
+
+def _check_browser_call_timeout(
+    timeout: object, name: str, where: str, error: type[Exception]
+) -> None:
+    """Raise unless a browser call timeout is None or a positive, finite number of seconds.
+
+    A timeout of 0 would fail the call before the browser can answer.
+
+    Args:
+        timeout: The timeout.
+        name: The name the timeout is set under.
+        where: Where it is set, as the error's fix names it after the name.
+        error: The exception to raise.
+
+    Raises:
+        error: If the timeout is invalid.
+    """
+    if timeout is not None and not _is_seconds(timeout, positive=True):
+        msg = (
+            f"{name} is {timeout!r}, but awaited browser calls need a positive, "
+            "finite number of seconds to wait for a result. Set "
+            f"{name}{where} to a number of seconds such as 30, or to None to "
+            "wait without a limit."
+        )
+        raise error(msg)
 
 
 def _is_plain_path_segment(segment: str) -> bool:
@@ -378,6 +428,29 @@ class Config(BaseConfig):
 
     # Track whether the app name has already been validated for this Config instance.
     _app_name_is_valid: bool = dataclasses.field(default=False, repr=False)
+
+    def _check_browser_call_settings(self) -> None:
+        """Check the timeout and the grace period of awaited browser calls.
+
+        Raises:
+            ConfigError: If either is not a valid number of seconds.
+        """
+        _check_browser_call_timeout(
+            self.browser_call_timeout,
+            "browser_call_timeout",
+            " in rxconfig.py",
+            ConfigError,
+        )
+        if not _is_seconds(self.browser_call_grace_period, positive=False):
+            msg = (
+                f"browser_call_grace_period is {self.browser_call_grace_period!r}, "
+                "but awaited browser calls need a non-negative, finite number of "
+                "seconds to wait for a disconnected tab to reconnect. Set "
+                "browser_call_grace_period in rxconfig.py to a number of seconds "
+                "such as 5, or to 0 to fail the calls as soon as their tab "
+                "disconnects."
+            )
+            raise ConfigError(msg)
 
     def _post_init(self, **kwargs):
         """Post-initialization method to set up the config.
@@ -444,14 +517,11 @@ class Config(BaseConfig):
             msg = "trusted_proxy_hops must be a non-negative integer."
             raise ConfigError(msg)
 
-        threshold = self.event_loop_blocking_threshold
-        if (
-            isinstance(threshold, bool)
-            or not isinstance(threshold, (int, float))
-            or not 0 <= threshold < math.inf
-        ):
+        if not _is_seconds(self.event_loop_blocking_threshold, positive=False):
             msg = "event_loop_blocking_threshold must be a non-negative finite number."
             raise ConfigError(msg)
+
+        self._check_browser_call_settings()
 
         # Normalize route prefixes to ensure they start with a slash.
         self._normalize_paths()

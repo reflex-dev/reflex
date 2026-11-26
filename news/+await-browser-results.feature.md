@@ -1,0 +1,1 @@
+The backend receives the results of browser scripts that a background event handler awaits (`await rx.call_script(...)`), keeps those calls alive while their tab reconnects, and fails them with `BrowserDisconnectedError` when the reloaded page connects, or when no tab reconnects within `browser_call_grace_period`.

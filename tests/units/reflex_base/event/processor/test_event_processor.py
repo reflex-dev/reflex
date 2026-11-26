@@ -20,6 +20,7 @@ from pytest_mock import MockerFixture
 from reflex_base import constants, otel
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import event_processor as processor_module
+from reflex_base.event.processor.browser_calls import ClientToken, RequestId
 from reflex_base.event.processor.event_processor import (
     EventProcessor,
     QueueShutDown,
@@ -28,9 +29,11 @@ from reflex_base.event.processor.event_processor import (
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegistrationContext
 from reflex_base.session import SessionToken
+from reflex_base.utils.exceptions import BrowserDisconnectedError
 
 from reflex.event import Event, EventHandler, EventSpec
 from tests.units.conftest import active_tracer
+from tests.units.reflex_base.event.processor.test_browser_calls import grace_expired
 
 # Module-level log so event handlers can record what happened.
 _CALL_LOG: list[dict[str, Any]] = []
@@ -2193,3 +2196,101 @@ async def test_bare_handler_returned_future_is_awaited(
     async with mock_event_processor as ep:
         event_future = await ep.enqueue(token, Event.from_event_type(future_event())[0])
         assert await event_future == 11
+
+
+class _FakeEventNamespace:
+    """Records the updates sent to the clients it reports as connected."""
+
+    def __init__(self, **pages: str):
+        """Connect the given tokens.
+
+        Args:
+            pages: The page load each connected client token connected from.
+        """
+        self.pages = pages
+        self.updates: list[tuple[str, Any]] = []
+        self.sent = asyncio.Event()
+
+    def _page_of(self, token: str) -> str | None:
+        """Get the page load of a connected client.
+
+        Args:
+            token: The client token.
+
+        Returns:
+            The page id, or None when the token is not connected.
+        """
+        return self.pages.get(token)
+
+    async def emit_update(self, update: Any, token: str) -> None:
+        """Record an update sent to a client.
+
+        Args:
+            update: The state update.
+            token: The client token.
+        """
+        self.updates.append((token, update))
+        self.sent.set()
+
+    async def next_rid(self) -> RequestId:
+        """Wait for the next update and return the request id of its event.
+
+        Returns:
+            The request id the event was sent with.
+        """
+        await self.sent.wait()
+        self.sent.clear()
+        return self.updates[-1][1].events[0].payload["rid"]
+
+
+async def test_call_frontend_sends_the_event_and_awaits_its_result(
+    processor: EventProcessor,
+):
+    """The configured call_frontend sends the event with a rid and resolves with the result.
+
+    A call to a tab that is not connected fails at once; a tab disconnecting
+    fails its calls after the processor's grace period; stopping the
+    processor cancels the calls still waiting.
+
+    Args:
+        processor: The event processor fixture.
+    """
+    event = Event(name="_call_script", payload={"javascript_code": "1"})
+    namespace = _FakeEventNamespace(tok="p1")
+    processor.browser_call_grace_period = 0.01
+    processor.configure(event_namespace=namespace)  # pyright: ignore[reportArgumentType]
+    assert processor._root_context is not None
+    call_frontend = processor._root_context.call_frontend_impl
+    assert call_frontend is not None
+
+    async with processor:
+        with pytest.raises(BrowserDisconnectedError) as exc_info:
+            await call_frontend(ClientToken("gone"), event, 1)
+        assert str(exc_info.value) == (
+            "`_call_script` cannot run in the browser tab: the tab is not "
+            "connected to this backend worker, because it was closed, is "
+            "reconnecting, or reconnected to another worker. Catch "
+            "BrowserDisconnectedError where the tab may be gone; with several "
+            "backend workers, route each tab to one worker (sticky sessions)."
+        )
+
+        token = ClientToken("tok")
+        answered = asyncio.create_task(call_frontend(token, event, 1))
+        rid = await namespace.next_rid()
+        assert [(token, update.events) for token, update in namespace.updates] == [
+            ("tok", [dataclasses.replace(event, payload={**event.payload, "rid": rid})])
+        ]
+        processor._browser_calls.resolve(rid, {"json": "[1]"})
+        assert await answered == [1]
+
+        abandoned = asyncio.create_task(call_frontend(token, event, 1))
+        await namespace.next_rid()
+        processor._on_disconnect("tok")
+        with pytest.raises(BrowserDisconnectedError) as exc_info:
+            await abandoned
+        assert str(exc_info.value) == grace_expired(0.01)
+
+        pending = asyncio.create_task(call_frontend(token, event, None))
+        await namespace.next_rid()
+    with pytest.raises(asyncio.CancelledError):
+        await pending

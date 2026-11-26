@@ -46,8 +46,9 @@ Several of the bugs found in this code came from state a function reads or write
 without it appearing in its arguments. What there is, and where it is pinned:
 
 - **Module-level state in `utils/state.js`**: the event queue, the session
-  token, the socket warmed up before React mounts, the record of sent
-  localStorage values. Every mounted event loop and every drain shares them.
+  token, the id of the page load (sent on every connect, so the backend tells
+  a reconnect from a reload), the socket warmed up before React mounts, the
+  record of sent localStorage values. Every mounted event loop and every drain shares them.
   A test that needs a clean copy reloads the module (`vi.resetModules()`, as
   `tests/state_connection.test.js` does). Code that awaits must not assume the
   queue or the socket is as it left them.

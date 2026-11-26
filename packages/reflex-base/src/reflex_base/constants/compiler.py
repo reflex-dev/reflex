@@ -64,6 +64,9 @@ class CompileVars(SimpleNamespace):
     # The key of the CONNECT auth packet that carries the hash of the state
     # tree the frontend was compiled for; an old frontend sends none.
     CONNECT_AUTH_STATE_SCHEMA = "state_schema"
+    # The key of the CONNECT auth packet that carries the id of the page load,
+    # which tells a reconnect of the page from a reload.
+    CONNECT_AUTH_PAGE = "page"
     # Payload keys of hydrate_and_load / update_vars_internal; they are passed
     # through as handler kwargs, so they must match those parameter names.
     PAYLOAD_VARS = "vars"

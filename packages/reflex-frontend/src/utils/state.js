@@ -34,7 +34,16 @@ const EVENTURL = env.EVENT;
 // Socket event names (must match reflex_base/constants/event.py SocketEvent)
 const CLIENT_ERROR_EVENT = "client_error";
 const STATE_MISMATCH_EVENT = "state_mismatch";
+const RESULT_EVENT = "result";
 const SESSION_REFRESH_EVENT = "session_refresh";
+
+// The error kind of a script result JSON cannot carry (must match
+// SERIALIZATION_ERROR_KIND in reflex_base/event/processor/browser_calls.py).
+const SERIALIZATION_ERROR_KIND = "serialization";
+
+// What the backend is told when even reading what a script threw throws.
+const UNDESCRIBABLE_ERROR =
+  "The script threw a value whose name, message or stack cannot be read.";
 
 // sessionStorage key with the time of the last automatic reload (must match
 // LAST_RELOADED_KEY in reflex/state.py: the reload on a frontend error and the
@@ -161,6 +170,10 @@ export const getToken = () => {
   }
   return token || "";
 };
+
+// Sent on every connect, so the backend tells a reconnect of this page from a
+// reload: the scripts it awaits stop with the page that runs them.
+const PAGE_ID = generateUUID();
 
 /** Get the saved client token to warm the transport before the app mounts. */
 const peekToken = () =>
@@ -660,6 +673,201 @@ const applyResultCallback = async (
 };
 
 /**
+ * Run the script of a _call_script or _call_function event.
+ * @param event The event whose script to run.
+ * @param socket The socket object to send events on.
+ * @param navigate The navigate function from useNavigate.
+ * @param params The params object from useParams.
+ * @returns The script's completion value, or the function's return value.
+ */
+const runEventScript = (event, socket, navigate, params) => {
+  // User code dispatches through addEvents like compiled event triggers do;
+  // late-bound so a remounted EventLoopProvider is picked up.
+  const addEvents = (...args) => eventLoop.addEvents(...args);
+  if (event.name === "_call_script") {
+    return runScript(
+      event.payload.javascript_code,
+      addEvents,
+      socket,
+      navigate,
+      params,
+    );
+  }
+  const fn =
+    typeof event.payload.function === "string"
+      ? runScript(event.payload.function, addEvents, socket, navigate, params)
+      : event.payload.function;
+  return fn();
+};
+
+// The most characters of an error's name, message or stack sent to the
+// backend: a longer error would not fit in one message, and the server would
+// drop the connection instead of raising it.
+const MAX_ERROR_TEXT = 4000;
+
+/**
+ * Cut a text about an error a script threw to at most MAX_ERROR_TEXT characters.
+ * @param {string} text The text.
+ * @returns {string} The text, cut and ended with an ellipsis when too long.
+ */
+const clipErrorText = (text) =>
+  text.length > MAX_ERROR_TEXT ? `${text.slice(0, MAX_ERROR_TEXT - 1)}…` : text;
+
+/**
+ * Describe an error a script threw, for the backend that awaits its result.
+ *
+ * Reading the thrown value can throw as well (a getter that throws, a revoked
+ * Proxy, an object without a prototype that String() rejects). The backend
+ * still gets an error then, or it would wait for its timeout.
+ * @param error The thrown value, which need not be an Error.
+ * @returns The error's name, message and stack, each cut to MAX_ERROR_TEXT
+ *   characters.
+ */
+const describeScriptError = (error) => {
+  try {
+    return {
+      name: clipErrorText(String(error?.name ?? "Error")),
+      message: clipErrorText(
+        String(error instanceof Error ? error.message : error),
+      ),
+      stack: clipErrorText(String(error?.stack ?? "")),
+    };
+  } catch {
+    return { name: "Error", message: UNDESCRIBABLE_ERROR, stack: "" };
+  }
+};
+
+/**
+ * Whether a value is a DOM node or a window, of this page or of an iframe.
+ *
+ * An iframe's nodes are instances of the iframe's own Node, not this page's,
+ * so ``instanceof`` misses them. The nodeType getter of Node accepts a node of
+ * any frame and throws for anything else, so data that merely has a nodeType
+ * field is not taken for a node. A window is this page's or one of its
+ * frames', compared by identity; any other refers to itself, so serializing
+ * it fails anyway. None of this runs the value's own code (getters, a
+ * ``Symbol.toStringTag``): that belongs to the script and runs once, when the
+ * result is serialized.
+ * @param item A value inside the script's result.
+ * @returns True for a DOM node or a window.
+ */
+const isNodeOrWindow = (item) => {
+  if (typeof item !== "object" || item === null) return false;
+  if (item === globalThis || Array.prototype.includes.call(frames, item)) {
+    return true;
+  }
+  if (!("nodeType" in item)) return false;
+  const { get } = /** @type {{ get: () => number }} */ (
+    Object.getOwnPropertyDescriptor(Node.prototype, "nodeType")
+  );
+  try {
+    get.call(item);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Serialize a script's result as UTF-8 JSON for the backend that awaits it.
+ *
+ * ``undefined`` is sent as ``null``. A DOM node or a window would arrive as
+ * an empty object, so it is rejected instead, like a value JSON cannot carry.
+ * The bytes travel as a binary attachment of the message, so the JSON is not
+ * escaped again inside it.
+ * @param value The script's result.
+ * @returns The result as UTF-8 JSON.
+ */
+const serializeScriptResult = (value) => {
+  const json = JSON.stringify(value ?? null, (_key, item) => {
+    if (isNodeOrWindow(item)) {
+      throw new TypeError(
+        "The script returned a DOM node or window, which JSON cannot carry; return the data you need from it instead.",
+      );
+    }
+    return item;
+  });
+  if (json === undefined) {
+    throw new TypeError(
+      `The script returned a ${typeof value}, which JSON cannot carry; return plain data (objects, arrays, strings, numbers, booleans or null) instead.`,
+    );
+  }
+  return new TextEncoder().encode(json);
+};
+
+/**
+ * Check that a result's JSON fits in one message to the backend.
+ *
+ * The server drops a transport whose frame exceeds the limit its handshake
+ * announced, and the result would be lost. A websocket carries the bytes in
+ * one binary frame. Polling carries them base64-encoded behind a
+ * one-character marker, in a request body that also holds the message
+ * referring to them when the two are queued together.
+ * @param outcome The request id and the result as UTF-8 JSON.
+ * @param socket The connected socket that sends it.
+ */
+const checkResultSize = (outcome, socket) => {
+  // Reads socket.io-client internals: engine._maxPayload, the packet encoder
+  // and engine.transport.name. A wrong budget drops the connection and the
+  // backend raises TimeoutError; the real-socket cases in run_script.test.js
+  // fail when a socket.io-client upgrade moves them.
+  const { encoder, engine } = socket.io;
+  let maxBytes = engine._maxPayload;
+  if (engine.transport.name !== "websocket") {
+    // The message as socket.emit encodes it: an EVENT packet (type 2) with a
+    // placeholder for the bytes.
+    const [message] = encoder.encode({
+      type: 2,
+      nsp: socket.nsp,
+      data: [RESULT_EVENT, outcome],
+    });
+    // Its Engine.IO message type, the separator and the marker take 3 bytes.
+    maxBytes =
+      3 * Math.floor((maxBytes - 3 - frameSize(message, "polling")) / 4);
+  }
+  const { json } = outcome;
+  if (json.byteLength > maxBytes) {
+    throw new RangeError(
+      `The script returned ${json.byteLength} bytes of JSON, more than the ${maxBytes} a message to the backend can carry; return less data, or raise REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE on the backend.`,
+    );
+  }
+};
+
+/**
+ * Run a script the backend awaits and send its result, or its error, back.
+ *
+ * The script runs before this returns; its result is awaited and sent after,
+ * so a script waiting on the user does not hold up the event queue.
+ * @param socket The socket object to send the result on.
+ * @param rid The request id the backend awaits the result under.
+ * @param run Runs the script and returns its result.
+ */
+const sendScriptResult = async (socket, rid, run) => {
+  let outcome;
+  try {
+    const value = await run();
+    try {
+      const json = serializeScriptResult(value);
+      if (!socket.connected) {
+        // The limit is the next connection's, known once it connects.
+        await new Promise((resolve) => socket.once("connect", resolve));
+      }
+      outcome = { rid, json };
+      checkResultSize(outcome, socket);
+    } catch (e) {
+      outcome = {
+        rid,
+        error: { ...describeScriptError(e), kind: SERIALIZATION_ERROR_KIND },
+      };
+    }
+  } catch (e) {
+    outcome = { rid, error: describeScriptError(e) };
+  }
+  // Buffered by socket.io while disconnected, and sent once it reconnects.
+  socket?.emit(RESULT_EVENT, outcome);
+};
+
+/**
  * Build the update_vars_internal event for a synced localStorage var.
  *
  * The value is read when the event is sent, so it and the write count recorded
@@ -870,49 +1078,24 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return;
   }
 
-  if (
-    event.name === "_call_function" &&
-    typeof event.payload.function !== "string"
-  ) {
+  if (event.name === "_call_script" || event.name === "_call_function") {
+    if (event.payload.rid) {
+      // The backend awaits the result: an error is its to handle.
+      void sendScriptResult(socket, event.payload.rid, () =>
+        runEventScript(event, socket, navigate, params),
+      );
+      return;
+    }
     try {
       await applyResultCallback(
         event,
-        event.payload.function(),
+        runEventScript(event, socket, navigate, params),
         socket,
         navigate,
         params,
       );
     } catch (e) {
-      console.log("_call_function", e);
-      if (window?.onerror) {
-        window.onerror(e.message, null, null, null, e);
-      }
-    }
-    return;
-  }
-
-  if (event.name === "_call_script" || event.name === "_call_function") {
-    try {
-      const eval_result =
-        event.name === "_call_script"
-          ? runScript(
-              event.payload.javascript_code,
-              addEvents,
-              socket,
-              navigate,
-              params,
-            )
-          : runScript(
-              event.payload.function,
-              addEvents,
-              socket,
-              navigate,
-              params,
-            )();
-
-      await applyResultCallback(event, eval_result, socket, navigate, params);
-    } catch (e) {
-      console.log("_call_script", e);
+      console.log(event.name, e);
       if (window?.onerror) {
         window.onerror(e.message, null, null, null, e);
       }
@@ -1192,16 +1375,20 @@ export const connect = async (
   // The hydrate event rides in the socket.io CONNECT packet, so the backend
   // starts loading state as soon as the namespace connects instead of after
   // an extra round trip for the connect acknowledgement. The keys are read by
-  // the backend as CompileVars.CONNECT_AUTH_EVENT and CONNECT_AUTH_STATE_SCHEMA;
-  // the state schema goes along on every (re)connect, since a reconnect can
-  // land on another backend version.
+  // the backend as CompileVars.CONNECT_AUTH_EVENT, CONNECT_AUTH_STATE_SCHEMA
+  // and CONNECT_AUTH_PAGE; the state schema goes along on every (re)connect,
+  // since a reconnect can land on another backend version.
   const bootAuth = (first) => (callback) => {
     const boot_event = withRouterData(app.initialEvents(first)[0], params);
     bootRoute = currentRouteKey();
     recordSentStorageValues(boot_event);
     // Instrumentation hook (installed by reflex-otel): may add a traceparent.
     window.__reflex_otel?.onEventSend?.(boot_event);
-    callback({ event: boot_event, state_schema: app.stateSchema });
+    callback({
+      event: boot_event,
+      state_schema: app.stateSchema,
+      page: PAGE_ID,
+    });
   };
 
   // Create the socket. A new session's token is saved here, once the app has
