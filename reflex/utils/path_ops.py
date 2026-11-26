@@ -189,6 +189,10 @@ def ls(path: str | Path) -> list[Path]:
 def ln(src: str | Path, dest: str | Path, overwrite: bool = False) -> bool:
     """Create a symbolic link.
 
+    If creating the symlink fails (no permission, or a cross-device link),
+    the target is copied to the link location instead, so the caller still
+    gets the content.
+
     Args:
         src: The path to the file or directory.
         dest: The path to the destination.
@@ -202,11 +206,19 @@ def ln(src: str | Path, dest: str | Path, overwrite: bool = False) -> bool:
         return False
     if not overwrite and (dest.exists() or dest.is_symlink()):
         return False
-    if src.is_dir():
-        rm(dest)
-        src.symlink_to(dest, target_is_directory=True)
-    else:
-        src.symlink_to(dest)
+    try:
+        if src.is_dir():
+            rm(dest)
+            src.symlink_to(dest, target_is_directory=True)
+        else:
+            src.symlink_to(dest)
+    except OSError:
+        # Symlinks may be unavailable on this filesystem: fall back to a
+        # plain copy so the caller still gets the content.
+        if dest.is_dir():
+            shutil.copytree(dest, src)
+        else:
+            shutil.copy2(dest, src)
     return True
 
 
