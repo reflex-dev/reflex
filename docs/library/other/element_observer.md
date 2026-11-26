@@ -156,7 +156,7 @@ def reveal(text: str) -> rx.Component:
             transform=rx.cond(seen.value, "none", "translateY(1em)"),
             transition="opacity 600ms, transform 600ms",
         ),
-        on_intersect=seen.set,
+        on_intersect=lambda visible, ratio: seen.set(ratio >= 0.5),
         threshold=0.5,
         disabled=seen.value,
     )
@@ -463,10 +463,10 @@ page would show its content under the header until the page hydrates.
 ### Performance
 
 The observers on a page share the browser's observers: one `ResizeObserver`
-for every observed element, one scroll and one resize listener on the window for
-every `on_move`, one `IntersectionObserver` for each combination of `threshold`
-and `root_margin`, and one `MutationObserver` that watches for elements and ids
-coming and going. A scroll inside a scroll container only measures the elements
+watches all observed elements, one scroll and one resize listener on the window
+serve all `on_move` triggers, one `IntersectionObserver` watches all elements
+observed with the same `threshold` and `root_margin`, and one `MutationObserver`
+watches for elements and ids coming and going. A scroll inside a scroll container only measures the elements
 in it. Each time, all affected elements are measured before any is reported, so
 the client state they set lands in one task and React renders it once.
 
