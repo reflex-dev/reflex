@@ -2596,6 +2596,97 @@ async def test_hydrate_and_load_single_lock_cycle(
     }
 
 
+async def test_hydrate_and_load_survives_raising_computed_vars(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    emitted_events: list[tuple[str, tuple[Event, ...]]],
+    token: str,
+):
+    """A computed var that raises does not stop hydration of the rest of the tree.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        emitted_events: List to capture emitted events.
+        token: The client token.
+    """
+
+    class BrokenState(State):
+        msg: str = "page a"
+        _data: dict[str, str] = {"user": "default"}
+
+        @event
+        def expire(self):
+            self._data = {}
+
+        @rx.var
+        def user(self) -> str:
+            return self._data["user"]
+
+        @rx.var
+        async def async_user(self) -> str:
+            return self._data["user"]
+
+    class PageState(State):
+        loads: int = 0
+
+        @event
+        def on_load_handler(self):
+            self.loads += 1
+
+    wired_app.add_page(
+        lambda: rx.text(PageState.loads),
+        route="/",
+        on_load=PageState.on_load_handler,
+    )
+    wired_app._compile_page("index")
+    event_errors: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = event_errors.append
+    snapshot_errors: list[Exception] = []
+
+    def recover(ex: Exception) -> EventSpec:
+        snapshot_errors.append(ex)
+        return rx.redirect("/login")
+
+    wired_app.backend_exception_handler = recover
+    boot = _boot_event(
+        Event.from_event_type(State.hydrate_and_load())[0].name,  # pyright: ignore[reportCallIssue]
+        {},
+    )
+    async with real_base_state_processor as processor:
+        await _send(processor, token, boot)
+        await processor.enqueue(token, Event.from_event_type(BrokenState.expire())[0])
+    assert [(type(e), e.args) for e in event_errors] == [(KeyError, ("user",))]
+    assert snapshot_errors == []
+    emitted_deltas.clear()
+    emitted_events.clear()
+    async with real_base_state_processor as processor:
+        await _send(processor, token, boot)
+
+    assert [(type(e), e.args) for e in snapshot_errors] == [
+        (KeyError, ("user",)),
+        (KeyError, ("user",)),
+    ]
+    snapshot = emitted_deltas[0][1]
+    assert snapshot[BrokenState.get_full_name()] == {"msg" + FIELD_MARKER: "page a"}
+    state_name = State.get_full_name()
+    hydrated_key = CompileVars.IS_HYDRATED + FIELD_MARKER
+    assert snapshot[state_name][hydrated_key] is False
+    assert snapshot[PageState.get_full_name()] == {"loads" + FIELD_MARKER: 1}
+    assert [d for _, d in emitted_deltas[1:]] == [
+        {state_name: {hydrated_key: False}},
+        {PageState.get_full_name(): {"loads" + FIELD_MARKER: 2}},
+        {state_name: {hydrated_key: True}},
+    ]
+    # Both errors are reported ahead of the on_load chain, in one batch.
+    redirect = Event.from_event_type(rx.redirect("/login"))[0]
+    assert [[(e.name, e.payload) for e in events] for _, events in emitted_events] == [
+        [(redirect.name, redirect.payload), (redirect.name, redirect.payload)]
+    ]
+
+
 async def test_hydrate_and_load_diffs_against_compiled_defaults(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,

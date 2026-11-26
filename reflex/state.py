@@ -93,10 +93,13 @@ from reflex.istate.data import (
     URLData,
 )
 from reflex.istate.delta import (
+    _DROP_FROM_DELTA,
     Delta,
     DeltaMapping,
     _replay_client_storage,
     _resolve_delta,
+    _snapshot_errors,
+    _snapshot_value,
     build_delta,
     clean_state,
     resolve_delta,
@@ -2224,6 +2227,15 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                 for prop_name, cv in self.computed_vars.items()
                 if not cv._backend
             }
+        elif include_computed and (errors := _snapshot_errors.get()) is not None:
+            # Building a hydration snapshot: leave out computed vars that raise.
+            computed_vars = {
+                prop_name: value
+                for prop_name, cv in self.computed_vars.items()
+                if not cv._backend
+                and (value := _snapshot_value(self, prop_name, errors))
+                is not _DROP_FROM_DELTA
+            }
         elif include_computed:
             computed_vars = {
                 # Include the computed vars.
@@ -2738,6 +2750,10 @@ class State(BaseState):
         handlers then gets ``on_load_internal``, which only locks its leaf
         substate.
 
+        A frontend computed var that raises while the snapshot is built is left
+        out of it, and its error goes to the app's backend exception handler,
+        so that one broken state does not stop the hydration of every page.
+
         Args:
             vars: Client storage vars set in the browser, keyed by fully
                 qualified var name.
@@ -2748,7 +2764,9 @@ class State(BaseState):
                 everything else is sent in full.
 
         Returns:
-            ``on_load_internal`` if the current page has on_load handlers.
+            The events the backend exception handler returned for computed vars
+            that raised, followed by ``on_load_internal`` if the current page
+            has on_load handlers.
         """
         from reflex_base.event.context import EventContext
 
@@ -2760,8 +2778,21 @@ class State(BaseState):
         # the reset defaults above must not be written back to the browser.
         self.is_hydrated = False
         ctx = EventContext.get()
+        app = RegistrationContext.get().app
+        events: list[Event | EventSpec | event.EventCallback] = []
         if ctx.emit_delta_impl is not None:
-            delta = await _resolve_delta(self.dict())
+            errors: list[Exception] = []
+            errors_token = _snapshot_errors.set(errors)
+            try:
+                delta = await _resolve_delta(self.dict())
+            finally:
+                _snapshot_errors.reset(errors_token)
+            for error in errors:
+                handled = app.backend_exception_handler(error)
+                if isinstance(handled, list):
+                    events.extend(handled)
+                elif handled is not None:
+                    events.append(handled)
             if hashes:
                 delta = await _diff_against_initial_state(type(self), delta, hashes)
             # Include the guard and values changed while resolving the snapshot.
@@ -2773,14 +2804,15 @@ class State(BaseState):
             if applied:
                 delta = await _get_client_storage_delta(self, applied)
                 await ctx.emit_delta(delta=delta)
-        if not RegistrationContext.get().app.get_load_events(self.rx_router_url.path):
+        if not app.get_load_events(self.rx_router_url.path):
             self.is_hydrated = True
-            return None
+            return events or None
         # A separate superseding event, so a navigation can cancel the page's
         # stale on_load work without cancelling this snapshot. The previous
         # page's unfinished on_load chain was already cancelled when this
         # event was enqueued (see BaseStateEventProcessor._supersede_previous).
-        return [OnLoadInternalState.on_load_internal]
+        events.append(OnLoadInternalState.on_load_internal)
+        return events
 
 
 async def _get_client_storage_delta(
