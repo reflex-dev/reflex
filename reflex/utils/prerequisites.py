@@ -38,6 +38,7 @@ _LATEST_VERSION_CHECK_INTERVAL = timedelta(days=1)
 _LATEST_VERSION_CHECK_FAILURE_INTERVAL = timedelta(hours=1)
 _LATEST_VERSION_CHECK_DATETIME_KEY = "last_version_check_datetime"
 _LATEST_VERSION_CHECK_ATTEMPT_DATETIME_KEY = "last_version_check_attempt_datetime"
+WEB_TEMPLATE_HASH_KEY = "web_template_hash"
 
 if typing.TYPE_CHECKING:
     from redis import Redis as RedisSync
@@ -763,7 +764,7 @@ def _is_web_dir_up_to_date() -> bool:
     reflex_json = json.loads(json_file.read_text())
     return (
         reflex_json.get("version") == constants.Reflex.VERSION
-        and reflex_json.get("web_template_hash") == get_web_template_hash()
+        and reflex_json.get(WEB_TEMPLATE_HASH_KEY) == get_web_template_hash()
     )
 
 
