@@ -65,7 +65,7 @@ The sitemap configuration supports the following options:
 - `changefreq`: How frequently the page changes (`"always"`, `"hourly"`, `"daily"`, `"weekly"`, `"monthly"`, `"yearly"`, `"never"`)
 - `priority`: Priority of this URL relative to other URLs (0.0 to 1.0)
 
-The sitemap is written to `sitemap.xml` at the root of the frontend. `path` moves it, and `index_path` adds a [sitemap index](https://www.sitemaps.org/protocol.html#index) listing it first, followed by `index_sitemaps` (absolute URLs, or paths resolved against `deploy_url`), for a site whose other part comes from another server:
+The sitemap is written to `sitemap.xml` at the root of the frontend. `path` moves it, and `index_path` adds a [sitemap index](https://www.sitemaps.org/protocol.html#index) listing it first, followed by `index_sitemaps` (absolute URLs, or paths resolved against `deploy_url`, which must be set for relative paths), for a site whose other part comes from another server:
 
 ```python
 config = rx.Config(
