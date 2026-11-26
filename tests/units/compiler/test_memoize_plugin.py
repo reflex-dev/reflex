@@ -1969,6 +1969,61 @@ def test_memoized_match_wrapper_receives_case_children_in_page_output() -> None:
     )
 
 
+_DIGEST = re.compile(r"_[0-9a-f]{32}")
+
+
+def _memo_files_without_digests(ctx: CompileContext) -> dict[str, str]:
+    """Compile the auto-memo definitions with content digests left out.
+
+    Args:
+        ctx: The compile context produced by ``_compile_single_page``.
+
+    Returns:
+        The code of each module by its file name, digests removed from both.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    files, _imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+    )
+    return {
+        _DIGEST.sub("", Path(path).stem): _DIGEST.sub("", code) for path, code in files
+    }
+
+
+def _setter_button_module(setter_hook: str, on_click: str) -> str:
+    """The module of a memoized button whose ``on_click`` only sets client state.
+
+    Args:
+        setter_hook: The ``useClientStateSetter`` declaration.
+        on_click: The JS of the click handler.
+
+    Returns:
+        The module's code, digests removed.
+    """
+    return _code(
+        "",
+        'import {ReflexEvent,applyEventActions,isTrue,mergeSlotProps} from "$/utils/state"',
+        'import {addEvents} from "$/utils/context"',
+        'import {useClientStateSetter} from "$/utils/client_state"',
+        'import {Fragment,memo,useCallback,useEffect} from "react"',
+        'import {jsx} from "@emotion/react"',
+        *[""] * 6,
+        "export const Button_button = /*#__PURE__*/ (() => {",
+        "const Button_button = memo(({children, ...rest}) => {",
+        f"    {setter_hook}",
+        f"const on_click = useCallback({on_click})",
+        "    return(",
+        '        jsx("button",{...mergeSlotProps(rest, ({ onClick:on_click }))},children)',
+        "    )",
+        "});",
+        'Button_button.displayName = "Button";',
+        "return Button_button;",
+        "})();",
+        "",
+    )
+
+
 def test_client_state_setter_in_call_function_event_imports_hook() -> None:
     """A button whose ``on_click`` calls a ``ClientStateVar`` setter must memoize
     and the resulting memo body must declare the ``useClientStateSetter`` hook
@@ -1977,10 +2032,9 @@ def test_client_state_setter_in_call_function_event_imports_hook() -> None:
     The setter is the local binding returned by the hook, so the memo body is
     only valid if ``ClientStateVar.set`` carries its own hook VarData. When it
     did not, the body referenced a setter that nothing declared, producing a
-    ``ReferenceError`` at runtime.
+    ``ReferenceError`` at runtime. The body never reads the value, so it does
+    not subscribe to it.
     """
-    from reflex.compiler.compiler import compile_memo_components
-
     counter = rx.client_state(0, name="counter")
 
     def page() -> Component:
@@ -1991,51 +2045,14 @@ def test_client_state_setter_in_call_function_event_imports_hook() -> None:
 
     ctx, _page_ctx = _compile_single_page(page)
 
-    assert len(ctx.memoize_wrappers) == 1, (
-        "Expected the button with a stateful on_click to be auto-memoized, "
-        f"got wrappers: {list(ctx.memoize_wrappers)}"
-    )
-    wrapper_tag = next(iter(ctx.memoize_wrappers))
-
-    memo_files, _memo_imports = compile_memo_components(
-        memos=tuple(ctx.auto_memo_components.values()),
-    )
-    memo_code = next(
-        code for path, code in memo_files if Path(path).name == f"{wrapper_tag}.jsx"
-    )
-
-    assert "counterRxClientStateSet(42)" in memo_code, (
-        "Expected the memo body to call the client-state setter.\n"
-        f"Memo code snippet: {memo_code[:2000]}"
-    )
-    assert (
-        'const counterRxClientStateSet = useClientStateSetter(0, "counter", true)'
-        in memo_code
-    ), (
-        "Expected the memo body to declare the client-state hook so the setter "
-        f"binding exists.\nMemo code snippet: {memo_code[:2000]}"
-    )
-
-    import_match = re.search(
-        r'^import\s*\{([^}]*)\}\s*from\s*"\$/utils/client_state"',
-        memo_code,
-        flags=re.MULTILINE,
-    )
-    assert import_match is not None, (
-        "Memo body must import from $/utils/client_state since it calls "
-        f"useClientStateSetter.\nMemo code snippet: {memo_code[:2000]}"
-    )
-    imported_names = {name.strip() for name in import_match.group(1).split(",")}
-    # Only the setter: the body never reads the value, so it does not subscribe.
-    assert imported_names == {"useClientStateSetter"}, (
-        f"Memo body imports {imported_names!r} from $/utils/client_state.\n"
-        f"Memo code snippet: {memo_code[:2000]}"
-    )
-
-    assert "refs['_client_state" not in memo_code, (
-        "Client state must no longer route through the global refs object.\n"
-        f"Memo code snippet: {memo_code[:2000]}"
-    )
+    assert _memo_files_without_digests(ctx) == {
+        "Button_button": _setter_button_module(
+            'const counterRxClientStateSet = useClientStateSetter(0, "counter", true)',
+            '((_e) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : '
+            '(() => (counterRxClientStateSet(42))), ["callback"] : null }), ({  })))], '
+            "[_e], ({  })))), [counterRxClientStateSet]",
+        ),
+    }
 
 
 @pytest.mark.parametrize("is_global", [True, False])
@@ -2048,9 +2065,10 @@ def test_client_state_setter_only_sibling_memo_initializes_state(
     setter function without the hook defining it, so a button memo relied on a
     sibling rendering ``.value`` to initialize the state and threw when that
     sibling was not mounted. The setter now carries the ``useClientStateSetter``
-    hook, so a setter-only memo registers its own slot binding. That holds for scoped
-    vars too: the slot lives in the shared scope store, not in a private copy,
-    so a setter-only writer is seen by every reader in the scope.
+    hook, so a setter-only memo registers its own slot binding without
+    subscribing to the value. That holds for scoped vars too: the slot lives in
+    the shared scope store, not in a private copy, so a setter-only writer is
+    seen by every reader in the scope.
 
     Args:
         is_global: Whether the var is named (global) or scoped.
@@ -2064,24 +2082,40 @@ def test_client_state_setter_only_sibling_memo_initializes_state(
         )
 
     ctx, _page_ctx = _compile_single_page(page)
-    memo_code = _compile_memo_module_text(ctx)
-    button_memo = next(
-        chunk
-        for chunk in memo_code.split("export const ")
-        if chunk.startswith("Button_")
-    )
+
     # A global var passes ``true`` as the third argument; a scoped var omits it.
-    hook = re.search(
-        r'const ([\w$]+RxClientStateSet) = useClientStateSetter\("a", "([\w$]+)"(, true)?\)',
-        button_memo,
-    )
-    assert hook is not None, button_memo
-    setter, name, global_flag = hook.groups()
-    assert (global_flag is not None) is is_global
-    assert name == shared._state_name
-    assert f'{setter}("b")' in button_memo
-    # Writing does not subscribe the button to the value.
-    assert "useClientState(" not in button_memo
+    args = f'"a", "{shared._state_name}"' + (", true" if is_global else "")
+    getter, setter = shared._getter_name, shared._setter_name
+    assert _memo_files_without_digests(ctx) == {
+        "Bare_comp": _code(
+            "",
+            'import {isTrue} from "$/utils/state"',
+            'import {useClientState} from "$/utils/client_state"',
+            'import {jsx} from "@emotion/react"',
+            'import {Fragment,memo,useEffect} from "react"',
+            *[""] * 6,
+            "export const Bare_comp = /*#__PURE__*/ (() => {",
+            "const Bare_comp = memo(({children}) => {",
+            f"    const [{getter}] = useClientState({args})",
+            "    return(",
+            f"        {getter}",
+            "    )",
+            "});",
+            'Bare_comp.displayName = "Bare";',
+            "return Bare_comp;",
+            "})();",
+            "",
+        ),
+        "Button_button": _setter_button_module(
+            f"const {setter} = useClientStateSetter({args})",
+            f'((_e) => (((...args) => ((() => ({setter}("b")))(({{ ["button"] : '
+            '_e?.["button"], ["buttons"] : _e?.["buttons"], ["client_x"] : '
+            '_e?.["clientX"], ["client_y"] : _e?.["clientY"], ["alt_key"] : '
+            '_e?.["altKey"], ["ctrl_key"] : _e?.["ctrlKey"], ["meta_key"] : '
+            '_e?.["metaKey"], ["shift_key"] : _e?.["shiftKey"] }), ...args)))(_e))), '
+            f"[{setter}]",
+        ),
+    }
 
 
 def test_debounce_input_memo_renders_react_debounce_wrapper() -> None:
