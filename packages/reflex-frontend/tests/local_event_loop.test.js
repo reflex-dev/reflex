@@ -187,6 +187,9 @@ test("a splat route's params reach scripts as a list", async () => {
   expect(seen).toEqual([["a", "b"]]);
 });
 
+const backendError = (name) =>
+  `The event "${name}" needs the backend, but this app is compiled without state (rx.App(enable_state=False)).`;
+
 test("an event for the backend is reported, and the next event still applies", async () => {
   const error = vi.spyOn(console, "error").mockImplementation(() => {});
   const { dispatch } = await mountLocalLoop();
@@ -201,20 +204,67 @@ test("an event for the backend is reported, and the next event still applies", a
     call(() => seen.push("after")),
   ]);
   expect(seen).toEqual(["after"]);
-  expect(error).toHaveBeenCalledTimes(2);
-  expect(error.mock.calls[0][0]).toContain('"reflex___state____state.handler"');
-  expect(error.mock.calls[0][0]).toContain("enable_state=False");
+  expect(error.mock.calls).toEqual([
+    [backendError("reflex___state____state.handler")],
+    [backendError("reflex___state____state.upload")],
+  ]);
   expect(io).not.toHaveBeenCalled();
 });
 
-test("storage events need the backend that keeps them in sync with state", async () => {
-  const error = vi.spyOn(console, "error").mockImplementation(() => {});
+test("an event dispatched while an earlier one awaits runs after the events queued before it", async () => {
+  const { mounted } = await mountLocalLoop();
+  const seen = [];
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  let first;
+  await act(async () => {
+    first = mounted.addEvents([
+      call(
+        () => gate,
+        () => seen.push("callback"),
+      ),
+      call(() => seen.push("queued with it")),
+    ]);
+  });
+  await act(async () => {
+    await mounted.addEvents([call(() => seen.push("dispatched later"))]);
+  });
+  expect(seen).toEqual(["queued with it", "dispatched later"]);
+  await act(async () => {
+    release();
+    await first;
+  });
+  expect(seen).toEqual(["queued with it", "dispatched later", "callback"]);
+});
+
+test("browser storage events apply without a backend", async () => {
+  localStorage.setItem("local", "1");
   localStorage.setItem("kept", "1");
+  sessionStorage.setItem("session", "1");
+  sessionStorage.setItem("kept", "1");
+  document.cookie = "crumb=1; path=/";
   const { dispatch } = await mountLocalLoop();
-  await dispatch([{ name: "_clear_local_storage" }]);
-  expect(localStorage.getItem("kept")).toBe("1");
-  expect(error.mock.calls[0][0]).toContain('"_clear_local_storage"');
-  localStorage.clear();
+
+  await dispatch([
+    { name: "_remove_local_storage", payload: { key: "local" } },
+    { name: "_remove_session_storage", payload: { key: "session" } },
+    {
+      name: "_remove_cookie",
+      payload: { key: "crumb", options: { path: "/" } },
+    },
+  ]);
+  expect({ ...localStorage }).toEqual({ kept: "1" });
+  expect({ ...sessionStorage }).toEqual({ kept: "1" });
+  expect(document.cookie).toBe("");
+
+  await dispatch([
+    { name: "_clear_local_storage" },
+    { name: "_clear_session_storage" },
+  ]);
+  expect(localStorage.length).toBe(0);
+  expect(sessionStorage.length).toBe(0);
 });
 
 test("event actions apply to the dispatching DOM event", async () => {
@@ -231,7 +281,7 @@ test("event actions apply to the dispatching DOM event", async () => {
 });
 
 test("isFrontendEvent accepts the events the browser applies itself", () => {
-  for (const name of [
+  const names = [
     "_redirect",
     "_download",
     "_set_focus",
@@ -241,15 +291,16 @@ test("isFrontendEvent accepts the events the browser applies itself", () => {
     "_client_state_get",
     "_call_function",
     "_call_script",
-  ]) {
-    expect(state.isFrontendEvent({ name })).toBe(true);
-  }
-  for (const name of [
-    "reflex___state____state.handler",
     "_remove_cookie",
     "_clear_local_storage",
+    "_remove_local_storage",
+    "_clear_session_storage",
+    "_remove_session_storage",
+    "reflex___state____state.handler",
     "_sync_local_storage",
-  ]) {
-    expect(state.isFrontendEvent({ name })).toBe(false);
-  }
+    "constructor",
+  ];
+  expect(names.filter((name) => state.isFrontendEvent({ name }))).toEqual(
+    names.slice(0, 14),
+  );
 });

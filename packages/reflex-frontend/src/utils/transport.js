@@ -524,61 +524,6 @@ const storageDefault = (state_key) => {
  * @param params The params object from useParams
  */
 export const applyEvent = async (event, socket, navigate, params) => {
-  if (event.name === "_remove_cookie") {
-    getCookies().remove(event.payload.key, { ...event.payload.options });
-    void queueEventIfSocketExists(
-      app.initialEvents(),
-      socket,
-      navigate,
-      params,
-    );
-    return;
-  }
-
-  if (event.name === "_clear_local_storage") {
-    localStorage.clear();
-    void queueEventIfSocketExists(
-      app.initialEvents(),
-      socket,
-      navigate,
-      params,
-    );
-    return;
-  }
-
-  if (event.name === "_remove_local_storage") {
-    localStorage.removeItem(event.payload.key);
-    void queueEventIfSocketExists(
-      app.initialEvents(),
-      socket,
-      navigate,
-      params,
-    );
-    return;
-  }
-
-  if (event.name === "_clear_session_storage") {
-    sessionStorage.clear();
-    void queueEventIfSocketExists(
-      app.initialEvents(),
-      socket,
-      navigate,
-      params,
-    );
-    return;
-  }
-
-  if (event.name === "_remove_session_storage") {
-    sessionStorage.removeItem(event.payload.key);
-    void queueEventIfSocketExists(
-      app.initialEvents(),
-      socket,
-      navigate,
-      params,
-    );
-    return;
-  }
-
   // Special case when linking to uploaded files
   if (
     event.name === "_download" &&
@@ -600,9 +545,20 @@ export const applyEvent = async (event, socket, navigate, params) => {
   }
 
   if (isFrontendEvent(event)) {
-    await applyFrontendEvent(event, navigate, (code, addEvents) =>
-      runScript(code, addEvents, socket, navigate, params),
+    const storageChanged = await applyFrontendEvent(
+      event,
+      navigate,
+      (code, addEvents) => runScript(code, addEvents, socket, navigate, params),
     );
+    if (storageChanged) {
+      // Hydrate again so the state's browser storage vars see the change.
+      void queueEventIfSocketExists(
+        app.initialEvents(),
+        socket,
+        navigate,
+        params,
+      );
+    }
     return;
   }
 

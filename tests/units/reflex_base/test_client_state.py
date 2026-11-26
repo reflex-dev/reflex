@@ -657,16 +657,21 @@ def test_backend_events_use_the_shared_store() -> None:
 
     state_js = (Templates.Dirs.WEB_TEMPLATE / "utils" / "runtime.js").read_text()
     assert "refs[CLIENT_STATE_REF] = getClientStore()" in state_js
-    set_branch = state_js.split('event.name === "_client_state_set"')[1].split(
-        "return;"
-    )[0]
-    assert "setClientState(event.payload.var_name, event.payload.value)" in set_branch
-    get_branch = state_js.split('event.name === "_client_state_get"')[1].split(
-        "return;"
-    )[0]
-    assert "applyResultCallback" in get_branch
-    assert "getClientState(event.payload.var_name)" in get_branch
-    assert "ClientStateProvider" not in set_branch + get_branch
+    set_branch = state_js.split("  _client_state_set: ")[1].split("\n\n")[0]
+    assert set_branch == (
+        "(event) => {\n"
+        "    setClientState(event.payload.var_name, event.payload.value);\n"
+        "  },"
+    )
+    get_branch = state_js.split("  _client_state_get: ")[1].split("\n\n")[0]
+    assert get_branch == (
+        "(event, navigate, runScript) =>\n"
+        "    applyCodeEvent(\n"
+        "      event,\n"
+        "      () => getClientState(event.payload.var_name),\n"
+        "      runScript,\n"
+        "    ),"
+    )
 
 
 def test_each_construction_gets_its_own_name() -> None:
