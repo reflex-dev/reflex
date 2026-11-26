@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import {
   applyDelta,
+  applyEvent,
   applyEventActions,
   encodeFormDataArgs,
   generateUUID,
@@ -574,5 +575,81 @@ describe("events", () => {
     expect(target).not.toHaveBeenCalled();
     vi.advanceTimersByTime(1);
     expect(target.mock.calls).toEqual([["second"]]);
+  });
+
+  test("_download saves a data: url through a blob: url only when it has a comma before the fragment", async () => {
+    const clicked = [];
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(function () {
+        clicked.push([this.href, this.download]);
+      });
+    const createObjectURL = URL.createObjectURL;
+    URL.createObjectURL = () => "blob:test";
+    try {
+      for (const url of ["data:text/plain#a,b", "data:text/plain,ok#a,b"]) {
+        await applyEvent(
+          { name: "_download", payload: { url, filename: "" } },
+          null,
+          null,
+          null,
+        );
+      }
+    } finally {
+      click.mockRestore();
+      URL.createObjectURL = createObjectURL;
+    }
+    expect(clicked).toEqual([
+      ["data:text/plain#a,b", ""],
+      ["blob:test", "download"],
+    ]);
+  });
+
+  test("_download decodes a data: url without a media type as text/plain", async () => {
+    const blobs = [];
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => {});
+    const createObjectURL = URL.createObjectURL;
+    URL.createObjectURL = (blob) => {
+      blobs.push(blob);
+      return "blob:test";
+    };
+    try {
+      for (const url of [
+        "data:,hello",
+        "data:;base64,aGVsbG8=",
+        "data:;charset=utf-8,h%C3%A9",
+        "data:text/csv;base64,YSxi",
+      ]) {
+        await applyEvent(
+          { name: "_download", payload: { url, filename: "" } },
+          null,
+          null,
+          null,
+        );
+      }
+    } finally {
+      click.mockRestore();
+      URL.createObjectURL = createObjectURL;
+    }
+    // jsdom's Blob has no text(), so read it through a FileReader, which
+    // needs real timers to fire its load event.
+    vi.useRealTimers();
+    const readText = (blob) =>
+      new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsText(blob);
+      });
+    const decoded = await Promise.all(
+      blobs.map(async (blob) => [blob.type, await readText(blob)]),
+    );
+    expect(decoded).toEqual([
+      ["text/plain;charset=us-ascii", "hello"],
+      ["text/plain;charset=us-ascii", "hello"],
+      ["text/plain;charset=utf-8", "hé"],
+      ["text/csv", "a,b"],
+    ]);
   });
 });

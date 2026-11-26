@@ -692,6 +692,32 @@ const storageDefault = (state_key) => {
 };
 
 /**
+ * Decode a data: url into a Blob, as fetch does.
+ *
+ * The data is decoded here because a connect-src policy can block fetching a
+ * data: url.
+ * @param href The serialized data: url, which contains a comma.
+ * @returns The decoded Blob.
+ */
+const dataUrlToBlob = (href) => {
+  const [url] = href.split("#", 1);
+  const comma = url.indexOf(",");
+  const meta = url.slice(5, comma);
+  let type = meta.replace(/;\s*base64\s*$/i, "");
+  const base64 = type !== meta;
+  // A data: url without a media type is text/plain, as fetch decodes it.
+  if (!type) type = "text/plain;charset=US-ASCII";
+  else if (type.startsWith(";")) type = "text/plain" + type;
+  // href is serialized ascii, so each percent-decoded char is one byte. "%u"
+  // stays literal, so unescape decodes only %XX escapes.
+  let raw = unescape(url.slice(comma + 1).replace(/%u/g, "%25u"));
+  if (base64) raw = atob(raw);
+  const bytes = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+  return new Blob([bytes], { type });
+};
+
+/**
  * Handle frontend event or send the event to the backend via Websocket.
  * @param event The event to send.
  * @param socket The socket object to send the event on.
@@ -803,6 +829,18 @@ export const applyEvent = async (event, socket, navigate, params) => {
       );
     }
     a.download = event.payload.filename;
+    // iOS WebKit ignores the download attribute of data: urls and only shows
+    // the file, so save inline data through a blob: url instead. A data: url
+    // without a comma before its fragment is invalid and stays as it is.
+    if (/^data:[^,#]*,/.test(a.href)) {
+      a.href = URL.createObjectURL(dataUrlToBlob(a.href));
+      // A blob: url names the file after its uuid, so use the name that
+      // Chromium gives a data: url.
+      a.download ||= "download";
+      // Release the blob url after one minute.
+      setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    }
+    document.body.appendChild(a);
     a.click();
     a.remove();
     return;
