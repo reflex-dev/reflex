@@ -183,7 +183,7 @@ def _config_dirs_moved_by_rename(
 def _update_moved_config_dirs(moved_dirs: dict[str, tuple[Path, Path]]):
     """Point configured directories that moved with the app at their new location.
 
-    Only string literals in rxconfig.py are rewritten, any other source is left to the user.
+    Only a string literal passed as the setting in rxconfig.py is rewritten, any other source is left to the user.
 
     Args:
         moved_dirs: The old and new path of each moved directory by config field.
@@ -193,19 +193,38 @@ def _update_moved_config_dirs(moved_dirs: dict[str, tuple[Path, Path]]):
     config_file = constants.Config.FILE
     content, encoding = _read_source(config_file)
     for field, (old, new) in moved_dirs.items():
-        literals = [
-            (f"{quote}{old.as_posix()}{quote}", f"{quote}{new.as_posix()}{quote}")
-            for quote in "\"'"
-        ]
-        if not any(old_literal in content for old_literal, _ in literals):
+        content, count = _replace_config_dir_literal(content, field, old, new)
+        if not count:
             logger.warning(
                 f"{field} {old.as_posix()} moved to {new.as_posix()} with the app "
                 "directory. Update it in your config."
             )
-            continue
-        for old_literal, new_literal in literals:
-            content = content.replace(old_literal, new_literal)
     config_file.write_text(content, encoding=encoding, newline="")
+
+
+def _replace_config_dir_literal(
+    content: str, field: str, old: Path, new: Path
+) -> tuple[str, int]:
+    """Replace the string literal passed as a directory setting, bare or in ``Path()``.
+
+    Args:
+        content: The config source.
+        field: The name of the setting.
+        old: The path to replace.
+        new: The replacement path.
+
+    Returns:
+        The updated source and the number of replacements.
+    """
+    pattern = re.compile(
+        rf"(\b{field}\s*=\s*(?:(?:pathlib\.)?Path\(\s*)?)([\"']){re.escape(old.as_posix())}\2"
+    )
+    return pattern.subn(
+        lambda match: (
+            f"{match.group(1)}{match.group(2)}{new.as_posix()}{match.group(2)}"
+        ),
+        content,
+    )
 
 
 def _read_source(file_path: Path) -> tuple[str, str]:
@@ -250,7 +269,9 @@ def process_directory(
     extensions_set = {ext.lstrip(".") for ext in extensions}
     directory = Path(directory)
 
-    root_exclude_dirs = {directory / exclude_dir for exclude_dir in exclude_dirs}
+    root_exclude_dirs = {
+        (directory / exclude_dir).resolve() for exclude_dir in exclude_dirs
+    }
 
     files = (
         p.resolve()
