@@ -1,0 +1,1 @@
+When `reflex run` serves the dev backend with Uvicorn instead of Granian, it now also reloads when a `.js`, `.jsx`, `.mjs`, `.ts`, `.tsx`, `.mts` or `.css` file in the watched app directories changes, as Granian already does, so a JavaScript module the app imports from Python is read again.

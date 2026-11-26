@@ -44,7 +44,8 @@ class Dirs(SimpleNamespace):
     REFLEX_API_PATH = UTILS + "/reflex"
     # The index of the JavaScript modules an app imports from Python.
     SCRIPTS_PATH = UTILS + "/scripts"
-    # The directory those modules are copied to.
+    # The directory holding a link to the app's package, through which the
+    # bundler reads those modules where they are.
     SCRIPT_MODULES_PATH = UTILS + "/script_modules"
     # The name of the output directory.
     BUILD_DIR = "build"
