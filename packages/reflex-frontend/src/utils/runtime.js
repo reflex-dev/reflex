@@ -415,6 +415,9 @@ export const useLocalEventLoop = () => {
       event_actions,
       args,
       _events.map((e) => e.name).join("+++"),
+      // Temporal events are dropped while the backend is down, and this app
+      // has none.
+      () => false,
     );
   }, []);
 

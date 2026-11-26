@@ -267,6 +267,22 @@ test("browser storage events apply without a backend", async () => {
   expect(sessionStorage.length).toBe(0);
 });
 
+test("temporal events are dropped, as while the backend is down", async () => {
+  const error = vi.spyOn(console, "error").mockImplementation(() => {});
+  const { dispatch } = await mountLocalLoop();
+  const seen = [];
+  await dispatch([call(() => seen.push("temporal"))], [], { temporal: true });
+  await dispatch([
+    {
+      name: "reflex___state____state.handler",
+      event_actions: { temporal: true },
+    },
+  ]);
+  await dispatch([call(() => seen.push("plain"))]);
+  expect(seen).toEqual(["plain"]);
+  expect(error.mock.calls).toEqual([]);
+});
+
 test("event actions apply to the dispatching DOM event", async () => {
   const { dispatch } = await mountLocalLoop();
   const domEvent = { preventDefault: vi.fn(), stopPropagation: vi.fn() };
