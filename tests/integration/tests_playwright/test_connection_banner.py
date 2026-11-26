@@ -13,6 +13,7 @@ from reflex.environment import environment
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.testing import AppHarness
 from reflex.utils.token_manager import RedisTokenManager, SocketRecord
+from tests.integration.utils import CLIENT_TOKEN_JS
 
 
 def ConnectionBanner():
@@ -119,8 +120,8 @@ def _assert_token(connection_banner: AppHarness, page: Page) -> str:
     Returns:
         The token if found, raises an assertion error otherwise.
     """
-    page.wait_for_function("() => sessionStorage.getItem('token') !== null")
-    token = page.evaluate("() => sessionStorage.getItem('token')")
+    page.wait_for_function(f"() => {CLIENT_TOKEN_JS} !== null")
+    token = page.evaluate(f"() => {CLIENT_TOKEN_JS}")
     assert token is not None, "token not found"
     return token
 

@@ -21,6 +21,7 @@ import click
 from reflex_base import constants
 from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
+from reflex_base.session import ensure_secret_key
 from reflex_base.utils import console, log, supervisor
 from reflex_base.utils.process_tree import (
     descendant_pids,
@@ -698,6 +699,10 @@ def _run(
 
     # Set env mode in the environment
     environment.REFLEX_ENV_MODE.set(env)
+
+    if running_mode.has_backend():
+        # Backend workers and reloads inherit the environment, so they share one key.
+        ensure_secret_key()
 
     # Preview serves a real (but readable) frontend bundle: disable JS/CSS
     # minification by default for readable output and to speed up rebuilds.

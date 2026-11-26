@@ -72,8 +72,12 @@ def test_navigation_before_socket_connect_uses_current_route(
 
     page.goto(f"{frontend_url}/slow")
     expect(page.get_by_role("link", name="Other")).to_be_visible()
-    if not sockets:
-        page.wait_for_event("websocket", timeout=60000)
+    # A tab without a session cookie opens its socket after the page mounts.
+    # A routed socket fires no page event, so poll for the route handler.
+    for _ in range(600):
+        if sockets:
+            break
+        page.wait_for_timeout(100)
     assert len(sockets) == 1, page_errors
 
     page.get_by_role("link", name="Other").click()

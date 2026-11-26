@@ -10,7 +10,13 @@ from typing import Any, Literal, TypedDict
 
 from reflex_base.components.component import Component, NoSSRComponent, field
 from reflex_base.components.literals import LiteralRowMarker
-from reflex_base.event import EventHandler, no_args_event_spec, passthrough_event_spec
+from reflex_base.components.tags.tag import CommonTag
+from reflex_base.event import (
+    EventChain,
+    EventHandler,
+    no_args_event_spec,
+    passthrough_event_spec,
+)
 from reflex_base.utils import format, types
 from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.utils.serializers import serializer
@@ -498,6 +504,29 @@ class DataEditor(NoSSRComponent):
             ],
             self.library: ["GridCellKind", "CompactSelection"],
         }
+
+    def _render(self, props: dict[str, Any] | None = None) -> CommonTag:
+        """Render the grid, making onDelete return true after queuing its events.
+
+        Args:
+            props: The props to render (if None, then use get_props).
+
+        Returns:
+            The tag to render.
+        """
+        tag = super()._render(props)
+        if (on_delete := self.event_triggers.get("on_delete")) is not None:
+            # Glide uses the return value of onDelete: true deletes the selection,
+            # and any other non-boolean is taken as the selection to delete.
+            handler = LiteralVar.create(on_delete)
+            tag = tag.add_props(
+                on_delete=Var(
+                    _js_expr=f"((selection) => {{ ({handler!s})(selection); return true; }})",
+                    _var_type=EventChain,
+                    _var_data=handler._get_all_var_data(),
+                )
+            )
+        return tag
 
     def add_custom_code(self) -> list[str]:
         """Add custom code for reconstructing GridSelection with CompactSelection objects.
