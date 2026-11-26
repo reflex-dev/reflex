@@ -20,8 +20,9 @@ Reflex Enterprise is a package containing paid features built on top of Reflex.
 The full [End-User License Agreement (EULA)](https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/enterprise/LICENSE) for Reflex Enterprise is published in the Reflex repository.
 
 ```md alert info
-# Enterprise components are available to free users.
-Free apps can use these components with a "Built with Reflex" badge shown in the bottom right corner of the app.
+# What a Free account can use
+On a Free account, the features marked Free under Self-hosted Tier in the table below work in development and in self-hosted production, with a "Built with Reflex" badge shown in the bottom right corner of the app.
+Deploying to Reflex Cloud and the hosted [Reflex MCP server](/docs/ai/integrations/mcp-overview/) require the Enterprise plan.
 For more information on the badge, visit [Built with Reflex](/docs/enterprise/built-with-reflex/).
 ```
 

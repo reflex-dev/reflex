@@ -2,7 +2,7 @@
 
 from typing import TypedDict
 
-import httpx
+import httpx2
 
 import reflex as rx
 from reflex_site_shared.constants import RECENT_BLOGS_API_URL
@@ -32,7 +32,7 @@ class RecentBlogsState(rx.State):
         if self._fetched:
             return
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx2.AsyncClient() as client:
                 resp = await client.get(RECENT_BLOGS_API_URL, timeout=10)
                 resp.raise_for_status()
                 data = resp.json()

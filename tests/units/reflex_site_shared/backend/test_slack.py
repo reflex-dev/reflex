@@ -2,15 +2,15 @@
 
 import json
 
-import httpx
+import httpx2
 import pytest
 from reflex_site_shared.backend import slack
 from reflex_site_shared.backend.slack import escape_slack_text, post_to_slack
 
 
 def _mock_slack_api(
-    monkeypatch, response: httpx.Response | Exception
-) -> list[httpx.Request]:
+    monkeypatch, response: httpx2.Response | Exception
+) -> list[httpx2.Request]:
     """Route Slack API calls to a mock that answers with a fixed response.
 
     Args:
@@ -20,19 +20,19 @@ def _mock_slack_api(
     Returns:
         The captured requests, in send order.
     """
-    requests: list[httpx.Request] = []
+    requests: list[httpx2.Request] = []
 
-    def handler(request: httpx.Request) -> httpx.Response:
+    def handler(request: httpx2.Request) -> httpx2.Response:
         requests.append(request)
         if isinstance(response, Exception):
             raise response
         return response
 
-    client = httpx.AsyncClient
+    client = httpx2.AsyncClient
     monkeypatch.setattr(
-        slack.httpx,
+        slack.httpx2,
         "AsyncClient",
-        lambda: client(transport=httpx.MockTransport(handler)),
+        lambda: client(transport=httpx2.MockTransport(handler)),
     )
     monkeypatch.setattr(slack, "SLACK_BOT_TOKEN", "xoxb-test")
     return requests
@@ -50,7 +50,7 @@ async def test_post_to_slack_sends_an_authenticated_post_message(
     monkeypatch,
 ) -> None:
     """Post the text to the channel with the bot token and previews off."""
-    requests = _mock_slack_api(monkeypatch, httpx.Response(200, json={"ok": True}))
+    requests = _mock_slack_api(monkeypatch, httpx2.Response(200, json={"ok": True}))
 
     assert await post_to_slack("hello", "docs-feedback")
 
@@ -69,15 +69,15 @@ async def test_post_to_slack_sends_an_authenticated_post_message(
 @pytest.mark.parametrize(
     "response",
     [
-        httpx.Response(200, json={"ok": False, "error": "channel_not_found"}),
-        httpx.Response(200, text="<html>upstream error</html>"),
-        httpx.Response(200, json=["ok"]),
-        httpx.Response(429),
-        httpx.ConnectError("unreachable"),
+        httpx2.Response(200, json={"ok": False, "error": "channel_not_found"}),
+        httpx2.Response(200, text="<html>upstream error</html>"),
+        httpx2.Response(200, json=["ok"]),
+        httpx2.Response(429),
+        httpx2.ConnectError("unreachable"),
     ],
 )
 async def test_post_to_slack_reports_undelivered_posts(
-    monkeypatch, response: httpx.Response | Exception
+    monkeypatch, response: httpx2.Response | Exception
 ) -> None:
     """Report rejections, invalid bodies and HTTP or transport errors as undelivered."""
     requests = _mock_slack_api(monkeypatch, response)
