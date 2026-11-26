@@ -8,6 +8,9 @@ deployments, the marketing site) must use the latter.
 """
 
 import importlib
+import json
+import shutil
+import subprocess
 
 import pytest
 import reflex as rx
@@ -392,3 +395,49 @@ def test_editorial_footer_product_links_skip_the_retired_pricing_page():
         ("Enterprise", "/docs/enterprise/overview/"),
         ("App Management", "/hosting/"),
     )
+
+
+NODE = shutil.which("node")
+
+
+def _press(menu, key: str, open_: bool) -> dict[str, bool]:
+    """Run the mobile menu's compiled keydown handler against a fake menu.
+
+    Args:
+        menu: The rendered mobile menu.
+        key: The pressed key.
+        open_: Whether the menu is open when the key is pressed.
+
+    Returns:
+        Whether the menu is open afterwards and whether its toggle took focus.
+    """
+    assert NODE is not None
+    script = (
+        "let focused = false;"
+        f"const menu = {{open: {json.dumps(open_)}, "
+        "querySelector: (selector) => selector === 'summary' ? {focus: () => { focused = true; }} : null};"
+        f"({menu.custom_attrs['onKeyDown']!s})({{key: {json.dumps(key)}, currentTarget: menu}});"
+        "process.stdout.write(JSON.stringify({open: menu.open, focused}));"
+    )
+    return json.loads(
+        subprocess.run(
+            [NODE, "-e", script], capture_output=True, text=True, check=True
+        ).stdout
+    )
+
+
+@pytest.mark.skipif(NODE is None, reason="node is required to run the key handler")
+@pytest.mark.parametrize(
+    ("key", "open_", "expected"),
+    [
+        ("Escape", True, {"open": False, "focused": True}),
+        ("Escape", False, {"open": False, "focused": False}),
+        ("Enter", True, {"open": True, "focused": False}),
+    ],
+)
+def test_escape_closes_the_mobile_menu(navbar, key, open_, expected):
+    """Escape closes the open mobile menu and returns focus to its toggle.
+
+    Regression test: a native disclosure ignores Escape, so the menu stayed open.
+    """
+    assert _press(navbar.navbar_sidebar_button(), key, open_) == expected

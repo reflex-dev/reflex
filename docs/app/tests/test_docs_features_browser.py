@@ -479,3 +479,24 @@ def test_prop_type_chips_stay_inside_their_column(page: Page, width: int):
             .map(chip => chip.textContent);
     }""")
     assert overflow == []
+
+
+@pytest.mark.parametrize("focus", ["summary", "link"])
+def test_escape_closes_mobile_menu(page: Page, focus: str):
+    """Escape closes the open mobile menu from its toggle or a link inside it.
+
+    Focus returns to the toggle, since a focused link would otherwise be hidden.
+    """
+    page.set_viewport_size({"width": 390, "height": 900})
+    page.goto(f"{PREVIEW_URL}/docs/")
+    menu = page.locator("details.docs-navbar-menu")
+    toggle = menu.locator("summary")
+    toggle.click()
+    expect(menu).to_have_attribute("open", "")
+    if focus == "link":
+        menu.get_by_role("link", name="Framework").focus()
+    else:
+        toggle.focus()
+    page.keyboard.press("Escape")
+    expect(menu).not_to_have_attribute("open", "")
+    expect(toggle).to_be_focused()
