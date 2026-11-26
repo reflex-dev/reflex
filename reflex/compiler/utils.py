@@ -636,7 +636,8 @@ def _read_script_signatures(paths: Sequence[Path]) -> Signatures | None:
             return signatures
         else:
             detail = None
-    reason = (
+    _warn_untyped(
+        paths,
         _unreadable_output(_SIGNATURES_SCRIPT)
         if detail is None
         else (
@@ -644,14 +645,24 @@ def _read_script_signatures(paths: Sequence[Path]) -> Signatures | None:
             f"{get_web_dir() / Javascript.NODE_MODULES} so that the next run reinstalls "
             "typescript, or report the error at "
             f"https://github.com/reflex-dev/reflex/issues:\n{detail}"
-        )
-    )
-    console.warn(
-        "Reflex could not read the argument types of the JavaScript modules "
-        f"{', '.join(map(str, paths))}, so their type stubs accept any "
-        f"arguments; the app still runs. {reason}"
+        ),
     )
     return None
+
+
+def _warn_untyped(paths: Iterable[Path | str], reason: str) -> None:
+    """Warn that the types of JavaScript modules could not be read, and why.
+
+    Args:
+        paths: The modules.
+        reason: Why, and the fix.
+    """
+    console.warn(
+        "Reflex could not read the argument types of the JavaScript modules "
+        f"{', '.join(map(str, paths))}; the app still runs. Their type stubs are "
+        "left as they are, and a module without one gets a stub that accepts any "
+        f"arguments, until a compile reads them. {reason}"
+    )
 
 
 def _remove_orphan_stubs(modules: Iterable[str]) -> None:
@@ -747,16 +758,16 @@ def write_script_stubs(modules: Mapping[Path, _ScriptExports]) -> None:
     types were read from and the code that makes stubs, and the digest of the
     stub written. typescript only reads the types of a module whose stub is
     missing, changed since, as by restoring a committed one, or whose digest
-    changed, and
-    the stub is only rewritten when its text changes, so a committed stub
-    changes with its declarations alone. When the types cannot be read, the
-    stub takes any arguments, and when it cannot be written, which is warned
-    about, the file is left as it is; either way the next compile reads the
-    types again. A stub without Reflex's header, as one written by hand, is
-    left alone, and a stub Reflex wrote for a module the app no longer imports
-    is removed, or warned about if it cannot be. Each file is replaced whole:
-    a compile killed while writing one leaves the old file and the old
-    record, so the next compile reads the types again.
+    changed, and the stub is only rewritten when its text changes, so a
+    committed stub changes with its declarations alone. When the types cannot
+    be read, which is warned about, a stub already there is left as it is and
+    a missing one takes any arguments; when a stub cannot be written, which is
+    warned about, the file is left as it is; either way the next compile reads
+    the types again. A stub without Reflex's header, as one written by hand,
+    is left alone, and a stub Reflex wrote for a module the app no longer
+    imports is removed, or warned about if it cannot be. Each file is replaced whole: a compile killed while
+    writing one leaves the old file and the old record, so the next compile
+    reads the types again.
 
     Args:
         modules: What was read of each module, by the file Python imports, from
@@ -796,28 +807,39 @@ def write_script_stubs(modules: Mapping[Path, _ScriptExports]) -> None:
             return False
         return made == _stub_record(modules[path], made["files"], stub)
 
-    stale = [
-        path
+    # Whether each stale module has a stub.
+    stale = {
+        path: header is not None
         for path in modules
         if (header := _read_header(path.with_suffix(".pyi"))) is None
         # A stub without Reflex's header is the developer's own.
         or (_is_generated(header) and not current(path))
-    ]
+    }
     # Each module's types are read by the path the compile read it by, the
     # first of its files.
     source = {path: modules[path]["files"][0] for path in stale}
     signatures = (
         _read_script_signatures(list(map(Path, source.values()))) if stale else None
     )
-    for path in stale:
+    # The modules the script found no file for, as one deleted meanwhile.
+    missing: list[str] = []
+    for path, exists in stale.items():
         functions = modules[path]["functions"]
-        if signatures is None:
-            made = None
-            stub = _render_stub(path, functions, {})
-        else:
-            stub = _render_stub(path, functions, signatures["modules"][source[path]])
-            made = _stub_record(modules[path], signatures["files"][source[path]], stub)
+        if signatures is None or source[path] not in signatures["modules"]:
+            if signatures is not None:
+                missing.append(source[path])
+            # The next compile reads its types again. A stub already there
+            # keeps the types it has, rather than lose them to a failure that
+            # can pass, such as a timeout.
+            record[str(path)] = None
+            if not exists:
+                _write_stub(path, _render_stub(path, functions, {}))
+            continue
+        stub = _render_stub(path, functions, signatures["modules"][source[path]])
+        made = _stub_record(modules[path], signatures["files"][source[path]], stub)
         record[str(path)] = made if _write_stub(path, stub) else None
+    if missing:
+        _warn_untyped(missing, f"{_SIGNATURES_SCRIPT} found no such files.")
     write_file(record_file, json.dumps(record), atomic=True)
 
 

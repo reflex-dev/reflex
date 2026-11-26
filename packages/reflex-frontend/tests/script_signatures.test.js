@@ -224,3 +224,12 @@ test("a parameter whose type cannot be classified accepts any value", async () =
     spy.mockRestore();
   }
 });
+
+test("a module that is not there is left out, and the others are read", async () => {
+  // As a module deleted after the compile read it: TypeScript loads no file.
+  expect(await signatures(["deleted.ts", "script.js"])).toEqual({
+    format: 1,
+    modules: { "script.js": {} },
+    files: { "script.js": ["script.js"] },
+  });
+});

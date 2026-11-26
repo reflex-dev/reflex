@@ -2187,6 +2187,13 @@ def _print_signatures(modules: str, files: str = "[]", format_: str = "1") -> st
             1,
             _UNREADABLE_SIGNATURES,
         ),
+        # The output leaves the module out, as for one deleted since the
+        # compile read it.
+        (
+            "import json\nprint(json.dumps({'format': 1, 'modules': {}, 'files': {}}))\n",
+            1,
+            "script-signatures.js found no such files.",
+        ),
     ],
     ids=[
         "fails",
@@ -2197,6 +2204,7 @@ def _print_signatures(modules: str, files: str = "[]", format_: str = "1") -> st
         "files-not-strings",
         "no-rest",
         "nested-unknown-kind",
+        "module-left-out",
     ],
 )
 def test_write_script_stubs_warns_when_the_types_cannot_be_read(
@@ -2206,7 +2214,7 @@ def test_write_script_stubs_warns_when_the_types_cannot_be_read(
     timeout: float,
     reason: str,
 ):
-    """The stub accepts any arguments, the warning says why, and the next compile retries.
+    """A missing stub accepts any arguments, the warning says why, and the next compile retries.
 
     Args:
         stub_app: the module, and what was read of it.
@@ -2235,15 +2243,52 @@ def test_write_script_stubs_warns_when_the_types_cannot_be_read(
         ),
     )
     assert _write_stubs(modules) == [untyped]
-    # Read again, as the second warning shows, to the same stub.
+    # Read again, as the second warning shows, leaving the stub as it is.
     assert _write_stubs(modules) == []
+    assert json.loads((web_dir / "script_stubs.json").read_text()) == {str(party): None}
     command = [sys.executable, "script-signatures.js", str(party)]
     warning = (
         "Reflex could not read the argument types of the JavaScript modules "
-        f"{party}, so their type stubs accept any arguments; the app still runs. "
-        + reason.format(web_dir=web_dir, command=command)
+        f"{party}; the app still runs. Their type stubs are left as they are, and "
+        "a module without one gets a stub that accepts any arguments, until a "
+        "compile reads them. " + reason.format(web_dir=web_dir, command=command)
     )
     assert warnings == [warning, warning]
+
+
+def test_write_script_stubs_keeps_a_typed_stub_when_the_types_cannot_be_read(
+    stub_app: tuple[Path, dict[Path, Any]], monkeypatch: pytest.MonkeyPatch
+):
+    """A failure to read the types, such as a timeout, leaves a typed stub as it is.
+
+    It would otherwise turn a committed stub into one that accepts any
+    arguments, a change to the source tree that loses its checks. The record
+    is cleared, so the next compile reads the types again and writes the
+    stub of the module as it is then.
+
+    Args:
+        stub_app: the module, and what was read of it.
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    party, modules = stub_app
+    stub = party.with_suffix(".pyi")
+    web_dir = utils.get_web_dir()
+    monkeypatch.setattr(utils.console, "warn", lambda message: None)
+    signatures = _print_signatures(_GO_SIGNATURES, "[sys.argv[1]]")
+    _fake_signatures(signatures)
+    assert _write_stubs(modules) == [(str(stub), _PARTY_STUB)]
+    party.write_text(party.read_text().replace("{number}", "{string}"))
+    _fake_signatures("sys.exit(1)\n")
+    assert _write_stubs(modules) == []
+    assert (
+        stub.read_text(),
+        json.loads((web_dir / "script_stubs.json").read_text()),
+    ) == (
+        _PARTY_STUB,
+        {str(party): None},
+    )
+    _fake_signatures(signatures)
+    assert _write_stubs(modules) == [(str(stub), _PARTY_STR_STUB)]
 
 
 def test_parse_json_reads_the_signatures_the_real_script_prints():

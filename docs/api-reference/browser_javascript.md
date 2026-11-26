@@ -445,9 +445,11 @@ arguments: `def run(*args: Any)`.
 
 When the types cannot be read, the app still runs and Reflex warns
 `Reflex could not read the argument types of the JavaScript modules
-.../party.js, so their type stubs accept any arguments; the app still runs.`
-The stub takes any arguments until the types can be read, and Reflex tries
-again on every compile. The warning ends with one of these reasons:
+.../party.js; the app still runs.` A stub already there is left as it is, so a
+failure that passes, such as a timeout on a busy machine, neither changes your
+committed stubs nor loses their checks; a module without a stub gets one that
+takes any arguments. Reflex tries again on every compile. The warning ends with
+one of these reasons:
 
 - `script-signatures.js failed. If this repeats, delete .../.web/node_modules
   so that the next run reinstalls typescript, or report the error at
@@ -455,6 +457,11 @@ again on every compile. The warning ends with one of these reasons:
 - `.../.web/script-signatures.js printed output that this version of Reflex
   does not read, so it is likely left over from another version.` Delete the
   `.web` directory, and the next run writes it again.
+- `script-signatures.js found no such files.` The module was deleted or
+  renamed while the app compiled; the next compile reads the module as it is.
+
+A parameter whose type TypeScript cannot describe takes any value; the rest of
+the module is typed as usual.
 
 When a stub cannot be written, as in a read-only directory, the app still runs
 and Reflex warns `Reflex could not write the type stub .../party.pyi:

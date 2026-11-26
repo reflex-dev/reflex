@@ -21,7 +21,10 @@
  *     "modules": {"<module>": {"<export>": [{"parameters": [
  *       {"name": string, "type": type, "optional": boolean, "rest": boolean}
  *     ]}, ...]}},                one signature per overload; none if it has
- *                                no known call signature
+ *                                no known call signature. A module TypeScript
+ *                                finds no file for, as one deleted since the
+ *                                compile read it, is left out, here and in
+ *                                "files"
  *     "files": {"<module>": [file, ...]}
  *                                the files its types are read from: it, the
  *                                local files it reaches through imports,
@@ -250,9 +253,12 @@ const describeType = (parameter, location, optional, rest) => {
   return classify(type);
 };
 
+// The modules TypeScript found a file for.
+const found = files.filter((file) => program.getSourceFile(file));
+
 /** @type {Record<string, Record<string, any[]>>} */
 const modules = {};
-for (const file of files) {
+for (const file of found) {
   const source = program.getSourceFile(file);
   const moduleSymbol = checker.getSymbolAtLocation(source);
   modules[file] = Object.fromEntries(
@@ -322,5 +328,5 @@ const reach = (file) => {
   return [...listed];
 };
 
-const read = Object.fromEntries(files.map((file) => [file, reach(file)]));
+const read = Object.fromEntries(found.map((file) => [file, reach(file)]));
 process.stdout.write(JSON.stringify({ format: 1, modules, files: read }));
