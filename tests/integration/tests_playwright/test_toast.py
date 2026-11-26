@@ -1,4 +1,4 @@
-"""Integration tests for rx.toast action and cancel buttons.
+"""Integration tests for rx.toast action buttons and custom icons.
 
 Regression coverage for the frontend ``ReferenceError: queueEvents is not
 defined`` that fired when clicking a toast action/cancel button whose
@@ -14,8 +14,11 @@ from reflex.testing import AppHarness
 
 
 def ToastApp():
-    """App firing toasts with action/cancel buttons from frontend and backend."""
+    """App firing toasts with action buttons and icons from frontend and backend."""
     import reflex as rx
+    from reflex.components.dynamic import bundle_library
+
+    bundle_library(rx.icon("check"))
 
     class ToastActionState(rx.State):
         undone: int = 0
@@ -80,6 +83,32 @@ def ToastApp():
             yield rx.toast(
                 "Backend toast",
                 action={"label": "BackendUndo", "on_click": ToastActionState.undo},
+                icon=rx.icon("check", id="yielded-toast-icon"),
+                duration=30000,
+            )
+
+        @rx.event
+        def dismiss_icon_toast(self, toast: dict):
+            """Record a dismissal when the payload contains only data.
+
+            Args:
+                toast: The dismissed toast's serialized options.
+            """
+            if "icon" not in toast:
+                self.dismissed += 1
+
+        @rx.event
+        def backend_icon_toast(self):
+            """Return a toast with an icon created on the backend.
+
+            Returns:
+                A toast with a custom success icon.
+            """
+            return rx.toast.success(
+                "Saved on the backend",
+                icon=rx.icon("check", id="backend-toast-icon"),
+                close_button=True,
+                on_dismiss=ToastActionState.dismiss_icon_toast,
                 duration=30000,
             )
 
@@ -108,6 +137,20 @@ def ToastApp():
                 "Backend Toast",
                 on_click=ToastActionState.backend_toast,
                 id="show-backend-toast",
+            ),
+            rx.button(
+                "Frontend Toast With Icon",
+                on_click=rx.toast.success(
+                    "Saved on the frontend",
+                    icon=rx.icon("circle_check", id="frontend-toast-icon"),
+                    close_button=True,
+                    on_dismiss=ToastActionState.dismiss_icon_toast,
+                    duration=30000,
+                ),
+            ),
+            rx.button(
+                "Backend Toast With Icon",
+                on_click=ToastActionState.backend_icon_toast,
             ),
             rx.text(ToastActionState.undone, id="undone"),
             rx.text(ToastActionState.dismissed, id="dismissed"),
@@ -229,6 +272,7 @@ def test_toast_action_buttons_queue_events(toast_app: AppHarness, page: Page):
     # Toast yielded from a backend event handler: action button.
     page.locator("#show-backend-toast").click()
     expect(toast).to_be_visible()
+    expect(toast.locator("svg#yielded-toast-icon")).to_be_visible()
     toast.get_by_role("button", name="BackendUndo").click()
     expect(page.locator("#undone")).to_have_text("2")
 
@@ -301,6 +345,8 @@ def test_upload_callbacks(
     expect(page.locator("#upload-count")).to_have_text("1")
     expect(page.locator("#uploaded")).to_have_text('["current.txt:current"]')
 
+    if action is not None:
+        expect(page.get_by_role("button", name=action, exact=True)).to_have_count(0)
     page.locator("#clear-selection").click()
     expect(page.locator("#selected-upload")).to_have_text("[]")
     page.locator(f"#{trigger}").click()
@@ -309,3 +355,30 @@ def test_upload_callbacks(
     expect(page.locator("#upload-count")).to_have_text("2")
     expect(page.locator("#uploaded")).to_have_text("[]")
     assert not page_errors, f"Frontend raised unexpected errors: {page_errors}"
+
+
+@pytest.mark.parametrize("origin", ["frontend", "backend"])
+def test_toast_with_component_icon(
+    toast_app: AppHarness, page: Page, origin: str
+) -> None:
+    """A toast shows its text and component icon.
+
+    Args:
+        toast_app: AppHarness running the test app.
+        page: Playwright page.
+        origin: Whether the toast runs on the frontend or backend.
+    """
+    assert toast_app.frontend_url is not None
+    page.goto(toast_app.frontend_url)
+    expect(page.locator("#token")).not_to_have_value("")
+
+    page.get_by_role(
+        "button", name=f"{origin.title()} Toast With Icon", exact=True
+    ).click()
+    toast = page.locator("[data-sonner-toast]").filter(
+        has=page.get_by_text(f"Saved on the {origin}", exact=True)
+    )
+    expect(toast).to_be_visible()
+    expect(toast.locator(f"svg#{origin}-toast-icon")).to_be_visible()
+    toast.get_by_role("button", name="Close toast").click()
+    expect(page.locator("#dismissed")).to_have_text("1")
