@@ -163,6 +163,11 @@ class PackageJson(SimpleNamespace):
         "vite": "8.3.4",
     }
 
+    # Installed when the app's frontend_css_minifier is "esbuild".
+    ESBUILD_CSS_MINIFIER_DEV_DEPENDENCIES = {
+        "esbuild": "0.28.2",
+    }
+
     REACT_COMPILER_DEV_DEPENDENCIES = {
         "@babel/core": "7.29.7",
         "babel-plugin-react-compiler": "0.0.0-experimental-a1856f3-20260507",

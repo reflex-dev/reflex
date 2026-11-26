@@ -772,6 +772,7 @@ def vite_config_template(
     prod_react: bool = False,
     warmup_routes: bool = False,
     react_compiler: bool = False,
+    css_minifier: Literal["lightningcss", "esbuild"] = "lightningcss",
 ):
     """Template for vite.config.js.
 
@@ -788,10 +789,14 @@ def vite_config_template(
         warmup_routes: Pre-transform every route module when the dev server
             starts, so the first visit to a page does not wait on Vite.
         react_compiler: Enable React Compiler for generated components.
+        css_minifier: The minifier for the build's CSS when minifying.
 
     Returns:
         Rendered vite.config.js content as string.
     """
+    css_minify = (
+        "false" if not minify else '"esbuild"' if css_minifier == "esbuild" else "true"
+    )
     if allowed_hosts is True:
         allowed_hosts_line = "\n    allowedHosts: true,"
     elif isinstance(allowed_hosts, list) and allowed_hosts:
@@ -967,7 +972,7 @@ export default defineConfig((config) => ({{
   ].concat({"[fullReload()]" if force_full_reload else "[]"}),
   build: {{
     minify: {"true" if minify else "false"},
-    cssMinify: {"true" if minify else "false"},
+    cssMinify: {css_minify},
     sourcemap: {"true" if sourcemap is True else "false" if sourcemap is False else repr(sourcemap)},
     rollupOptions: {{
       onwarn(warning, warn) {{
