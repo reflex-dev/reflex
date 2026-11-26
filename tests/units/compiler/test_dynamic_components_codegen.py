@@ -547,16 +547,34 @@ def test_dynamic_component_codegen_wires_state_var_counter_events() -> None:
     assert 'jsx(RadixThemesText, ({as:"p",size:"9"}), 0)' in code
 
 
-def test_dynamic_component_codegen_writes_out_hoisted_literals(
+def test_dynamic_component_codegen_declares_hoisted_literals(
     hoisted_vars: dict[str, LiteralVar],
 ) -> None:
     """The browser evaluates a dynamic component outside any module.
 
-    So the component gets a hoisted literal written out in full, exactly like the
-    literal, instead of an import it could not resolve.
+    So the component declares the hoisted literals it reads, with what they
+    import, instead of importing them from modules it could not resolve.
     """
-    literal = Var.create(["a", "b"])
+    texts = Var.create(["a", "b"]).hoist()
+    same = Var.create({"same": Var.create([1]).deep_equals([1])}).hoist()
+    a, b = str(texts), str(same)
 
-    assert serializers.serialize(
-        rx.el.span(literal.hoist().length())
-    ) == serializers.serialize(rx.el.span(literal.length()))
+    code = serializers.serialize(rx.el.span(a, texts.length(), same["same"].to(str)))
+
+    assert code == (
+        "//__reflex_evaluate:[]\n"
+        'import isEqual from "https://cdn.jsdelivr.net/npm/lodash.isequal@4.5.0/+esm"\n'
+        "const React = window.__reflex.react;\n"
+        "const {jsx} = window.__reflex['@emotion/react']\n"
+        "const {Fragment,useEffect} = window.__reflex['react']\n"
+        "const {pyOr} = window.__reflex['$/utils/state']\n"
+        f'const {a} = ["a", "b"];\n'
+        f'const {b} = ({{ ["same"] : isEqual([1], [1]) }});\n'
+        "\n"
+        "export default function MySSRComponent () {\n"
+        "  \n"
+        "  return (\n"
+        f'    (jsx("span", ({{}}), "{a}", {a}.length, {b}?.["same"]))\n'
+        "  )\n"
+        "}"
+    )

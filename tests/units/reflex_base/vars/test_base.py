@@ -3155,14 +3155,19 @@ def test_hoist_rejects_a_literal_reading_other_vars(
     assert hoisted_vars == {}
 
 
-def test_decode_writes_out_hoisted_literals(
-    hoisted_vars: dict[str, LiteralVar],
-) -> None:
-    """Code the backend sends runs outside any module, so it gets the values."""
+def test_decode_binds_hoisted_literals(hoisted_vars: dict[str, LiteralVar]) -> None:
+    """Code the backend sends runs outside any module, so it binds the values."""
     inner = Var.create(["a", "b"]).hoist()
     outer = Var.create({"inner": inner}).hoist()
+    a, b = str(inner), str(outer)
 
     assert inner._decode() == ["a", "b"]
     assert outer._decode() == {"inner": ["a", "b"]}
-    assert inner.length()._decode() == '["a", "b"].length'
-    assert outer["inner"]._decode() == '({ ["inner"] : ["a", "b"] })?.["inner"]'
+    assert inner.length()._decode() == f'(({a}) => ({a}.length))(["a", "b"])'
+    assert outer["inner"]._decode() == (
+        f'(({a}) => ((({b}) => ({b}?.["inner"]))(({{ ["inner"] : {a} }}))))(["a", "b"])'
+    )
+    # A string holding the name is no reference to the literal.
+    assert (Var.create(a) + inner[0])._decode() == (
+        f'(({a}) => (("{a}"+{a}?.at?.(0))))(["a", "b"])'
+    )

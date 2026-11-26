@@ -560,7 +560,7 @@ def format_queue_events(
     else:
         arg_def = "()"
 
-    payloads = []
+    all_specs: list[EventSpec] = []
     if not is_non_string_sequence(events):
         events = [events]
 
@@ -574,12 +574,33 @@ def format_queue_events(
             if isinstance(specs, Var):
                 msg = f"Invalid event spec: {specs}. Expected a list of EventSpecs."
                 raise ValueError(msg)
-        payloads.extend(format_event(s) for s in specs)
+        all_specs.extend(specs)
 
+    payloads = ",".join(format_event(s) for s in all_specs)
     return Var(
-        f"{arg_def} => {{{constants.CompileVars.ADD_EVENTS}([{','.join(payloads)}])}}",
-        _var_data=VarData(imports=constants.Imports.EVENTS),
+        f"{arg_def} => {{{constants.CompileVars.ADD_EVENTS}([{payloads}])}}",
+        _var_data=VarData.merge(
+            VarData(imports=constants.Imports.EVENTS),
+            *(value._get_all_var_data() for s in all_specs for _, value in s.args),
+        ),
     ).to(FunctionVar, EventChain)
+
+
+def _format_script_callback(callback: EventType[Any] | None) -> str | None:
+    """Format the callback of a script as code the browser evaluates later.
+
+    Args:
+        callback: The events that receive the result of the script.
+
+    Returns:
+        The code queueing the callback's events, or None without a callback.
+    """
+    from reflex_base.vars.base import _bind_hoisted_vars
+
+    if callback is None:
+        return None
+    queue_events = format_queue_events(callback, args_spec=lambda result: [result])
+    return _bind_hoisted_vars(str(queue_events), queue_events._get_all_var_data())
 
 
 def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:

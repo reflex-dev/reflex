@@ -14,8 +14,9 @@ from reflex_base.utils.serializers import serializer
 from reflex_base.vars import Var, get_unique_variable_name
 from reflex_base.vars.base import (
     _HOISTED_LIBRARY_PREFIX,
+    _HOISTED_VARS,
     VarData,
-    _inline_hoisted_vars,
+    _hoisted_var_names,
     transform,
 )
 
@@ -204,11 +205,20 @@ def load_dynamic_serializer():
 
         component_imports = component._get_all_imports()
         compiler._apply_common_imports(component_imports)
-        # The browser evaluates the component outside any module, so hoisted
-        # literals are written out in full instead of imported.
-        for lib in list(component_imports):
-            if lib.startswith(_HOISTED_LIBRARY_PREFIX):
-                del component_imports[lib]
+        # The browser evaluates the component outside any module, so it declares
+        # the hoisted literals it reads itself, with what they import.
+        hoisted_names = _hoisted_var_names(list(component_imports))
+        for name in hoisted_names:
+            component_imports.pop(_HOISTED_LIBRARY_PREFIX + name, None)
+            if var_data := _HOISTED_VARS[name]._get_all_var_data():
+                component_imports = utils.merge_imports(
+                    component_imports,
+                    {
+                        lib: list(fields)
+                        for lib, fields in var_data.imports
+                        if not lib.startswith(_HOISTED_LIBRARY_PREFIX)
+                    },
+                )
 
         imports = {}
         for lib, names in component_imports.items():
@@ -261,8 +271,9 @@ def load_dynamic_serializer():
                     f"const {{{','.join(named_imports)}}} = {window_library}"
                 )
         bundled_declarations.extend(
-            _inline_hoisted_vars(code) for code in rendered_components
+            f"const {name} = {_HOISTED_VARS[name]!s};" for name in hoisted_names
         )
+        bundled_declarations.extend(rendered_components)
 
         module_code_lines = templates.dynamic_components_module_template(
             imports=module_imports,

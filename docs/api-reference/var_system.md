@@ -82,8 +82,8 @@ Equal literals hoist to the same module.
 Only constant literals can be hoisted: a literal holding a state var or another value only known at runtime raises an error, because the module cannot reach it.
 A hoisted literal may hold other hoisted literals.
 
-The browser evaluates code the backend sends at runtime outside any module: `rx.call_script` and `rx.call_function` returned from an event handler, the callbacks of both, and dynamic components.
-There, hoisted literals are written out in full.
+The browser evaluates code the backend sends at runtime outside any module: `rx.call_script` and `rx.call_function` returned from an event handler, the callbacks of scripts, and dynamic components.
+That code carries the hoisted literals it reads along with it instead of importing them.
 
 Every reference shares the same object, so JavaScript passed to the frontend must not mutate a hoisted value.
 

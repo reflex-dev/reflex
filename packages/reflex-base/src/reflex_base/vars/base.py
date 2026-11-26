@@ -1600,7 +1600,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
 
         Note that Var with state set cannot be decoded python-side and will be
         returned as full_name. A hoisted literal decodes to its value, and code
-        referencing one gets it written out in full.
+        reading one gets it bound to that value.
 
         Returns:
             The decoded value or the Var name.
@@ -1609,7 +1609,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             return self._var_value
         if (hoisted := _HOISTED_VARS.get(self._js_expr)) is not None:
             return _decode_hoisted(hoisted._var_value)
-        code = _inline_hoisted_vars(str(self))
+        code = _bind_hoisted_vars(str(self), self._get_all_var_data())
         try:
             return json.loads(code)
         except ValueError:
@@ -2094,8 +2094,7 @@ class LiteralVar(Var[VAR_TYPE]):
         renders as a name imported from a module holding the value once, which
         the bundler shares between every page and component using it. Equal
         literals hoist to the same module. Code the backend sends to the browser
-        at runtime cannot import the module, so the value is written out in full
-        there.
+        at runtime cannot import the module, so the value is bound there.
 
         Returns:
             A var of the same type that renders as the name of the hoisted value.
@@ -2123,33 +2122,54 @@ class LiteralVar(Var[VAR_TYPE]):
 # The import specifier of a hoisted literal's module, without its name.
 _HOISTED_LIBRARY_PREFIX = f"$/{constants.Dirs.HOISTED_PATH}/"
 
-# The name a hoisted literal's module exports it as.
-_HOISTED_NAME = re.compile(r"\bhoisted_[0-9a-f]{16}\b")
-
 # Every hoisted literal by the name its module exports, filled by LiteralVar.hoist.
 _HOISTED_VARS: dict[str, LiteralVar] = {}
 
 
-def _inline_hoisted_vars(code: str) -> str:
-    """Write out in full the hoisted literals that code references.
-
-    The browser evaluates code the backend sends at runtime outside any module,
-    where the imports bringing hoisted literals into scope are missing.
+def _hoisted_var_names(libraries: Iterable[str]) -> list[str]:
+    """Name the hoisted literals that code importing from ``libraries`` reads.
 
     Args:
-        code: The javascript code.
+        libraries: The libraries the code imports from.
 
     Returns:
-        The code with each hoisted literal in place of its name.
+        The names of the hoisted literals the code imports and of those they
+        hold, each after the literals it holds.
     """
-    return _HOISTED_NAME.sub(
-        lambda match: (
-            _inline_hoisted_vars(str(literal))
-            if (literal := _HOISTED_VARS.get(match[0])) is not None
-            else match[0]
-        ),
-        code,
-    )
+    names: dict[str, None] = {}
+
+    def visit(libraries: Iterable[str]) -> None:
+        for library in libraries:
+            name = library.removeprefix(_HOISTED_LIBRARY_PREFIX)
+            if name == library or name in names or name not in _HOISTED_VARS:
+                continue
+            if var_data := _HOISTED_VARS[name]._get_all_var_data():
+                visit(lib for lib, _ in var_data.imports)
+            names[name] = None
+
+    visit(libraries)
+    return list(names)
+
+
+def _bind_hoisted_vars(code: str, var_data: VarData | None) -> str:
+    """Bind the hoisted literals an expression reads to their values around it.
+
+    The browser evaluates code the backend sends at runtime outside any module,
+    where the imports of hoisted literals are missing. Each literal becomes the
+    parameter of an arrow function called with its value, the literals it holds
+    bound around it.
+
+    Args:
+        code: The javascript expression.
+        var_data: The var data of the expression, holding its imports.
+
+    Returns:
+        An expression evaluating to the same value without the imports.
+    """
+    names = _hoisted_var_names(lib for lib, _ in var_data.imports) if var_data else []
+    for name in reversed(names):
+        code = f"(({name}) => ({code}))({_HOISTED_VARS[name]!s})"
+    return code
 
 
 def _decode_hoisted(value: Any) -> Any:

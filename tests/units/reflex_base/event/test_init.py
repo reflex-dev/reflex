@@ -291,22 +291,31 @@ def test_a_callable_with_a_required_keyword_only_parameter_is_rejected() -> None
     )
 
 
-@pytest.mark.parametrize("script", [rx.call_script, rx.call_function])
-def test_scripts_write_out_hoisted_literals(
-    hoisted_vars: dict[str, LiteralVar], script: Callable[..., EventSpec]
+@pytest.mark.parametrize(
+    ("script", "code_arg"),
+    [(rx.call_script, "javascript_code"), (rx.call_function, "function")],
+)
+def test_scripts_bind_hoisted_literals(
+    hoisted_vars: dict[str, LiteralVar],
+    script: Callable[..., EventSpec],
+    code_arg: str,
 ) -> None:
     """The browser runs a script and its callback outside any module.
 
-    So both get a hoisted literal written out in full, exactly like the literal.
+    So both bind the hoisted literals they read to their values.
     """
-    literal = Var.create(["a", "b"])
-    hoisted = literal.hoist()
+    hoisted = Var.create(["a", "b"]).hoist()
+    name = str(hoisted)
 
-    assert (
-        script(
-            hoisted.length(), callback=lambda result: rx.console_log(hoisted[0])
-        )._to_event()
-        == script(
-            literal.length(), callback=lambda result: rx.console_log(literal[0])
-        )._to_event()
-    )
+    event = script(
+        hoisted.length(), callback=lambda result: rx.console_log(hoisted[0])
+    )._to_event()
+
+    assert event.payload == {
+        code_arg: f'(({name}) => ({name}.length))(["a", "b"])',
+        "callback": (
+            f"(({name}) => ((_result) => {{addEvents([ReflexEvent("
+            f'"_call_function", {{function:(() => (console?.["log"]({name}?.at?.(0)))),'
+            f'callback:null}})])}}))(["a", "b"])'
+        ),
+    }
