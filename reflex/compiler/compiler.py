@@ -1285,6 +1285,94 @@ def _read_stateful_pages_marker() -> list[str] | None:
         raise
 
 
+def _memo_symbol_and_imports(
+    memo: MemoDefinition,
+) -> tuple[str, ParsedImportDict]:
+    """Get the symbol modules import a memo by and the imports of its body.
+
+    Args:
+        memo: The memo.
+
+    Returns:
+        The symbol and the body's imports.
+    """
+    if isinstance(memo, MemoComponentDefinition):
+        name, imports = memo.export_name, memo.component._get_all_imports()
+    elif isinstance(memo, MemoFunctionDefinition):
+        var_data = memo.function._get_all_var_data()
+        name = memo.python_name
+        imports = (
+            {lib: list(fields) for lib, fields in var_data.imports} if var_data else {}
+        )
+    else:
+        name, imports = memo.python_name, {}
+    return memo_paths.library_and_symbol(memo.source_module, name)[1], imports
+
+
+def _backend_imports(
+    compile_ctx: CompileContext,
+    app_root_imports: ParsedImportDict,
+    document_imports: ParsedImportDict,
+    memos: Iterable[MemoDefinition],
+    hydrate_fallback: MemoDefinition | None = None,
+) -> list[str]:
+    """List the compiled modules that import the backend transport.
+
+    Memos register for the whole process, so only those the pages, the app
+    root, the document head and the hydrate fallback import, directly or
+    through another memo, are checked.
+
+    Args:
+        compile_ctx: The compile context holding the compiled pages.
+        app_root_imports: The imports of the app root.
+        document_imports: The imports of the document head components.
+        memos: Every memo the compile emits.
+        hydrate_fallback: The memo the app root re-exports as its hydrate
+            fallback, which no import names.
+
+    Returns:
+        One line per module, naming it and what it imports from the transport.
+    """
+    transport = f"$/{constants.Dirs.TRANSPORT_PATH}"
+    modules = [
+        (
+            f"page {route!r}",
+            page_ctx.frontend_imports or page_ctx.merged_imports(collapse=True),
+        )
+        for route, page_ctx in compile_ctx.compiled_pages.items()
+    ]
+    modules.extend((
+        ("the app root", app_root_imports),
+        ("the document head", document_imports),
+    ))
+    unreached = {id(memo): memo for memo in memos}
+    if hydrate_fallback is not None:
+        unreached.pop(id(hydrate_fallback), None)
+        modules.append((
+            "the hydrate fallback",
+            _memo_symbol_and_imports(hydrate_fallback)[1],
+        ))
+    checked = 0
+    while checked < len(modules):
+        imported = {
+            var.tag
+            for _, imports in modules[checked:]
+            for fields in imports.values()
+            for var in fields
+        }
+        checked = len(modules)
+        for key, memo in list(unreached.items()):
+            symbol, imports = _memo_symbol_and_imports(memo)
+            if symbol in imported:
+                del unreached[key]
+                modules.append((f"memo {symbol!r}", imports))
+    return [
+        f"{module}: {', '.join(sorted({var.tag for var in imports[transport] if var.tag}))}"
+        for module, imports in modules
+        if transport in imports
+    ]
+
+
 def compile_app(
     app: App,
     *,
@@ -1473,10 +1561,12 @@ def compile_app(
 
     app_wrappers = _resolve_app_wrap_components(app, compile_ctx.app_wrap_components)
     app_root = _memoize_stateful_app_wraps(app._app_root(app_wrappers), compile_ctx)
-    all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
+    app_root_imports = app_root._get_all_imports()
+    all_imports = utils.merge_imports(all_imports, app_root_imports)
 
     hydrate_fallback = app._resolve_hydrate_fallback()
     hydrate_fallback_export = None
+    hydrate_fallback_definition = None
     if hydrate_fallback is not None:
         hydrate_fallback._add_style_recursive(app.style)
         # Compile the fallback through the memo pipeline so it lands in its own
@@ -1504,6 +1594,30 @@ def compile_app(
     )
     compile_results.extend(memo_component_files)
     all_imports = utils.merge_imports(all_imports, memo_components_imports)
+
+    # Without state nothing connects, so code that needs the backend would
+    # fail in the browser; utils/transport.js is where all of it lives.
+    if app._state is None and (
+        backend_imports := _backend_imports(
+            compile_ctx,
+            app_root_imports,
+            utils.merge_imports(
+                *(component._get_all_imports() for component in app.head_components)
+            ),
+            (*memos, *compile_ctx.auto_memo_components.values()),
+            hydrate_fallback_definition,
+        )
+    ):
+        progress.stop()
+        msg = (
+            "These modules use the backend, which an app with state disabled "
+            "(`rx.App(enable_state=False)`) does not have:\n  "
+            + "\n  ".join(backend_imports)
+            + f"\nThey import these names from $/{constants.Dirs.TRANSPORT_PATH}, "
+            "for example through `rx.get_upload_url`. Remove `enable_state=False` "
+            "or the components and vars that use the backend."
+        )
+        raise ReflexRuntimeError(msg)
     progress.advance(task)
 
     compile_results.append(

@@ -1,4 +1,4 @@
-"""Regression tests for the state.js frontend template."""
+"""Regression tests for the state.js, runtime.js and transport.js frontend templates."""
 
 import re
 import shutil
@@ -9,6 +9,8 @@ import pytest
 from reflex_base.constants import Templates
 
 STATE_JS_TEMPLATE = Templates.Dirs.WEB_TEMPLATE / "utils" / "state.js"
+RUNTIME_JS_TEMPLATE = Templates.Dirs.WEB_TEMPLATE / "utils" / "runtime.js"
+TRANSPORT_JS_TEMPLATE = Templates.Dirs.WEB_TEMPLATE / "utils" / "transport.js"
 
 ADD_EVENTS_ALIAS = "const addEvents = (...args) => eventLoop.addEvents(...args);"
 
@@ -56,7 +58,7 @@ def test_socket_startup_lifecycle() -> None:
     assert result.returncode == 0, result.stdout + result.stderr
 
 
-def test_state_js_does_not_register_deprecated_unload_listener() -> None:
+def test_transport_js_does_not_register_deprecated_unload_listener() -> None:
     """The template must not register the deprecated `unload` event listener.
 
     Regression for https://github.com/reflex-dev/reflex/issues/6195: Chrome
@@ -65,30 +67,30 @@ def test_state_js_does_not_register_deprecated_unload_listener() -> None:
     (tab close, navigation, bfcache), so the deprecated listener must not be
     re-introduced.
     """
-    content = STATE_JS_TEMPLATE.read_text()
+    content = TRANSPORT_JS_TEMPLATE.read_text()
 
     assert 'addEventListener("unload"' not in content, (
-        "state.js registers a deprecated `unload` listener; use `pagehide` instead."
+        "transport.js registers a deprecated `unload` listener; use `pagehide` instead."
     )
     assert 'removeEventListener("unload"' not in content, (
-        "state.js still removes a `unload` listener that should no longer be registered."
+        "transport.js still removes a `unload` listener that should no longer be registered."
     )
 
 
-def test_state_js_still_handles_page_lifecycle_disconnect() -> None:
+def test_transport_js_still_handles_page_lifecycle_disconnect() -> None:
     """The template must still disconnect on page lifecycle events.
 
     Replacing the deprecated `unload` listener with `pagehide` is the
     recommended Web Page Lifecycle pattern; verify the replacement listeners
     remain wired so the socket is closed when the user navigates away.
     """
-    content = STATE_JS_TEMPLATE.read_text()
+    content = TRANSPORT_JS_TEMPLATE.read_text()
 
     assert 'addEventListener("pagehide"' in content, (
-        "state.js should register a `pagehide` listener to disconnect the socket."
+        "transport.js should register a `pagehide` listener to disconnect the socket."
     )
     assert 'addEventListener("beforeunload"' in content, (
-        "state.js should keep its `beforeunload` listener as a disconnect fallback."
+        "transport.js should keep its `beforeunload` listener as a disconnect fallback."
     )
 
 
@@ -100,7 +102,7 @@ def test_every_user_code_eval_can_reach_add_events() -> None:
     `_call_function` returns -- has to declare it first. The dispatch itself is
     covered by `packages/reflex-frontend/tests/run_script.test.js`.
     """
-    content = STATE_JS_TEMPLATE.read_text()
+    content = RUNTIME_JS_TEMPLATE.read_text()
 
     sites = list(USER_CODE_RUNS.finditer(content))
     assert [m.group(1) for m in sites] == ["callback", "javascript_code", "function"]
@@ -118,7 +120,7 @@ def test_every_user_code_eval_can_reach_add_events() -> None:
 @pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
 def test_get_ref_value_preserves_empty_and_unset_controls() -> None:
     """Form fields retain falsy values and serialize unset refs as null."""
-    content = STATE_JS_TEMPLATE.read_text()
+    content = RUNTIME_JS_TEMPLATE.read_text()
     helper = content[
         content.index("export const getRefValue =") : content.index(
             "export const getRefValues ="
@@ -155,7 +157,7 @@ assert.equal(getRefValue({current: {type: 'checkbox', checked: false}}), false);
 @pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
 def test_merge_slot_props_handles_conditional_event_handlers() -> None:
     """Falsy handlers, direct object merges and DOM-ref routing behave per contract."""
-    content = STATE_JS_TEMPLATE.read_text()
+    content = RUNTIME_JS_TEMPLATE.read_text()
     helpers = content[
         content.index("export const mergeRefs =") : content.index(
             "export const getRefValue ="
@@ -230,7 +232,7 @@ assert.ok(!('ref' in mergeSlotProps({ref: null}, {inputRef: ownRef}, 'inputRef')
 @pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
 def test_form_data_args_are_wrapped_before_emit() -> None:
     """Form data reads as a plain object but is sent as its ordered entries."""
-    content = STATE_JS_TEMPLATE.read_text()
+    content = RUNTIME_JS_TEMPLATE.read_text()
     start = content.index("const FORM_DATA_ENTRIES_KEY =")
     end = (
         content.index("\n};\n", content.index("export const encodeFormDataArgs =")) + 4
@@ -309,7 +311,16 @@ assert.deepEqual(
 
 def test_state_js_keeps_ref_value_exports_for_older_form_components() -> None:
     """Published reflex-components-core forms import these helpers from state.js."""
-    content = STATE_JS_TEMPLATE.read_text()
+    exports = [
+        line
+        for line in STATE_JS_TEMPLATE.read_text().splitlines()
+        if line.startswith("export ")
+    ]
+    assert exports == [
+        'export * from "$/utils/runtime";',
+        'export * from "$/utils/transport";',
+    ]
+    content = RUNTIME_JS_TEMPLATE.read_text()
     assert "export const getRefValue =" in content
     assert "export const getRefValues =" in content
 
@@ -317,7 +328,7 @@ def test_state_js_keeps_ref_value_exports_for_older_form_components() -> None:
 @pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
 def test_apply_delta_shares_unchanged_values() -> None:
     """Deltas keep the identity of unchanged plain objects and arrays."""
-    content = STATE_JS_TEMPLATE.read_text()
+    content = TRANSPORT_JS_TEMPLATE.read_text()
     helpers = content[
         content.index("const isPlainObject =") : content.index(
             "export const evalReactComponent ="

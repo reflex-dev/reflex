@@ -3266,10 +3266,10 @@ def test_passthrough_memo_forwards_ref_and_props_to_root() -> None:
     from reflex_base.constants import Templates
     from reflex_base.constants.installer import PackageJson
 
-    state_js_text = (Templates.Dirs.WEB_TEMPLATE / "utils" / "state.js").read_text()
+    state_js_text = (Templates.Dirs.WEB_TEMPLATE / "utils" / "runtime.js").read_text()
     assert "export const mergeSlotProps" in state_js_text
     assert "export const mergeRefs" in state_js_text
-    # state.js statically imports mergician, so it must be a base dependency.
+    # runtime.js statically imports mergician, so it must be a base dependency.
     assert 'from "mergician"' in state_js_text
     assert "mergician" in PackageJson.DEPENDENCIES
     # The page-side call site is unchanged; injections only arrive at runtime.

@@ -4,6 +4,15 @@ The javascript a Reflex app runs on: state sync over the websocket, the event
 loop, client state, the python-semantics helpers compiled code calls, and the
 Vite plugins of the build.
 
+Compiled code imports the runtime from `utils/state.js`, which re-exports two
+modules. `utils/runtime.js` holds what every app needs: the helpers, events,
+and the events the browser applies itself. `utils/transport.js` holds the
+connection to the backend (the socket, hydration, deltas, synced browser
+storage, uploads, cookies). Only an app with state calls into the transport:
+the context module of an app compiled with `rx.App(enable_state=False)` runs
+the local event loop of `utils/runtime.js` instead, so its build leaves the
+transport and socket.io out.
+
 ## How it reaches an app
 
 This package is not published to npm. When the `reflex-base` wheel is built, its
@@ -45,31 +54,36 @@ so there is still no compile step between this directory and an app.
 Several of the bugs found in this code came from state a function reads or writes
 without it appearing in its arguments. What there is, and where it is pinned:
 
-- **Module-level state in `utils/state.js`**: the event queue, the session
+- **Module-level state in `utils/transport.js`**: the event queue, the session
   token, the socket warmed up before React mounts, the record of sent
   localStorage values. Every mounted event loop and every drain shares them.
   A test that needs a clean copy reloads the module (`vi.resetModules()`, as
   `tests/state_connection.test.js` does). Code that awaits must not assume the
   queue or the socket is as it left them.
-- **Work done on import**: `utils/state.js` creates the cookie reader, always;
-  publishes the client state store on `refs`, when there is a `document`; and
-  starts a socket transport, when there is a `window`. A production build
-  evaluates every module in node to prerender pages, so anything added here has
-  to load without either. `tests/public_api.test.js` imports each module in
-  node to keep it that way.
+- **Work done on import**: `utils/runtime.js` publishes the client state store
+  on `refs`, when there is a `document`. `utils/transport.js` does nothing on
+  import: the vite config tells the build so, which is what lets an app without
+  state drop it although `utils/state.js` re-exports it. The context module of
+  an app with state starts the socket transport (`warmUpTransport`), when
+  there is a `window`. A production build evaluates every module in node to
+  prerender pages, so anything added here has to load without either.
+  `tests/public_api.test.js` imports each module in node to keep it that way.
 - **Script scope**: event code sent by the backend (`rx.call_script`, event
-  callbacks) runs through `runScript` in `utils/state.js`, which compiles it
-  with the Function constructor and passes in every export of that module, the
-  late-bound `addEvents`, the `socket`, `navigate` and `params` of the event
-  being applied, and the session `token`. A direct `eval` would see every
-  module local, but it stops the minifier from mangling the chunk that holds
-  it. So a script sees those names and the globals, and nothing else. Renaming
-  an export changes what compiled callbacks can call.
+  callbacks) runs through `runScript` in `utils/transport.js`, which compiles
+  it with the Function constructor and passes in every export of
+  `utils/state.js`, the late-bound `addEvents`, the `socket`, `navigate` and
+  `params` of the event being applied, and the session `token`. A direct
+  `eval` would see every module local, but it stops the minifier from mangling
+  the chunk that holds it. So a script sees those names and the globals, and
+  nothing else. Renaming an export changes what compiled callbacks can call.
+  In an app without state, `runLocalScript` in `utils/runtime.js` passes the
+  exports of that module instead, with `addEvents`, `navigate` and `params`:
+  the exports of `utils/state.js` would keep the transport in the bundle.
 - **Globals the runtime reads**: hooks other code installs on `window`
   (`__reflex_otel`, `__reflex`, `__reflex_load`) and the per-app `$/env.json`.
   Each is declared in `types/globals.d.ts`; reading one that is not fails the
   type check.
-- **Globals the runtime publishes**: `utils/state.js` sets `globalThis.refs`
+- **Globals the runtime publishes**: `utils/runtime.js` sets `globalThis.refs`
   on import, so code written against 0.10 that reads `refs[...]` without
   importing it keeps working. TypeScript takes that assignment as declaring a
   global, so the type check accepts a bare `refs` in any module here. The

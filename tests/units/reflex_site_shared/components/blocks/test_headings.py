@@ -16,10 +16,10 @@ from reflex.istate.data import ReflexURL, _serialize_reflex_url
 
 NODE = shutil.which("node")
 ROUTER_URL = str(rx.State.router.url._original)
-STATE_JS = constants.Templates.Dirs.WEB_TEMPLATE / "utils" / "state.js"
+RUNTIME_JS = constants.Templates.Dirs.WEB_TEMPLATE / "utils" / "runtime.js"
 # The generated expression calls the frontend's isTrue helper; load the real one.
 IS_TRUE = re.search(
-    r"^export (const isTrue = .*?^};)", STATE_JS.read_text(), re.DOTALL | re.MULTILINE
+    r"^export (const isTrue = .*?^};)", RUNTIME_JS.read_text(), re.DOTALL | re.MULTILINE
 )
 
 
