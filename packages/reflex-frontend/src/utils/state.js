@@ -807,7 +807,10 @@ const serializeScriptResult = (value) => {
  * @param socket The connected socket that sends it.
  */
 const checkResultSize = (outcome, socket) => {
-  // socket.io-client is pinned; test_hydration_storage.py covers these internals.
+  // Reads socket.io-client internals: engine._maxPayload, the packet encoder
+  // and engine.transport.name. A wrong budget drops the connection and the
+  // backend raises TimeoutError; the real-socket cases in run_script.test.js
+  // fail when a socket.io-client upgrade moves them.
   const { encoder, engine } = socket.io;
   let maxBytes = engine._maxPayload;
   if (engine.transport.name !== "websocket") {

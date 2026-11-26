@@ -4,7 +4,12 @@
  * the minifier may mangle this module. These pin what the generated strings
  * can see and what the script returns.
  */
+import {
+  XHR as PollingTransport,
+  WebSocket as WebSocketTransport,
+} from "engine.io-client";
 import { encodePayload } from "engine.io-parser";
+import { io } from "socket.io-client";
 import { Encoder } from "socket.io-parser";
 import { describe, expect, test, vi } from "vitest";
 
@@ -258,6 +263,112 @@ describe("awaited script results", () => {
       '451-/_event,["result",{"rid":"r1","json":{"_placeholder":true,"num":0}}]\x1ebIjEyMzQ1Njc4OTAi',
     );
     expect(body.length).toBe(90);
+  });
+
+  // A real socket.io-client socket on /_event, connected through the given
+  // transport to an in-memory server that announces maxPayload. The size
+  // check reads private socket.io-client fields (engine._maxPayload, encoder,
+  // transport.name), which the fakes above only imitate: these cases fail
+  // when an upgrade moves them. Returns the socket and the frames, or
+  // polling request bodies, the server received.
+  const realSocket = async (transport, maxPayload) => {
+    const received = [];
+    const handshake = `0${JSON.stringify({ sid: "e", upgrades: [], pingInterval: 25000, pingTimeout: 20000, maxPayload })}`;
+    const accept = (frame) =>
+      typeof frame === "string" && frame.startsWith("40/_event,")
+        ? ['40/_event,{"sid":"s"}']
+        : [];
+    class MemoryWebSocket extends WebSocketTransport {
+      createSocket() {
+        const ws = {
+          send: (frame) => {
+            received.push(frame);
+            for (const data of accept(frame)) {
+              queueMicrotask(() => ws.onmessage({ data }));
+            }
+          },
+          close: () => {},
+        };
+        queueMicrotask(() => {
+          ws.onopen();
+          ws.onmessage({ data: handshake });
+        });
+        return ws;
+      }
+    }
+    class MemoryPolling extends PollingTransport {
+      outbox = [handshake];
+      poll = null;
+      flush() {
+        if (this.poll && this.outbox.length) {
+          const [poll, body] = [this.poll, this.outbox.splice(0).join("\x1e")];
+          this.poll = null;
+          queueMicrotask(() => poll(body));
+        }
+      }
+      doPoll() {
+        this.poll = (body) => this.onData(body);
+        this.flush();
+      }
+      doWrite(body, drained) {
+        received.push(body);
+        this.outbox.push(...body.split("\x1e").flatMap(accept));
+        this.flush();
+        queueMicrotask(drained);
+      }
+    }
+    const socket = io("http://backend.test/_event", {
+      transports: [transport === "websocket" ? MemoryWebSocket : MemoryPolling],
+      reconnection: false,
+    });
+    await vi.waitFor(() => expect(socket.connected).toBe(true));
+    vi.spyOn(socket, "emit");
+    received.length = 0;
+    return { socket, received };
+  };
+
+  test.each([
+    ["websocket", 100, 100, null],
+    ["websocket", 100, 101, 100],
+    // The message and its base64 attachment fill a 90 byte request body.
+    ["polling", 90, 12, null],
+    ["polling", 89, 12, 9],
+  ])("over a real %s socket with a %d frame limit, measures a %d byte result against the limit", async (transport, maxPayload, size, maxBytes) => {
+    const { socket, received } = await realSocket(transport, maxPayload);
+    const json = `"${"1".repeat(size - 2)}"`;
+    const { outcome } = awaited(script(json), socket);
+    try {
+      const sent = await outcome();
+      if (maxBytes !== null) {
+        expect(withoutStack(sent)).toEqual({
+          rid: "r1",
+          error: {
+            name: "RangeError",
+            message: `The script returned ${size} bytes of JSON, more than the ${maxBytes} a message to the backend can carry; return less data, or raise REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE on the backend.`,
+            stack: "<stack>",
+            kind: "serialization",
+          },
+        });
+        return;
+      }
+      expect(sent).toEqual({ rid: "r1", json });
+      const message =
+        '451-/_event,["result",{"rid":"r1","json":{"_placeholder":true,"num":0}}]';
+      await vi.waitFor(() => expect(received).toHaveLength(2));
+      expect(received[0]).toBe(message);
+      if (transport === "websocket") {
+        expect([...new Uint8Array(received[1])]).toEqual([
+          ...new TextEncoder().encode(json),
+        ]);
+      } else {
+        // Posted apart here, but a body may carry both while an earlier
+        // request is in flight, and then fills the limit exactly.
+        expect(received[1]).toBe(`b${btoa(json)}`);
+        expect(received.join("\x1e").length).toBe(maxPayload);
+      }
+    } finally {
+      socket.disconnect();
+    }
   });
 
   test("measures a result settled while disconnected against the limit of the next connection", async () => {
