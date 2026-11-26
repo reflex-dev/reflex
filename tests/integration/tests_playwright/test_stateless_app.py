@@ -21,13 +21,13 @@ def StatelessApp():
         return rx.fragment(
             rx.heading("This is a stateless app"),
             rx.el.p("Index", class_name="page-styled", id="index-paragraph"),
-            rx.el.a("Styled", href="/styled", id="styled-link"),
+            rx.link("Styled", href="/styled", id="styled-link"),
         )
 
     def styled():
         return rx.fragment(
             rx.el.p("Styled", class_name="page-styled", id="styled-paragraph"),
-            rx.el.a("Home", href="/", id="home-link"),
+            rx.link("Home", href="/", id="home-link"),
         )
 
     assets = Path.cwd() / "assets"
@@ -81,6 +81,9 @@ def test_statelessness(stateless_app: AppHarness, page: Page):
 def test_page_stylesheets(stateless_app: AppHarness, page: Page):
     """A page's stylesheet applies after the app's, only while the page is shown.
 
+    The links navigate client-side, so React Router itself has to add the
+    stylesheet and remove it again: a document reload would drop it anyway.
+
     Args:
         stateless_app: A harness for testing the stateless app.
         page: A Playwright page.
@@ -88,12 +91,14 @@ def test_page_stylesheets(stateless_app: AppHarness, page: Page):
     assert stateless_app.frontend_url is not None
     page.goto(stateless_app.frontend_url)
     expect(page.locator("#index-paragraph")).to_have_css("color", "rgb(255, 0, 0)")
+    page.evaluate("() => { window.__same_document = true; }")
 
     page.locator("#styled-link").click()
     expect(page.locator("#styled-paragraph")).to_have_css("color", "rgb(0, 0, 255)")
 
     page.locator("#home-link").click()
     expect(page.locator("#index-paragraph")).to_have_css("color", "rgb(255, 0, 0)")
+    assert page.evaluate("() => window.__same_document") is True
 
     page.goto(stateless_app.frontend_url.rstrip("/") + "/styled")
     expect(page.locator("#styled-paragraph")).to_have_css("color", "rgb(0, 0, 255)")
