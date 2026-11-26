@@ -508,6 +508,37 @@ def test_stylesheet_copied_where_links_fail(tmp_path: Path, mocker: MockerFixtur
     assert real.read_text() == ".site { background: url(../images/y.png); }"
 
 
+@pytest.mark.skipif(os.name == "nt", reason="symlinks need a privilege on Windows")
+def test_sass_replaces_a_stylesheet_link(tmp_path: Path, mocker: MockerFixture):
+    """Compiled sass replaces a link an earlier compile left, never the file behind it.
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+    """
+    if importlib.util.find_spec("sass") is None:
+        pytest.skip(
+            'The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`.'
+        )
+    assets_dir = tmp_path / "assets"
+    assets_dir.mkdir()
+    (assets_dir / "theme.css").write_text(".theme { color: red; }")
+    target = tmp_path / constants.Dirs.WEB / "styles" / "theme.css"
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=tmp_path)
+    mocker.patch("reflex.compiler.compiler.get_web_dir", return_value=tmp_path / ".web")
+    compiler.compile_root_stylesheet(["/theme.css"], reset_style=False)
+    assert target.is_symlink()
+
+    (assets_dir / "theme.css").unlink()
+    (assets_dir / "theme.scss").write_text(".theme { color: blue; }")
+    _, code = compiler.compile_root_stylesheet(["/theme.scss"], reset_style=False)
+
+    assert code == "@layer __reflex_base;\n@import url('./theme.css');"
+    assert not target.is_symlink()
+    assert target.read_text() == ".theme{color:blue}\n"
+    assert sorted(path.name for path in assets_dir.iterdir()) == ["theme.scss"]
+
+
 def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
     if importlib.util.find_spec("sass") is None:
         pytest.skip(
