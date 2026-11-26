@@ -19,7 +19,7 @@ __all__ = [
 ]
 
 # Wire key wrapping a form's ordered ``[name, value]`` entries; must match
-# ``FORM_DATA_ENTRIES_KEY`` in ``state.js``.
+# ``FORM_DATA_ENTRIES_KEY`` in ``runtime.js``.
 FORM_DATA_ENTRIES_KEY = "__reflex_form_data__"
 
 # Suffix of field names that submit a list, like the ``range[]`` of a slider.

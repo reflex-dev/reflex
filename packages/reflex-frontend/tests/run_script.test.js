@@ -6,7 +6,7 @@
  */
 import { describe, expect, test, vi } from "vitest";
 
-import { eventLoop } from "$/utils/context-registry";
+import { eventLoop, registerApp } from "$/utils/context-registry";
 import { applyEvent, getToken } from "$/utils/state";
 
 const callScript = (code, callback, socket = null) =>
@@ -118,5 +118,49 @@ describe("_call_script", () => {
       null,
     );
     expect(seen).toEqual([7]);
+  });
+});
+
+describe("events the transport applies before the frontend ones", () => {
+  test("a download of an uploaded file resolves the backend upload URL", async () => {
+    const hrefs = [];
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(
+      function () {
+        hrefs.push([this.href, this.download]);
+      },
+    );
+    await applyEvent(
+      {
+        name: "_download",
+        payload: {
+          url: 'getBackendURL(env.UPLOAD) + "/a.png"',
+          filename: "a.png",
+        },
+      },
+      null,
+      null,
+      null,
+    );
+    expect(hrefs).toEqual([["http://localhost:8000/_upload/a.png", "a.png"]]);
+  });
+
+  test("clearing local storage hydrates again when connected", async () => {
+    localStorage.setItem("kept", "1");
+    const socket = { connected: true, emit: vi.fn() };
+    registerApp({
+      initialEvents: () => [{ name: "state.hydrate_and_load" }],
+      clientStorage: {},
+      state_name: "state",
+    });
+    await applyEvent({ name: "_clear_local_storage" }, socket, null, {
+      current: {},
+    });
+    expect(localStorage.getItem("kept")).toBeNull();
+    await vi.waitFor(() =>
+      expect(socket.emit).toHaveBeenCalledWith(
+        "event",
+        expect.objectContaining({ name: "state.hydrate_and_load" }),
+      ),
+    );
   });
 });

@@ -1,6 +1,15 @@
+import fs from "node:fs";
+import path from "node:path";
 import { SourceTextModule, SyntheticModule } from "node:vm";
 
-/** Evaluate the complete frontend module with isolated dependency stubs. */
+// Like the other runtime scripts, this one is handed state.js; the modules it
+// re-exports are next to it.
+const readUtil = (name) =>
+  fs.readFileSync(path.join(path.dirname(process.argv[2]), name), "utf8");
+const runtimeSource = readUtil("runtime.js");
+const transportSource = readUtil("transport.js");
+
+/** Evaluate the complete frontend modules with isolated dependency stubs. */
 export async function createQueueRuntime(
   source,
   { uploadFiles, throttle, dependencies: dependencyOverrides } = {},
@@ -64,17 +73,23 @@ export async function createQueueRuntime(
     },
     ...dependencyOverrides,
   };
-  // Let Node parse the unchanged module; only expose private state to tests.
-  const module = new SourceTextModule(
-    `import { window, document, localStorage, sessionStorage } from "test:browser";
-${source}
+  // Let Node parse the unchanged modules; only expose private state to tests.
+  const browser =
+    'import { window, document, localStorage, sessionStorage } from "test:browser";';
+  const module = new SourceTextModule(source);
+  const transport = new SourceTextModule(
+    `${browser}
+${transportSource}
 export { event_queue };
 `,
   );
-  const linked = new Map();
+  // state.js re-exports runtime.js and transport.js.
+  const linked = new Map([
+    ["$/utils/state", module],
+    ["$/utils/runtime", new SourceTextModule(`${browser}\n${runtimeSource}`)],
+    ["$/utils/transport", transport],
+  ]);
   await module.link((specifier) => {
-    // state.js imports itself to hand its exports to server-provided scripts.
-    if (specifier === "$/utils/state") return module;
     if (!linked.has(specifier)) {
       const exports = dependencies[specifier];
       if (!exports)

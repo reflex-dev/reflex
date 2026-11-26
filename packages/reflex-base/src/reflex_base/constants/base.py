@@ -31,8 +31,10 @@ class Dirs(SimpleNamespace):
     EXTERNAL_APP_ASSETS = "external"
     # The name of the utils file.
     UTILS = "utils"
-    # The name of the state file.
+    # The module compiled code imports the runtime from.
     STATE_PATH = UTILS + "/state"
+    # The backend connection, which only apps with state load.
+    TRANSPORT_PATH = UTILS + "/transport"
     # The name of the components file, where memos that can't be mirrored to a
     # user module (``__main__``, unsafe names) get one file per memo.
     COMPONENTS_PATH = UTILS + "/components"
