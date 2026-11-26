@@ -9,7 +9,9 @@ from typing import TYPE_CHECKING, Self, TypeVar
 
 from reflex_base.constants import ROUTER_DATA, ROUTER_VARS
 from reflex_base.event import Event, get_hydrate_event
+from reflex_base.event.context import EventContext
 from reflex_base.registry import RegistrationContext
+from reflex_base.session import SessionToken, authorize, is_client_token
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_base.vars.base import _owner_state
 
@@ -69,6 +71,7 @@ def _do_update_other_tokens(
         async with app.modify_state(
             BaseStateToken(ident=token, cls=state_type),
             previous_dirty_vars=previous_dirty_vars,
+            session_token=SessionToken.SYSTEM,
         ):
             pass
 
@@ -247,6 +250,10 @@ class SharedStateBaseInternal(State):
             raise ReflexRuntimeError(msg)
         if self._linked_to == token:
             return self  # already linked to this token
+        if is_client_token(token):
+            # A link to a client token reaches that client's own state. Check
+            # before the earlier link changes, so a rejected link keeps it.
+            authorize(EventContext.get().session_token, token)
         if self._linked_to and self._linked_to != token:
             # Disassociate from previous linked token since unlink will not be called.
             self._linked_from.discard(self.rx_router_session.client_token)

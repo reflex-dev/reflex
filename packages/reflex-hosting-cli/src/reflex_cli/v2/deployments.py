@@ -164,12 +164,12 @@ def check_version():
         Exit: If a newer version is available, prompting the user to upgrade.
 
     """
-    import httpx
+    import httpx2
 
     package_name = constants.ReflexHostingCli.MODULE_NAME
     try:
         installed_version = importlib.metadata.version(package_name)
-        response = httpx.get(f"https://pypi.org/pypi/{package_name}/json")
+        response = httpx2.get(f"https://pypi.org/pypi/{package_name}/json")
         response.raise_for_status()
         latest_version = response.json()["info"]["version"]
 
@@ -182,8 +182,8 @@ def check_version():
             raise click.exceptions.Exit(1)
     except (
         importlib.metadata.PackageNotFoundError,
-        httpx.RequestError,
-        httpx.HTTPStatusError,
+        httpx2.RequestError,
+        httpx2.HTTPStatusError,
     ):
         # Silently pass if we can't check the version
         pass

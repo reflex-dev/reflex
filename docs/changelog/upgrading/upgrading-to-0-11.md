@@ -241,7 +241,7 @@ def serialize_point(point: Point) -> dict:
 
 ## Printing a backend var on a state class
 
-A backend var read on the state class, such as `State._secret`, is a `Field` since 0.10. In 0.11, `print()`, logging and `str()` of it raise `BackendVarFormatError`, as f-strings already did ([#7651](https://github.com/reflex-dev/reflex/pull/7651)). The same error replaces the `TypeError` or `ValueError` raised when the var is passed where a frontend value is needed, such as a component prop, `rx.toast(State._secret)`, or the `title`, `description` or `image` of `app.add_page(...)`.
+A backend var read on the state class, such as `State._secret`, is a `Field` since 0.10. In 0.11, `print()`, logging and `str()` of it raise `BackendVarFormatError`, as f-strings already did ([#7651](https://github.com/reflex-dev/reflex/pull/7651)). The same error replaces the `TypeError` or `ValueError` raised when the var is passed where a frontend value is needed, such as a component child or prop, an event handler argument, `rx.toast(State._secret)`, or the `title`, `description`, `image` or `on_load` of `app.add_page(...)`. Comparing it with a value, as in `rx.cond(State._secret == "x", ...)`, or truth-testing it also raises, where it used to give a plain `False` or `True`.
 
 ```python
 class State(rx.State):

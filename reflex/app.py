@@ -19,6 +19,7 @@ import tempfile
 import time
 import traceback
 import urllib.parse
+import uuid
 from collections.abc import (
     AsyncIterator,
     Callable,
@@ -53,8 +54,10 @@ from reflex_base.event import (
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
+from reflex_base.session import SessionToken, SessionTokenManager, authorize
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
 from reflex_base.utils import memo_paths
+from reflex_base.utils.compat import MISSING_TYPE
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import (
     ASGIApp,
@@ -98,6 +101,12 @@ from reflex.route import (
     get_route_args,
     replace_brackets_with_keywords,
     verify_route_validity,
+)
+from reflex.session_middleware import (
+    SessionMiddleware,
+    session_authorization_error,
+    session_endpoint,
+    trusted_session_origins,
 )
 from reflex.state import BaseState, State, StateUpdate, all_base_state_classes
 from reflex.utils import (
@@ -296,10 +305,10 @@ def default_error_boundary(*children: Component, **props) -> Component:
 
 
 def _reject_page_meta_fields(*values: Any) -> None:
-    """Reject page metadata given as a field with no frontend var.
+    """Reject page metadata or on_load events given as a field with no frontend var.
 
     Args:
-        *values: The page metadata values.
+        *values: The page metadata values or on_load events.
 
     Raises:
         BackendVarFormatError: If a value is a field with no frontend var.
@@ -794,16 +803,14 @@ class _SocketOriginCheck:
         hops = self._trusted_proxy_hops
         host = environ.get("HTTP_HOST")
         forwarded_host = environ.get("HTTP_X_FORWARDED_HOST")
-        if _origin_matches_request(
-            origin,
-            (
-                host,
-                _trusted_forwarded_value(forwarded_host or "", hops, appended=False),
-            ),
-            _trusted_forwarded_value(
-                environ.get("HTTP_X_FORWARDED_PROTO", ""), hops, appended=False
-            ),
-        ):
+        hosts = (
+            host,
+            _trusted_forwarded_value(forwarded_host or "", hops, appended=False),
+        )
+        forwarded_proto = _trusted_forwarded_value(
+            environ.get("HTTP_X_FORWARDED_PROTO", ""), hops, appended=False
+        )
+        if _origin_matches_request(origin, hosts, forwarded_proto):
             return True
         if self._warned:
             return False
@@ -823,6 +830,12 @@ class _SocketOriginCheck:
                 "reverse proxies can reach the backend, set trusted_proxy_hops "
                 f"(REFLEX_TRUSTED_PROXY_HOPS) to their number; otherwise, {deploy_url}"
             )
+        elif _origin_matches_request(origin, hosts, None):
+            fix = (
+                "the page was loaded over http but the trusted X-Forwarded-Proto "
+                f"says {forwarded_proto}, so fix the reverse proxy's X-Forwarded-Proto "
+                "or serve the page over https"
+            )
         else:
             fix = (
                 f"{deploy_url} or add it to cors_allowed_origins; a reverse proxy "
@@ -832,7 +845,11 @@ class _SocketOriginCheck:
             origin,
             "in prod mode the backend accepts only its own origin (request Host "
             f"{_clip(host)}, X-Forwarded-Host {_clip(forwarded_host)} "
-            + ("trusted" if hops else "ignored as trusted_proxy_hops is 0")
+            + (
+                f"trusted, X-Forwarded-Proto {_clip(forwarded_proto)} trusted"
+                if hops
+                else "ignored as trusted_proxy_hops is 0"
+            )
             + ")"
             + (f" and {sorted(self._origins)}" if self._origins else "")
             + f"; {fix}",
@@ -980,6 +997,10 @@ class App(MiddlewareMixin, LifespanMixin):
 
     # The backend API object.
     _api: Starlette | None = None
+
+    _session_token_manager: SessionTokenManager = dataclasses.field(
+        init=False, repr=False
+    )
 
     # The state class to use for the app.
     _state: type[BaseState] | None = None
@@ -1358,6 +1379,10 @@ class App(MiddlewareMixin, LifespanMixin):
                         lifespan_apps.append(asgi_app)
                     # Mount the api to the starlette app.
                     App._add_cors(api_transformer)
+                    api_transformer.add_exception_handler(
+                        exceptions.SessionAuthorizationError,
+                        session_authorization_error,
+                    )
                     api_transformer.mount("", asgi_app)
                     asgi_app = api_transformer
                 else:
@@ -1368,6 +1393,9 @@ class App(MiddlewareMixin, LifespanMixin):
                 lifespan_apps.append(asgi_app)
 
         cors_options = App._cors_options()
+        asgi_app = SessionMiddleware(
+            asgi_app, manager=self._session_token_manager, api_url=config.api_url
+        )
         top_asgi_app = _RootMiddleware(
             # Covers the routes a callable transformer adds and the 500 responses
             # that the outermost Starlette app's error handler sends.
@@ -1384,12 +1412,26 @@ class App(MiddlewareMixin, LifespanMixin):
         return top_asgi_app
 
     def _add_default_endpoints(self):
-        """Add default api endpoints (ping)."""
+        """Add the framework's HTTP endpoints."""
         # To test the server.
         if not self._api:
             return
 
         config = get_config()
+        self._session_token_manager = SessionTokenManager(
+            config.app_name,
+            ttl=config.session_token_ttl,
+            refresh_interval=config.session_token_refresh_interval,
+            max_age=config.session_token_max_age,
+        )
+        self._api.add_exception_handler(
+            exceptions.SessionAuthorizationError, session_authorization_error
+        )
+        self._api.add_route(
+            config.prepend_backend_path("/_reflex/session"),
+            self._issue_session,
+            methods=["POST"],
+        )
         self._api.add_route(
             config.prepend_backend_path(str(constants.Endpoint.PING)),
             ping,
@@ -1399,6 +1441,23 @@ class App(MiddlewareMixin, LifespanMixin):
             config.prepend_backend_path(str(constants.Endpoint.HEALTH)),
             health,
             methods=["GET"],
+        )
+
+    async def _issue_session(self, request: Request) -> Response:
+        """Issue a browser session using the current public URLs.
+
+        Args:
+            request: The incoming session request.
+
+        Returns:
+            Session metadata and the HttpOnly cookie.
+        """
+        config = get_config()
+        return await session_endpoint(
+            request,
+            manager=self._session_token_manager,
+            api_url=config.api_url,
+            allowed_origins=trusted_session_origins(config),
         )
 
     def _add_optional_endpoints(self):
@@ -1542,7 +1601,7 @@ class App(MiddlewareMixin, LifespanMixin):
             context: Values passed to page for custom page-specific logic.
 
         Raises:
-            BackendVarFormatError: When title, description or image is a field with no frontend var.
+            BackendVarFormatError: When title, description, image or on_load is a field with no frontend var.
             PageValueError: When the component is not set for a non-404 page.
             RouteValueError: When the specified route name already exists.
             ValueError: When the route syntax is invalid.
@@ -1591,11 +1650,15 @@ class App(MiddlewareMixin, LifespanMixin):
             The validated page descriptor and its dynamic route arguments.
 
         Raises:
+            BackendVarFormatError: When title, description, image or on_load is a field with no frontend var.
             PageValueError: When the component is not set for a non-404 page.
             RouteValueError: When a route cannot be derived.
             ValueError: When the route syntax is invalid.
         """
         _reject_page_meta_fields(title, description, image)
+        _reject_page_meta_fields(
+            *(on_load if is_non_string_sequence(on_load) else [on_load])
+        )
         route = self._page_route_key(component, route)
         if route is None:
             msg = "Route must be set if component is not a callable."
@@ -2347,6 +2410,8 @@ class App(MiddlewareMixin, LifespanMixin):
         token: str,
         background: bool = False,
         previous_dirty_vars: dict[str, set[str]] | None = None,
+        *,
+        session_token: SessionToken | MISSING_TYPE | None = dataclasses.MISSING,
     ) -> contextlib.AbstractAsyncContextManager[BaseState]: ...
 
     @overload
@@ -2355,6 +2420,8 @@ class App(MiddlewareMixin, LifespanMixin):
         token: BaseStateToken,
         background: bool = False,
         previous_dirty_vars: dict[str, set[str]] | None = None,
+        *,
+        session_token: SessionToken | MISSING_TYPE | None = dataclasses.MISSING,
     ) -> contextlib.AbstractAsyncContextManager[BaseState]: ...
 
     @contextlib.asynccontextmanager
@@ -2363,6 +2430,8 @@ class App(MiddlewareMixin, LifespanMixin):
         token: BaseStateToken | str,
         background: bool = False,
         previous_dirty_vars: dict[str, set[str]] | None = None,
+        *,
+        session_token: SessionToken | MISSING_TYPE | None = dataclasses.MISSING,
         **context: Unpack[StateModificationContext],
     ) -> AsyncIterator[BaseState]:
         """Modify the state out of band.
@@ -2375,6 +2444,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 is not supported.
             background: Whether the modification is happening in a background task.
             previous_dirty_vars: Vars that are considered dirty from a previous operation.
+            session_token: The session authorizing access, or omitted to inherit the current context.
 
         Yields:
             The state to modify.
@@ -2399,7 +2469,9 @@ class App(MiddlewareMixin, LifespanMixin):
             # shared-state fan-out runs in a task that copied the triggering
             # event's context for a different client. No-op without an EventContext.
             try:
-                forked_context = EventContext.get().fork(token=token.ident)
+                forked_context = EventContext.get().fork(
+                    token=token.ident, session_token=session_token
+                )
             except LookupError:
                 forked_context = None
             else:
@@ -2649,6 +2721,21 @@ def _decode_asgi_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, st
     return decoded
 
 
+@dataclasses.dataclass(slots=True)
+class _SocketSession:
+    """The browser session of one socket connection.
+
+    Attributes:
+        session: The session that authorizes the socket's events.
+        refresh_at: When to ask the client to renew its credential.
+        from_cookie: Whether the socket connected with a valid session cookie.
+    """
+
+    session: SessionToken
+    refresh_at: float
+    from_cookie: bool
+
+
 class EventNamespace(AsyncNamespace):
     """The event namespace."""
 
@@ -2684,6 +2771,8 @@ class EventNamespace(AsyncNamespace):
         # Connection-scoped router_data entries per SID, computed once at
         # connect time instead of for every event on the connection.
         self._static_router_data: dict[str, dict[str, Any]] = {}
+
+        self._sessions: dict[str, _SocketSession] = {}
 
         # Start time and count of the current process-wide client_error window.
         self._client_error_window_start = 0.0
@@ -2761,38 +2850,89 @@ class EventNamespace(AsyncNamespace):
             )
         query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING", ""))
         token_list = query_params.get("token", [])
-        if token_list:
-            # The boot event is the connection's first event: processing it
-            # records the new sid and token on the state under the state lock.
-            await self.link_token_to_sid(
-                sid, token_list[0], update_state=boot_event is None
-            )
+        token = token_list[0] if token_list else ""
+        issued_session = None
+        if environment.REFLEX_SESSION_TOKEN_MODE.get() == "off":
+            if not token:
+                token = str(uuid.uuid4())
+                await self.emit("new_token", token, to=sid)
         else:
-            logger.warning(f"No token provided in connection for session {sid}")
-
-        subprotocol = environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL")
-        if subprotocol and subprotocol != constants.Reflex.VERSION:
-            logger.warning(
-                f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
+            manager = self.app._session_token_manager
+            session = environ.get("asgi.scope", {}).get("reflex.session")
+            from_cookie = session is not None
+            if session is None:
+                session = issued_session = manager.create()
+            self._sessions[sid] = _SocketSession(
+                session, session.issued_at + manager.refresh_interval, from_cookie
             )
-        if otel.enabled:
-            otel.record_connection(1)
+            if (bound_token := manager.client_token_for(session, token)) != token:
+                token = bound_token
+                await self.emit("new_token", token, to=sid)
+        try:
+            if token:
+                # The boot event records the new sid and token under its state lock.
+                await self.link_token_to_sid(
+                    sid, token, update_state=boot_event is None
+                )
+            else:
+                logger.warning(f"No token provided in connection for session {sid}")
+            if issued_session is not None:
+                await self.emit(
+                    "session_token",
+                    self.app._session_token_manager.encode(
+                        issued_session, exchange=True
+                    ),
+                    to=sid,
+                )
 
-        # Headers, client IP, and session id cannot change for the lifetime of
-        # the connection; compute them once instead of on every event.
-        self._static_router_data[sid] = self._build_static_router_data(sid, environ)
+            subprotocol = environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL")
+            if subprotocol and subprotocol != constants.Reflex.VERSION:
+                logger.warning(
+                    f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
+                )
+            if otel.enabled:
+                otel.record_connection(1)
 
-        if boot_event is not None:
-            try:
+            # Headers, client IP, and session id cannot change for the lifetime of
+            # the connection; compute them once instead of on every event.
+            self._static_router_data[sid] = self._build_static_router_data(sid, environ)
+
+            if boot_event is not None:
                 await self.on_event(sid, boot_event)
-            except Exception:
-                # A refused connect never reaches on_disconnect, so drop the
-                # token link and connection data made above before the error
-                # refuses the connect.
-                self._static_router_data.pop(sid, None)
-                if (linked_token := self.sid_to_token.get(sid)) is not None:
-                    await self._token_manager.disconnect_token(linked_token, sid)
-                raise
+        except Exception:
+            # A refused connect never reaches on_disconnect, so drop the token
+            # link and connection data made above before the error refuses it.
+            self._static_router_data.pop(sid, None)
+            self._sessions.pop(sid, None)
+            if (linked_token := self.sid_to_token.get(sid)) is not None:
+                await self._token_manager.disconnect_token(linked_token, sid)
+            raise
+
+    async def on_session_refresh(self, sid: str) -> None:
+        """Renew credentials for the session already authenticated by this socket.
+
+        A socket that connected with a cookie renews that HttpOnly cookie at the
+        session endpoint, so page scripts cannot read a credential from the
+        socket. The endpoint renews a valid cookie and issues a new session for
+        an expired one, also after the maximum session age. A socket that
+        connected without a cookie gets a credential for one exchange.
+
+        Args:
+            sid: The Socket.IO session id requesting renewal.
+        """
+        if (socket_session := self._sessions.get(sid)) is None:
+            return
+        manager = self.app._session_token_manager
+        session = socket_session.session
+        if (
+            socket_session.from_cookie
+            or time.time() >= session.created_at + manager.max_age
+        ):
+            await self.emit("session_token", None, to=sid)
+            return
+        renewed = socket_session.session = manager.refresh(session)
+        socket_session.refresh_at = renewed.issued_at + manager.refresh_interval
+        await self.emit("session_token", manager.encode(renewed, exchange=True), to=sid)
 
     def _build_static_router_data(self, sid: str, environ: dict) -> dict[str, Any]:
         """Build the connection-scoped router_data entries for a socket.
@@ -2848,6 +2988,7 @@ class EventNamespace(AsyncNamespace):
             otel.record_connection(-1)
         self._client_error_counts.pop(sid, None)
         self._static_router_data.pop(sid, None)
+        self._sessions.pop(sid, None)
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
@@ -2928,6 +3069,15 @@ class EventNamespace(AsyncNamespace):
             )
             return
 
+        session = None
+        if (socket_session := self._sessions.get(sid)) is not None:
+            session = socket_session.session
+            if time.time() >= socket_session.refresh_at:
+                socket_session.refresh_at = (
+                    time.time() + self.app._session_token_manager.refresh_interval
+                )
+                await self.emit("session_refresh", to=sid)
+
         fields = data
 
         if isinstance(fields, str):
@@ -2986,10 +3136,14 @@ class EventNamespace(AsyncNamespace):
             else "404"
         ).removeprefix("/")
         if not otel.enabled:
-            future = await self.app.event_processor.enqueue(token, event)
+            future = await self.app.event_processor.enqueue(
+                token, event, session_token=session
+            )
         else:
             with otel.remote_context(fields):
-                future = await self.app.event_processor.enqueue(token, event)
+                future = await self.app.event_processor.enqueue(
+                    token, event, session_token=session
+                )
         if self._warn_dropped_results:
             future.add_done_callback(
                 functools.partial(self._warn_dropped_result, event.name)
@@ -3127,7 +3281,28 @@ class EventNamespace(AsyncNamespace):
                 without an extra load and save of the whole state tree.
         """
         # Use TokenManager for duplicate detection and Redis support
-        new_token = await self._token_manager.link_token_to_sid(token, sid)
+        socket_session = self._sessions.get(sid)
+        session = socket_session.session if socket_session is not None else None
+        if session is not None:
+            # Validate before linking or loading any client state.
+            try:
+                context = dataclasses.replace(
+                    EventContext.get(), token=token, session_token=session
+                )
+            except LookupError:
+                # No request scope, for example a harness that connects directly.
+                authorize(session, token)
+                context = contextlib.nullcontext()
+            with context:
+                new_token = await self._token_manager.link_token_to_sid(
+                    token,
+                    sid,
+                    token_factory=functools.partial(
+                        self.app._session_token_manager.create_client_token, session
+                    ),
+                )
+        else:
+            new_token = await self._token_manager.link_token_to_sid(token, sid)
 
         if new_token:
             # Duplicate detected, emit new token to client
@@ -3135,15 +3310,27 @@ class EventNamespace(AsyncNamespace):
 
         # Update client state to apply new sid/token for running background tasks.
         if update_state and self.app._state is not None:
-            async with self.app.state_manager.modify_state(
-                BaseStateToken(ident=new_token or token, cls=self.app._state)
-            ) as state:
-                state.router_data[constants.RouteVar.SESSION_ID] = sid
-                # Record the identity the state was loaded under; duplicate-token
-                # handling can hand back a fresh one here.
-                state.router_data[constants.RouteVar.CLIENT_TOKEN] = new_token or token
-                # Rebuild from router_data to keep the session var in step with it.
-                if (
-                    session := SessionData.from_router_data(state.router_data)
-                ) != state.rx_router_session:
-                    state.rx_router_session = session
+            try:
+                context = EventContext.get().fork(
+                    token=new_token or token, session_token=session
+                )
+            except LookupError:
+                # No request scope, for example a harness that connects directly.
+                context = contextlib.nullcontext()
+            with context:
+                async with self.app.state_manager.modify_state(
+                    BaseStateToken(ident=new_token or token, cls=self.app._state)
+                ) as state:
+                    state.router_data[constants.RouteVar.SESSION_ID] = sid
+                    # Record the identity the state was loaded under; duplicate-token
+                    # handling can hand back a fresh one here.
+                    state.router_data[constants.RouteVar.CLIENT_TOKEN] = (
+                        new_token or token
+                    )
+                    # Rebuild from router_data to keep the session var in step with it.
+                    if (
+                        router_session := SessionData.from_router_data(
+                            state.router_data
+                        )
+                    ) != state.rx_router_session:
+                        state.rx_router_session = router_session
