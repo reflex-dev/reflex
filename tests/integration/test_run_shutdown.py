@@ -6,6 +6,9 @@ nothing it started is left running, and the output holds no error. The
 cases differ only in the route the stop takes: a terminal Ctrl-C reaches the
 whole process group, ``kill`` and service managers reach the CLI's PID only,
 and ``--json`` puts the output supervisor in front of everything.
+
+One more case stops a production run whose lifespan cleanup never finishes,
+where only a repeated stop can end it.
 """
 
 from __future__ import annotations
@@ -33,8 +36,14 @@ pytestmark = pytest.mark.skipif(sys.platform == "win32", reason="POSIX signal de
 START_TIMEOUT = 600
 # Seconds the CLI gets to exit after a stop request.
 STOP_TIMEOUT = 20
+# Set for a run whose lifespan cleanup outlasts every wait in this module.
+STUCK_CLEANUP_ENV = "SHUTDOWN_APP_STUCK_CLEANUP"
 
 APP_SOURCE = """
+import asyncio
+import contextlib
+import os
+
 import reflex as rx
 
 
@@ -51,6 +60,18 @@ def index():
 
 app = rx.App()
 app.add_page(index)
+
+
+@app.register_lifespan_task
+@contextlib.asynccontextmanager
+async def stuck_cleanup():
+    stuck = os.environ.get("SHUTDOWN_APP_STUCK_CLEANUP")
+    if stuck:
+        print("lifespan started", flush=True)
+    yield
+    if stuck:
+        print("cleanup started", flush=True)
+        await asyncio.sleep(600)
 """
 
 
@@ -131,25 +152,36 @@ def _describe(pid: int) -> str:
 class _RunningApp:
     """A ``reflex run`` started in its own process group, with its output."""
 
-    def __init__(self, app_dir: Path, json_mode: bool, npm: bool):
+    def __init__(
+        self, app_dir: Path, json_mode: bool, npm: bool, stuck_prod: bool = False
+    ):
         """Start the CLI.
 
         Args:
             app_dir: The app directory.
             json_mode: Whether to run with ``--json``.
             npm: Whether to put npm instead of bun in front of the dev server.
+            stuck_prod: Whether to run the production backend alone, with a
+                lifespan cleanup that never finishes.
         """
         env = {**os.environ, "REFLEX_USE_NPM": "1" if npm else ""}
         if json_mode:
             env["REFLEX_LOG_JSON"] = "true"
+        if stuck_prod:
+            env[STUCK_CLEANUP_ENV] = "1"
+            # The server that shuts down in the CLI process, whatever is
+            # installed or set around the test.
+            env["REFLEX_USE_GRANIAN"] = "true"
+            mode = ["--env", "prod", "--backend-only"]
+        else:
+            mode = ["--frontend-port", str(_free_port())]
         self.process = subprocess.Popen(
             [
                 sys.executable,
                 "-m",
                 "reflex",
                 "run",
-                "--frontend-port",
-                str(_free_port()),
+                *mode,
                 "--backend-port",
                 str(_free_port()),
             ],
@@ -160,7 +192,11 @@ class _RunningApp:
             start_new_session=True,
         )
         self.lines: list[bytes] = []
+        # The production banner is printed before the backend starts, so
+        # that run is up only once its worker entered the lifespan.
+        self.running_marker = b"lifespan started" if stuck_prod else b"App running at"
         self.running = threading.Event()
+        self.cleaning_up = threading.Event()
         self.json_mode = json_mode
         self.descendants: list[int] = []
         # Read continuously: a full pipe would block the app during shutdown,
@@ -173,8 +209,10 @@ class _RunningApp:
         assert self.process.stdout is not None
         for line in self.process.stdout:
             self.lines.append(line)
-            if b"App running at" in line:
+            if self.running_marker in line:
                 self.running.set()
+            elif line == b"cleanup started\n":
+                self.cleaning_up.set()
 
     @property
     def output(self) -> str:
@@ -287,7 +325,20 @@ def running_app(
     json_mode, npm = request.param
     if npm and shutil.which("npm") is None:
         pytest.skip("npm is not installed")
-    app = _RunningApp(app_dir, json_mode=json_mode, npm=npm)
+    with _started(_RunningApp(app_dir, json_mode=json_mode, npm=npm)) as app:
+        yield app
+
+
+@contextlib.contextmanager
+def _started(app: _RunningApp) -> Generator[_RunningApp, None, None]:
+    """Wait until an app is up and make sure nothing outlives the block.
+
+    Args:
+        app: The app, already started.
+
+    Yields:
+        The running app.
+    """
     try:
         app.wait_until_running()
         yield app
@@ -339,3 +390,21 @@ def test_run_stops_cleanly(running_app: _RunningApp, deliver):
     assert elapsed < STOP_TIMEOUT
     assert running_app.survivors() == []
     assert running_app.errors() == []
+
+
+def test_prod_repeated_stop_forces_exit(app_dir: Path):
+    """A later Ctrl-C ends a production run whose lifespan cleanup is stuck."""
+    stuck = _RunningApp(app_dir, json_mode=False, npm=False, stuck_prod=True)
+    with _started(stuck) as app:
+        _group_sigint(app.process)
+        assert app.cleaning_up.wait(STOP_TIMEOUT), app.output[-3000:]
+        # Past the window in which a repeat is the same Ctrl-C delivered twice.
+        time.sleep(2)
+        assert app.process.poll() is None
+
+        elapsed = app.stop(_group_sigint)
+
+        assert app.process.returncode == 128 + signal.SIGINT
+        assert elapsed < 5
+        assert app.survivors() == []
+        assert app.output.splitlines()[-1] == "Forced exit: the cleanup did not finish."
