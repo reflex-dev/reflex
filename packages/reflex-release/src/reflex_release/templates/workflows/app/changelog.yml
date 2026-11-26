@@ -1,0 +1,51 @@
+@@HEADER@@
+name: Check release workflows
+
+on:
+  pull_request:
+    branches: ["@@MAIN_BRANCH@@"]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read the pull request's labels
+        if: github.event_name == 'pull_request'
+        id: labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "$PR_URL" --jq '
+            [.labels[].name] |
+            "version_edit=\(index("changelog-version-edit") != null)"
+          ' >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+@@UV_SETUP_WITH@@
+      - name: Reject manual changelog version headings
+        if: >-
+          ${{ github.event_name == 'pull_request'
+          && steps.labels.outputs.version_edit != 'true'
+          && !(startsWith(github.head_ref, '@@RELEASE_PREFIX@@')
+          && github.event.pull_request.user.login == 'github-actions[bot]') }}
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+        shell: bash
+        run: @@CLI@@ check-headings
+      - run: @@CLI@@ sync --check

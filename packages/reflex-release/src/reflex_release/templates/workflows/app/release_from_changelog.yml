@@ -1,0 +1,27 @@
+@@HEADER@@
+name: Release from changelog
+
+on:
+  push:
+    branches: ["@@MAIN_BRANCH@@"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Own the staging environment until production and tagging finish. Later runs
+# queue instead of replacing pending runs (GitHub allows up to 100 pending).
+concurrency:
+  group: app-release
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/@@MAIN_BRANCH@@'
+    permissions:
+      contents: write
+      actions: read
+      id-token: write
+    uses: ./.github/workflows/publish.yml
+    secrets: inherit
