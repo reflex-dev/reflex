@@ -105,13 +105,10 @@ def test_app_root_publishes_libraries_only_with_state(
     app = rx.App(enable_state=enable_state)
     app.add_page(lambda: rx.el.div("hello"), route="index")
     mocker.patch.object(app, "_get_frontend_packages")
-    compiler.compile_app(app, use_rich=False)
+    compile_app_root = mocker.spy(compiler, "compile_app_root")
+    compiler.compile_app(app, dry_run=True, use_rich=False)
 
-    root = (
-        prerequisites.get_web_dir() / constants.Dirs.PAGES / PageNames.APP_ROOT
-    ).read_text()
-    assert ("window.__reflex" in root) is enable_state
-    assert ('import * as utils_state from "$/utils/state";' in root) is enable_state
+    assert compile_app_root.call_args.kwargs == {"stateful": enable_state}
 
 
 @pytest.mark.parametrize("remove_assets_directory", [False, True])

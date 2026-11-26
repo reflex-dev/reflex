@@ -547,6 +547,70 @@ def test_dynamic_component_codegen_wires_state_var_counter_events() -> None:
     assert 'jsx(RadixThemesText, ({as:"p",size:"9"}), 0)' in code
 
 
+_APP_ROOT_BODY = """
+function AppWrap({children}) {
+
+return (jsx("div",{},))
+}
+
+export function Layout({children}) {
+  return jsx(AppLayout, {}, jsx(ReflexProviders, {}, children));
+}
+
+// Used by entry.client.js when mount_target is configured: skips the document
+// shell (which renders react-router's <Meta>/<Scripts>/<Links> and requires a
+// framework router context) but keeps the runtime providers.
+export function EmbedLayout({children}) {
+  return jsx(ReflexProviders, {}, children);
+}
+
+export default function App() {
+  return jsx(Outlet, {});
+}
+
+"""
+
+_APP_ROOT_IMPORTS = """
+import {jsx} from "@emotion/react"
+import {Fragment,useEffect} from "react"
+
+import { defaultColorMode } from "$/utils/context";
+import { ThemeProvider } from '$/utils/react-theme';
+import { Layout as AppLayout } from './_document';
+import { Outlet } from 'react-router';
+"""
+
+_PROVIDERS_TAIL = """
+  return jsx(ThemeProvider, {defaultTheme: defaultColorMode, attribute: "class"},
+    jsx(AppWrap, {}, children)
+  );
+}
+
+"""
+
+
+def _compile_lucide_app_root(mocker, *, lazy: bool, stateful: bool) -> str:
+    """Compile an app root that bundles lucide-react.
+
+    Args:
+        mocker: Fixture for patching the config.
+        lazy: Whether optional libraries load lazily.
+        stateful: Whether the app has state.
+
+    Returns:
+        The compiled app root.
+    """
+    mocker.patch(
+        "reflex_base.config._get_config",
+        return_value=rx.Config(
+            app_name="stateless_app_root", frontend_lazy_bundled_libraries=lazy
+        ),
+    )
+    with RegistrationContext():
+        bundle_library("lucide-react")
+        return compiler.compile_app_root(rx.el.div(), stateful=stateful)[1]
+
+
 @pytest.mark.parametrize("lazy", [False, True])
 def test_app_root_without_state_publishes_no_libraries(mocker, lazy: bool) -> None:
     """Dynamic components need a backend, so an app without state skips window.__reflex.
@@ -558,19 +622,45 @@ def test_app_root_without_state_publishes_no_libraries(mocker, lazy: bool) -> No
         mocker: Fixture for patching the config.
         lazy: Whether optional libraries load lazily.
     """
-    mocker.patch(
-        "reflex_base.config._get_config",
-        return_value=rx.Config(
-            app_name="stateless_app_root", frontend_lazy_bundled_libraries=lazy
-        ),
+    assert _compile_lucide_app_root(mocker, lazy=lazy, stateful=False) == (
+        _APP_ROOT_IMPORTS
+        + "\n\n\n\n\nfunction ReflexProviders({children}) {\n  \n"
+        + _PROVIDERS_TAIL
+        + _APP_ROOT_BODY
     )
-    with RegistrationContext():
-        bundle_library("lucide-react")
-        _, stateless_code = compiler.compile_app_root(rx.el.div(), stateful=False)
-        _, stateful_code = compiler.compile_app_root(rx.el.div())
 
-    assert "window.__reflex" not in stateless_code
-    assert "import * as" not in stateless_code
-    assert 'import * as utils_state from "$/utils/state";' in stateful_code
-    assert 'import * as utils_transport from "$/utils/transport";' in stateful_code
-    assert "window.__reflex" in stateful_code
+
+def test_app_root_with_state_publishes_its_libraries(mocker) -> None:
+    """An app with state hands every bundled library to its dynamic components.
+
+    Args:
+        mocker: Fixture for patching the config.
+    """
+    libraries = {
+        "React": "react",
+        "emotion_react": "@emotion/react",
+        "utils_context": "$/utils/context",
+        "utils_context_registry": "$/utils/context-registry",
+        "utils_state": "$/utils/state",
+        "utils_transport": "$/utils/transport",
+        "lucide_react": "lucide-react",
+    }
+    namespaces = "".join(
+        f'import * as {alias} from "{library}";\n'
+        for alias, library in libraries.items()
+    )
+    published = "".join(
+        f'    "{library}": {alias},\n' for alias, library in libraries.items()
+    )
+    assert _compile_lucide_app_root(mocker, lazy=False, stateful=True) == (
+        _APP_ROOT_IMPORTS
+        + namespaces
+        + "\n\n\n\nfunction ReflexProviders({children}) {\n"
+        + "  useEffect(() => {\n"
+        + "    // Make contexts and state objects available globally for dynamic eval'd components\n"
+        + "    window.__reflex = {\n      "
+        + published
+        + "    };\n  }, []);\n"
+        + _PROVIDERS_TAIL
+        + _APP_ROOT_BODY
+    )
