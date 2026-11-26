@@ -204,13 +204,14 @@ def _update_moved_config_dirs(moved_dirs: dict[str, tuple[Path, Path]]):
         reverse=True,
     ):
         old, new = moved_dirs[field]
-        if Path(value) != old or literal.end_lineno != literal.lineno:
+        root = Path.cwd() if Path(value).is_absolute() else Path()
+        if Path(value) != root / old or literal.end_lineno != literal.lineno:
             continue
         line = lines[literal.lineno - 1].encode()
         segment = line[literal.col_offset : literal.end_col_offset].decode()
         if value not in segment:
             continue
-        segment = segment.replace(value, new.as_posix(), 1)
+        segment = segment.replace(value, (root / new).as_posix(), 1)
         lines[literal.lineno - 1] = (
             line[: literal.col_offset]
             + segment.encode()

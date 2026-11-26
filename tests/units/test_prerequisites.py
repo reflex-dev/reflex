@@ -2724,6 +2724,12 @@ config = rx.Config(
             id="outside-the-app",
         ),
         pytest.param(
+            'assets_dir="{root}/foo/assets", lockfile_dir=Path("{root}/foo.lock")',
+            'assets_dir="{root}/bar/assets", lockfile_dir=Path("{root}/foo.lock")',
+            "",
+            id="absolute-paths",
+        ),
+        pytest.param(
             'assets_dir=Path("foo") / "assets"',
             'assets_dir=Path("foo") / "assets"',
             "Warning: assets_dir foo/assets moved to bar/assets with the app "
@@ -2744,11 +2750,13 @@ def test_cli_rename_updates_configured_dirs_it_moves(
     Args:
         tmp_path: The app root.
         monkeypatch: The pytest monkeypatch fixture.
-        config_args: The directory settings before the rename.
+        config_args: The directory settings before the rename, ``{root}`` standing for the app root.
         renamed_config_args: The directory settings expected after the rename.
         warning: The warning expected for a setting the rename cannot update.
     """
     monkeypatch.delenv(log._MANAGED_ENV_VAR, raising=False)
+    config_args = config_args.format(root=tmp_path.as_posix())
+    renamed_config_args = renamed_config_args.format(root=tmp_path.as_posix())
     (tmp_path / "foo").mkdir()
     (tmp_path / "foo" / "__init__.py").touch()
     (tmp_path / "foo" / "foo.py").write_text("import reflex as rx\n")
