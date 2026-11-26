@@ -101,12 +101,7 @@ class ElementObserver(Fragment):
         Returns:
             The props the fragment does not render.
         """
-        return [
-            *super()._exclude_props(),
-            "target",
-            *_OPTIONS,
-            *self.event_triggers,
-        ]
+        return [*super()._exclude_props(), *self.get_props(), *self.event_triggers]
 
     def add_imports(self) -> dict[str, ImportVar]:
         """Add the hook that observes the element.
