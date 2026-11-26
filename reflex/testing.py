@@ -21,7 +21,9 @@ import textwrap
 import threading
 import time
 import types
+from collections import defaultdict
 from collections.abc import Callable, Coroutine, Sequence
+from graphlib import CycleError, TopologicalSorter
 from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Self, TypeVar
@@ -360,6 +362,58 @@ class AppHarness:
             key = (str(self.app_path.resolve()), app_package)
             self._cached_app_state_modules.setdefault(key, set()).update(module_names)
 
+    @staticmethod
+    def _get_stale_state_module_order(
+        module_classes: dict[str, tuple[type[BaseState], ...]],
+        context: RegistrationContext,
+    ) -> list[str]:
+        """Find stale modules and their descendants in parent-first order.
+
+        Args:
+            module_classes: Cached state classes defined in each app module.
+            context: The current app registration context.
+
+        Returns:
+            The cached modules to reload.
+        """
+        parent_modules: dict[str, set[str]] = defaultdict(set)
+        child_modules: dict[str, set[str]] = defaultdict(set)
+        stale_modules: set[str] = set()
+        for module_name, state_classes in module_classes.items():
+            for state_cls in state_classes:
+                parent = state_cls.get_parent_state()
+                if parent is None:
+                    continue
+                parent_module = parent.__module__
+                if parent_module != module_name and parent_module in module_classes:
+                    parent_modules[module_name].add(parent_module)
+                    child_modules[parent_module].add(module_name)
+                registered_parent = context.base_states.get(parent.get_full_name())
+                if registered_parent is not None and registered_parent is not parent:
+                    stale_modules.add(module_name)
+
+        pending = list(stale_modules)
+        while pending:
+            children = child_modules[pending.pop()] - stale_modules
+            stale_modules.update(children)
+            pending.extend(children)
+
+        sorter = TopologicalSorter({
+            name: sorted(parent_modules[name] & stale_modules)
+            for name in sorted(stale_modules)
+        })
+        # Dependencies between modules can cycle even though class inheritance cannot.
+        # Keep reloading any remaining modules if no parent-first order exists.
+        with contextlib.suppress(CycleError):
+            sorter.prepare()
+        order: list[str] = []
+        while sorter.is_active():
+            ready = sorter.get_ready()
+            order.extend(ready)
+            sorter.done(*ready)
+        order.extend(sorted(stale_modules.difference(order)))
+        return order
+
     def _restore_cached_app_module_states(
         self, app_package: str, *, initialize_var_dependencies: bool = True
     ) -> None:
@@ -375,74 +429,56 @@ class AppHarness:
             return
 
         context = RegistrationContext.get()
-        stale_module_names: set[str] = set()
-        stale_classes: set[type[BaseState]] = set()
-        for module_name in module_names:
-            for state_cls in self._get_app_module_state_classes(module_name):
-                parent_state = state_cls.get_parent_state()
-                registered_parent = (
-                    context.base_states.get(parent_state.get_full_name())
-                    if parent_state is not None
-                    else None
-                )
-                if (
-                    registered_parent is not None
-                    and registered_parent is not parent_state
-                ):
-                    stale_module_names.add(module_name)
-                    stale_classes.add(state_cls)
-
-        stale_module_classes = {
+        module_classes = {
             module_name: self._get_app_module_state_classes(module_name)
-            for module_name in stale_module_names
+            for module_name in module_names
         }
-        for module_name in stale_module_names:
-            module = sys.modules[module_name]
-            reload_state_module(module=module_name)
-            importlib.reload(module)
-
-        if stale_classes:
-            replacements = {}
-            for module_name, old_classes in stale_module_classes.items():
+        if reload_order := self._get_stale_state_module_order(module_classes, context):
+            app_package_prefix = f"{app_package}."
+            app_modules = [
+                module
+                for name, module in sys.modules.items()
+                if module is not None
+                and (name == app_package or name.startswith(app_package_prefix))
+            ]
+            for module_name in reload_order:
+                reload_state_module(module=module_name)
+                importlib.reload(sys.modules[module_name])
                 reloaded_classes = {
                     state_cls.__name__: state_cls
                     for state_cls in self._get_app_module_state_classes(module_name)
                 }
-                for old_class in old_classes:
-                    if (
-                        replacement := reloaded_classes.get(old_class.__name__)
-                    ) is not None:
-                        replacements[id(old_class)] = replacement
-            app_package_prefix = f"{app_package}."
-            for module_name, module in tuple(sys.modules.items()):
-                if module is None or not (
-                    module_name == app_package
-                    or module_name.startswith(app_package_prefix)
-                ):
-                    continue
-                for name, value in vars(module).items():
-                    if (replacement := replacements.get(id(value))) is not None:
-                        setattr(module, name, replacement)
+                replacements = {
+                    id(old_class): replacement
+                    for old_class in module_classes[module_name]
+                    if (replacement := reloaded_classes.get(old_class.__name__))
+                    is not None
+                }
+                # The next module may import a newly reloaded state via an alias.
+                for module in app_modules:
+                    for name, value in vars(module).items():
+                        if (replacement := replacements.get(id(value))) is not None:
+                            setattr(module, name, replacement)
 
-            if self.app_instance is not None:
-                app_state = getattr(self.app_instance, "_state", None)
-                if (replacement := replacements.get(id(app_state))) is not None:
-                    self.app_instance._state = replacement
+                if self.app_instance is not None:
+                    app_state = getattr(self.app_instance, "_state", None)
+                    if (replacement := replacements.get(id(app_state))) is not None:
+                        self.app_instance._state = replacement
+                module_classes[module_name] = tuple(reloaded_classes.values())
 
         cached_classes = {
             state_cls.get_full_name(): state_cls
-            for module_name in module_names
-            for state_cls in self._get_app_module_state_classes(module_name)
+            for state_classes in module_classes.values()
+            for state_cls in state_classes
         }
         restored: dict[str, type[BaseState]] = {}
-        for module_name in module_names:
-            for state_cls in self._get_app_module_state_classes(module_name):
-                parent_state: type[BaseState] | None = state_cls
-                while parent_state is not None:
-                    full_name = parent_state.get_full_name()
-                    if full_name not in context.base_states:
-                        restored[full_name] = parent_state
-                    parent_state = parent_state.get_parent_state()
+        for state_cls in cached_classes.values():
+            parent_state: type[BaseState] | None = state_cls
+            while parent_state is not None:
+                full_name = parent_state.get_full_name()
+                if full_name not in context.base_states:
+                    restored[full_name] = parent_state
+                parent_state = parent_state.get_parent_state()
 
         if restored:
             for state_cls in sorted(restored.values(), key=lambda cls: len(cls.mro())):

@@ -505,10 +505,10 @@ def test_app_harness_restarts_multi_module_app_without_reimporting_states(
     assert factory_states[0].get_full_name() not in all_base_state_classes
 
 
-def test_app_harness_reloads_cached_child_when_parent_module_reloads(
+def test_app_harness_reloads_cached_descendants_when_parent_module_reloads(
     tmp_path, monkeypatch
 ):
-    """A cached child state must inherit from the reloaded app parent state.
+    """Cached descendant states must inherit from the reloaded app states.
 
     Args:
         tmp_path: Temporary directory for app modules.
@@ -525,6 +525,7 @@ def test_app_harness_reloads_cached_child_when_parent_module_reloads(
         "class ParentState(rx.State):\n"
         "    count: int = 0\n"
         "from .states import ChildState, SiblingState\n"
+        "from .grandchild import GrandchildState\n"
     )
     (package_dir / "states.py").write_text(
         "import reflex as rx\n"
@@ -536,6 +537,14 @@ def test_app_harness_reloads_cached_child_when_parent_module_reloads(
         "class SiblingState(ParentState):\n"
         "    sibling_count: int = 0\n"
     )
+    (package_dir / "grandchild.py").write_text(
+        "import reflex as rx\n"
+        "from .main import ChildState\n"
+        "class GrandchildState(ChildState):\n"
+        "    @rx.var(cache=True)\n"
+        "    def grandchild_value(self) -> int:\n"
+        "        return self.count + 2\n"
+    )
     monkeypatch.syspath_prepend(str(tmp_path))
     base = RegistrationContext()
     monkeypatch.setattr(AppHarness, "_base_registration_context", base)
@@ -543,10 +552,16 @@ def test_app_harness_reloads_cached_child_when_parent_module_reloads(
     active = base.fork()
     active_token = RegistrationContext.set(active)
     restart_token = None
-    module_names = (f"{app_package}.main", f"{app_package}.states", app_package)
+    module_names = (
+        f"{app_package}.grandchild",
+        f"{app_package}.states",
+        f"{app_package}.main",
+        app_package,
+    )
     try:
         main_module = importlib.import_module(f"{app_package}.main")
         states_module = importlib.import_module(f"{app_package}.states")
+        grandchild_module = importlib.import_module(f"{app_package}.grandchild")
         harness = AppHarness.create(root=tmp_path, app_name=app_package)
         harness.app_module = main_module
         harness._cache_app_state_modules(app_package)
@@ -555,23 +570,35 @@ def test_app_harness_reloads_cached_child_when_parent_module_reloads(
         RegistrationContext.reset(active_token)
         active_token = None
         restart_token = RegistrationContext.set(base.fork())
+        harness._restore_cached_app_module_states(
+            app_package, initialize_var_dependencies=False
+        )
+        reload_state_module(main_module.__name__)
         main_module = importlib.reload(main_module)
         harness.app_module = main_module
         harness.app_instance = cast(
-            reflex.App, SimpleNamespace(_state=states_module.ChildState)
+            reflex.App, SimpleNamespace(_state=grandchild_module.GrandchildState)
         )
         harness._restore_cached_app_module_states(app_package)
 
         child_state = states_module.ChildState
+        grandchild_state = grandchild_module.GrandchildState
         parent_state = main_module.ParentState
         context = RegistrationContext.get()
         assert child_state.get_parent_state() is parent_state
+        assert grandchild_state.get_parent_state() is child_state
         assert main_module.ChildState is child_state
+        assert main_module.GrandchildState is grandchild_state
         assert main_module.SiblingState is states_module.SiblingState
         assert harness.app_instance is not None
-        assert harness.app_instance._state is child_state
+        assert harness.app_instance._state is grandchild_state
         assert context.base_states[child_state.get_full_name()] is child_state
+        assert context.base_states[grandchild_state.get_full_name()] is grandchild_state
         assert child_state.get_name() in parent_state._always_dirty_substates
+        assert (
+            grandchild_state.get_full_name(),
+            "grandchild_value",
+        ) in parent_state._var_dependencies["count"]
     finally:
         for module_name in module_names:
             reload_state_module(module=module_name)
