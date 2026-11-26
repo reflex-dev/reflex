@@ -498,6 +498,9 @@ def _compile_stylesheet_files(files: Iterable[Path]) -> list[str]:
             try:
                 from sass import compile as sass_compile
 
+                # Writing through a stylesheet link an earlier compile left
+                # here would overwrite the file it points at.
+                target.unlink(missing_ok=True)
                 target.write_text(
                     # libsass is untyped; compiling from a filename returns the CSS.
                     data=cast(
