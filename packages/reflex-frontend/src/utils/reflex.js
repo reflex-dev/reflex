@@ -36,7 +36,8 @@ export const reflex = Object.freeze({
 
   /**
    * Build an event for `addEvents`.
-   * @param {string} name The full name of the event handler.
+   * @param {string} name The full name of the event handler, built in Python
+   *   as `f"{State.get_full_name()}.handler_name"` and passed in.
    * @param {object} [payload] The handler's arguments, by name.
    * @returns {any} The event.
    */
