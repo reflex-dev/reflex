@@ -1,0 +1,1 @@
+`rx.set_focus`, `rx.blur_focus` and `rx.set_value` now act on the right element when the id is built from a Var, such as `rx.set_value(f"row-{item}", "")` inside `rx.foreach`. Every row named the same ref, so each row's button acted on the last row. The three events also accept a plain `Var` id, such as `rx.set_focus(State.target_id)`.

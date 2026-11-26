@@ -13,6 +13,8 @@ def ServerSideEvent():
     import reflex as rx
 
     class SSState(rx.State):
+        rows: list[str] = ["alpha", "beta", "gamma"]
+
         @rx.event
         def set_value_yield(self):
             yield rx.set_value("a", "")
@@ -82,6 +84,23 @@ def ServerSideEvent():
                 "Focus input",
                 id="focus_input",
                 on_click=rx.set_focus("focus_target"),
+            ),
+            # Each row targets its own input through an id built from the item.
+            rx.foreach(
+                SSState.rows,
+                lambda row: rx.hstack(
+                    rx.input(id=f"row-{row}"),
+                    rx.button(
+                        "Focus row",
+                        id=f"focus-{row}",
+                        on_click=rx.set_focus(f"row-{row}"),
+                    ),
+                    rx.button(
+                        "Fill row",
+                        id=f"fill-{row}",
+                        on_click=rx.set_value(f"row-{row}", row),
+                    ),
+                ),
             ),
         )
 
@@ -166,3 +185,23 @@ def test_set_focus(page: Page) -> None:
     """
     page.locator("#focus_input").click()
     expect(page.locator("#focus_target")).to_be_focused()
+
+
+def test_set_value_and_set_focus_target_their_own_foreach_row(page: Page) -> None:
+    """An id built from an ``rx.foreach`` item names the input of its own row.
+
+    Regression for reflex-dev/reflex#7838: every row named the same ref, so
+    each row's buttons acted on the last row's input.
+
+    Args:
+        page: Playwright page.
+    """
+    rows = [page.locator(f"#row-{row}") for row in ("alpha", "beta", "gamma")]
+
+    page.locator("#fill-alpha").click()
+    expect(rows[0]).to_have_value("alpha")
+    expect(rows[1]).to_have_value("")
+    expect(rows[2]).to_have_value("")
+
+    page.locator("#focus-beta").click()
+    expect(rows[1]).to_be_focused()

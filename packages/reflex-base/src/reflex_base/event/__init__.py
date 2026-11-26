@@ -1879,11 +1879,32 @@ def window_alert(message: str | Var[str]) -> EventSpec:
     return run_script(Var("window").to(dict).alert.to(FunctionVar).call(message))
 
 
-def set_focus(ref: str) -> EventSpec:
+def _ref_args(ref: str | Var[str]) -> dict[str, Var]:
+    """Get the event argument that names the component with an id.
+
+    A component registers its ref under a name derived from a literal id,
+    which is sent as ``ref``. An id built from Vars is only known when the
+    event runs, and inside ``rx.foreach`` it differs for each item, so it is
+    sent as it evaluates, as ``id``, and the frontend looks the element up in
+    the document: it never names a registered ref, even one spelled the same.
+
+    Args:
+        ref: The id of the component.
+
+    Returns:
+        The name of the registered ref as ``ref``, or the id itself as ``id``
+        if built from Vars.
+    """
+    if isinstance(ref, Var) or constants.REFLEX_VAR_OPENING_TAG in ref:
+        return {"id": LiteralVar.create(ref)}
+    return {"ref": LiteralVar.create(format.format_ref(ref))}
+
+
+def set_focus(ref: str | Var[str]) -> EventSpec:
     """Set focus to specified ref.
 
     Args:
-        ref: The ref.
+        ref: The id of the component to focus.
 
     Returns:
         An event to set focus on the ref
@@ -1891,15 +1912,15 @@ def set_focus(ref: str) -> EventSpec:
     return server_side(
         "_set_focus",
         inspect.signature(set_focus),
-        ref=LiteralVar.create(format.format_ref(ref)),
+        **_ref_args(ref),
     )
 
 
-def blur_focus(ref: str) -> EventSpec:
+def blur_focus(ref: str | Var[str]) -> EventSpec:
     """Blur focus of specified ref.
 
     Args:
-        ref: The ref.
+        ref: The id of the component to blur.
 
     Returns:
         An event to blur focus on the ref
@@ -1907,7 +1928,7 @@ def blur_focus(ref: str) -> EventSpec:
     return server_side(
         "_blur_focus",
         inspect.signature(blur_focus),
-        ref=LiteralVar.create(format.format_ref(ref)),
+        **_ref_args(ref),
     )
 
 
@@ -1932,11 +1953,11 @@ def scroll_to(elem_id: str, align_to_top: bool | Var[bool] = True) -> EventSpec:
     )
 
 
-def set_value(ref: str, value: Any) -> EventSpec:
+def set_value(ref: str | Var[str], value: Any) -> EventSpec:
     """Set the value of a ref.
 
     Args:
-        ref: The ref.
+        ref: The id of the component to set the value of.
         value: The value to set.
 
     Returns:
@@ -1945,7 +1966,7 @@ def set_value(ref: str, value: Any) -> EventSpec:
     return server_side(
         "_set_value",
         inspect.signature(set_value),
-        ref=LiteralVar.create(format.format_ref(ref)),
+        **_ref_args(ref),
         value=value,
     )
 
