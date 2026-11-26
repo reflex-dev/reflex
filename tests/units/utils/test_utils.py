@@ -380,6 +380,40 @@ def test_initialize_non_existent_gitignore(
     assert set(file_content) - expected == set()
 
 
+@pytest.mark.parametrize(
+    ("assets_dir", "entry"),
+    [
+        ("assets", None),
+        ("site/assets", "site/assets/external/"),
+        ("../shared/assets", None),
+    ],
+)
+def test_initialize_gitignore_ignores_external_links_of_the_configured_assets_dir(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    assets_dir: str,
+    entry: str | None,
+):
+    """The links of shared assets are ignored in the configured assets directory too.
+
+    Args:
+        tmp_path: The app root.
+        monkeypatch: The pytest monkeypatch fixture.
+        assets_dir: The configured assets directory.
+        entry: The entry expected besides the defaults.
+    """
+    from reflex_base.config import Config
+
+    monkeypatch.chdir(tmp_path)
+    config = Config(app_name="site", assets_dir=Path(assets_dir))
+    monkeypatch.setattr(frontend_skeleton, "get_config", lambda: config)
+
+    frontend_skeleton.initialize_gitignore()
+
+    lines = set((tmp_path / ".gitignore").read_text().splitlines())
+    assert lines == constants.GitIgnore.DEFAULTS | ({entry} if entry else set())
+
+
 def test_initialize_agents_md_fetches_canonical(tmp_path, mocker):
     """Test that AGENTS.md is fetched and a CLAUDE.md bridge is created when absent."""
     agents_file = tmp_path / "AGENTS.md"
