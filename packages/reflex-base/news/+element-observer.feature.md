@@ -1,0 +1,1 @@
+The frontend ships `utils/helpers/element_observer.js`, the hook behind `rx.element_observer`. It observes an element with a `ResizeObserver`, an `IntersectionObserver`, scroll and resize listeners and a `transitionend` listener, and calls the latest handlers without observing again when they re-render.

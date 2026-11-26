@@ -12,11 +12,12 @@
   "packages/reflex-components-core/src/reflex_components_core/base/meta.pyi": "c0e97a357ac2521c9b1c48b9368513e7",
   "packages/reflex-components-core/src/reflex_components_core/base/script.pyi": "f90534d5aa80ee67a3e41d6f11196b10",
   "packages/reflex-components-core/src/reflex_components_core/base/strict_mode.pyi": "135dd395a27f01be303b3879ece179c1",
-  "packages/reflex-components-core/src/reflex_components_core/core/__init__.pyi": "931b222daf3755f67281b6c4d7155f85",
+  "packages/reflex-components-core/src/reflex_components_core/core/__init__.pyi": "b35f98ea23fee46727705d08d947bfbc",
   "packages/reflex-components-core/src/reflex_components_core/core/auto_scroll.pyi": "2d83dc211884423496c31d372d3f3734",
   "packages/reflex-components-core/src/reflex_components_core/core/banner.pyi": "85ff5f20fc7a59de5544858cfc364cf1",
   "packages/reflex-components-core/src/reflex_components_core/core/clipboard.pyi": "21d51b69ab11279e864f7aca9307462f",
   "packages/reflex-components-core/src/reflex_components_core/core/debounce.pyi": "86b2bea0aeec5334dbb64b3addae91df",
+  "packages/reflex-components-core/src/reflex_components_core/core/element_observer.pyi": "e03b608f4d7fce7cf80ccfac632150cd",
   "packages/reflex-components-core/src/reflex_components_core/core/helmet.pyi": "a43533eba05dec1ece2602bd64ca0f01",
   "packages/reflex-components-core/src/reflex_components_core/core/html.pyi": "bedb5c94e690d50721ddc7bfdfbe8a25",
   "packages/reflex-components-core/src/reflex_components_core/core/sticky.pyi": "a910d65f42f620531c959677d22977cb",
@@ -118,7 +119,7 @@
   "packages/reflex-components-recharts/src/reflex_components_recharts/polar.pyi": "adc4db1a3ca7cd292b099ec4d97a4346",
   "packages/reflex-components-recharts/src/reflex_components_recharts/recharts.pyi": "f2a9cf6db58d169289fbc76de6813300",
   "packages/reflex-components-sonner/src/reflex_components_sonner/toast.pyi": "b195e3845260389ced026d2f5c4adb93",
-  "reflex/__init__.pyi": "067a60e22fb825072f2f0b690662da5a",
+  "reflex/__init__.pyi": "e21f578cd741f4b03d896bff9f46d9ee",
   "reflex/components/__init__.pyi": "9facd05a776d0641432696bbf8e34388",
   "reflex/experimental/memo.pyi": "0fc8eae24cd0def5ea9d8d66ce87206e"
 }

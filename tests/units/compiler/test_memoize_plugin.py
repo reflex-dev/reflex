@@ -612,6 +612,99 @@ def test_foreach_form_submit_handler_receives_loop_index() -> None:
     assert "indexRxState:index_rx_state_" in loop_body
 
 
+@pytest.mark.parametrize("auto_memoize", [True, False])
+def test_branch_and_loop_hooks_in_a_snapshot_boundary_run_in_wrappers(
+    auto_memoize: bool,
+) -> None:
+    """A lifecycle event under a loop or branch in a snapshot boundary gets its own component.
+
+    The boundary compiles its subtree into one function, at whose top the loop
+    item's effect would read a loop variable that does not exist there, and the
+    branch's effect would run whatever branch is shown.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    ctx = CompileContext(
+        pages=[
+            FakePage(
+                route="/p",
+                component=lambda: rx.el.svg(
+                    rx.foreach(
+                        SpecialFormMemoState.items,
+                        lambda item: rx.el.text(item, on_mount=rx.console_log(item)),
+                    ),
+                    rx.cond(
+                        SpecialFormMemoState.flag,
+                        rx.el.circle(on_mount=rx.console_log("shown")),
+                    ),
+                ),
+            )
+        ],
+        hooks=CompilerHooks(plugins=default_page_plugins(auto_memoize=auto_memoize)),
+    )
+    with ctx:
+        ctx.compile()
+    files, _imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+    )
+    # Content digests, also camel-cased in prop names, change with the code.
+    modules = {
+        re.sub(r"_[0-9a-f]{32}", "", name): re.sub(
+            r"_?[0-9a-fA-F]{32}", "", block
+        ).strip()
+        for name, block in _module_by_export(files).items()
+    }
+
+    state = SpecialFormMemoState.get_full_name().replace(".", "__")
+    assert modules == {
+        "Svg_svg": _code(
+            "Svg_svg = /*#__PURE__*/ (() => {",
+            "const Svg_svg = memo(({children, ...rest}) => {",
+            f'    const {state} = useStateContext("{state}", '
+            '["items_rx_state_", "flag_rx_state_"])',
+            "    return(",
+            '        jsx("svg",{...mergeSlotProps(rest, ({  }))},'
+            f"Array.prototype.map.call({state}.items_rx_state_ ?? [],"
+            "((item_rx_state_,index)=>(jsx(Text_text,"
+            "{index:index,itemRxState:item_rx_state_,key:index},item_rx_state_)))),"
+            f"jsx(Fragment,{{}},({state}.flag_rx_state_?"
+            "(jsx(Fragment,{},jsx(Circle_circle,{},))):(jsx(Fragment,{},)))))",
+            "    )",
+            "});",
+            'Svg_svg.displayName = "Svg";',
+            "return Svg_svg;",
+            "})();",
+        ),
+        "Text_text": _code(
+            "Text_text = /*#__PURE__*/ (() => {",
+            "const Text_text = memo(({children, itemRxState:item_rx_state_, "
+            "index:index, ...rest}) => {",
+            "    ",
+            *_mount_effect(_console_log("item_rx_state_")),
+            "    return(",
+            '        jsx("text",{...mergeSlotProps(rest, ({ key:index }))},children)',
+            "    )",
+            "});",
+            'Text_text.displayName = "Text";',
+            "return Text_text;",
+            "})();",
+        ),
+        "Circle_circle": _code(
+            "Circle_circle = /*#__PURE__*/ (() => {",
+            "const Circle_circle = memo(({children, ...rest}) => {",
+            "    ",
+            *_mount_effect(_console_log('"shown"')),
+            "    return(",
+            '        jsx("circle",{...mergeSlotProps(rest, ({  }))},)',
+            "    )",
+            "});",
+            'Circle_circle.displayName = "Circle";',
+            "return Circle_circle;",
+            "})();",
+        ),
+    }
+
+
 class SlotHolder(Component):
     """A component that takes another component in a prop."""
 

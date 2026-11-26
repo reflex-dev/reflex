@@ -1,0 +1,1 @@
+Add an Element Observer page under Library > Other: how `rx.element_observer` feeds measurements into client state, with examples for responsive components, lazy reveals, scroll spies, back-to-top buttons and expanding panels.
