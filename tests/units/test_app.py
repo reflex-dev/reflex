@@ -5012,16 +5012,26 @@ def test_compile_defers_full_collections(
     """A compile runs without automatic full collections and restores them after.
 
     The incremental collector of CPython 3.14.0 to 3.14.4 paces its old generation
-    by threshold1 instead of threshold2.
+    by threshold1 instead of threshold2, and reports no threshold2 at all, so the
+    test checks the thresholds set rather than the ones read back.
     """
     app, web_dir = compilable_app
     mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
     mocker.patch("reflex.app._INCREMENTAL_GC", incremental)
-    threshold0, threshold1, threshold2 = gc.get_threshold()
+    original = gc.get_threshold()
+    threshold0, threshold1, threshold2 = original
+    set_threshold = gc.set_threshold
+    calls = []
+
+    def record(*thresholds: int) -> None:
+        calls.append(thresholds)
+        set_threshold(*thresholds)
+
+    mocker.patch("reflex.app.gc.set_threshold", side_effect=record)
     seen = []
 
     def compile_app(*args, **kwargs) -> bool:
-        seen.append(gc.get_threshold())
+        seen.append(list(calls))
         if fails:
             raise RuntimeError
         return True
@@ -5032,12 +5042,14 @@ def test_compile_defers_full_collections(
         app._compile()
 
     deferred = _DEFERRED_FULL_COLLECTION_THRESHOLD
-    assert seen == [
+    expected = (
         (threshold0, deferred, threshold2)
         if incremental
         else (threshold0, threshold1, deferred)
-    ]
-    assert gc.get_threshold() == (threshold0, threshold1, threshold2)
+    )
+    assert seen == [[expected]]
+    assert calls == [expected, original]
+    assert gc.get_threshold() == original
 
 
 def test_compile_skips_telemetry_when_compile_app_short_circuits(
