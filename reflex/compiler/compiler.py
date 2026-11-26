@@ -452,6 +452,22 @@ def _resolve_stylesheet_files(stylesheet: str) -> list[Path]:
     return files
 
 
+def _has_stylesheet_namesake(stylesheet: Path) -> bool:
+    """Check whether a stylesheet of another supported type has the same name.
+
+    Args:
+        stylesheet: The stylesheet file.
+
+    Returns:
+        Whether a file next to it differs from it only in its stylesheet suffix.
+    """
+    return any(
+        stylesheet.with_suffix(f".{ext}").is_file()
+        for ext in constants.Reflex.STYLESHEETS_SUPPORTED
+        if f".{ext}" != stylesheet.suffix
+    )
+
+
 def _compile_stylesheet_files(files: Iterable[Path]) -> list[str]:
     """Copy stylesheet asset files into the styles directory, compiling sass.
 
@@ -466,7 +482,12 @@ def _compile_stylesheet_files(files: Iterable[Path]) -> list[str]:
     target_paths = []
 
     for stylesheet in files:
-        target_path = stylesheet.relative_to(assets_app_path).with_suffix(".css")
+        target_path = stylesheet.relative_to(assets_app_path)
+        if stylesheet.suffix != ".css" and _has_stylesheet_namesake(stylesheet):
+            # Compiling to the namesake's file would overwrite its CSS.
+            target_path = target_path.with_name(target_path.name + ".css")
+        else:
+            target_path = target_path.with_suffix(".css")
         target = get_web_dir() / constants.Dirs.STYLES / target_path
 
         target.parent.mkdir(parents=True, exist_ok=True)
