@@ -870,6 +870,7 @@ def create_document_root(
     html_lang: str | None = None,
     html_custom_attrs: dict[str, Var | Any] | None = None,
     default_color_mode: str = "system",
+    scroll_restoration: bool = True,
 ) -> Component:
     """Create the document root.
 
@@ -879,6 +880,7 @@ def create_document_root(
         html_custom_attrs: custom attributes added to the html root element.
         default_color_mode: The color mode applied before hydration when no theme
             is saved in the browser.
+        scroll_restoration: Whether to render React Router's ScrollRestoration.
 
     Returns:
         The document root.
@@ -952,7 +954,7 @@ def create_document_root(
         Head.create(*head_components),
         Body.create(
             Var("children"),
-            ScrollRestoration.create(),
+            *([ScrollRestoration.create()] if scroll_restoration else []),
             Scripts.create(),
         ),
         lang=html_lang or "en",
