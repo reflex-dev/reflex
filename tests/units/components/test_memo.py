@@ -24,7 +24,10 @@ from reflex_base.components.memo import (
     _analyze_params,
     _LazyBody,
     _MemoCallBinding,
+    _reregister_used_memo,
     component_hash,
+    create_passthrough_component_memo,
+    materialize_registered_memo_bodies,
     memo_tag,
 )
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec
@@ -2008,6 +2011,210 @@ def test_self_referencing_var_memo():
 
     invoked = recursive_count(n=Var(_js_expr="three", _var_type=int))
     assert "recursive_count" in str(invoked)
+
+
+def _this_memo_module_path() -> str:
+    """Get the path the memos defined in this test module compile to.
+
+    Returns:
+        The mirrored memo module path.
+    """
+    segments = memo_paths.module_to_mirrored_segments(__name__)
+    assert segments is not None
+    return compiler_utils.get_memo_module_path(segments)
+
+
+def test_memo_reregisters_on_use_after_registry_clear():
+    """Using a ``@rx.memo`` repopulates ``MEMOS`` after the registry is cleared,
+    so the compiler still emits its module.
+    """
+
+    @rx.memo
+    def sample_card(*, title: rx.Var[str]) -> rx.Component:
+        return rx.box(rx.heading(title))
+
+    key = ("SampleCard", __name__)
+    assert key in MEMOS  # registered at decoration time
+
+    MEMOS.clear()
+    assert key not in MEMOS
+
+    # Using (rendering) the memo must re-register it.
+    sample_card(title="Hello")
+    assert MEMOS.keys() == {key}
+
+    # ...so the compiler still emits its module.
+    sym = memo_paths.mirrored_symbol("SampleCard", __name__)
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
+    assert files == [
+        (
+            _this_memo_module_path(),
+            "\n"
+            'import {isTrue} from "$/utils/state"\n'
+            "import {Box as RadixThemesBox,Heading as RadixThemesHeading}"
+            ' from "@radix-ui/themes"\n'
+            'import {jsx} from "@emotion/react"\n'
+            'import {Fragment,memo,useEffect} from "react"\n'
+            + "\n" * 8
+            + "\n".join([
+                f"export const {sym} = /*#__PURE__*/ (() => {{",
+                f"const {sym} = memo(({{title:titleRxMemo}}) => {{",
+                "    ",
+                "    return(",
+                "        jsx(RadixThemesBox,{},jsx(RadixThemesHeading,{},titleRxMemo))",
+                "    )",
+                "});",
+                f'{sym}.displayName = "SampleCard";',
+                f"return {sym};",
+                "})();\n",
+            ]),
+        )
+    ]
+
+
+def test_nested_var_memo_reregistered_before_compile_snapshot():
+    """A var memo referenced only inside another memo's body is still emitted.
+
+    Regression: rendering ``outer`` after a registry clear leaves its lazy body
+    unread, so ``inner`` is missing from the snapshot the compiler takes.
+    ``materialize_registered_memo_bodies`` re-registers it first.
+    """
+
+    @rx.memo
+    def inner_fmt(*, value: rx.Var[str]) -> rx.Var[str]:
+        return rx.Var.create(f"[{value}]")
+
+    @rx.memo
+    def outer_fmt(*, value: rx.Var[str]) -> rx.Var[str]:
+        return inner_fmt(value=value)
+
+    inner_key = ("inner_fmt", __name__)
+    outer_key = ("outer_fmt", __name__)
+    inner_sym = memo_paths.mirrored_symbol("inner_fmt", __name__)
+    outer_sym = memo_paths.mirrored_symbol("outer_fmt", __name__)
+
+    MEMOS.clear()
+
+    # Rendering the outer memo re-registers only itself; its lazy body (which
+    # references inner) is not read yet.
+    outer_fmt(value=rx.Var.create("x"))
+    assert MEMOS.keys() == {outer_key}
+
+    # The compiler pre-pass settles the registry before it snapshots MEMOS.
+    materialize_registered_memo_bodies()
+    assert MEMOS.keys() == {outer_key, inner_key}
+
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
+    assert files == [
+        (
+            _this_memo_module_path(),
+            "\n"
+            'import {isTrue} from "$/utils/state"\n'
+            'import {jsx} from "@emotion/react"\n'
+            'import {Fragment,useEffect} from "react"\n'
+            + "\n" * 6
+            + "\n".join([
+                f"export const {outer_sym} = ((value) => ({inner_sym}(value)));",
+                "",
+                f'export const {inner_sym} = ((value) => ("["+value+"]"));',
+                "",
+                "\n",
+            ]),
+        )
+    ]
+
+
+def test_cached_memo_bodies_reregister_nested_memos_after_registry_clear():
+    """Memos nested in a body an earlier compile cached are emitted again.
+
+    Regression: a later ``AppHarness`` clears ``MEMOS`` without re-importing a
+    shared memo module, so only re-running the cached outer bodies can
+    re-register the inner memos their compiled modules import.
+    """
+
+    @rx.memo
+    def nested_fmt(*, value: rx.Var[str]) -> rx.Var[str]:
+        return rx.Var.create(f"[{value}]")
+
+    @rx.memo
+    def wrapping_fmt(*, value: rx.Var[str]) -> rx.Var[str]:
+        return nested_fmt(value=value)
+
+    @rx.memo
+    def nested_card(*, title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    @rx.memo
+    def wrapping_card(*, title: rx.Var[str]) -> rx.Component:
+        return rx.box(nested_card(title=title))
+
+    # The first app's compile caches every body.
+    materialize_registered_memo_bodies()
+
+    MEMOS.clear()
+    wrapping_fmt(value=rx.Var.create("x"))
+    wrapping_card(title="Hello")
+    materialize_registered_memo_bodies()
+
+    names = ("wrapping_fmt", "nested_fmt", "WrappingCard", "NestedCard")
+    assert MEMOS.keys() == {(name, __name__) for name in names}
+    wrapping_fmt_sym, nested_fmt_sym, wrapping_card_sym, nested_card_sym = (
+        memo_paths.mirrored_symbol(name, __name__) for name in names
+    )
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
+    assert files == [
+        (
+            _this_memo_module_path(),
+            "\n"
+            'import {isTrue} from "$/utils/state"\n'
+            "import {Box as RadixThemesBox,Text as RadixThemesText}"
+            ' from "@radix-ui/themes"\n'
+            'import {jsx} from "@emotion/react"\n'
+            'import {Fragment,memo,useEffect} from "react"\n'
+            + "\n" * 6
+            + "\n".join([
+                f"export const {wrapping_fmt_sym} = ((value) => ({nested_fmt_sym}(value)));",
+                "",
+                f'export const {nested_fmt_sym} = ((value) => ("["+value+"]"));',
+                "",
+                "",
+                "",
+                f"export const {wrapping_card_sym} = /*#__PURE__*/ (() => {{",
+                f"const {wrapping_card_sym} = memo(({{title:titleRxMemo}}) => {{",
+                "    ",
+                "    return(",
+                f"        jsx(RadixThemesBox,{{}},jsx({nested_card_sym},{{title:titleRxMemo}},))",
+                "    )",
+                "});",
+                f'{wrapping_card_sym}.displayName = "WrappingCard";',
+                f"return {wrapping_card_sym};",
+                "})();",
+                "",
+                f"export const {nested_card_sym} = /*#__PURE__*/ (() => {{",
+                f"const {nested_card_sym} = memo(({{title:titleRxMemo}}) => {{",
+                "    ",
+                "    return(",
+                '        jsx(RadixThemesText,{as:"p"},titleRxMemo)',
+                "    )",
+                "});",
+                f'{nested_card_sym}.displayName = "NestedCard";',
+                f"return {nested_card_sym};",
+                "})();\n",
+            ]),
+        )
+    ]
+
+
+def test_reregister_used_memo_skips_passthrough_auto_memos():
+    """Passthrough auto-memos (tracked separately by the compiler) must never
+    enter ``MEMOS`` on use.
+    """
+    _, definition = create_passthrough_component_memo(
+        rx.box(rx.text("x")), source_module=__name__
+    )
+    MEMOS.clear()
+    _reregister_used_memo(definition)
+    assert MEMOS == {}
 
 
 class _AppWrapProbe(Component):

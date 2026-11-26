@@ -20,12 +20,12 @@ import textwrap
 import threading
 import time
 import types
-from collections.abc import Callable, Coroutine, Sequence
+from collections.abc import Callable, Coroutine, Iterator, Sequence
 from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Self, TypeVar
 
-from reflex_base.components.memo import MEMOS
+from reflex_base.components.memo import MEMOS, MemoDefinition
 from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
@@ -39,7 +39,7 @@ import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.istate.shared import SharedState as SharedState  # To register it.
-from reflex.state import reload_state_module
+from reflex.state import BaseState, State, all_base_state_classes, reload_state_module
 from reflex.utils.exec import _frontend_dev_command, _with_development_condition
 from reflex.utils.export import export
 from reflex.utils.token_manager import TokenManager
@@ -84,6 +84,34 @@ def _get_uvicorn():
         )
         raise ImportError(msg) from exc
     return uvicorn
+
+
+def _iter_substates(state: type[BaseState]) -> Iterator[type[BaseState]]:
+    """Yield the registered substates below ``state``, parents first.
+
+    Args:
+        state: The state to walk from.
+
+    Yields:
+        Each substate in the active registration context.
+    """
+    for substate in state.get_substates():
+        yield substate
+        yield from _iter_substates(substate)
+
+
+def _restore_states(states: Sequence[type[BaseState]]) -> None:
+    """Re-register states that ``reload_state_module`` stripped from the context.
+
+    Args:
+        states: The stripped states, parents first.
+    """
+    for state in states:
+        RegistrationContext.register_base_state(state)
+        all_base_state_classes[state.get_full_name()] = None
+    # Dependencies may name any restored state, so resolve them once all are back.
+    for state in states:
+        state._init_var_dependency_dicts()
 
 
 if platform.system() == "Windows":
@@ -140,7 +168,13 @@ class AppHarness:
     backend: uvicorn.Server | None = None
     _frontends: list[WebDriver] = dataclasses.field(default_factory=list)
     _registry_token: contextvars.Token[RegistrationContext] | None = None
+    # The memo registry a generated app cleared, which stop() restores: a real app is
+    # not re-imported, so the memos its prebuilt pages render never register again.
+    _cleared_memos: dict[tuple[str, str | None], MemoDefinition] | None = None
     _base_registration_context: ClassVar[RegistrationContext] | None = None
+    # A real app is imported only once, so the states stop() strips from it are
+    # kept per app module for its next harness to restore.
+    _stripped_app_states: ClassVar[dict[str, list[type[BaseState]]]] = {}
 
     @classmethod
     def create(
@@ -266,57 +300,80 @@ class AppHarness:
         # prerendering, so the dev server serves prerendered page HTML whose
         # hydration failures break event delivery (notably under vite >= 8.2).
         environment.REFLEX_ENV_MODE.set(reflex.constants.Env.DEV)
-        # Reset the global memo registry so previous AppHarness apps do not
-        # leak compiled component definitions into the next test app.
-        MEMOS.clear()
         self.app_path.mkdir(parents=True, exist_ok=True)
-        if self.app_source is not None:
-            app_globals = self._get_globals_from_signature(self.app_source)
-            if isinstance(self.app_source, functools.partial):
-                self.app_source = self.app_source.func
-            # get the source from a function or module object
-            source_code = "\n".join([
-                "\n".join([
-                    self.get_app_global_source(k, v) for k, v in app_globals.items()
-                ]),
-                self._get_source_from_app_source(self.app_source),
-            ])
-            get_config().loglevel = reflex.constants.LogLevel.INFO
+
+        if self.app_source is None:
+            # Real, pre-existing app: import once and use it as-is. Reloading an
+            # already-imported app re-runs only the top module, dropping every
+            # submodule page/state/@rx.memo, so use reload=False (no reset).
             with chdir(self.app_path):
-                reflex.reflex._init(
-                    name=self.app_name,
-                    template=reflex.constants.Templates.DEFAULT,
+                self._registry_token = RegistrationContext.set(
+                    self._fork_base_registration_context()
                 )
-                self.app_module_path.write_text(source_code)
-        else:
-            # Just initialize the web folder.
-            with chdir(self.app_path):
+                # Load this app's config before .web is initialized from it.
+                reload_config()
                 reflex.utils.prerequisites.initialize_frontend_dependencies()
-        with chdir(self.app_path):
-            # Use a new registration context for a new app.
-            if AppHarness._base_registration_context is None:
-                # Save the initial RegistrationContext for the app if we haven't already
-                AppHarness._base_registration_context = (
-                    RegistrationContext.ensure_context()
+                os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
+                os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
+                self.app_instance, self.app_module = (
+                    reflex.utils.prerequisites.get_and_validate_app(reload=False)
                 )
-            new_registration_context = AppHarness._base_registration_context.fork()
-            self._registry_token = RegistrationContext.set(new_registration_context)
+                # A real app stays bound to the context of its first import, so it
+                # takes this run's config; stop() still resets to the pre-fork context.
+                app_context = self.app_instance._registration_context
+                app_context._set_config(get_config())
+                RegistrationContext.set(app_context)
+                _restore_states(
+                    AppHarness._stripped_app_states.pop(self.app_module.__name__, ())
+                )
+                self.app_asgi = self.app_instance()
+            return
+
+        # Generated app: reset the global memo registry so a previous AppHarness
+        # app does not leak compiled component definitions into the next test app.
+        self._cleared_memos = dict(MEMOS)
+        MEMOS.clear()
+        app_globals = self._get_globals_from_signature(self.app_source)
+        if isinstance(self.app_source, functools.partial):
+            self.app_source = self.app_source.func
+        # get the source from a function or module object
+        source_code = "\n".join([
+            "\n".join([
+                self.get_app_global_source(k, v) for k, v in app_globals.items()
+            ]),
+            self._get_source_from_app_source(self.app_source),
+        ])
+        get_config().loglevel = reflex.constants.LogLevel.INFO
+        with chdir(self.app_path):
+            reflex.reflex._init(
+                name=self.app_name,
+                template=reflex.constants.Templates.DEFAULT,
+            )
+            self.app_module_path.write_text(source_code)
+        with chdir(self.app_path):
+            self._registry_token = RegistrationContext.set(
+                self._fork_base_registration_context()
+            )
             # ensure config and app are reloaded when testing different app
-            config = reload_config()
+            reload_config()
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
-            # Ensure we compile generated apps, and reload pre-existing app modules
-            # that were already imported so they can re-register memo definitions.
-            should_reload_app = (
-                self.app_source is not None or config.module in sys.modules
-            )
             self.app_instance, self.app_module = (
-                reflex.utils.prerequisites.get_and_validate_app(
-                    reload=should_reload_app
-                )
+                reflex.utils.prerequisites.get_and_validate_app(reload=True)
             )
             self.app_asgi = self.app_instance()
+
+    @staticmethod
+    def _fork_base_registration_context() -> RegistrationContext:
+        """Fork the registration context that predates every harness.
+
+        Returns:
+            A fork with the base registrations and no app.
+        """
+        if AppHarness._base_registration_context is None:
+            AppHarness._base_registration_context = RegistrationContext.ensure_context()
+        return AppHarness._base_registration_context.fork()
 
     def _reload_state_module(self):
         """Forget the states of every module of the app's package, so they never reach the next app."""
@@ -324,6 +381,12 @@ class AppHarness:
             self.app_module.__name__ if self.app_module else self.app_name
         ).partition(".")[0]
         prefix = f"{package}."
+        if self.app_source is None and self.app_module is not None:
+            AppHarness._stripped_app_states[self.app_module.__name__] = [
+                state
+                for state in _iter_substates(State)
+                if state.__module__ == package or state.__module__.startswith(prefix)
+            ]
         for module in [
             name for name in sys.modules if name == package or name.startswith(prefix)
         ]:
@@ -508,6 +571,10 @@ class AppHarness:
         self._reload_state_module()
         if self._registry_token is not None:
             RegistrationContext.reset(self._registry_token)
+        if self._cleared_memos is not None:
+            MEMOS.clear()
+            MEMOS.update(self._cleared_memos)
+            self._cleared_memos = None
 
         if self.backend is not None:
             self.backend.should_exit = True

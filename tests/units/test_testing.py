@@ -1,6 +1,7 @@
 """Unit tests for the included testing tools."""
 
 import sys
+from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from unittest import mock
 
@@ -11,10 +12,12 @@ from reflex_base.constants import IS_WINDOWS
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
 
+import reflex.app
 import reflex.constants
 import reflex.reflex as reflex_cli
 import reflex.testing as reflex_testing
 import reflex.utils.prerequisites
+from reflex.state import State
 from reflex.testing import AppHarness
 from reflex.utils.exec import should_prerender_routes
 
@@ -65,11 +68,13 @@ def harness_mocks(monkeypatch):
     Args:
         monkeypatch: pytest monkeypatch fixture
 
-    Returns:
+    Yields:
         Namespace with fake_config and get_and_validate_app mock.
     """
     fake_config = SimpleNamespace(loglevel=None, module="test_app.test_app")
-    fake_app = mock.Mock(_state_manager=None)
+    fake_app = mock.Mock(
+        _state_manager=None, _registration_context=RegistrationContext()
+    )
     get_and_validate_app = mock.Mock(
         return_value=reflex.utils.prerequisites.AppInfo(
             app=fake_app,
@@ -87,10 +92,13 @@ def harness_mocks(monkeypatch):
         get_and_validate_app,
     )
 
-    return SimpleNamespace(
+    # _initialize_app() sets a context that only stop() resets.
+    token = RegistrationContext.set(RegistrationContext.ensure_context())
+    yield SimpleNamespace(
         config=fake_config,
         get_and_validate_app=get_and_validate_app,
     )
+    RegistrationContext.reset(token)
 
 
 def test_app_harness_initialize_isolates_memo_registries(
@@ -167,13 +175,15 @@ def test_app_harness_initialize_resets_leaked_prod_env_mode(
     assert not should_prerender_routes()
 
 
-def test_app_harness_initialize_reloads_existing_imported_app(
-    tmp_path, harness_mocks, monkeypatch
+def test_app_harness_initialize_preserves_existing_imported_app(
+    tmp_path, preserve_memo_registries, harness_mocks, monkeypatch
 ):
-    """Ensure pre-existing imported apps are reloaded after memo registry reset.
+    """A real (``app_source is None``) app is imported with ``reload=False`` and
+    its registrations (incl. memos) are kept, not reset.
 
     Args:
         tmp_path: pytest tmp_path fixture
+        preserve_memo_registries: restores global memo registries after the test
         harness_mocks: shared AppHarness mock setup
         monkeypatch: pytest monkeypatch fixture
     """
@@ -187,11 +197,286 @@ def test_app_harness_initialize_reloads_existing_imported_app(
         harness_mocks.config.module,
         ModuleType(harness_mocks.config.module),
     )
+    MEMOS["existing_memo", None] = mock.sentinel.memo
 
     harness = AppHarness.create(root=tmp_path / "plain_app")
     harness._initialize_app()
 
-    harness_mocks.get_and_validate_app.assert_called_once_with(reload=True)
+    harness_mocks.get_and_validate_app.assert_called_once_with(reload=False)
+    # The real app's registrations (incl. memos) are preserved, not reset.
+    assert ("existing_memo", None) in MEMOS
+
+
+def test_app_harness_initialize_loads_real_app_config_before_frontend(
+    tmp_path, harness_mocks, monkeypatch
+):
+    """A real app's ``.web`` is initialized from its own config, not a stale one.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        harness_mocks: shared AppHarness mock setup
+        monkeypatch: pytest monkeypatch fixture
+    """
+    calls = []
+    monkeypatch.setattr(
+        reflex_testing, "reload_config", lambda: calls.append("reload_config")
+    )
+    monkeypatch.setattr(
+        reflex.utils.prerequisites,
+        "initialize_frontend_dependencies",
+        lambda: calls.append("initialize_frontend_dependencies"),
+    )
+
+    AppHarness.create(root=tmp_path / "plain_app")._initialize_app()
+
+    assert calls == ["reload_config", "initialize_frontend_dependencies"]
+
+
+def _write_app_package(app_root: Path, name: str, modules: dict[str, str]) -> None:
+    """Write an app's rxconfig and package below ``app_root``.
+
+    Args:
+        app_root: The app's root directory.
+        name: The app name, which is also its package.
+        modules: The source of each package module, by module name.
+    """
+    (app_root / name).mkdir(parents=True)
+    (app_root / "rxconfig.py").write_text(
+        f"import reflex as rx\n\nconfig = rx.Config(app_name={name!r})\n"
+    )
+    (app_root / name / "__init__.py").write_text("")
+    for module, source in modules.items():
+        (app_root / name / f"{module}.py").write_text(source)
+
+
+def _write_real_app(root: Path, name: str) -> Path:
+    """Write a real app whose states live in its top module and a submodule.
+
+    Args:
+        root: The directory to create the app in.
+        name: The app name.
+
+    Returns:
+        The app's root directory.
+    """
+    _write_app_package(
+        root / name,
+        name,
+        {
+            "sub": (
+                "import reflex as rx\n\n\n"
+                "class SubState(rx.State):\n"
+                "    value: int = 1\n\n"
+                "    @rx.var(cache=False)\n"
+                "    def doubled(self) -> int:\n"
+                "        return self.value * 2\n"
+            ),
+            name: (
+                "import reflex as rx\n\n"
+                f"from {name}.sub import SubState\n\n\n"
+                "class TopState(rx.State):\n"
+                "    @rx.var\n"
+                "    def hydrated(self) -> bool:\n"
+                "        return self.is_hydrated\n\n\n"
+                "app = rx.App()\n"
+                "app.add_page(lambda: rx.text(SubState.doubled, TopState.hydrated), route='/')\n"
+            ),
+        },
+    )
+    return root / name
+
+
+def _start_harness(harness: AppHarness) -> AppHarness:
+    """Initialize ``harness``'s app without starting any server.
+
+    Args:
+        harness: The harness to initialize.
+
+    Returns:
+        The initialized harness.
+    """
+    harness._initialize_app()
+    return harness
+
+
+def _real_app_registrations(package: str) -> tuple:
+    """Snapshot what the active context and the root state hold for ``package``.
+
+    Args:
+        package: The app package.
+
+    Returns:
+        The package's substates of the root state and its root dependency tracking.
+    """
+    states = {
+        state
+        for state in RegistrationContext.get().get_substates(State)
+        if state.__module__.partition(".")[0] == package
+    }
+    full_names = {state.get_full_name() for state in states}
+    return (
+        states,
+        {
+            var: {dep for dep in deps if dep[0] in full_names}
+            for var, deps in State._var_dependencies.items()
+            if any(dep[0] in full_names for dep in deps)
+        },
+        State._potentially_dirty_states & full_names,
+        State._always_dirty_substates & {state.get_name() for state in states},
+    )
+
+
+@pytest.fixture
+def real_app_harness_env(monkeypatch):
+    """Let apps written to disk go through ``AppHarness._initialize_app`` and ``stop``.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture
+
+    Yields:
+        Nothing; the app modules the test imported are removed afterwards.
+    """
+    monkeypatch.setattr(
+        reflex.utils.prerequisites, "initialize_frontend_dependencies", lambda: None
+    )
+    # Other unit tests subclass BaseState directly, which App() rejects outside
+    # tests, and leave states behind that a compile of the whole tree rejects.
+    monkeypatch.setattr(reflex.app, "is_testing_env", lambda: True)
+    monkeypatch.setattr(reflex.app.App, "__call__", lambda self: None)
+    monkeypatch.setattr(
+        AppHarness,
+        "_base_registration_context",
+        RegistrationContext.ensure_context().fork(),
+    )
+    monkeypatch.setattr(AppHarness, "_stripped_app_states", {})
+    # stop() rewrites the root state's dependency tracking; keep the original.
+    monkeypatch.setattr(
+        State,
+        "_var_dependencies",
+        {var: set(deps) for var, deps in State._var_dependencies.items()},
+    )
+    for attr in ("_potentially_dirty_states", "_always_dirty_substates"):
+        monkeypatch.setattr(State, attr, set(getattr(State, attr)))
+    monkeypatch.setattr(sys, "path", list(sys.path))
+    yield
+    for name in [
+        n for n in sys.modules if n.startswith(("real_app_", "generated_app"))
+    ]:
+        del sys.modules[name]
+
+
+@pytest.mark.usefixtures("real_app_harness_env")
+def test_app_harness_keeps_real_app_states_across_harnesses(tmp_path):
+    """A real app's states come back for its next harness; real apps never share a context.
+
+    A real app is imported only once, so ``stop()`` must not lose the states it
+    strips, the next harness must still read its config from disk, and a second
+    real app must not register into the first one's context.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+    """
+    roots = [_write_real_app(tmp_path, name) for name in ("real_app_a", "real_app_b")]
+
+    def start(root: Path) -> AppHarness:
+        return _start_harness(AppHarness.create(root=root))
+
+    def expected(name: str) -> tuple:
+        top, sub = sys.modules[f"{name}.{name}"].TopState, sys.modules[f"{name}.sub"]
+        return (
+            {top, sub.SubState},
+            {"is_hydrated": {(top.get_full_name(), "hydrated")}},
+            {top.get_full_name()},
+            {sub.SubState.get_name()},
+        )
+
+    first = start(roots[0])
+    assert _real_app_registrations("real_app_a") == expected("real_app_a")
+    first.stop()
+    assert _real_app_registrations("real_app_a") == (set(), {}, set(), set())
+
+    (roots[0] / "rxconfig.py").write_text(
+        "import reflex as rx\n\n"
+        "config = rx.Config(app_name='real_app_a', frontend_path='/next')\n"
+    )
+    again = start(roots[0])
+    assert again.app_instance is first.app_instance
+    assert reflex_base.config.get_config().frontend_path == "/next"
+    assert _real_app_registrations("real_app_a") == expected("real_app_a")
+    again.stop()
+
+    other = start(roots[1])
+    assert other.app_instance is not None
+    assert first.app_instance is not None
+    assert (
+        other.app_instance._registration_context
+        is not first.app_instance._registration_context
+    )
+    assert _real_app_registrations("real_app_a") == (set(), {}, set(), set())
+    assert _real_app_registrations("real_app_b") == expected("real_app_b")
+    other.stop()
+
+
+@pytest.mark.usefixtures("real_app_harness_env", "preserve_memo_registries")
+def test_generated_app_harness_gives_back_the_memo_registry(tmp_path, monkeypatch):
+    """A generated app's harness restores the memo registry it cleared when it stops.
+
+    A real app is imported only once, so a memo it renders into a page at import
+    time is registered only then. A generated app run in between must neither
+    drop that memo nor leave its own behind for the real app's next compile.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        monkeypatch: pytest monkeypatch fixture
+    """
+    memo_source = (
+        "import reflex as rx\n\n\n"
+        "@rx.memo\n"
+        "def {name}(label: rx.Var[str]) -> rx.Component:\n"
+        "    return rx.text(label)\n\n\n"
+        "app = rx.App()\n"
+    )
+    real_root = tmp_path / "real_app_memo"
+    _write_app_package(
+        real_root,
+        "real_app_memo",
+        {
+            "real_app_memo": memo_source.format(name="card")
+            + "app.add_page(card(label='Hello'), route='/')\n"
+        },
+    )
+    monkeypatch.setattr(
+        reflex_cli,
+        "_init",
+        lambda name, template: _write_app_package(Path.cwd(), name, {}),
+    )
+
+    real = _start_harness(AppHarness.create(root=real_root))
+    real.stop()
+    registry = dict(MEMOS)
+
+    generated = _start_harness(
+        AppHarness.create(
+            root=tmp_path / "generated_app",
+            app_source=memo_source.format(name="badge"),
+            app_name="generated_app",
+        )
+    )
+    assert {
+        ("Badge", "generated_app.generated_app"): sys.modules[
+            "generated_app.generated_app"
+        ].badge._definition
+    } == MEMOS
+    generated.stop()
+
+    assert registry == MEMOS
+    real = _start_harness(AppHarness.create(root=real_root))
+    assert registry == MEMOS
+    assert (
+        MEMOS["Card", "real_app_memo.real_app_memo"]
+        is sys.modules["real_app_memo.real_app_memo"].card._definition
+    )
+    real.stop()
 
 
 def test_app_harness_frontend_env_has_development_condition(
