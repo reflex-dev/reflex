@@ -255,6 +255,33 @@ def test_run_prod_sends_telemetry_synchronously(
     assert [name for name, _args, _kwargs in calls.mock_calls] == ["send", "serve"]
 
 
+@pytest.mark.parametrize(
+    ("command", "target"),
+    [
+        ("compile", "reflex.utils.prerequisites.get_compiled_app"),
+        ("export", "reflex.utils.export.export"),
+    ],
+)
+def test_one_shot_commands_freeze_the_heap_before_exit(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    command: str,
+    target: str,
+):
+    """Commands that exit right after compiling spare the exit collections the app."""
+    monkeypatch.delenv(environment.REFLEX_COMPILE_CONTEXT.name, raising=False)
+    mocker.patch("reflex.utils.prerequisites.needs_reinit", return_value=False)
+    mocker.patch("reflex.utils.prerequisites.assert_in_reflex_dir")
+    compiled = mocker.patch(target)
+    freeze = mocker.patch("reflex.reflex.gc.freeze")
+    freeze.side_effect = lambda: compiled.assert_called_once()
+
+    result = click.testing.CliRunner().invoke(reflex.cli, [command])
+
+    assert result.exit_code == 0, result.output
+    freeze.assert_called_once_with()
+
+
 def test_cloud_commands_registered():
     """The hosting CLI commands import, resolve, and dispatch only on demand."""
     probe = """

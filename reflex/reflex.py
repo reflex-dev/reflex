@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import gc
 import logging
 import os
 import select
@@ -906,6 +907,18 @@ def run(
     )
 
 
+def _skip_exit_collections() -> None:
+    """Keep the interpreter's collections at exit off the compiled app.
+
+    The compiled pages stay alive until the process ends, and the full
+    collections the interpreter runs while it shuts down walk all of them again,
+    which for an app with many pages takes as long as the compile. Only for
+    commands that exit right after: a long-lived process must not keep garbage
+    frozen.
+    """
+    gc.freeze()
+
+
 @cli.command()
 @log_options
 @click.option(
@@ -934,6 +947,7 @@ def compile(dry: bool, rich: bool):
     prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger="cli_compile")
     elapsed_time = time.monotonic() - starting_time
     logger.log(log.SUCCESS, f"App compiled successfully in {elapsed_time:.3f} seconds.")
+    _skip_exit_collections()
 
 
 @cli.command()
@@ -1032,6 +1046,7 @@ def export(
         backend_excluded_dirs=backend_excluded_dirs,
         prerender_routes=ssr,
     )
+    _skip_exit_collections()
 
 
 @cli.command()

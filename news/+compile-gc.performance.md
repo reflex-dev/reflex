@@ -1,0 +1,1 @@
+Compiling no longer rescans the growing component trees in automatic full garbage collections, and `reflex compile` and `reflex export` no longer spend their exit collecting the compiled app: an export of a site with 129 pages went from 28 s to 19 s.

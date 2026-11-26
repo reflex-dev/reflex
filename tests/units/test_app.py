@@ -4,6 +4,7 @@ import asyncio
 import contextlib
 import contextvars
 import functools
+import gc
 import io
 import json
 import logging
@@ -68,6 +69,7 @@ import reflex as rx
 from reflex import constants
 from reflex._upload import upload
 from reflex.app import (
+    _DEFERRED_FULL_COLLECTION_THRESHOLD,
     App,
     ComponentCallable,
     EventNamespace,
@@ -4885,6 +4887,33 @@ def test_compile_reports_exception_and_reraises(
     assert len(compile_calls) == 1
     payload = compile_calls[0].kwargs["properties"]
     assert payload["exception"] == {"type": "_BoomError"}
+
+
+@pytest.mark.parametrize("fails", [False, True])
+def test_compile_defers_full_collections(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    fails: bool,
+):
+    """A compile runs without automatic full collections and restores them after."""
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    threshold0, threshold1, threshold2 = gc.get_threshold()
+    seen = []
+
+    def compile_app(*args, **kwargs) -> bool:
+        seen.append(gc.get_threshold())
+        if fails:
+            raise RuntimeError
+        return True
+
+    mocker.patch("reflex.compiler.compiler.compile_app", side_effect=compile_app)
+
+    with pytest.raises(RuntimeError) if fails else contextlib.nullcontext():
+        app._compile()
+
+    assert seen == [(threshold0, threshold1, _DEFERRED_FULL_COLLECTION_THRESHOLD)]
+    assert gc.get_threshold() == (threshold0, threshold1, threshold2)
 
 
 def test_compile_skips_telemetry_when_compile_app_short_circuits(
