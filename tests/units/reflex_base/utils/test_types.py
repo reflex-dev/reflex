@@ -645,6 +645,57 @@ def test_get_typed_dict_field_types_through_generic_bases():
     assert get_typed_dict_field_types(_GenericMiddle[int])["value"] == list[int]
 
 
+@pytest.mark.parametrize(
+    ("value", "cls", "expected"),
+    [
+        ({"value": ["a"], "maybe": None}, _GenericBase[list[str]], True),
+        ({"value": "a", "maybe": None}, _GenericBase[list[str]], False),
+        ({"value": 1, "maybe": 2}, _GenericBase[int], True),
+        ({"value": "a", "maybe": None}, _GenericBase[int], False),
+        ({"value": 1, "maybe": None}, _GenericBase[int] | None, True),
+        (None, _GenericBase[int] | None, True),
+        ({"value": "a", "maybe": None}, _GenericBase[int] | None, False),
+        ({"value": ["a"], "maybe": None, "flag": True}, _GenericMiddle[str], True),
+        ({"value": "a", "maybe": None, "flag": True}, _GenericMiddle[str], False),
+        (
+            {"value": ["a"], "maybe": None, "flag": True, "name": "x"},
+            _Concrete,
+            True,
+        ),
+        (
+            {"value": "a", "maybe": None, "flag": True, "name": "x"},
+            _Concrete,
+            False,
+        ),
+        ({"value": 1}, _GenericBase[int], False),
+        ([1], _GenericBase[int], False),
+    ],
+)
+def test_isinstance_specialized_generic_typed_dict(
+    value: Any, cls: Any, expected: bool
+) -> None:
+    """A specialized generic TypedDict is checked field by field, not as a Mapping."""
+    assert _isinstance(value, cls, nested=2, treat_var_as_type=False) is expected
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ({"value": 1, "maybe": None}, True),
+        ({"value": "a"}, True),
+        ([1], False),
+    ],
+)
+def test_isinstance_specialized_generic_typed_dict_outer_type_only(
+    value: Any, expected: bool
+) -> None:
+    """Without nesting, only the dict itself is checked, as in production."""
+    assert (
+        _isinstance(value, _GenericBase[int], nested=0, treat_var_as_type=False)
+        is expected
+    )
+
+
 class _PlainSubclass(_Concrete):
     pass
 
@@ -674,6 +725,7 @@ def test_get_typed_dict_field_types_through_stdlib_plain_subclass():
     class Plain(Concrete):
         pass
 
+    assert _isinstance({"value": ["a"]}, Plain, nested=2, treat_var_as_type=False)
     if sys.version_info >= (3, 12):
         assert get_typed_dict_field_types(Plain) == {"value": list[str]}
     else:
