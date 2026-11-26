@@ -1,19 +1,26 @@
 """Unit tests for TokenManager implementations."""
 
 import asyncio
+import functools
 import pickle
 import time
 from collections.abc import Callable, Generator
 from contextlib import asynccontextmanager
-from typing import cast
+from functools import partial
+from typing import Any, cast
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from pytest_mock import MockerFixture
+from redis.asyncio.client import PubSub
+from reflex_base.event.context import EventContext
+from reflex_base.session import SessionTokenManager
 
 from reflex import config
 from reflex.app import EventNamespace
 from reflex.istate.data import RouterData
 from reflex.state import StateUpdate
+from reflex.utils.tasks import ensure_task
 from reflex.utils.token_manager import (
     LocalTokenManager,
     RedisTokenManager,
@@ -21,6 +28,45 @@ from reflex.utils.token_manager import (
     TokenManager,
 )
 from tests.units.mock_redis import mock_redis
+
+
+@pytest.mark.parametrize("backend", ["local", "redis", "redis-down"])
+async def test_duplicate_token_uses_session_bound_factory(
+    mocker: MockerFixture, backend: str
+):
+    """Every duplicate path preserves the caller's session-bound token factory.
+
+    Args:
+        mocker: Mock fixture.
+        backend: The token manager backend and availability.
+    """
+    codec = SessionTokenManager("duplicates", secrets=(b"s" * 32,))
+    session = codec.create()
+    token = codec.create_client_token(session)
+    if backend == "local":
+        manager = LocalTokenManager()
+    else:
+        redis = AsyncMock()
+        redis.get_connection_kwargs = Mock(return_value={"db": 0})
+        redis.exists.return_value = True
+        if backend == "redis-down":
+            redis.exists.side_effect = ConnectionError("unavailable")
+        manager = RedisTokenManager(redis)
+        mocker.patch.object(manager, "_ensure_socket_record_task")
+    manager.token_to_socket[token] = SocketRecord(
+        instance_id=manager.instance_id, sid="sid1"
+    )
+    manager.sid_to_token["sid1"] = token
+    factory = Mock(side_effect=partial(codec.create_client_token, session))
+
+    replacement = await manager.link_token_to_sid(token, "sid2", token_factory=factory)
+
+    assert replacement is not None
+    assert replacement != token
+    assert session.authorizes(replacement)
+    assert not codec.create().authorizes(replacement)
+    assert manager.sid_to_token == {"sid1": token, "sid2": replacement}
+    factory.assert_called_once_with()
 
 
 class TestTokenManager:
@@ -367,16 +413,19 @@ class TestRedisTokenManager:
         """
         token, sid = "token1", "sid1"
         mock_redis.exists.side_effect = Exception("Redis connection error")
+        token_factory = Mock(return_value="replacement-token")
 
         with patch.object(
             LocalTokenManager, "link_token_to_sid", new_callable=AsyncMock
         ) as mock_super:
             mock_super.return_value = None
 
-            result = await manager.link_token_to_sid(token, sid)
+            result = await manager.link_token_to_sid(
+                token, sid, token_factory=token_factory
+            )
 
             assert result is None
-            mock_super.assert_called_once_with(token, sid)
+            mock_super.assert_called_once_with(token, sid, token_factory=token_factory)
 
     async def test_link_token_to_sid_redis_set_error_continues(
         self, manager, mock_redis
@@ -739,7 +788,7 @@ def redis_url():
     return redis_url
 
 
-def query_string_for(token: str) -> dict[str, str]:
+def query_string_for(token: str) -> dict[str, Any]:
     """Generate query string for given token.
 
     Args:
@@ -748,12 +797,25 @@ def query_string_for(token: str) -> dict[str, str]:
     Returns:
         The generated query string.
     """
-    return {"QUERY_STRING": f"token={token}"}
+    codec = SessionTokenManager("namespace", secrets=(b"s" * 32,))
+    return {
+        "QUERY_STRING": f"token={token}",
+        "asgi.scope": {"reflex.session": codec.create()},
+    }
 
 
 @pytest.fixture
-def event_namespace_factory() -> Generator[Callable[[], EventNamespace], None, None]:
-    """Yields the EventNamespace factory function."""
+def event_namespace_factory(
+    attached_mock_event_context: EventContext,
+) -> Generator[Callable[[], EventNamespace], None, None]:
+    """Create namespaces with validated browser sessions and an active context.
+
+    Args:
+        attached_mock_event_context: The active event context.
+
+    Yields:
+        The EventNamespace factory function.
+    """
     namespace = config.get_config().get_event_namespace()
     created_objs = []
 
@@ -762,6 +824,9 @@ def event_namespace_factory() -> Generator[Callable[[], EventNamespace], None, N
         state.router_data = {}
 
         mock_app = Mock()
+        mock_app._session_token_manager = SessionTokenManager(
+            "namespace", secrets=(b"s" * 32,)
+        )
         mock_app.state_manager.modify_state = Mock(
             return_value=AsyncMock(__aenter__=AsyncMock(return_value=state))
         )
@@ -948,6 +1013,151 @@ async def test_redis_token_manager_lost_and_found(
     emit2_mock.assert_not_called()
     emit1_mock.assert_called_once()
     emit1_mock.reset_mock()
+
+
+@pytest.mark.asyncio
+async def test_redis_token_manager_waits_for_an_unconfirmed_subscription_once(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """Connects stop waiting once redis has had its time to confirm the subscription.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest log capture fixture.
+    """
+
+    async def listen():
+        """Never confirm the subscription."""
+        await asyncio.Event().wait()
+        if False:
+            yield
+
+    @asynccontextmanager
+    async def pubsub():
+        yield Mock(psubscribe=AsyncMock(), listen=listen)
+
+    monkeypatch.setattr(
+        "reflex.utils.token_manager.LOST_AND_FOUND_SUBSCRIBE_TIMEOUT", 0.05
+    )
+    manager = RedisTokenManager(Mock(pubsub=pubsub, aclose=AsyncMock()))
+    try:
+        await manager.ensure_lost_and_found_subscribed(AsyncMock())
+        started = time.monotonic()
+        await manager.ensure_lost_and_found_subscribed(AsyncMock())
+        assert time.monotonic() - started < 0.05
+
+        assert manager._lost_and_found_task is not None
+        assert not manager._lost_and_found_task.done()
+        assert [record.getMessage() for record in caplog.records] == [
+            (
+                "Redis did not confirm the lost and found subscription in time; "
+                "updates from other instances may be lost until it does."
+            )
+        ]
+    finally:
+        await manager.close()
+
+
+@pytest.mark.asyncio
+async def test_redis_token_manager_waits_again_while_resubscribing(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """A subscriber that fails and subscribes again makes connects wait again.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest log capture fixture.
+    """
+    fail = asyncio.Event()
+    attempts = 0
+
+    async def listen():
+        """Confirm and then fail the first subscription, never confirm the next.
+
+        Yields:
+            The confirmation of the first subscription.
+
+        Raises:
+            ConnectionError: When the first subscription fails.
+        """
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            yield {"type": "psubscribe"}
+            await fail.wait()
+            msg = "connection lost"
+            raise ConnectionError(msg)
+        await asyncio.Event().wait()
+
+    @asynccontextmanager
+    async def pubsub():
+        yield Mock(psubscribe=AsyncMock(), listen=listen)
+
+    monkeypatch.setattr(
+        "reflex.utils.token_manager.LOST_AND_FOUND_SUBSCRIBE_TIMEOUT", 0.05
+    )
+    # Retry the failed subscription at once instead of after a second.
+    monkeypatch.setattr(
+        "reflex.utils.token_manager.ensure_task",
+        functools.partial(ensure_task, exception_delay=0),
+    )
+    manager = RedisTokenManager(Mock(pubsub=pubsub, aclose=AsyncMock()))
+    try:
+        await manager.ensure_lost_and_found_subscribed(AsyncMock())
+        # Outlast the first subscription's wait before it fails.
+        await asyncio.sleep(0.1)
+        fail.set()
+        while attempts < 2:  # noqa: ASYNC110
+            await asyncio.sleep(0)
+
+        await manager.ensure_lost_and_found_subscribed(AsyncMock())
+
+        assert [
+            record.getMessage()
+            for record in caplog.records
+            if record.name == "reflex.utils.token_manager"
+        ] == [
+            (
+                "Redis did not confirm the lost and found subscription in time; "
+                "updates from other instances may be lost until it does."
+            )
+        ]
+    finally:
+        await manager.close()
+
+
+@pytest.mark.usefixtures("redis_url")
+@pytest.mark.asyncio
+async def test_redis_token_manager_lost_and_found_subscribes_before_connecting(
+    event_namespace_factory: Callable[[], EventNamespace],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A connect waits for the lost and found subscription, so no update is lost.
+
+    Redis drops a message published before its subscriber is subscribed, and
+    the socket record tells other instances to publish as soon as it is stored.
+
+    Args:
+        event_namespace_factory: Factory fixture for EventNamespace instances.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    psubscribe = PubSub.psubscribe
+
+    async def slow_psubscribe(self: PubSub, *args, **kwargs):
+        if any("lost_and_found" in str(arg) for arg in args):
+            await asyncio.sleep(0.5)
+        return await psubscribe(self, *args, **kwargs)
+
+    monkeypatch.setattr(PubSub, "psubscribe", slow_psubscribe)
+    event_namespace1 = event_namespace_factory()
+    emit1_mock: Mock = event_namespace1.emit  # pyright: ignore[reportAssignmentType]
+    event_namespace2 = event_namespace_factory()
+
+    await event_namespace1.on_connect(sid="sid1", environ=query_string_for("token1"))
+    await event_namespace2.emit_update(StateUpdate(), token="token1")
+    await _wait_for_call_count_positive(emit1_mock)
+
+    emit1_mock.assert_called_once()
 
 
 @pytest.mark.usefixtures("redis_url")

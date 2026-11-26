@@ -58,6 +58,30 @@ REFLEX_FRONTEND_PORT=3001 uv run reflex run
 
 The [config reference](/docs/api-reference/config/) lists the environment variable corresponding to each config parameter. Reflex also honors additional environment variables that are not config parameters — see [environment variables](/docs/api-reference/environment-variables/) for those.
 
+## HTTP clients and certificates
+
+Reflex and its hosting CLI use [HTTPX2](https://pydantic.dev/docs/httpx2/) for HTTP requests. HTTPS verification uses the operating system's certificate store. Set `SSL_CERT_FILE` or `SSL_CERT_DIR` to use a custom CA bundle or certificate directory. Downloads continue to honor `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, and `NO_PROXY`.
+
+Reflex no longer installs the original `httpx` package as a runtime dependency. For application code that you want to migrate, declare HTTPX2 in your own dependencies:
+
+```bash
+uv add "httpx2>=2.15.1,<3.0"
+```
+
+Then change your imports:
+
+```python
+import httpx2 as httpx
+```
+
+If your application or an SDK still uses the original `httpx`, keep it as an explicit dependency. Installing `sniffio` also avoids repeated failed imports in `httpcore` when handling async requests:
+
+```bash
+uv add httpx sniffio
+```
+
+The two clients can coexist, but their request, response, and exception classes are distinct. Pass an SDK the client type it expects, and catch exceptions from the matching package. See the [HTTPX2 migration guide](https://pydantic.dev/docs/httpx2/get-started/migration/).
+
 ## Command Line Arguments
 
 Finally, you can override the configuration file and environment variables by passing command line arguments to `uv run reflex run`.
@@ -151,7 +175,7 @@ config = rx.Config(
 )
 ```
 
-For example, `trusted_proxy_hops=1` uses the rightmost `X-Forwarded-For` entry; `2` uses the second entry from the right. The same entry of `X-Forwarded-Host` and `X-Forwarded-Proto` is used when the backend checks the origin of a WebSocket connection (see [CORS](#cors)). Proxies usually set these two headers instead of appending to them, so when one has fewer entries than `trusted_proxy_hops`, its leftmost entry is used. The default is `0`. Do not enable forwarded-header trust if untrusted clients can connect directly to the backend or bypass the trusted proxy chain. The setting can also be provided as `REFLEX_TRUSTED_PROXY_HOPS`.
+For example, `trusted_proxy_hops=1` uses the rightmost `X-Forwarded-For` entry; `2` uses the second entry from the right. The entry is normalized to an IP address after dropping any port and IPv6 brackets, and an IPv4-mapped IPv6 address such as `::ffff:203.0.113.7` becomes its IPv4 address; if it is not a valid address, it is ignored and the connection's peer address is used. The same entry of `X-Forwarded-Host` and `X-Forwarded-Proto` is used when the backend checks the origin of a WebSocket connection (see [CORS](#cors)). Proxies usually set these two headers instead of appending to them, so when one has fewer entries than `trusted_proxy_hops`, its leftmost entry is used. The default is `0`. Do not enable forwarded-header trust if untrusted clients can connect directly to the backend or bypass the trusted proxy chain. The setting can also be provided as `REFLEX_TRUSTED_PROXY_HOPS`.
 
 ## Plugins
 

@@ -1,0 +1,1 @@
+`passthrough_event_spec` takes a union such as `str | None` without a type error under ty, and every type checker types its argument as `Var[Any]`. Pyright used to infer one callable per member of the union.
