@@ -29,6 +29,9 @@ def ElementObserverApp():
     late_width = rx.client_state(0.0, name="late_width")
     squeezed = rx.client_state(False, name="squeezed")
     narrow = rx.client_state(False, name="narrow")
+    watching = rx.client_state(False, name="watching")
+    first_ratio = rx.client_state(0.0, name="first_ratio")
+    later_ratio = rx.client_state(0.0, name="later_ratio")
 
     def readout(label: str, value: rx.Var) -> rx.Component:
         return rx.el.p(value, id=label)
@@ -43,6 +46,9 @@ def ElementObserverApp():
                 readout("item_widths", item_widths.value),
                 readout("late_width", late_width.value),
                 readout("direction", rx.cond(narrow.value, "column", "row")),
+                readout("first_ratio", first_ratio.value),
+                readout("later_ratio", later_ratio.value),
+                rx.el.button("Watch", id="watch", on_click=watching.set(True)),
                 style={"position": "fixed", "right": "0", "top": "0"},
             ),
             rx.el.button("Widen", id="widen", on_click=wide.set(True)),
@@ -117,6 +123,18 @@ def ElementObserverApp():
                     },
                 ),
                 on_resize=lambda w, h: narrow.set(w.to(float) < 400),
+            ),
+            rx.element_observer(
+                rx.el.div(id="ratio_box", style={"height": "100px"}),
+                on_intersect=lambda v, ratio: first_ratio.set(ratio),
+            ),
+            # Joins the observer above on the same element.
+            rx.cond(
+                watching.value,
+                rx.element_observer(
+                    target="ratio_box",
+                    on_intersect=lambda v, ratio: later_ratio.set(ratio),
+                ),
             ),
             rx.el.div(style={"height": "200vh"}),
             rx.element_observer(
@@ -247,3 +265,20 @@ def test_target_shown_later_is_observed_once_shown(observer_page: Page):
     expect(observer_page.locator("#late_width")).to_have_text("0")
     observer_page.click("#show")
     expect(observer_page.locator("#late_width")).to_have_text("70")
+
+
+def test_an_observer_joining_another_gets_the_current_ratio(observer_page: Page):
+    """An observer of an element observed already reports what is in view now."""
+    expect(observer_page.locator("#first_ratio")).to_have_text("1")
+    # Scrolls the top half of the box out of view, which crosses no threshold.
+    observer_page.evaluate(
+        "window.scrollTo(0, document.getElementById('ratio_box')"
+        ".getBoundingClientRect().top + window.scrollY + 50)"
+    )
+    observer_page.wait_for_function(
+        "document.getElementById('ratio_box').getBoundingClientRect().top === -50"
+    )
+    # Clicked without scrolling to the button.
+    observer_page.locator("#watch").dispatch_event("click")
+    expect(observer_page.locator("#later_ratio")).to_have_text("0.5")
+    expect(observer_page.locator("#first_ratio")).to_have_text("1")

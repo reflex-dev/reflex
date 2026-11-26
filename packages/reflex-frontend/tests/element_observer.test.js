@@ -44,6 +44,7 @@ class FakeIntersectionObserver {
   constructor(callback, options) {
     this.callback = callback;
     this.options = options;
+    this.thresholds = [options.threshold ?? 0].flat().sort((x, y) => x - y);
     this.observed = [];
     this.disconnected = false;
     intersectionObservers.push(this);
@@ -510,14 +511,14 @@ describe("observing anew", () => {
     expect(widths).toEqual([100, 120]);
   });
 
-  test("a second observer of an element starts from its latest intersection entry", () => {
+  test("a second observer of an element gets a fresh first intersection entry", () => {
     const reports = [];
     mountTwo((id) => [
-      { onIntersect: (visible) => reports.push([id, visible]) },
+      { onIntersect: (...args) => reports.push([id, ...args]) },
       {},
     ]);
     const [observer] = intersectionObservers;
-    const a = document.getElementById("a");
+    const [a, b] = ["a", "b"].map((id) => document.getElementById(id));
     observer.callback([
       { target: a, isIntersecting: true, intersectionRatio: 1 },
     ]);
@@ -525,16 +526,29 @@ describe("observing anew", () => {
     const Second = () => {
       useElementObserver(
         "a",
-        { onIntersect: (visible) => reports.push(["second", visible]) },
+        { onIntersect: (...args) => reports.push(["second", ...args]) },
         {},
       );
       return null;
     };
     renderRoot(createElement(Second));
+    // Observed anew, so the browser measures it again.
     expect(intersectionObservers).toHaveLength(1);
+    expect(observer.observed).toEqual([b, a]);
+    expect(reports).toEqual([["a", true, 1]]);
+
+    // Half in view by now, which crossed no threshold for the first observer.
+    observer.callback([
+      { target: a, isIntersecting: true, intersectionRatio: 0.5 },
+    ]);
+    observer.callback([
+      { target: a, isIntersecting: false, intersectionRatio: 0 },
+    ]);
     expect(reports).toEqual([
-      ["a", true],
-      ["second", true],
+      ["a", true, 1],
+      ["second", true, 0.5],
+      ["a", false, 0],
+      ["second", false, 0],
     ]);
   });
 

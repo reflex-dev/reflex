@@ -189,6 +189,8 @@ const refreshOnScroll = (tracker) => {
 /**
  * @typedef {object} IntersectionTarget
  * @property {Set<IntersectionCallback>} callbacks The element's callbacks.
+ * @property {Set<IntersectionCallback>} waiting The callbacks waiting for
+ *   their first entry, which the element was observed anew for.
  * @property {IntersectionObserverEntry} [entry] The element's latest entry.
  */
 
@@ -212,6 +214,15 @@ const intersectionObservers = new Map();
 const shareIntersectionObserver = (thresholds, rootMargin) => {
   /** @type {SharedIntersectionObserver["targets"]} */
   const targets = new Map();
+  /**
+   * The number of thresholds the entry's ratio reached, which the browser
+   * compares to decide whether to report an element.
+   * @param {IntersectionObserverEntry} entry The entry.
+   * @returns {number} The number of thresholds.
+   */
+  const reached = ({ intersectionRatio }) =>
+    observer.thresholds.filter((threshold) => threshold <= intersectionRatio)
+      .length;
   const observer = new IntersectionObserver(
     (entries) => {
       // An element that changed more than once since the last callback has
@@ -221,13 +232,25 @@ const shareIntersectionObserver = (thresholds, rootMargin) => {
       for (const entry of entries) {
         const target = targets.get(entry.target);
         if (target !== undefined) {
-          target.entry = entry;
           latest.set(target, entry);
         }
       }
-      for (const [{ callbacks }, entry] of latest) {
+      for (const [target, entry] of latest) {
+        const { callbacks, waiting, entry: previous } = target;
+        target.entry = entry;
+        target.waiting = new Set();
+        // Observed anew for the waiting callbacks, the element is reported
+        // whether or not it crossed a threshold; the others only get the
+        // entry if it did, as they would have from an observer of their own.
+        const crossed =
+          waiting.size === 0 ||
+          previous === undefined ||
+          entry.isIntersecting !== previous.isIntersecting ||
+          reached(entry) !== reached(previous);
         for (const callback of callbacks) {
-          callback(entry);
+          if (crossed || waiting.has(callback)) {
+            callback(entry);
+          }
         }
       }
     },
@@ -258,18 +281,23 @@ const onIntersection = (element, callback, thresholds, rootMargin) => {
   const { observer, targets } = shared;
   let target = targets.get(element);
   if (target === undefined) {
-    target = { callbacks: new Set() };
+    target = { callbacks: new Set(), waiting: new Set() };
     targets.set(element, target);
     observer.observe(element);
   } else if (target.entry !== undefined) {
-    // The observer reports an element once when observing starts, so a later
-    // callback starts from the element's latest entry.
-    callback(target.entry);
+    // The latest entry may be stale, as the browser reports an element only
+    // when it crosses a threshold; observing it anew makes the browser
+    // measure it and report it again.
+    target.waiting.add(callback);
+    observer.unobserve(element);
+    observer.observe(element);
   }
-  const { callbacks } = target;
+  const observed = target;
+  const { callbacks } = observed;
   callbacks.add(callback);
   return () => {
     callbacks.delete(callback);
+    observed.waiting.delete(callback);
     if (callbacks.size > 0) {
       return;
     }
