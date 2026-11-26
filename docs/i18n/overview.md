@@ -482,6 +482,10 @@ app.add_page(
 )
 ```
 
+A head text that needs a context is marked with `pgettext_noop(context, message)`
+instead, and translated in that context, as `pgettext` does:
+`title=pgettext_noop("page title", "Pricing")`.
+
 Notes:
 
 - A head text given as `rx.t` resolves in the default locale (the document

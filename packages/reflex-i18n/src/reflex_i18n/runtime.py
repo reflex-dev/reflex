@@ -269,6 +269,32 @@ def gettext_noop(message: str) -> str:
     return message
 
 
+class _ContextMessage(str):
+    """A message carrying its gettext context (msgctxt)."""
+
+    __slots__ = ("context",)
+    context: str
+
+
+def pgettext_noop(context: str, message: str) -> str:
+    """Mark a context-qualified message for extraction without translating it.
+
+    The counterpart of :func:`gettext_noop` for :func:`pgettext`, e.g. for a
+    page's title: the message carries its context as a ``context`` attribute,
+    and a page's head texts are translated in it.
+
+    Args:
+        context: The gettext message context (msgctxt).
+        message: The source-locale message.
+
+    Returns:
+        The message, with its context.
+    """
+    marked = _ContextMessage(message)
+    marked.context = context
+    return marked
+
+
 def match_locale(requested: Iterable[str], supported: Iterable[str]) -> str | None:
     """Find the supported locale that best serves a list of requested ones.
 

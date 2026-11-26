@@ -45,7 +45,7 @@ from .format import (
 )
 from .registry import collected_messages, format_message_list, untranslated_messages
 from .routing import PathPrefixRouting, segment_locale
-from .runtime import active_locale, gettext
+from .runtime import active_locale, gettext, pgettext
 from .vars import (
     _i18n_var_data,
     _pick,
@@ -200,6 +200,9 @@ def _localized_page(component: Any, locale: str) -> Any:
 def _translate_text(value: Any) -> Any:
     """Translate a page's head text if it is a plain string.
 
+    A string carrying a ``context`` attribute, as
+    :func:`~reflex_i18n.runtime.pgettext_noop` marks one, is translated in it.
+
     Args:
         value: The text, or a Var, None or anything else left as is.
 
@@ -207,7 +210,11 @@ def _translate_text(value: Any) -> Any:
         The translated text, or the value unchanged.
     """
     # gettext("") would return the catalog's header.
-    return gettext(value) if isinstance(value, str) and value else value
+    if not isinstance(value, str) or not value:
+        return value
+    if context := getattr(value, "context", None):
+        return pgettext(context, value)
+    return gettext(value)
 
 
 def _translate_meta(meta: Any) -> Any:

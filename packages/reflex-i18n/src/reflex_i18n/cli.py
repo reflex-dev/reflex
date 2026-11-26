@@ -47,6 +47,7 @@ _GETTEXT_KEYWORDS = {
     "gettext_noop": None,
     "ngettext": (1, 2),
     "pgettext": ((1, "c"), 2),
+    "pgettext_noop": ((1, "c"), 2),
 }
 
 # Babel keyword specs for the literal rx.t calls _extract_python reports, under

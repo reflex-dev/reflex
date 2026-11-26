@@ -90,16 +90,18 @@ def test_extract_catalog_picks_up_noop_markers(
     app_dir = tmp_path / "myapp"
     app_dir.mkdir()
     (app_dir / "labels.py").write_text(
-        "from reflex_i18n import N_, gettext_noop\n"
-        'LABELS = {1: N_("Refill"), 2: gettext_noop("Removal")}\n',
+        "from reflex_i18n import N_, gettext_noop, pgettext_noop\n"
+        'LABELS = {1: N_("Refill"), 2: gettext_noop("Removal")}\n'
+        'TITLE = pgettext_noop("page title", "Refill")\n',
         encoding="utf-8",
     )
 
     catalog = extract_catalog(app_dir, ())
 
-    assert [(m.id, m.locations) for m in catalog if m.id] == [
-        ("Refill", [("myapp/labels.py", 2)]),
-        ("Removal", [("myapp/labels.py", 2)]),
+    assert [(m.id, m.context, m.locations) for m in catalog if m.id] == [
+        ("Refill", None, [("myapp/labels.py", 2)]),
+        ("Removal", None, [("myapp/labels.py", 2)]),
+        ("Refill", "page title", [("myapp/labels.py", 3)]),
     ]
 
 

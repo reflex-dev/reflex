@@ -5,7 +5,13 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from reflex_i18n import I18nConfig, PathPrefixRouting, get_locale, gettext
+from reflex_i18n import (
+    I18nConfig,
+    PathPrefixRouting,
+    get_locale,
+    gettext,
+    pgettext_noop,
+)
 from reflex_i18n.catalog import compile_index_module
 from reflex_i18n.component import LocaleRoute
 from reflex_i18n.config import set_active_i18n_config
@@ -398,6 +404,37 @@ def test_fanned_page_head_is_translated_into_its_locale(tmp_path: Path):
         # A meta component is the app's own and stays as built.
         custom,
     ]
+
+
+def test_fanned_page_head_text_is_translated_in_its_context(tmp_path: Path):
+    """A head text marked with pgettext_noop is a msgid of its context."""
+    from reflex.app import UnevaluatedPage
+
+    (tmp_path / "de.po").write_text(
+        'msgid "Open"\nmsgstr "Öffnen"\n\n'
+        'msgctxt "status"\nmsgid "Open"\nmsgstr "Geöffnet"\n',
+        encoding="utf-8",
+    )
+    plugin = I18nPlugin(
+        locales=["en", "de"],
+        default_locale="en",
+        catalog_dir=tmp_path,
+        routing=PathPrefixRouting(),
+    )
+    ctx = _fake_context([
+        UnevaluatedPage(
+            component=lambda: rx.text("Hours"),
+            route="hours",
+            title=pgettext_noop("status", "Open"),
+            description="Open",
+            meta=[{"property": "og:title", "content": pgettext_noop("status", "Open")}],
+        )
+    ])
+    plugin.expand_routes(add_page=ctx["add_page"], pages=ctx["pages"])  # pyright: ignore[reportCallIssue]
+
+    [(_, kwargs)] = ctx["calls"]
+    assert (kwargs["title"], kwargs["description"]) == ("Geöffnet", "Öffnen")
+    assert kwargs["meta"] == [{"property": "og:title", "content": "Geöffnet"}]
 
 
 def test_eval_page_scope_leaves_pages_alone_without_routing(tmp_path: Path):
