@@ -468,7 +468,7 @@ class BackendDisabled(Div):
                     el.link(
                         rel="preconnect",
                         href="https://fonts.gstatic.com",
-                        crossorigin="",
+                        cross_origin="",
                     ),
                     el.link(
                         href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,500;0,600&display=swap",

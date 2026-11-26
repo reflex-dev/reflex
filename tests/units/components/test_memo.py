@@ -593,6 +593,34 @@ def test_memo_component_rejects_unknown_even_alongside_base_props():
         mixed_card(title="hi", key="row-1", bogus="x")
 
 
+@pytest.mark.parametrize(
+    ("html_name", "name"),
+    [("titletext", "title_text"), ("tabindex", "tab_index")],
+    ids=["memo_prop", "rest_target_prop"],
+)
+def test_memo_component_rejects_html_attribute_names_with_rest(html_name, name):
+    """With a ``RestProp``, a prop spelled as in HTML raises instead of becoming a style.
+
+    Args:
+        html_name: The HTML spelling passed.
+        name: The memo prop or rest target prop it spells.
+    """
+
+    @rx.memo
+    def rest_card(
+        rest: rx.RestProp, title_text: rx.Var[str] = rx.EMPTY_VAR_STR
+    ) -> rx.Component:
+        return rx.el.div(title_text, rest)
+
+    with pytest.raises(TypeError) as err:
+        rest_card(**{html_name: "x"})
+    assert str(err.value) == (
+        f"rest_card got `{html_name}`, the HTML spelling of `{name}`. "
+        f"Pass `{name}=` instead: keyword arguments that are not props or event "
+        "triggers become style properties."
+    )
+
+
 def test_memo_component_rejects_structural_base_fields_without_rest():
     """Identity/internal base fields (``tag``, ``library``, ...) are not forwardable.
 

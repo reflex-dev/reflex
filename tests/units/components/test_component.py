@@ -321,6 +321,55 @@ def test_custom_attrs(component1):
     assert component.custom_attrs == {"attr1": "1", "attr2": "attr2"}
 
 
+@pytest.mark.parametrize(
+    ("create", "kwargs", "component_name", "html_name", "name"),
+    [
+        (
+            rx.el.link,
+            {"rel": "alternate", "hreflang": "en"},
+            "Link",
+            "hreflang",
+            "href_lang",
+        ),
+        (rx.el.div, {"tabindex": 0}, "Div", "tabindex", "tab_index"),
+        (
+            rx.el.button,
+            {"onclick": rx.console_log("clicked")},
+            "Button",
+            "onclick",
+            "on_click",
+        ),
+    ],
+    ids=["prop", "base_html_prop", "event_trigger"],
+)
+def test_html_attribute_name_raises(create, kwargs, component_name, html_name, name):
+    """A prop or event trigger spelled as in HTML must not become a style property.
+
+    Args:
+        create: The component factory.
+        kwargs: The keyword arguments, one spelled as in HTML.
+        component_name: The name of the component class.
+        html_name: The HTML spelling passed.
+        name: The prop or event trigger it spells.
+    """
+    with pytest.raises(TypeError) as err:
+        create(**kwargs)
+    assert str(err.value) == (
+        f"{component_name} got `{html_name}`, the HTML spelling of `{name}`. "
+        f"Pass `{name}=` instead: keyword arguments that are not props or event "
+        "triggers become style properties."
+    )
+
+
+def test_html_attribute_name_of_lowercase_prop():
+    """A prop whose own name has no underscore is set as the prop."""
+    component = rx.el.svg.a(hreflang="en", font_size="1em")
+    assert str(component.hreflang) == '"en"'  # pyright: ignore[reportAttributeAccessIssue]
+    assert {key: str(value) for key, value in component.style.items()} == {
+        "fontSize": '"1em"'
+    }
+
+
 def test_create_component(component1):
     """Test that the component is created correctly.
 

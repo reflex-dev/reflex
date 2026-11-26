@@ -31,7 +31,9 @@ from reflex_base.components.app_wraps import collect_subtree_app_wraps
 from reflex_base.components.component import (
     BaseComponent,
     Component,
+    _by_html_attribute_name,
     _field_values_equal,
+    _raise_for_html_attribute_names,
 )
 from reflex_base.components.memoize_helpers import (
     MemoizationStrategy,
@@ -1785,7 +1787,31 @@ class _MemoComponentWrapper:
         # before its own dedupe check, so a keyed memo under ``rx.foreach``
         # would pay that walk on every row. Gating here keeps it to the first.
         self._warned_base_props: set[frozenset[str]] = set()
+        self._props_by_html_attribute_name: dict[str, str] | None = None
         update_wrapper(self, definition.fn)
+
+    def _get_props_by_html_attribute_name(self) -> dict[str, str]:
+        """Map the HTML spelling of the props this memo accepts to their names.
+
+        Those are its own props and, with a ``RestProp``, the props it forwards
+        to the rest target. The body must already be materialized.
+
+        Returns:
+            The prop names, keyed by their HTML spelling.
+        """
+        if self._props_by_html_attribute_name is None:
+            component_fields = MemoComponent.get_fields()
+            names = {param.name for param in self._explicit_params} | {
+                name
+                for name in self._definition.rest_target_field_names()
+                if name not in component_fields and not name.startswith("_")
+            }
+            self._props_by_html_attribute_name = {
+                html_name: name
+                for html_name, name in _by_html_attribute_name(names).items()
+                if html_name not in names
+            }
+        return self._props_by_html_attribute_name
 
     def __call__(self, *children: Any, **props: Any) -> MemoComponent:
         """Call the wrapped memo and return a component.
@@ -1868,6 +1894,12 @@ class _MemoComponentWrapper:
             )
         else:
             component = definition.component
+        if remaining_props and rest_param is not None:
+            _raise_for_html_attribute_names(
+                definition.python_name,
+                remaining_props,
+                self._get_props_by_html_attribute_name(),
+            )
         memo_class = _get_memo_component_class(
             definition.export_name,
             type(component),
