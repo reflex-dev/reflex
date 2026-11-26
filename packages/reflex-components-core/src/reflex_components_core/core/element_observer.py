@@ -5,82 +5,17 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from reflex_base.components.component import Component, field
-from reflex_base.event import EventHandler
+from reflex_base.event import EventHandler, passthrough_event_spec
+from reflex_base.utils.format import to_camel_case
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import get_unique_variable_name
 from reflex_base.vars.base import LiteralVar, Var
 
 from reflex_components_core.base.fragment import Fragment
 
-
-def _size_spec(width: Var[float], height: Var[float]) -> tuple[Var[float], Var[float]]:
-    """Args spec for the on_resize event trigger.
-
-    Args:
-        width: The element's width in pixels.
-        height: The element's height in pixels.
-
-    Returns:
-        The element's width and height.
-    """
-    return (width, height)
-
-
-def _position_spec(x: Var[float], y: Var[float]) -> tuple[Var[float], Var[float]]:
-    """Args spec for the on_move event trigger.
-
-    Args:
-        x: The element's left edge, in pixels from the left of the viewport.
-        y: The element's top edge, in pixels from the top of the viewport.
-
-    Returns:
-        The element's position.
-    """
-    return (x, y)
-
-
-def _intersect_spec(
-    is_intersecting: Var[bool], ratio: Var[float]
-) -> tuple[Var[bool], Var[float]]:
-    """Args spec for the on_intersect event trigger.
-
-    Args:
-        is_intersecting: Whether the element is in the viewport.
-        ratio: The fraction of the element in the viewport, between 0 and 1.
-
-    Returns:
-        Whether the element is in the viewport, and which fraction of it.
-    """
-    return (is_intersecting, ratio)
-
-
-def _transition_end_spec(property_name: Var[str]) -> tuple[Var[str]]:
-    """Args spec for the on_transition_end event trigger.
-
-    Args:
-        property_name: The CSS property whose transition ended.
-
-    Returns:
-        The CSS property whose transition ended.
-    """
-    return (property_name,)
-
-
-# The event triggers the hook reports to, by the name it takes them under.
-_HANDLERS = {
-    "on_resize": "onResize",
-    "on_move": "onMove",
-    "on_intersect": "onIntersect",
-    "on_transition_end": "onTransitionEnd",
-}
-
-# The props the hook takes as options, by the name it takes them under.
-_OPTIONS = {
-    "layout": "layout",
-    "disabled": "disabled",
-    "threshold": "threshold",
-    "root_margin": "rootMargin",
-}
+# The props the hook takes as options, and the event triggers it reports to.
+_OPTIONS = ("layout", "disabled", "threshold", "root_margin")
+_TRIGGERS = ("on_resize", "on_move", "on_intersect", "on_transition_end")
 
 
 class ElementObserver(Fragment):
@@ -109,19 +44,19 @@ class ElementObserver(Fragment):
         doc="Stop observing while true. Observing starts again, with a first report, once it is false."
     )
 
-    on_resize: EventHandler[_size_spec] = field(
+    on_resize: EventHandler[passthrough_event_spec(float, float)] = field(
         doc="Fired with the element's width and height in pixels when observing starts and whenever they change."
     )
 
-    on_move: EventHandler[_position_spec] = field(
+    on_move: EventHandler[passthrough_event_spec(float, float)] = field(
         doc="Fired with the element's left and top edge in pixels from the viewport's when observing starts and whenever they change, after the page or a scroll container scrolled, the window resized or the element resized."
     )
 
-    on_intersect: EventHandler[_intersect_spec] = field(
+    on_intersect: EventHandler[passthrough_event_spec(bool, float)] = field(
         doc="Fired with whether the element is in the viewport and which fraction of it is, when observing starts and whenever that fraction crosses a threshold."
     )
 
-    on_transition_end: EventHandler[_transition_end_spec] = field(
+    on_transition_end: EventHandler[passthrough_event_spec(str)] = field(
         doc="Fired with the property name when a CSS transition of the element itself ends. Transitions of its descendants do not fire it."
     )
 
@@ -181,15 +116,15 @@ class ElementObserver(Fragment):
             The hook, or none without an event trigger it reports to.
         """
         handlers = {
-            js_name: self.event_triggers[trigger]
-            for trigger, js_name in _HANDLERS.items()
+            to_camel_case(trigger): self.event_triggers[trigger]
+            for trigger in _TRIGGERS
             if trigger in self.event_triggers
         }
         if not handlers:
             return []
         options = {
-            js_name: value
-            for prop, js_name in _OPTIONS.items()
+            to_camel_case(prop): value
+            for prop in _OPTIONS
             if (value := getattr(self, prop)) is not None
         }
         return [

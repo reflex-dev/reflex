@@ -23,11 +23,11 @@ def test_element_observer_reports_to_its_handlers_with_its_options():
     assert [str(hook) for hook in observer.add_hooks()] == [
         (
             'useElementObserver("box", '
-            '({ ["onResize"] : ((_width, _height) => (((_width, _height) => '
-            "(heightRxClientStateSet(_height)))(_width, _height))), "
-            '["onIntersect"] : ((_is_intersecting, _ratio) => (((...args) => '
-            "(visibleRxClientStateSet(_is_intersecting, _ratio, ...args)))"
-            "(_is_intersecting, _ratio))) }), "
+            '({ ["onResize"] : ((_ev_0, _ev_1) => (((_ev_0, _ev_1) => '
+            "(heightRxClientStateSet(_ev_1)))(_ev_0, _ev_1))), "
+            '["onIntersect"] : ((_ev_0, _ev_1) => (((...args) => '
+            "(visibleRxClientStateSet(_ev_0, _ev_1, ...args)))"
+            "(_ev_0, _ev_1))) }), "
             '({ ["layout"] : true, ["disabled"] : visibleRxClientState, '
             '["threshold"] : [0, 1], ["rootMargin"] : "-10px" }));'
         )
@@ -51,11 +51,11 @@ def test_element_observer_reports_positions_and_ended_transitions():
     assert [str(hook) for hook in observer.add_hooks()] == [
         (
             'useElementObserver("box", '
-            '({ ["onMove"] : ((_x, _y) => (((_x, _y) => (topRxClientStateSet(_y)))'
-            "(_x, _y))), "
-            '["onTransitionEnd"] : ((_property_name) => (((_property_name) => '
-            '(doneRxClientStateSet((_property_name?.valueOf?.() === "height"?.valueOf?.()))))'
-            "(_property_name))) }), ({  }));"
+            '({ ["onMove"] : ((_ev_0, _ev_1) => (((_ev_0, _ev_1) => (topRxClientStateSet(_ev_1)))'
+            "(_ev_0, _ev_1))), "
+            '["onTransitionEnd"] : ((_ev_0) => (((_ev_0) => '
+            '(doneRxClientStateSet((_ev_0?.valueOf?.() === "height"?.valueOf?.()))))'
+            "(_ev_0))) }), ({  }));"
         )
     ]
 
@@ -75,9 +75,9 @@ def test_element_observer_observes_its_only_child(monkeypatch: pytest.MonkeyPatc
     assert [str(hook) for hook in named.add_hooks()] == [
         (
             'useElementObserver("named", '
-            '({ ["onIntersect"] : ((_is_intersecting, _ratio) => '
-            "(((_is_intersecting) => (shownRxClientStateSet(_is_intersecting)))"
-            "(_is_intersecting, _ratio))) }), ({  }));"
+            '({ ["onIntersect"] : ((_ev_0, _ev_1) => '
+            "(((_ev_0) => (shownRxClientStateSet(_ev_0)))"
+            "(_ev_0, _ev_1))) }), ({  }));"
         )
     ]
 
@@ -92,9 +92,9 @@ def test_element_observer_observes_its_only_child(monkeypatch: pytest.MonkeyPatc
     assert [str(hook) for hook in unnamed.add_hooks()] == [
         (
             'useElementObserver("element_observer_abc", '
-            '({ ["onIntersect"] : ((_is_intersecting, _ratio) => '
-            "(((_is_intersecting) => (shownRxClientStateSet(_is_intersecting)))"
-            "(_is_intersecting, _ratio))) }), ({  }));"
+            '({ ["onIntersect"] : ((_ev_0, _ev_1) => '
+            "(((_ev_0) => (shownRxClientStateSet(_ev_0)))"
+            "(_ev_0, _ev_1))) }), ({  }));"
         )
     ]
     assert unnamed.render() == {
