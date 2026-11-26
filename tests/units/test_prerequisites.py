@@ -17,6 +17,7 @@ import pytest
 from click.testing import CliRunner
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.compiler.templates import vite_config_template
 from reflex_base.config import Config
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
@@ -607,8 +608,6 @@ def test_initialise_vite_config(config, expected_output):
 
 def test_css_minifier_vite_config():
     """The build's CSS goes through esbuild only when selected, and only when minifying."""
-    from reflex_base.compiler.templates import vite_config_template
-
     default_output = _compile_vite_config(Config(app_name="test"))
     esbuild_output = _compile_vite_config(
         Config(app_name="test", frontend_css_minifier="esbuild")
