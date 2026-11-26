@@ -41,10 +41,34 @@ def CallScript():
     external_scripts = inline_scripts.replace("inline", "external")
 
     import importlib
+    import json
 
-    # A JavaScript module beside the app, imported from Python.
+    # A frontend package installed from a directory beside the app's package,
+    # which npm links into .web/node_modules. It imports a package of .web.
+    local_package = Path(__file__).parent.parent / "local_package"
+    local_package.mkdir(exist_ok=True)
+    (local_package / "package.json").write_text(
+        json.dumps({
+            "name": "reflex-local-package",
+            "version": "1.0.0",
+            "type": "module",
+            "main": "index.js",
+        })
+    )
+    (local_package / "index.js").write_text(
+        'import { isbot } from "isbot";\n'
+        "export const shout = (text) =>\n"
+        '  `${text.toUpperCase()}! (bot: ${isbot("Googlebot/2.1")})`;\n'
+    )
+
+    # A JavaScript module beside the app, imported from Python. The bundler
+    # reads it through a link to the app's package, and finds the packages it
+    # imports and the stylesheets it and they import from there.
     Path(__file__).with_name("page_script.js").write_text(
+        'import { isbot } from "isbot";\n'
+        'import { shout } from "reflex-local-package";\n'
         'import { reflex } from "$/utils/reflex";\n'
+        'import "./page_script.css";\n'
         "export function setText(id, text) {\n"
         "  document.getElementById(id).textContent = text;\n"
         "}\n"
@@ -52,6 +76,21 @@ def CallScript():
         "  await Promise.resolve();\n"
         "  reflex.addEvents([reflex.event(handler, { value })]);\n"
         "}\n"
+        "export function detectBot(id, agent) {\n"
+        "  setText(id, String(isbot(agent)));\n"
+        "}\n"
+        "export function shoutText(id, text) {\n"
+        "  setText(id, shout(text));\n"
+        "}\n"
+        "export function echo(value) {\n"
+        '  setText("js_module_echo", `echo: ${value}`);\n'
+        "}\n"
+    )
+    Path(__file__).with_name("page_script.css").write_text(
+        '@import "./page_script_theme.css";\n'
+    )
+    Path(__file__).with_name("page_script_theme.css").write_text(
+        "#js_module_styled { color: rgb(1, 2, 3); }\n"
     )
     page_script = importlib.import_module(__name__.rpartition(".")[0] + ".page_script")
 
@@ -261,6 +300,10 @@ def CallScript():
 
     app = rx.App()
     Path("assets/external.js").write_text(external_scripts)
+    # After rx.App(), which loads the config again.
+    rx.config.get_config().frontend_packages.append(
+        f"reflex-local-package@file:{local_package.as_posix()}"
+    )
 
     @app.add_page
     def index():
@@ -467,20 +510,44 @@ def CallScript():
                 ),
                 id="js_module_report",
             ),
+            rx.text("styled by a module's stylesheet", id="js_module_styled"),
+            rx.text("", id="js_module_bot"),
+            rx.button(
+                "js_module_bot",
+                on_click=page_script.detectBot(
+                    "js_module_bot", "Googlebot/2.1 (+http://www.google.com/bot.html)"
+                ),
+                id="js_module_bot_button",
+            ),
+            rx.text("", id="js_module_local"),
+            rx.button(
+                "js_module_local",
+                on_click=page_script.shoutText("js_module_local", "hi"),
+                id="js_module_local_button",
+            ),
+            # Uncalled: the trigger passes the function the input's value.
+            rx.el.input(id="js_module_input", on_change=page_script.echo),
+            rx.text("", id="js_module_echo"),
         )
 
 
 @pytest.fixture(scope="module")
-def call_script(tmp_path_factory) -> Generator[AppHarness, None, None]:
+def call_script(
+    tmp_path_factory, app_harness_env: type[AppHarness]
+) -> Generator[AppHarness, None, None]:
     """Start CallScript app at tmp_path via AppHarness.
+
+    In prod mode the bundler builds the JavaScript modules through the link to
+    the app's package, as in dev mode its server serves them.
 
     Args:
         tmp_path_factory: pytest tmp_path_factory fixture
+        app_harness_env: harness class for the dev or prod mode under test.
 
     Yields:
         running AppHarness instance
     """
-    with AppHarness.create(
+    with app_harness_env.create(
         root=tmp_path_factory.mktemp("call_script"),
         app_source=CallScript,
     ) as harness:
@@ -684,3 +751,27 @@ def test_js_module(call_script_page: Page):
     expect(call_script_page.locator("#reflex_result")).to_have_value(
         "written by the module"
     )
+
+
+def test_js_module_bundles_its_imports(call_script_page: Page):
+    """A module bundled through the link to the app's package reaches its imports.
+
+    Its npm package, a frontend package installed from a local directory, and
+    the stylesheet it imports, with that stylesheet's own `@import`, are all
+    bundled; a function bound to a trigger uncalled gets the trigger's value.
+
+    Args:
+        call_script_page: Playwright page.
+    """
+    expect(call_script_page.locator("#js_module_styled")).to_have_css(
+        "color", "rgb(1, 2, 3)"
+    )
+
+    call_script_page.locator("#js_module_bot_button").click()
+    expect(call_script_page.locator("#js_module_bot")).to_have_text("true")
+
+    call_script_page.locator("#js_module_local_button").click()
+    expect(call_script_page.locator("#js_module_local")).to_have_text("HI! (bot: true)")
+
+    call_script_page.locator("#js_module_input").fill("typed")
+    expect(call_script_page.locator("#js_module_echo")).to_have_text("echo: typed")
