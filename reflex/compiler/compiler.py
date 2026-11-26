@@ -1312,16 +1312,19 @@ def _memo_symbol_and_imports(
 def _backend_imports(
     compile_ctx: CompileContext,
     app_root_imports: ParsedImportDict,
+    document_imports: ParsedImportDict,
     memos: Iterable[MemoDefinition],
 ) -> list[str]:
     """List the compiled modules that import the backend transport.
 
-    Memos register for the whole process, so only those the pages and the app
-    root import, directly or through another memo, are checked.
+    Memos register for the whole process, so only those the pages, the app
+    root and the document head import, directly or through another memo, are
+    checked.
 
     Args:
         compile_ctx: The compile context holding the compiled pages.
         app_root_imports: The imports of the app root.
+        document_imports: The imports of the document head components.
         memos: Every memo the compile emits.
 
     Returns:
@@ -1335,7 +1338,10 @@ def _backend_imports(
         )
         for route, page_ctx in compile_ctx.compiled_pages.items()
     ]
-    modules.append(("the app root", app_root_imports))
+    modules.extend((
+        ("the app root", app_root_imports),
+        ("the document head", document_imports),
+    ))
     unreached = {id(memo): memo for memo in memos}
     checked = 0
     while checked < len(modules):
@@ -1585,6 +1591,9 @@ def compile_app(
         backend_imports := _backend_imports(
             compile_ctx,
             app_root_imports,
+            utils.merge_imports(
+                *(component._get_all_imports() for component in app.head_components)
+            ),
             (*memos, *compile_ctx.auto_memo_components.values()),
         )
     ):
