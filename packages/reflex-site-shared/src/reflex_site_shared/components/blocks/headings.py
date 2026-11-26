@@ -130,7 +130,16 @@ class HeadingLink(rx.link.__self__):
             The component.
         """
         id_ = cls.slugify(text)
-        href = rx.State.router.url + "#" + id_
+        # The reported URL carries the page's current fragment, so rebuild it
+        # without one. Before the backend's first reply the URL is still empty,
+        # and a fragment-only link already points at this page.
+        url = rx.State.router.url
+        page = rx.cond(
+            url.path,
+            url.origin + url.path + rx.cond(url.query, "?" + url.query, ""),
+            "",
+        )
+        href = page + "#" + id_
         scroll_margin = rx.cond(
             HostingBannerState.is_banner_visible,
             "scroll-mt-[113px]",
@@ -147,7 +156,12 @@ class HeadingLink(rx.link.__self__):
                     "line_height": "1.2" if heading == "h1" else "1.25",
                     **(style or {}),
                 },
-                class_name=class_name + " " + scroll_margin + " mt-" + mt,
+                class_name="docs-heading "
+                + class_name
+                + " "
+                + scroll_margin
+                + " mt-"
+                + mt,
             ),
             rx.icon(
                 tag="link",

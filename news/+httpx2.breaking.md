@@ -1,0 +1,1 @@
+Reflex now uses `httpx2` for HTTP requests and verifies HTTPS certificates against the operating system's certificate store. Applications that import `httpx` must declare it as their own dependency or migrate to `httpx2`; see [HTTP clients and certificates](https://reflex.dev/docs/advanced-onboarding/configuration/#http-clients-and-certificates).

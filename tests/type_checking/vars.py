@@ -3,7 +3,11 @@
 import dataclasses
 from typing import Any, Literal, assert_type
 
+from reflex_base.event import EventChain
+from reflex_components_core.el.elements.typography import Div
+
 from reflex.vars.base import Var
+from reflex.vars.function import FunctionStringVar, ReflexCallable
 from reflex.vars.number import (
     BooleanVar,
     LiteralBooleanVar,
@@ -31,6 +35,13 @@ _any_var: Var[Any] = Var.create(None)
 assert_type(_any_var.to(bool), BooleanVar)
 assert_type(_any_var.to(str), StringVar[str])
 assert_type(_any_var.to(int), NumberVar[int])
+# A `Var` subclass as the output type returns that subclass, with or without a
+# `var_type`. The overload took an instance of the subclass rather than the
+# class and no `var_type`, so these fell through to the catch-all one, which ty
+# 0.0.92 and later solve as `Unknown`.
+assert_type(_any_var.to(StringVar), StringVar[str])
+assert_type(_any_var.to(BooleanVar), BooleanVar)
+assert_type(_any_var.to(StringVar, str), StringVar[str])
 
 # `guess_type` narrows on the declared inner type via a `self` annotation, so
 # the `Var[bool]` overload is the one the `bool` shadow affected.
@@ -48,3 +59,13 @@ class _Point:
 
 
 LiteralObjectVar.create(_Point(1))
+
+# A JS function typed as an event chain is bound to a trigger as its whole handler.
+_on_mount = FunctionStringVar.create("() => {}", _var_type=EventChain)
+assert_type(_on_mount, FunctionStringVar[ReflexCallable[..., Any]])
+Div.create(on_mount=_on_mount)
+# Any other `_var_type` still names the function's own signature.
+assert_type(
+    FunctionStringVar.create("(x) => x", _var_type=ReflexCallable[[int], int]),
+    FunctionStringVar[ReflexCallable[[int], int]],
+)

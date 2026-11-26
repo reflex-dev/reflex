@@ -3,6 +3,7 @@ from reflex_site_shared.constants import OG_IMAGE_URL
 from reflex_site_shared.route import Route
 from reflex_site_shared.views.marketing_footer import marketing_footer
 
+from reflex_docs import sections
 from reflex_docs.pages.docs_landing.views import (
     ai_builder_section,
     divider,
@@ -24,11 +25,11 @@ def _docs_landing() -> rx.Component:
         The documentation landing page component.
     """
     return rx.el.div(
-        docs_navbar(),
+        docs_navbar(active_tab=sections.OVERVIEW),
         rx.el.main(
             rx.el.div(
                 hero(),
-                divider(class_name="max-w-full"),
+                divider(),
                 ai_builder_section(),
                 framework(),
                 enterprise_section(),
@@ -37,11 +38,11 @@ def _docs_landing() -> rx.Component:
                 other_section(),
                 docs_cta(),
                 marketing_footer(show_color_mode_toggle=True),
-                class_name="flex flex-col relative justify-center items-center w-full overflow-hidden",
+                class_name="relative flex w-full flex-col items-center",
             ),
             class_name="flex flex-col w-full relative h-full justify-center items-center",
         ),
-        class_name="flex flex-col w-full justify-center items-center relative bg-background",
+        class_name="docs-landing relative flex w-full flex-col items-center bg-background font-sans text-foreground",
     )
 
 

@@ -23,8 +23,8 @@ from collections.abc import AsyncGenerator, Callable, Mapping
 from hashlib import md5
 from pathlib import Path
 from textwrap import dedent
-from types import MethodType, ModuleType
-from typing import Any, ClassVar, Literal, TypeVar, cast
+from types import FunctionType, MethodType, ModuleType
+from typing import Any, ClassVar, ForwardRef, Literal, TypeVar, cast
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -35,12 +35,13 @@ from pytest_mock import MockerFixture
 from reflex_base import constants
 from reflex_base.constants import CompileVars, RouteVar
 from reflex_base.constants.state import FIELD_MARKER
-from reflex_base.event import Event, EventHandler
+from reflex_base.event import Event, EventHandler, EventSpec
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import format, types
 from reflex_base.utils.exceptions import (
+    EventHandlerValueError,
     InvalidLockWarningThresholdError,
     LockExpiredError,
     ReflexRuntimeError,
@@ -79,8 +80,12 @@ from reflex.state import (
     OnLoadInternalState,
     State,
     StateUpdate,
+    _apply_client_storage_vars,
     _frontend_schema,
+    _get_client_storage_delta,
     _load_events_for_page,
+    _override_base_method,
+    _shared_storage_groups,
     all_base_state_classes,
     is_serializable,
     state_snapshot_hashes,
@@ -103,7 +108,10 @@ CI = bool(os.environ.get("CI", False))
 LOCK_EXPIRATION = 2500 if CI else 300
 LOCK_WARNING_THRESHOLD = 1000 if CI else 100
 LOCK_WARN_SLEEP = 1.5 if CI else 0.15
-LOCK_EXPIRE_SLEEP = 2.5 if CI else 0.4
+# Must outlast LOCK_EXPIRATION by a clear margin: redis times the expiration on
+# its own clock, so sleeping exactly as long leaves only the few milliseconds of
+# round trips between the lock and the save to decide whether it expired.
+LOCK_EXPIRE_SLEEP = 3.0 if CI else 0.4
 
 
 formatted_router_vars = {
@@ -2624,6 +2632,11 @@ async def state_manager_redis() -> AsyncGenerator[StateManager, None]:
         # Create a mocked redis client instead of skipping.
         state_manager = StateManagerRedis(redis=mock_redis())
 
+    # Leases are only taken once the lock updates subscription is confirmed.
+    # Best effort: a Redis that rejects CONFIG never confirms it.
+    with contextlib.suppress(TimeoutError, asyncio.TimeoutError):
+        await state_manager._ensure_lock_task_subscribed()
+
     yield state_manager
 
     await state_manager.close()
@@ -4370,6 +4383,7 @@ def test_potentially_dirty_states():
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("forked_registration_context")
 async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
     """Test that router var dependencies are correctly tracked.
 
@@ -4416,16 +4430,6 @@ async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
     assert state.dirty_vars == {"foo"}
     assert parent_state.dirty_substates == {RouterVarDepState.get_name()}
 
-    # The locally-defined states above registered themselves in the class-level
-    # dependency maps on State, which outlive this test. Left behind, a later
-    # test that dirties a router var on a fresh State tree resolves the stale
-    # entry and raises on the missing substate. Drop them.
-    for dep_set in State._var_dependencies.values():
-        dep_set.difference_update({
-            (RouterVarDepState.get_full_name(), "foo"),
-        })
-    State._potentially_dirty_states.discard(RouterVarDepState.get_full_name())
-
 
 @pytest.mark.parametrize("name", constants.ROUTER_VARS)
 def test_router_field_names_are_reserved(name):
@@ -4442,6 +4446,7 @@ def test_router_field_names_are_reserved(name):
         )
 
 
+@pytest.mark.usefixtures("forked_registration_context")
 def test_router_var_dep_legacy_string() -> None:
     """An explicit deps=["router"] still fires when any router var changes.
 
@@ -4463,13 +4468,8 @@ def test_router_var_dep_legacy_string() -> None:
         ) in State._var_dependencies[router_var]
     assert "router" not in State._var_dependencies
 
-    # Drop the class-level registrations this locally-defined state made; see
-    # the note in test_router_var_dep.
-    for dep_set in State._var_dependencies.values():
-        dep_set.discard((LegacyRouterDepState.get_full_name(), "foo"))
-    State._potentially_dirty_states.discard(LegacyRouterDepState.get_full_name())
 
-
+@pytest.mark.usefixtures("forked_registration_context")
 def test_router_var_dep_legacy_string_still_compiles() -> None:
     """An app declaring deps=["router"] must still pass dependency validation.
 
@@ -4488,10 +4488,6 @@ def test_router_var_dep_legacy_string_still_compiles() -> None:
     assert constants.ROUTER in State.vars
     # Raises VarDependencyError if the dependency does not resolve to a var.
     App()._validate_var_dependencies()
-
-    for dep_set in State._var_dependencies.values():
-        dep_set.discard((LegacyRouterCompileState.get_full_name(), "foo"))
-    State._potentially_dirty_states.discard(LegacyRouterCompileState.get_full_name())
 
 
 @pytest.mark.asyncio
@@ -4515,6 +4511,7 @@ async def test_get_var_value_of_the_whole_router() -> None:
     ).client_token == router.session.client_token
 
 
+@pytest.mark.usefixtures("forked_registration_context")
 def test_router_var_dep_does_not_warn_for_the_var_form(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -4553,13 +4550,8 @@ def test_router_var_dep_does_not_warn_for_the_var_form(
     assert len(deprecations) == 1
     assert "StringFormRouterDepState.from_string" in deprecations[0]
 
-    for dep_set in State._var_dependencies.values():
-        dep_set.discard((VarFormRouterDepState.get_full_name(), "from_var"))
-        dep_set.discard((StringFormRouterDepState.get_full_name(), "from_string"))
-    State._potentially_dirty_states.discard(VarFormRouterDepState.get_full_name())
-    State._potentially_dirty_states.discard(StringFormRouterDepState.get_full_name())
 
-
+@pytest.mark.usefixtures("forked_registration_context")
 def test_router_var_dep_whole_router() -> None:
     """deps=[State.router] must track every per-field router var.
 
@@ -4593,11 +4585,6 @@ def test_router_var_dep_whole_router() -> None:
         WholeRouterDepState.get_full_name(),
         "summary",
     ) not in State._var_dependencies.get(constants.ROUTER, set())
-
-    # Drop the class-level registrations; see the note in test_router_var_dep.
-    for dep_set in State._var_dependencies.values():
-        dep_set.discard((WholeRouterDepState.get_full_name(), "summary"))
-    State._potentially_dirty_states.discard(WholeRouterDepState.get_full_name())
 
 
 def test_router_is_listed_as_a_var_and_inherited_by_substates() -> None:
@@ -4873,6 +4860,7 @@ def test_setvar_async_setter():
         ),
     ],
 )
+@pytest.mark.usefixtures("forked_registration_context")
 def test_redis_state_manager_config_knobs(tmp_path, expiration_kwargs, expected_values):
     proj_root = tmp_path / "project1"
     proj_root.mkdir()
@@ -4909,6 +4897,7 @@ config = rx.Config(
         (20000, 30000),
     ],
 )
+@pytest.mark.usefixtures("forked_registration_context")
 def test_redis_state_manager_config_knobs_invalid_lock_warning_threshold(
     tmp_path, redis_lock_expiration, redis_lock_warning_threshold
 ):
@@ -5018,6 +5007,276 @@ config = rx.Config(
         assert "setvar" in TestState.event_handlers
 
 
+def shared_explicit_callback() -> EventSpec:
+    """A module-level callback that a state also exposes as an attribute.
+
+    Returns:
+        The event to run.
+    """
+    return rx.console_log("shared")
+
+
+def test_explicit_event_handlers(tmp_path, forked_registration_context):
+    """With state_explicit_event_handlers, undecorated methods stay plain methods."""
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+
+    config_string = """
+import reflex as rx
+config = rx.Config(
+    app_name="project1",
+    state_explicit_event_handlers=True,
+)
+    """
+
+    (proj_root / "rxconfig.py").write_text(dedent(config_string))
+
+    with chdir(proj_root):
+        reflex_base.config.reload_config()
+        from reflex.state import State
+
+        class ExplicitMixin(State, mixin=True):
+            @rx.event
+            def mixin_handler(self):
+                pass
+
+            def mixin_helper(self) -> int:
+                return 1
+
+        # Named like the attribute it is exposed as, like a class-body method.
+        def made_callback() -> EventSpec:
+            return rx.console_log("made")
+
+        made = made_callback
+
+        class ExplicitCallbacks:
+            @staticmethod
+            def refresh() -> EventSpec:
+                return rx.console_log("refresh")
+
+        class ExplicitState(ExplicitMixin, State):
+            num: int = 0
+            shared_explicit_callback = shared_explicit_callback
+            made_callback = made
+            refresh = ExplicitCallbacks.refresh
+
+            @rx.event
+            def handler(self):
+                self.num += 1
+
+            @rx.event(background=True)
+            async def bg_handler(self):
+                pass
+
+            def helper(self) -> int:
+                return self.num + self.mixin_helper()
+
+        assert sorted(ExplicitState.event_handlers) == [
+            "bg_handler",
+            "handler",
+            "mixin_handler",
+            "setvar",
+        ]
+        assert isinstance(ExplicitState.handler, EventHandler)
+        assert isinstance(ExplicitState.bg_handler, EventHandler)
+        assert isinstance(ExplicitState.mixin_handler, EventHandler)
+        assert isinstance(ExplicitState.helper, FunctionType)
+        assert isinstance(ExplicitState.mixin_helper, FunctionType)
+        assert ExplicitState(_reflex_internal_init=True).helper() == 1  # pyright: ignore [reportCallIssue]
+
+        # Wiring an undecorated method to a trigger names the missing decorator
+        # instead of calling it with the component as `self`.
+        hint = (
+            "Decorate it with `@rx.event`: with `state_explicit_event_handlers` enabled, "
+            "undecorated methods stay plain methods. "
+            "See https://reflex.dev/docs/events/events-overview/#explicit-event-handlers"
+        )
+        for trigger, method in (
+            (ExplicitState.helper, ExplicitState.helper),
+            (ExplicitState.mixin_helper, ExplicitState.mixin_helper),
+            (lambda: ExplicitState.helper, ExplicitState.helper),
+            (lambda: ExplicitState.mixin_helper, ExplicitState.mixin_helper),
+        ):
+            with pytest.raises(EventHandlerValueError) as exc_info:
+                rx.button(on_click=trigger)
+            assert str(exc_info.value) == (
+                f"{method.__qualname__} is wired to on_click but is not an event handler. {hint}"
+            )
+
+        with pytest.raises(EventHandlerValueError) as exc_info:
+            rx.App().add_page(
+                lambda: rx.text("x"), route="/load", on_load=ExplicitState.helper
+            )
+        assert str(exc_info.value) == (
+            f"{ExplicitState.helper.__qualname__} is wired to on_load "
+            f"but is not an event handler. {hint}"
+        )
+
+        # A callback the state merely exposes stays usable as a trigger elsewhere.
+        rx.button(on_click=shared_explicit_callback)
+        rx.button(on_click=made_callback)
+        rx.button(on_click=ExplicitCallbacks.refresh)
+        rx.button(on_click=ExplicitState.refresh)
+
+        # Built-in states are unaffected.
+        assert "on_load_internal" in OnLoadInternalState.event_handlers
+
+
+def test_state_flags_from_env_without_config(monkeypatch):
+    """A State defined before any config load honors the REFLEX_* env var."""
+    monkeypatch.setenv("REFLEX_STATE_EXPLICIT_EVENT_HANDLERS", "true")
+
+    with RegistrationContext():
+
+        class WorkerState(State):
+            def helper(self):
+                pass
+
+        assert "helper" not in WorkerState.event_handlers
+
+
+def test_explicit_event_handlers_keep_decorator_above_event(monkeypatch):
+    """A handler under a functools.wraps decorator stays a handler in explicit mode."""
+    monkeypatch.setenv("REFLEX_STATE_EXPLICIT_EVENT_HANDLERS", "true")
+
+    def passthrough(fn):
+        @functools.wraps(fn)
+        def wrapper(self, *args, **kwargs):
+            return fn(self, *args, **kwargs)
+
+        return wrapper
+
+    with RegistrationContext():
+
+        class StackedState(State):
+            @passthrough
+            @rx.event
+            def save(self):
+                pass
+
+        assert "save" in StackedState.event_handlers
+
+
+def test_reload_config_resets_state_flags(tmp_path, forked_registration_context):
+    """Reloading a project does not leak the previous project's State-class flags.
+
+    A State defined in rxconfig.py ahead of its Config must see the default
+    (implicit) handler mode even if the previously loaded Config enabled
+    state_explicit_event_handlers.
+    """
+    explicit_root = tmp_path / "explicit"
+    explicit_root.mkdir()
+    (explicit_root / "rxconfig.py").write_text(
+        dedent(
+            """
+            import reflex as rx
+            config = rx.Config(app_name="explicit", state_explicit_event_handlers=True)
+            """
+        )
+    )
+    implicit_root = tmp_path / "implicit"
+    implicit_root.mkdir()
+    (implicit_root / "rxconfig.py").write_text(
+        dedent(
+            """
+            import reflex as rx
+
+
+            class RxconfigImplicitState(rx.State):
+                def implicit_handler(self):
+                    pass
+
+
+            config = rx.Config(app_name="implicit")
+            """
+        )
+    )
+
+    with chdir(explicit_root):
+        reflex_base.config.reload_config()
+        assert reflex_base.config.get_state_explicit_event_handlers() is True
+
+    with chdir(implicit_root):
+        reflex_base.config.reload_config()
+        state_cls = sys.modules[constants.Config.MODULE].RxconfigImplicitState
+        assert "implicit_handler" in state_cls.event_handlers
+        del sys.modules[constants.Config.MODULE]
+
+
+def test_state_in_rxconfig_after_config_honors_flags(
+    tmp_path, forked_registration_context
+):
+    """A State defined in rxconfig.py after its Config uses that Config's flags."""
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+    (proj_root / "rxconfig.py").write_text(
+        dedent(
+            """
+            import reflex as rx
+
+            config = rx.Config(app_name="project1", state_explicit_event_handlers=True)
+
+
+            class RxconfigPostConfigState(rx.State):
+                def helper(self):
+                    pass
+            """
+        )
+    )
+
+    with chdir(proj_root):
+        reflex_base.config.reload_config()
+        state_cls = sys.modules[constants.Config.MODULE].RxconfigPostConfigState
+        assert "helper" not in state_cls.event_handlers
+        del sys.modules[constants.Config.MODULE]
+
+
+def test_state_flags_are_per_registration_context(
+    tmp_path, forked_registration_context
+):
+    """Each RegistrationContext resolves State-class flags from its own Config."""
+    explicit_root = tmp_path / "explicit"
+    explicit_root.mkdir()
+    (explicit_root / "rxconfig.py").write_text(
+        dedent(
+            """
+            import reflex as rx
+            config = rx.Config(app_name="explicit", state_explicit_event_handlers=True)
+            """
+        )
+    )
+    implicit_root = tmp_path / "implicit"
+    implicit_root.mkdir()
+    (implicit_root / "rxconfig.py").write_text(
+        dedent(
+            """
+            import reflex as rx
+            config = rx.Config(app_name="implicit")
+            """
+        )
+    )
+
+    with chdir(explicit_root):
+        reflex_base.config.reload_config()
+
+    with chdir(implicit_root), RegistrationContext():
+        reflex_base.config.reload_config()
+
+        class ImplicitContextState(State):
+            def handler(self):
+                pass
+
+        assert "handler" in ImplicitContextState.event_handlers
+
+    # Back on the explicit context: its Config is untouched by the other context.
+    class ExplicitContextState(State):
+        def helper(self):
+            pass
+
+    assert "helper" not in ExplicitContextState.event_handlers
+    del sys.modules[constants.Config.MODULE]
+
+
 def test_state_defined_in_rxconfig_does_not_crash(tmp_path):
     """A State subclass defined in rxconfig.py must not crash config loading.
 
@@ -5053,11 +5312,9 @@ config = rx.Config(
 def test_state_in_rxconfig_honors_env_auto_setters(tmp_path, monkeypatch):
     """A State defined in rxconfig.py (pre-config) honors REFLEX_STATE_AUTO_SETTERS.
 
-    During rxconfig import the Config does not exist yet, so the cached value is
-    unset and get_state_auto_setters falls back to the env var.
+    During rxconfig import no Config is loaded on the context yet, so
+    get_state_auto_setters falls back to the env var.
     """
-    # Simulate a fresh process where no Config has been built yet.
-    monkeypatch.setattr(reflex_base.config, "_state_auto_setters", None)
     monkeypatch.setenv("REFLEX_STATE_AUTO_SETTERS", "true")
 
     proj_root = tmp_path / "project1"
@@ -5083,7 +5340,6 @@ config = rx.Config(app_name="project1")
 
 def test_state_in_rxconfig_defaults_to_no_auto_setters(tmp_path, monkeypatch):
     """A State defined in rxconfig.py gets no auto-setters by default (pre-config)."""
-    monkeypatch.setattr(reflex_base.config, "_state_auto_setters", None)
     monkeypatch.delenv("REFLEX_STATE_AUTO_SETTERS", raising=False)
 
     proj_root = tmp_path / "project1"
@@ -5438,6 +5694,16 @@ def test_backend_var_inherits_field_default_and_surfaces_factory_errors():
 
     with pytest.raises(ValueError, match="factory blew up"):
         _ = FactoryState()._n  # pyright: ignore [reportCallIssue]
+
+
+def test_state_var_dataclasses_field_default_raises():
+    """A state var default of dataclasses.field(...) raises a clear error (#7017)."""
+    with pytest.raises(
+        StateValueError, match=r"DataclassesFieldState\.model.*rx\.field"
+    ):
+
+        class DataclassesFieldState(BaseState):
+            model: ModelDC = dataclasses.field(default_factory=ModelDC)
 
 
 def test_assignment_through_property_setter():
@@ -5908,45 +6174,77 @@ def test_frontend_schema_leaves_out_backend_vars():
     )
 
 
-def test_reset_client_storage_uses_declared_factories():
-    """Hydration evaluates declared factories for all browser storage types."""
-    calls = []
+@pytest.mark.parametrize("value", ["", "dark"])
+@pytest.mark.parametrize(
+    "var_name",
+    [
+        "cookie",
+        "local",
+        "session",
+        "field_cookie",
+        "field_local",
+        "field_session",
+        "optional",
+        "storage_union",
+        "plain",
+    ],
+)
+async def test_storage_annotations_accept_browser_strings(
+    var_name: str,
+    value: str,
+    caplog: pytest.LogCaptureFixture,
+    clean_registration_context: RegistrationContext,
+):
+    """Browser strings satisfy storage annotations during hydration and later writes.
 
-    def factory(storage_type: type) -> Any:
-        """Record calls and return the configured browser default.
+    Args:
+        var_name: The browser storage var to update.
+        value: The value sent by the browser.
+        caplog: Captured log records.
+        clean_registration_context: An isolated state registry.
+    """
 
-        Args:
-            storage_type: The browser storage value type.
-
-        Returns:
-            The new storage value.
-        """
-        calls.append(storage_type)
-        return storage_type("new")
-
-    class StorageState(BaseState):
-        cookie: rx.Field[rx.Cookie] = rx.field(
-            default_factory=lambda: factory(rx.Cookie)
+    class StorageAnnotationState(State):
+        cookie: rx.Cookie = rx.Cookie("light", name="cookie", path="/settings")
+        local: rx.LocalStorage = rx.LocalStorage("light", name="local", sync=True)
+        session: rx.SessionStorage = rx.SessionStorage("light", name="session")
+        field_cookie: rx.Field[rx.Cookie] = rx.field(rx.Cookie("light"))
+        field_local: rx.Field[rx.LocalStorage] = rx.field(rx.LocalStorage("light"))
+        field_session: rx.Field[rx.SessionStorage] = rx.field(
+            rx.SessionStorage("light")
         )
-        local: rx.Field[rx.LocalStorage] = rx.field(
-            default_factory=lambda: factory(rx.LocalStorage)
-        )
-        session: rx.Field[rx.SessionStorage] = rx.field(
-            default_factory=lambda: factory(rx.SessionStorage)
-        )
+        plain: str = rx.LocalStorage("light", name="plain")
+        optional: rx.Field[rx.LocalStorage | None] = rx.field(rx.LocalStorage("light"))
+        storage_union: rx.Cookie | rx.SessionStorage = rx.Cookie("light")
 
-    assert calls == []
-    state = StorageState(
-        cookie=rx.Cookie("saved"),
-        local=rx.LocalStorage("saved"),
-        session=rx.SessionStorage("saved"),
-    )
-    state._reset_client_storage()
-    assert state.cookie == state.local == state.session == "new"
-    assert calls == [rx.Cookie, rx.LocalStorage, rx.SessionStorage]
-    state._reset_client_storage()
-    assert state.cookie == state.local == state.session == "new"
-    assert calls == [rx.Cookie, rx.LocalStorage, rx.SessionStorage] * 2
+    root = State()
+    state = await root.get_state(StorageAnnotationState)
+    declared = StorageAnnotationState.get_fields()[var_name].default
+    assert isinstance(declared, (rx.Cookie, rx.LocalStorage, rx.SessionStorage))
+    options = declared.options()
+
+    with caplog.at_level(logging.ERROR):
+        applied = await _apply_client_storage_vars(
+            root,
+            {
+                f"{StorageAnnotationState.get_full_name()}.{var_name}{FIELD_MARKER}": value
+            },
+        )
+        assert applied == [(state, var_name)]
+        assert getattr(state, var_name) == value
+        assert var_name in state.dirty_vars
+        assert not caplog.records
+
+        setattr(state, var_name, "changed")
+        assert getattr(state, var_name) == "changed"
+        assert not caplog.records
+
+        setattr(state, var_name, 42)
+        assert len(caplog.records) == 1
+        assert "Expected field" in caplog.records[0].getMessage()
+
+    assert StorageAnnotationState.get_fields()[var_name].default is declared
+    assert declared.options() == options
 
 
 @pytest.mark.parametrize(
@@ -6133,6 +6431,50 @@ def test_dict_and_get_delta():
             "bar" + FIELD_MARKER: "foo",
         }
     }
+
+
+def test_dict_reads_stored_fields_from_instance_dict(monkeypatch: pytest.MonkeyPatch):
+    """Stored fields skip get_value; unread fields and computed vars go through it."""
+
+    class StoredFieldsState(rx.State):
+        count: int = 0
+        items: list[int] = []
+
+        @rx.var
+        def doubled(self) -> int:
+            return self.count * 2
+
+    state = StoredFieldsState()
+    state.count = 2
+    get_value = StoredFieldsState.get_value
+    read = []
+
+    def spy(self: StoredFieldsState, key: str) -> Any:
+        read.append(key)
+        return get_value(self, key)
+
+    monkeypatch.setattr(StoredFieldsState, "get_value", spy)
+    expected = {
+        StoredFieldsState.get_full_name(): {
+            "count" + FIELD_MARKER: 2,
+            "doubled" + FIELD_MARKER: 4,
+            "items" + FIELD_MARKER: [],
+        }
+    }
+
+    assert state.dict() == expected
+    assert read == ["items", "doubled"]
+
+    read.clear()
+    state.items.append(1)
+    expected[StoredFieldsState.get_full_name()]["items" + FIELD_MARKER] = [1]
+    snapshot = state.dict()
+
+    assert snapshot == expected
+    assert read == ["doubled"]
+    items = snapshot[StoredFieldsState.get_full_name()]["items" + FIELD_MARKER]
+    assert not isinstance(items, MutableProxy)
+    assert items is state.__dict__["items"]
 
 
 @pytest.mark.parametrize(
@@ -6549,6 +6891,7 @@ async def test_async_computed_var_get_var_value(mock_app: rx.App, token: str):
     assert "foo" in comp_state.dirty_vars
 
 
+@pytest.mark.usefixtures("forked_registration_context")
 def test_computed_var_mutability() -> None:
     class CvMixin(rx.State, mixin=True):
         @rx.var(cache=True, deps=["hi"])
@@ -6843,6 +7186,36 @@ def test_setattr_alias_annotated_var(mocker: MockerFixture):
     error_mock.assert_called_once()
 
 
+def test_setattr_unannotated_empty_containers(mocker: MockerFixture) -> None:
+    """Empty unannotated containers accept values when assigned later."""
+
+    class EmptyContainerState(rx.State):
+        mapping = {}
+        pair = ()
+        items = []
+
+    error_mock = mocker.patch("reflex_base.vars.base.logger.error")
+    state = EmptyContainerState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+
+    state.mapping = {"key": "value"}  # pyright: ignore[reportAttributeAccessIssue]
+    state.pair = (1, "value")  # pyright: ignore[reportAttributeAccessIssue]
+    state.items = [1]  # pyright: ignore[reportAttributeAccessIssue]
+
+    assert state.mapping == {"key": "value"}
+    assert state.pair == (1, "value")
+    assert state.items == [1]
+    error_mock.assert_not_called()
+
+
+def test_unannotated_nested_empty_container_keeps_element_type() -> None:
+    """An empty container next to a typed one keeps the typed element type."""
+
+    class NestedEmptyState(rx.State):
+        nested = [[], [1]]
+
+    assert NestedEmptyState.nested[0][0]._var_type is int
+
+
 def test_redeclared_var_is_independent_of_the_inherited_one() -> None:
     """A substate redeclaring an inherited var gets its own var, stored on the substate."""
 
@@ -6871,6 +7244,91 @@ def test_redeclared_var_is_independent_of_the_inherited_one() -> None:
         ShadowParent.get_full_name(): {"shadowed_value" + FIELD_MARKER: 2},
         ShadowChild.get_full_name(): {"shadowed_value" + FIELD_MARKER: "changed"},
     }
+
+
+def test_base_var_shadowing_parent_before_mixin_does_not_raise() -> None:
+    """A mixin after the parent cannot shadow the parent's class attribute lookup."""
+
+    class ShadowParent(BaseState):
+        shadowed_value: int = 1
+
+    class ShadowMixin(BaseState, mixin=True):
+        shadowed_value: str = "ninety-nine"
+
+    class ShadowChild(ShadowParent, ShadowMixin):  # pyright: ignore[reportIncompatibleVariableOverride]
+        pass
+
+    assert isinstance(ShadowChild.shadowed_value, Var)
+    assert ShadowChild.get_fields()["shadowed_value"]._owner is ShadowParent
+
+
+def test_base_var_related_mixins_can_override() -> None:
+    """A mixin subclass may intentionally override its base mixin's var."""
+
+    class BaseMixin(BaseState, mixin=True):
+        value: int = 1
+
+    class ExtendedMixin(BaseMixin, mixin=True):
+        value: int = 2
+
+    class CombinedState(ExtendedMixin, State):
+        pass
+
+    assert isinstance(CombinedState.value, Var)
+    assert CombinedState.get_fields()["value"].default == 2
+
+
+def test_base_var_annotation_only_mixin_does_not_raise() -> None:
+    """An annotation-only mixin declaration does not shadow the parent var."""
+
+    class ShadowParent(BaseState):
+        shadowed_value: int = 1
+
+    class AnnotationOnlyMixin(BaseState, mixin=True):
+        shadowed_value: int
+
+    class ShadowChild(AnnotationOnlyMixin, ShadowParent):
+        pass
+
+    assert isinstance(ShadowChild.shadowed_value, Var)
+    assert ShadowChild.get_fields()["shadowed_value"]._owner is ShadowParent
+    assert (
+        cast("Var", ShadowChild.shadowed_value)._js_expr
+        == cast("Var", ShadowParent.shadowed_value)._js_expr
+    )
+
+
+def test_base_var_annotation_only_mixin_keeps_var_of_parents_mixin() -> None:
+    """The parent's var is kept when the parent got it from a mixin of its own."""
+
+    class ValueMixin(BaseState, mixin=True):
+        shadowed_value: int = 1
+
+    class ShadowParent(ValueMixin, BaseState):
+        pass
+
+    class AnnotationOnlyMixin(BaseState, mixin=True):
+        shadowed_value: int
+
+    class ShadowChild(AnnotationOnlyMixin, ShadowParent):
+        pass
+
+    assert ShadowChild.get_fields()["shadowed_value"]._owner is ShadowParent
+
+
+def test_base_var_reannotating_annotation_only_mixin_var_keeps_parent_var() -> None:
+    """Re-annotating a var that a mixin only annotates keeps the parent's var."""
+
+    class ShadowParent(BaseState):
+        shadowed_value: int = 1
+
+    class AnnotationOnlyMixin(BaseState, mixin=True):
+        shadowed_value: int
+
+    class ShadowChild(AnnotationOnlyMixin, ShadowParent):
+        shadowed_value: int
+
+    assert ShadowChild.get_fields()["shadowed_value"]._owner is ShadowParent
 
 
 def test_base_var_shadowing_non_state_descriptor_does_not_raise() -> None:
@@ -6925,6 +7383,7 @@ def test_base_var_bare_reannotation_does_not_raise() -> None:
     assert isinstance(ReannotatingChild.reannotated_value, Var)
 
 
+@pytest.mark.usefixtures("forked_registration_context")
 def test_composite_var_dep_tracks_fields_in_every_state():
     """A dependency on a var spanning two states must track both states' fields.
 
@@ -6965,16 +7424,6 @@ def test_composite_var_dep_tracks_fields_in_every_state():
     static_deps = _CompositeDepConsumer.__dict__["combined"]._static_deps
     assert "a_field" in static_deps.get(a_name, set())
     assert "b_field" in static_deps.get(b_name, set())
-
-    # The consumer registered itself in both source states' class-level
-    # dependency maps, which outlive this test. Left behind, a later test that
-    # dirties a_field or b_field resolves the stale entry and raises on the
-    # missing substate. Drop them.
-    consumer_name = _CompositeDepConsumer.get_full_name()
-    for state_cls in (_CompositeDepStateA, _CompositeDepStateB):
-        for dep_set in state_cls._var_dependencies.values():
-            dep_set.difference_update({(consumer_name, "combined")})
-        state_cls._potentially_dirty_states.discard(consumer_name)
 
 
 def test_getstate_holds_only_the_fields_of_the_state():
@@ -7322,3 +7771,742 @@ def test_undeclared_double_underscore_name_is_rejected(clean_registration_contex
         with pytest.raises(SetUndefinedStateVarError):
             setattr(state, name, 1)
     assert not state.dirty_vars
+
+
+_NO_DEFAULT = object()
+
+
+@pytest.mark.parametrize(
+    ("name", "annotation", "default"),
+    [
+        ("items", "list[MissingItem]", []),
+        ("items", "dict[str, MissingItem]", {}),
+        ("items", "MissingItem | None", None),
+        ("items", "list[MissingItem]", _NO_DEFAULT),
+        ("items", "dict[str, MissingItem]", _NO_DEFAULT),
+        ("items", "MissingItem | None", _NO_DEFAULT),
+        ("items", "MissingItem", _NO_DEFAULT),
+        ("items", "MissingItem", None),
+        ("items", list[ForwardRef("MissingItem")], []),
+        ("_items", "list[MissingItem]", []),
+    ],
+    ids=[
+        "list",
+        "dict",
+        "optional",
+        "list-no-default",
+        "dict-no-default",
+        "optional-no-default",
+        "bare-no-default",
+        "bare-none-default",
+        "nested-forward-ref",
+        "backend",
+    ],
+)
+def test_var_annotation_with_undefined_name_raises_name_error(
+    name: str, annotation: Any, default: Any
+) -> None:
+    """An annotation naming an undefined symbol raises a NameError naming it.
+
+    With postponed annotations the unresolved annotation used to reach var
+    typing as a ForwardRef and fail with an unrelated TypeError or
+    AttributeError, whether or not the var has a default. On Python 3.14 an
+    annotation is evaluated lazily, and an undefined name inside a generic
+    stays a nested ForwardRef.
+
+    Args:
+        name: The name of the var.
+        annotation: The annotation, which names a symbol that does not exist.
+        default: The default value of the var, or _NO_DEFAULT for none.
+    """
+    namespace: dict[str, Any] = {
+        "__module__": __name__,
+        "__annotations__": {name: annotation},
+    }
+    if default is not _NO_DEFAULT:
+        namespace[name] = default
+
+    with pytest.raises(NameError, match="MissingItem"):
+        type("UndefinedNameState", (BaseState,), namespace)
+
+
+@pytest.mark.parametrize(
+    ("name", "annotation", "value"),
+    [
+        ("cache", "ClassVar[MissingItem]", _NO_DEFAULT),
+        ("__client", "MissingItem | None", None),
+        ("total", "MissingItem", property(lambda self: 0)),
+    ],
+    ids=["classvar", "private", "descriptor"],
+)
+def test_non_var_annotation_with_undefined_name_is_allowed(
+    name: str, annotation: str, value: Any
+) -> None:
+    """An annotation that declares no var is not resolved, so its symbol may be undefined.
+
+    A symbol imported only under TYPE_CHECKING is undefined at runtime.
+
+    Args:
+        name: The name of the attribute.
+        annotation: The annotation, which names a symbol that does not exist.
+        value: The value of the attribute, or _NO_DEFAULT for none.
+    """
+    namespace: dict[str, Any] = {
+        "__module__": __name__,
+        "__annotations__": {name: annotation},
+    }
+    if value is not _NO_DEFAULT:
+        namespace[name] = value
+
+    state = type("UndefinedNonVarState", (BaseState,), namespace)
+
+    assert name not in state.get_fields()
+
+
+async def test_hydration_replay_preserves_shared_cleanup_marks(
+    monkeypatch: pytest.MonkeyPatch, clean_registration_context: RegistrationContext
+):
+    """A single shared cleanup records snapshot and correction writes for fanout.
+
+    Args:
+        monkeypatch: Restore root metadata changed by defining a shared state.
+        clean_registration_context: Isolate the temporary shared state class.
+    """
+    links = State.get_fields()["_reflex_internal_links"]
+    monkeypatch.setattr(links, "default", links.default)
+    monkeypatch.setattr(links, "default_factory", links.default_factory)
+    monkeypatch.setattr(
+        State, "_always_dirty_substates", State._always_dirty_substates.copy()
+    )
+    clean_calls = 0
+
+    class StorageState(rx.SharedState):
+        value: str = rx.LocalStorage("")
+        snapshot_write: str = "initial"
+
+        @_override_base_method
+        def get_delta(self):
+            """Normalize a backend storage value before returning its delta.
+
+            Returns:
+                The base delta.
+            """
+            if "value" in self.dirty_vars and self.value == "stale":
+                self.value = "fresh"
+            return super().get_delta()
+
+        @_override_base_method
+        def _clean(self):
+            """Count the cleanup calls that capture shared fanout marks."""
+            nonlocal clean_calls
+            clean_calls += 1
+            super()._clean()
+
+    root = State.get_root_state()(_reflex_internal_init=True)
+    storage = await root.get_state(StorageState)
+    storage.snapshot_write = "snapshot"
+    storage.value = "stale"
+    storage._previous_dirty_vars = set()
+    await _get_client_storage_delta(root, [(storage, "value")])
+    assert clean_calls == 1
+    assert storage.value == "fresh"
+    assert storage._previous_dirty_vars >= {"snapshot_write", "value"}
+    assert not storage.dirty_vars
+
+
+def test_rx_event_handler_bound_at_class_creation() -> None:
+    """A decorated method is an EventHandler bound to its class when the body runs."""
+
+    class BoundState(BaseState):
+        @rx.event
+        def handle(self, value: int):
+            pass
+
+    handler = BoundState.__dict__["handle"]
+    assert isinstance(handler, EventHandler)
+    assert handler.state is BoundState
+    assert handler._type_hints == {"value": int}
+    assert BoundState.event_handlers["handle"] is handler
+    registered = RegistrationContext.get().event_handlers[
+        f"{BoundState.get_full_name()}.handle"
+    ]
+    assert registered.handler is handler
+    assert registered.states == (BoundState,)
+
+
+def test_mixin_decorated_handler_copied_per_state() -> None:
+    """A mixin's decorated handler is bound to the mixin; each state gets its own copy."""
+
+    class CopyMixin(BaseState, mixin=True):
+        @rx.event(background=True, stop_propagation=True)
+        async def work(self):
+            pass
+
+    class UsesCopyMixinA(CopyMixin, State):
+        pass
+
+    class UsesCopyMixinB(CopyMixin, State):
+        pass
+
+    template = CopyMixin.__dict__["work"]
+    assert isinstance(template, EventHandler)
+    assert template.state is CopyMixin
+    handler_a = UsesCopyMixinA.event_handlers["work"]
+    handler_b = UsesCopyMixinB.event_handlers["work"]
+    assert handler_a.state is UsesCopyMixinA
+    assert handler_b.state is UsesCopyMixinB
+    assert len({template.fn, handler_a.fn, handler_b.fn}) == 3
+    for handler in (handler_a, handler_b):
+        assert handler.is_background
+        assert handler.event_actions == {"stopPropagation": True}
+
+
+def test_aliased_handler_keeps_its_state() -> None:
+    """Assigning another state's handler in a class body does not rebind it."""
+
+    class OwnerState(BaseState):
+        @rx.event
+        def handle(self):
+            pass
+
+    class AliasState(BaseState):
+        alias = OwnerState.handle
+
+    owner_handler = OwnerState.__dict__["handle"]
+    assert isinstance(owner_handler, EventHandler)
+    assert owner_handler.state is OwnerState
+    assert AliasState.__dict__["alias"] is owner_handler
+    assert "alias" not in AliasState.event_handlers
+
+
+def _logged(fn):
+    """Wrap a method the way an auth decorator stacked above @rx.event does.
+
+    Args:
+        fn: The decorated method (an EventHandler when stacked above @rx.event).
+
+    Returns:
+        The wrapper, which calls ``fn`` with the instance like a plain method.
+    """
+
+    @functools.wraps(fn)
+    def wrapper(self, *args, **kwargs):
+        return fn(self, *args, **kwargs)
+
+    return wrapper
+
+
+def test_wrapper_above_rx_event_is_deprecated_and_still_runs() -> None:
+    """A decorator above @rx.event warns and keeps working as the plain method it wraps."""
+    from reflex_base.utils import console as base_console
+
+    from reflex.utils import console
+
+    with (
+        patch.object(console, "deprecate", wraps=console.deprecate) as state_deprecate,
+        patch.object(
+            base_console, "deprecate", wraps=base_console.deprecate
+        ) as event_deprecate,
+    ):
+
+        class WrappedState(BaseState):
+            x: int = 0
+
+            @_logged
+            @rx.event
+            def inc(self, by: int):
+                self.x += by
+
+            @_logged
+            @rx.event(background=True)
+            async def bg(self):
+                pass
+
+        assert (
+            state_deprecate.call_args.kwargs["feature_name"]
+            == "Decorators above @rx.event"
+        )
+        handler = WrappedState.inc
+        assert isinstance(handler, EventHandler)
+        assert handler.state is WrappedState
+        assert format.format_event_handler(handler).endswith(".inc")
+        assert WrappedState.event_handlers["inc"] is handler
+        # The payload coercion still sees the method's annotations.
+        assert handler._get_type_hints()["by"] is int
+        assert handler.fn.__module__ == __name__
+        assert WrappedState.bg.is_background  # pyright: ignore [reportAttributeAccessIssue]
+        state = WrappedState()
+        # The wrapper calls the inner handler with the instance, like on main.
+        handler.fn(state, 2)
+        assert state.x == 2
+        assert (
+            event_deprecate.call_args.kwargs["feature_name"]
+            == "Calling an event handler with a state instance"
+        )
+
+
+def _wrapped_handler_warnings(caplog: pytest.LogCaptureFixture) -> list[str]:
+    """Collect the messages of the deprecation warnings that were logged.
+
+    Args:
+        caplog: The log capture fixture.
+
+    Returns:
+        The full message of every captured deprecation warning, with the
+        run-dependent source location replaced by a fixed placeholder.
+    """
+    messages = []
+    for record in caplog.records:
+        if record.name != "reflex.deprecation":
+            continue
+        message = record.getMessage()
+        if location := getattr(record, "location", None):
+            message = message.removesuffix(f"({location})") + "(<location>)"
+        messages.append(message)
+    return messages
+
+
+def _expected_wrapped_handler_warning(name: str) -> str:
+    """Build the full warning expected for a method decorated above @rx.event.
+
+    Args:
+        name: The method name.
+
+    Returns:
+        The complete expected message, as normalized by
+        ``_wrapped_handler_warnings``.
+    """
+    return (
+        "Decorators above @rx.event has been deprecated in version 0.11.0. "
+        f"`{name}` is decorated above @rx.event; apply other decorators below it. "
+        "It will be completely removed in 1.0. (<location>)"
+    )
+
+
+def test_wrapper_above_rx_event_warning_names_every_method(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Each method decorated above @rx.event is named, not just the first of the class."""
+    class_body_values: list = []
+    with caplog.at_level("WARNING", logger="reflex.deprecation"):
+
+        class ManyWrappedState(BaseState):
+            @_logged
+            @rx.event
+            def first_wrapped(self):
+                pass
+
+            class_body_values.append(first_wrapped)
+
+            @_logged
+            @rx.event
+            def second_wrapped(self):
+                pass
+
+    assert _wrapped_handler_warnings(caplog) == [
+        _expected_wrapped_handler_warning("first_wrapped"),
+        _expected_wrapped_handler_warning("second_wrapped"),
+    ]
+
+    # Repeating the setup of an already-warned method is deduplicated.
+    caplog.clear()
+    with caplog.at_level("WARNING", logger="reflex.deprecation"):
+        ManyWrappedState._item_is_event_handler("first_wrapped", class_body_values[0])
+    assert _wrapped_handler_warnings(caplog) == []
+
+
+def test_wrapper_above_rx_event_warns_once_per_method_for_dynamic_states(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Fresh classes built from one definition do not repeat the warning."""
+
+    class WrappedCounter(rx.ComponentState):
+        @_logged
+        @rx.event
+        def increment(self):
+            pass
+
+        @_logged
+        @rx.event
+        def decrement(self):
+            pass
+
+        @classmethod
+        def get_component(cls, *children, **props):
+            return rx.el.div(*children, **props)
+
+    def make_local_state() -> type[BaseState]:
+        class LocalWrappedState(BaseState):
+            @_logged
+            @rx.event
+            def local_first(self):
+                pass
+
+            @_logged
+            @rx.event
+            def local_second(self):
+                pass
+
+        return LocalWrappedState
+
+    with caplog.at_level("WARNING", logger="reflex.deprecation"):
+        components = [WrappedCounter.create() for _ in range(10)]
+        local_states = [make_local_state() for _ in range(3)]
+
+    assert _wrapped_handler_warnings(caplog) == [
+        _expected_wrapped_handler_warning("increment"),
+        _expected_wrapped_handler_warning("decrement"),
+        _expected_wrapped_handler_warning("local_first"),
+        _expected_wrapped_handler_warning("local_second"),
+    ]
+    # Every fresh class still gets its own handlers.
+    for state in (*(component.State for component in components), *local_states):
+        assert state is not None
+        assert all(handler.state is state for handler in state.event_handlers.values())
+
+
+def _partial_handler_impl(self, n: int = 0):
+    """Back the functools.partial handed to rx.event.
+
+    Args:
+        self: The state instance.
+        n: A bound argument.
+    """
+
+
+class _CallableHandler:
+    """A callable instance handed to rx.event; it has no ``__qualname__``."""
+
+    def __call__(self, state):
+        """Handle the event.
+
+        Args:
+            state: The state instance.
+        """
+
+
+@pytest.mark.parametrize(
+    "make_fn",
+    [lambda: functools.partial(_partial_handler_impl, n=2), _CallableHandler],
+    ids=["partial", "callable_instance"],
+)
+def test_wrapper_above_rx_event_of_callable_without_qualname_warns(
+    make_fn: Callable[[], Any], caplog: pytest.LogCaptureFixture
+) -> None:
+    """A wrapper above rx.event(<callable without __qualname__>) still only warns.
+
+    Args:
+        make_fn: Builds the callable handed to rx.event.
+        caplog: The log capture fixture.
+    """
+    fn = make_fn()
+    assert not hasattr(fn, "__qualname__")
+    with caplog.at_level("WARNING", logger="reflex.deprecation"):
+
+        class NoQualnameState(BaseState):
+            wrapped_no_qualname = _logged(rx.event(fn))
+
+    assert _wrapped_handler_warnings(caplog) == [
+        _expected_wrapped_handler_warning("wrapped_no_qualname"),
+    ]
+    assert isinstance(NoQualnameState.wrapped_no_qualname, EventHandler)
+
+
+def test_wrapper_above_rx_event_warning_names_every_alias(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """One wrapped handler assigned under two attribute names is named once per name."""
+    class_body_values: list = []
+    with caplog.at_level("WARNING", logger="reflex.deprecation"):
+
+        class AliasedWrappedState(BaseState):
+            @_logged
+            @rx.event
+            def aliased_original(self):
+                pass
+
+            aliased_copy = aliased_original
+            class_body_values.append(aliased_original)
+
+    assert _wrapped_handler_warnings(caplog) == [
+        _expected_wrapped_handler_warning("aliased_original"),
+        _expected_wrapped_handler_warning("aliased_copy"),
+    ]
+
+    # Each name is deduplicated on its own: only the new one is reported.
+    caplog.clear()
+    with caplog.at_level("WARNING", logger="reflex.deprecation"):
+        for name in ("aliased_original", "aliased_copy", "not_yet_warned"):
+            AliasedWrappedState._item_is_event_handler(name, class_body_values[0])
+    assert _wrapped_handler_warnings(caplog) == [
+        _expected_wrapped_handler_warning("not_yet_warned"),
+    ]
+
+
+def test_stacked_wrappers_above_rx_event_still_run() -> None:
+    """Decorators stacked above @rx.event are found through the whole __wrapped__ chain."""
+    from reflex.utils import console
+
+    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+
+        class StackedState(BaseState):
+            x: int = 0
+
+            @_logged
+            @_logged
+            @rx.event
+            def inc(self, by: int):
+                self.x += by
+
+        assert (
+            mock_deprecate.call_args.kwargs["feature_name"]
+            == "Decorators above @rx.event"
+        )
+        handler = StackedState.inc
+        assert isinstance(handler, EventHandler)
+        assert format.format_event_handler(handler).endswith(".inc")
+        state = StackedState()
+        handler.fn(state, 3)
+        assert state.x == 3
+
+
+def test_decorated_handler_shadowing_builtin_raises() -> None:
+    """A decorated handler that shadows a State method is rejected like a plain one."""
+    with pytest.raises(NameError, match="shadows a builtin State method"):
+
+        class ShadowState(BaseState):
+            @rx.event
+            def reset(self):
+                pass
+
+
+def test_rx_event_on_static_and_class_methods_is_deprecated_and_ignored() -> None:
+    """@rx.event on a staticmethod or classmethod warns and leaves it as it is."""
+    from reflex_base.utils import console
+
+    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+
+        class StaticState(BaseState):
+            @rx.event  # pyright: ignore [reportCallIssue, reportArgumentType]
+            @staticmethod
+            def helper(value: int) -> int:
+                return value * 2
+
+    assert (
+        mock_deprecate.call_args.kwargs["feature_name"]
+        == "@rx.event on a staticmethod or classmethod"
+    )
+    assert isinstance(StaticState.__dict__["helper"], staticmethod)
+    assert StaticState.helper(2) == 4  # pyright: ignore [reportCallIssue]
+
+
+def test_static_and_class_methods_above_rx_event_are_deprecated_and_ignored() -> None:
+    """A staticmethod or classmethod above @rx.event warns and stays a plain method."""
+    from reflex.utils import console
+
+    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+
+        class StaticAboveState(BaseState):
+            @staticmethod  # pyright: ignore [reportArgumentType]
+            @rx.event  # pyright: ignore [reportCallIssue, reportArgumentType]
+            def helper(value: int) -> int:
+                return value * 2
+
+            @classmethod  # pyright: ignore [reportArgumentType]
+            @rx.event  # pyright: ignore [reportCallIssue, reportArgumentType]
+            def cls_helper(cls, value: int) -> str:
+                return f"{cls.__name__}:{value}"
+
+        class StaticAboveMixin(BaseState, mixin=True):
+            @staticmethod  # pyright: ignore [reportArgumentType]
+            @rx.event  # pyright: ignore [reportCallIssue, reportArgumentType]
+            def mixin_helper(value: int) -> int:
+                return value * 2
+
+        class UsesStaticAboveMixin(StaticAboveMixin, State):
+            pass
+
+    # One warning each: the staticmethod, the classmethod, the mixin's copy.
+    assert [call.kwargs["feature_name"] for call in mock_deprecate.call_args_list] == [
+        "@rx.event on a staticmethod or classmethod"
+    ] * 3
+    assert isinstance(StaticAboveState.__dict__["helper"], staticmethod)
+    assert isinstance(StaticAboveState.__dict__["cls_helper"], classmethod)
+    assert StaticAboveState.helper(3) == 6  # pyright: ignore [reportCallIssue]
+    assert StaticAboveState().helper(3) == 6  # pyright: ignore [reportCallIssue]
+    assert StaticAboveState.cls_helper(3) == "StaticAboveState:3"  # pyright: ignore [reportCallIssue]
+    assert "helper" not in StaticAboveState.event_handlers
+    assert "cls_helper" not in StaticAboveState.event_handlers
+    assert UsesStaticAboveMixin.mixin_helper(4) == 8  # pyright: ignore [reportCallIssue]
+    assert "mixin_helper" not in UsesStaticAboveMixin.event_handlers
+
+
+def test_decorated_handler_on_state_derived_from_a_mixin_only() -> None:
+    """A state whose base flips the mixin flag on (like ``rx.SharedState``) owns its handlers.
+
+    The metaclass first marks a class declared on mixins alone as a mixin and
+    the base's ``__init_subclass__`` flips it, so binding must not depend on
+    that flag.
+    """
+
+    class FlippingMixin(BaseState, mixin=True):
+        def __init_subclass__(cls, **kwargs):
+            kwargs["mixin"] = False
+            cls._mixin = False
+            super().__init_subclass__(**kwargs)
+
+    class FromFlippingMixin(FlippingMixin):
+        @rx.event
+        def handle(self):
+            pass
+
+    assert not FromFlippingMixin._mixin
+    handler = FromFlippingMixin.__dict__["handle"]
+    assert isinstance(handler, EventHandler)
+    assert handler.state is FromFlippingMixin
+    assert FromFlippingMixin.event_handlers["handle"] is handler
+
+
+async def test_shared_storage_name_syncs_siblings(
+    clean_registration_context: RegistrationContext,
+):
+    """A write to a var sharing a storage name sets the synced vars with that name.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class SharedFirst(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class SharedSecond(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class SharedPlain(State):
+        value: str = rx.LocalStorage("", name="shared")
+
+    class OtherName(State):
+        value: str = rx.LocalStorage("", name="other", sync=True)
+
+    key = "value" + FIELD_MARKER
+    root = State()
+    first = await root.get_state(SharedFirst)
+    first.value = "new"
+    delta = await root._get_resolved_delta()
+    root._clean()
+    assert delta[SharedFirst.get_full_name()][key] == "new"
+    assert delta[SharedSecond.get_full_name()][key] == "new"
+    assert SharedPlain.get_full_name() not in delta
+    assert OtherName.get_full_name() not in delta
+
+    # An unsynced var's write raises the storage event too, so it syncs them.
+    plain = await root.get_state(SharedPlain)
+    plain.value = "plain"
+    delta = await root._get_resolved_delta()
+    root._clean()
+    assert delta[SharedFirst.get_full_name()][key] == "plain"
+    assert delta[SharedSecond.get_full_name()][key] == "plain"
+
+    # An unchanged sibling is not sent again.
+    first.value = "plain"
+    assert await root._get_resolved_delta() == {
+        SharedFirst.get_full_name(): {key: "plain"}
+    }
+    root._clean()
+
+    # A name no other var shares sets nothing else.
+    other = await root.get_state(OtherName)
+    other.value = "alone"
+    assert await root._get_resolved_delta() == {
+        OtherName.get_full_name(): {key: "alone"}
+    }
+
+
+def test_shared_storage_groups_do_not_call_default_factories(
+    clean_registration_context: RegistrationContext,
+):
+    """Grouping the storage vars at runtime calls no default_factory.
+
+    The compile already rejected a factory that produces browser storage, so the
+    first event of each backend worker does not call the factories again.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+    calls = []
+
+    def make_token() -> str:
+        """Record the call and return a plain default.
+
+        Returns:
+            The default token.
+        """
+        calls.append(1)
+        return "token"
+
+    class FactoryState(State):
+        token: rx.Field[str] = rx.field(default_factory=make_token)
+        maybe_token: rx.Field[str | None] = rx.field(default_factory=make_token)
+
+    class SharedFirst(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class SharedSecond(State):
+        value: str = rx.LocalStorage("", name="shared")
+
+    groups = _shared_storage_groups(State, clean_registration_context)
+
+    assert calls == []
+    assert groups == (((SharedFirst, "value", True), (SharedSecond, "value", False)),)
+
+
+@pytest.mark.parametrize("second_sync", [True, False])
+async def test_shared_storage_name_keeps_event_writes(
+    clean_registration_context: RegistrationContext,
+    second_sync: bool,
+):
+    """Vars sharing a storage name that one event writes keep their own values.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+        second_sync: Whether the second var syncs.
+    """
+
+    class WrittenFirst(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class WrittenSecond(State):
+        value: str = rx.LocalStorage("", name="shared", sync=second_sync)
+
+    root = State()
+    first = await root.get_state(WrittenFirst)
+    second = await root.get_state(WrittenSecond)
+    first.value = "one"
+    second.value = "two"
+    await root._get_resolved_delta()
+    assert (first.value, second.value) == ("one", "two")
+
+
+async def test_shared_storage_name_conflicting_writes_pick_by_name(
+    clean_registration_context: RegistrationContext,
+):
+    """Conflicting writes to one storage name set the other synced vars in name order.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class ZWriter(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class AWriter(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class MSibling(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    root = State()
+    (await root.get_state(ZWriter)).value = "z"
+    (await root.get_state(AWriter)).value = "a"
+    await root._get_resolved_delta()
+    assert (await root.get_state(MSibling)).value == "a"

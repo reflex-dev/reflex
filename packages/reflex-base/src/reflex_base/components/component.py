@@ -24,11 +24,12 @@ from reflex_base.breakpoints import Breakpoints
 from reflex_base.components.dynamic import load_dynamic_serializer
 from reflex_base.components.field import BaseField, FieldBasedMeta
 from reflex_base.components.tags import CommonTag, Tag
-from reflex_base.constants import Dirs, EventTriggers, Hooks, Imports, MemoizationMode
+from reflex_base.constants import Dirs, EventTriggers, Imports, MemoizationMode
 from reflex_base.constants.compiler import SpecialAttributes
 from reflex_base.event import (
     EventCallback,
     EventChain,
+    EventHandler,
     EventSpec,
     args_specs_from_fields,
     no_args_event_spec,
@@ -37,11 +38,13 @@ from reflex_base.event import (
 from reflex_base.style import Style, format_as_emotion
 from reflex_base.utils import format, imports, types
 from reflex_base.utils.compat import MISSING_TYPE
+from reflex_base.utils.exceptions import BackendVarFormatError
 from reflex_base.utils.imports import ImportDict, ImportVar, ParsedImportDict
 from reflex_base.vars import VarData
 from reflex_base.vars.base import (
     _PY_OR_IMPORT,
     CachedVarOperation,
+    Field,
     LiteralNoneVar,
     LiteralVar,
     Var,
@@ -945,6 +948,7 @@ class Component(BaseComponent, ABC):
         Raises:
             TypeError: If an invalid prop is passed.
             ValueError: If an event trigger passed is not valid.
+            BackendVarFormatError: If a child or typed prop is a field with no frontend var.
         """
         # Set the id and children initially.
         children = kwargs.get("children", [])
@@ -997,6 +1001,8 @@ class Component(BaseComponent, ABC):
                     expected_type = typing.get_args(
                         types.get_field_type(type(self), key)
                     )[0]
+                except BackendVarFormatError:
+                    raise
                 except TypeError:
                     # If it is not a valid var, check the base types.
                     passed_type = type(value)
@@ -1286,7 +1292,16 @@ class Component(BaseComponent, ABC):
 
             # Make sure the child is a valid type.
             if isinstance(child, dict) or not isinstance(child, ComponentChildTypes):
-                raise ChildrenTypeError(component=cls.__name__, child=child)
+                if isinstance(child, Field):
+                    raise child._no_frontend_var_error()
+                error = ChildrenTypeError(component=cls.__name__, child=child)
+                if isinstance(child, (EventSpec, EventHandler, EventChain)):
+                    error.add_note(
+                        "Bind an event to an event trigger such as on_click, or pass "
+                        "it to on_load in app.add_page to run it when the page loads. "
+                        "See https://reflex.dev/docs/events/events-overview/"
+                    )
+                raise error
 
     @classmethod
     def create(cls: type[T], *children, **props) -> T:
@@ -1832,9 +1847,8 @@ class Component(BaseComponent, ABC):
 
         if self._get_ref_hook() is not None:
             # Handle hooks needed for attaching react refs to DOM nodes.
-            imports_.setdefault("react", set()).add(ImportVar(tag="useRef"))
             imports_.setdefault(f"$/{Dirs.STATE_PATH}", set()).add(
-                ImportVar(tag="refs")
+                ImportVar(tag="useRegisteredRef")
             )
 
         if self._get_mount_lifecycle_hook():
@@ -1954,14 +1968,11 @@ class Component(BaseComponent, ABC):
         """Generate the ref hook for the component.
 
         Returns:
-            The useRef hook for managing refs.
+            The hook creating the ref and registering it in ``refs``.
         """
         ref = self.get_ref()
         if ref is not None:
-            return Var(
-                f"const {ref} = useRef(null); {Var(_js_expr=ref)._as_ref()!s} = {ref};",
-                _var_data=VarData(position=Hooks.HookPosition.INTERNAL),
-            )
+            return Var(f"const {ref} = useRegisteredRef({Var.create(ref)!s});")
         return None
 
     def _get_vars_hooks(self) -> dict[str, VarData | None]:
@@ -1974,14 +1985,7 @@ class Component(BaseComponent, ABC):
         for var in self._get_vars():
             var_data = var._get_all_var_data()
             if var_data is not None:
-                vars_hooks.update(
-                    var_data.hooks
-                    if isinstance(var_data.hooks, dict)
-                    else {
-                        k: VarData(position=Hooks.HookPosition.INTERNAL)
-                        for k in var_data.hooks
-                    }
-                )
+                vars_hooks.update(dict.fromkeys(var_data.hooks))
                 for component in var_data.components:
                     vars_hooks.update(component._get_all_hooks())
         return vars_hooks
@@ -2016,7 +2020,7 @@ class Component(BaseComponent, ABC):
         result = {
             **self._get_events_hooks(),
             **{
-                str(hook): VarData(position=Hooks.HookPosition.INTERNAL)
+                str(hook): None
                 for hook in [self._get_ref_hook(), self._get_mount_lifecycle_hook()]
                 if hook is not None
             },
@@ -2110,10 +2114,15 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The ref name.
+
+        Raises:
+            BackendVarFormatError: If the id is a field with no frontend var.
         """
         # do not create a ref if the id is dynamic or unspecified
         if self.id is None or isinstance(self.id, Var):
             return None
+        if isinstance(self.id, Field):
+            raise self.id._no_frontend_var_error()
         return format.format_ref(self.id)
 
     def _get_all_refs(self) -> dict[str, None]:

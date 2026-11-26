@@ -17,9 +17,9 @@ classifiers = [
 ]
 dependencies = [
     "email-validator",
-    "httpx",
+    "httpx2 >=2.15.1,<3.0",
     "pyyaml",
-    "reflex-components-internal >= 0.9.0",
+    "reflex-components-internal >= 0.0.34",
     "reflex-docgen",
     "reflex-integrations-docs",
     "reflex >= 0.9.0",
@@ -42,7 +42,7 @@ artifacts = ["/src/**/*.pyi"]
 [tool.hatch.build.hooks.reflex-pyi]
 dependencies = [
     "email-validator",
-    "httpx",
+    "httpx2 >=2.15.1,<3.0",
     "pyyaml",
     "reflex-base",
     "reflex-components-code",

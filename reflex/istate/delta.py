@@ -42,6 +42,14 @@ _record_delta_values: ContextVar[bool] = ContextVar(
 )
 
 
+# Replay browser storage and cached dependents without blanket invalidation.
+# Real assignments invalidate their caches eagerly. Uncached values are left
+# to the normal event delta, avoiding an extra evaluation during hydration.
+_replay_client_storage: ContextVar[bool] = ContextVar(
+    "_replay_client_storage", default=False
+)
+
+
 class _DeltaRecord(NamedTuple):
     """An uncached var value that counts as sent once the delta delivers it."""
 
@@ -227,8 +235,12 @@ def build_delta(state: BaseState) -> Delta:
     """
     delta = {}
 
-    state._mark_dirty_computed_vars()
-    delta_vars = state.dirty_vars & state._frontend_var_names
+    if _replay_client_storage.get():
+        delta_vars = state.dirty_vars & state._frontend_var_names
+        delta_vars.difference_update(state._always_dirty_computed_vars)
+    else:
+        state._mark_dirty_computed_vars()
+        delta_vars = state.dirty_vars & state._frontend_var_names
 
     always_dirty_computed_vars = state._always_dirty_computed_vars
     # Where to leave the values this traversal sends, for whoever delivers
@@ -237,6 +249,9 @@ def build_delta(state: BaseState) -> Delta:
     # Token of the client this delta is for, used to know which values it has.
     token = state.router.session.client_token if pending is not None else ""
     full_name = state.get_full_name()
+    # Read stored fields straight from the instance dict; computed vars and
+    # defaults not stored yet go through `get_value`.
+    values = state.__dict__
     subdelta: dict[str, Any] = {}
     for prop in delta_vars:
         key = prop + FIELD_MARKER
@@ -270,7 +285,7 @@ def build_delta(state: BaseState) -> Delta:
                 if value is _DROP_FROM_DELTA:
                     continue
         else:
-            value = state.get_value(prop)
+            value = values[prop] if prop in values else state.get_value(prop)
         subdelta[key] = value
 
     if subdelta:

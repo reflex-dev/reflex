@@ -3,14 +3,13 @@
 import functools
 import os
 import sys
-from collections.abc import Callable, Collection
+from collections.abc import Callable, Collection, Sequence
 from pathlib import Path
 from urllib.parse import quote
 
 import reflex as rx
 import reflex_components_internal as ui
 from reflex.components.radix.themes.base import LiteralAccentColor
-from reflex.experimental.client_state import ClientStateVar
 from reflex.utils.format import to_snake_case, to_title_case
 from reflex_site_shared.components.blocks.code import *
 from reflex_site_shared.components.blocks.demo import *
@@ -29,6 +28,9 @@ from reflex_site_shared.route import Route, get_path
 from reflex_site_shared.templates.docs import docs_layout_shell
 from reflex_site_shared.utils.docpage import right_sidebar_item_highlight
 
+from reflex_docs.sections import navbar_tab
+from reflex_docs.utils.acronyms import uppercase_acronyms
+
 _REGISTERED_DOC_ROUTES: set[str] = set()
 
 # The docs app lives at <repo>/docs/app; source files are linked relative to <repo>.
@@ -40,15 +42,6 @@ GITHUB_REPO_URL = "https://github.com/reflex-dev/reflex"
 
 # Normalized route -> GitHub edit URL used by the page footer.
 doc_edit_hrefs: dict[str, str] = {}
-
-# Title-cased breadcrumb labels that should be displayed as acronyms.
-_BREADCRUMB_LABEL_OVERRIDES: dict[str, str] = {
-    "Ai": "AI",
-    "Api": "API",
-    "Sdk": "SDK",
-    "Cli": "CLI",
-    "Css": "CSS",
-}
 
 
 def _normalize_doc_route(path: str) -> str:
@@ -121,7 +114,7 @@ def feedback_button_toc() -> rx.Component:
 
 @rx.memo
 def copy_to_markdown(text: rx.Var[str]) -> rx.Component:
-    copied = ClientStateVar.create("is_copied", default=False, global_ref=False)
+    copied = rx.client_state(False)
     return marketing_button(
         rx.cond(
             copied.value,
@@ -136,10 +129,10 @@ def copy_to_markdown(text: rx.Var[str]) -> rx.Component:
         variant="ghost",
         class_name="justify-start pl-0 text-muted-foreground",
         on_click=[
-            rx.call_function(copied.set_value(True)),
+            rx.call_function(copied.set(True)),
             rx.set_clipboard(text),
         ],
-        on_mouse_down=rx.call_function(copied.set_value(False)).debounce(1500),
+        on_mouse_down=rx.call_function(copied.set(False)).debounce(1500),
     )
 
 
@@ -212,11 +205,10 @@ def breadcrumb_data(path: str, title: str) -> dict:
         href = _resolve_breadcrumb_href("/" + "/".join(segments[:index]))
         if href is None or base + href in seen:
             continue
-        label = to_title_case(to_snake_case(segment), sep=" ")
         items.append({
             "@type": "ListItem",
             "position": len(items) + 1,
-            "name": _BREADCRUMB_LABEL_OVERRIDES.get(label, label),
+            "name": _breadcrumb_label(segment),
             "item": base + href,
         })
         seen.add(base + href)
@@ -234,32 +226,96 @@ def breadcrumb_data(path: str, title: str) -> dict:
     }
 
 
-def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = None):
+# Route segments whose section goes by another name in the navbar and sidebar.
+_SECTION_LABELS = {"hosting": "Cloud", "library": "Components"}
+
+
+def _breadcrumb_label(segment: str) -> str:
+    """Turn a route segment into a breadcrumb label, keeping acronyms uppercase.
+
+    Args:
+        segment: A kebab- or snake-case route segment, such as ``api-reference``.
+
+    Returns:
+        The section's navigation name for a section segment, such as ``Cloud``
+        for ``hosting``; otherwise the title-cased label, such as ``API Reference``.
+    """
+    if (label := _SECTION_LABELS.get(segment)) is not None:
+        return label
+    return uppercase_acronyms(to_title_case(to_snake_case(segment), sep=" "))
+
+
+def _same_letters(label: str, segment: str) -> bool:
+    """Whether a label spells a route segment, ignoring case and punctuation.
+
+    Args:
+        label: A display name, such as ``Upgrading to 0.11``.
+        segment: A route segment, such as ``upgrading-to-0-11``.
+
+    Returns:
+        True when both have the same letters and digits in the same order.
+    """
+    return [c for c in label.lower() if c.isalnum()] == [
+        c for c in segment.lower() if c.isalnum()
+    ]
+
+
+def _breadcrumb_items(
+    path: str, names: Sequence[str] = ()
+) -> list[tuple[str, str | None]]:
+    """List the visible breadcrumb labels and their links.
+
+    Args:
+        path: The app-relative documentation path.
+        names: The current page's display names, such as its title and sidebar
+            label. The first one that spells the last route segment labels it, so
+            "upgrading-to-0-11" reads "Upgrading to 0.11"; a name with other words
+            is skipped and the segment is title-cased like its parents.
+
+    Returns:
+        A ``(label, href)`` pair per path segment. ``href`` is None for category
+        segments that have no page of their own.
+    """
+    segments = [segment for segment in path.split("/") if segment and segment != "docs"]
+    items = []
+    current_path = ""
+    for segment in segments:
+        current_path += f"/{segment}"
+        items.append((
+            _breadcrumb_label(segment),
+            _resolve_breadcrumb_href(current_path),
+        ))
+    if items:
+        for name in names:
+            label = uppercase_acronyms(name)
+            if _same_letters(label, segments[-1]):
+                items[-1] = (label, items[-1][1])
+                break
+    return items
+
+
+def breadcrumb(
+    path: str,
+    nav_sidebar: rx.Component,
+    doc_content: str | None = None,
+    names: Sequence[str] = (),
+):
     from reflex_docs.components.docpage.navbar.buttons.sidebar import (
         docs_sidebar_drawer,
     )
 
-    # Split the path into segments, removing 'docs'.
-    segments = [segment for segment in path.split("/") if segment and segment != "docs"]
-
     # Initialize an empty list to store the breadcrumbs and their separators
     breadcrumbs = []
 
-    # Iteratively build the href for each segment (paths are app-relative, no /docs prefix)
-    current_path = ""
-    for i, segment in enumerate(segments):
-        current_path += f"/{segment}"
-
-        label = to_title_case(to_snake_case(segment), sep=" ")
-        label = _BREADCRUMB_LABEL_OVERRIDES.get(label, label)
+    items = _breadcrumb_items(path, names)
+    for i, (label, href) in enumerate(items):
         base_class = ui.cn(
             "min-h-8 flex items-center text-sm font-[525] text-foreground last:text-muted-foreground",
-            "truncate" if i == len(segments) - 1 else "",
+            "truncate" if i == len(items) - 1 else "",
         )
 
         # Category segments (e.g. /ai, /hosting) often have no page of their own.
         # Render those as plain text so the breadcrumb doesn't link to a 404.
-        href = _resolve_breadcrumb_href(current_path)
         if href is None:
             breadcrumbs.append(rx.el.span(label, class_name=base_class))
         else:
@@ -276,7 +332,7 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
             )
 
         # If it's not the last segment, add a separator
-        if i < len(segments) - 1:
+        if i < len(items) - 1:
             breadcrumbs.append(
                 ui.icon(
                     "ArrowRight01Icon",
@@ -354,7 +410,11 @@ def page_navigation_link(title: str, href: str, *, forward: bool) -> rx.Componen
         class_name=(
             "group flex min-w-0 flex-col gap-1 rounded-lg p-3 no-underline "
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring "
-            + ("items-end text-right" if forward else "items-start text-left")
+            + (
+                "col-start-2 items-end text-right"
+                if forward
+                else "items-start text-left"
+            )
         ),
     )
 
@@ -369,6 +429,7 @@ def docpage(
     image: str | None = None,
     source_path: str | None = None,
     show_breadcrumb: bool = True,
+    component_name: str | None = None,
 ):
     """A template that most pages on the reflex.dev site should use.
 
@@ -388,6 +449,8 @@ def docpage(
             "Edit this page" link. Defaults to the Python file defining the page.
         show_breadcrumb: Whether to display the page breadcrumb. Mobile sidebar
             access remains available when the breadcrumb is hidden.
+        component_name: The public component name a library page documents,
+            used to lead its search title.
 
     Returns:
         A wrapper function that returns the full webpage.
@@ -425,7 +488,10 @@ def docpage(
             Returns:
                 The page with the template applied.
             """
-            from reflex_docs.templates.docpage.sidebar import get_prev_next
+            from reflex_docs.templates.docpage.sidebar import (
+                get_prev_next,
+                sidebar_label,
+            )
             from reflex_docs.templates.docpage.sidebar import sidebar as sb
             from reflex_docs.views.docs_navbar import docs_navbar
 
@@ -444,9 +510,6 @@ def docpage(
                         forward=False,
                     )
                 )
-            else:
-                links.append(rx.fragment())
-            links.append(rx.spacer())
             if next:
                 links.append(
                     page_navigation_link(
@@ -455,8 +518,6 @@ def docpage(
                         forward=True,
                     )
                 )
-            else:
-                links.append(rx.fragment())
 
             toc = []
             doc_content = None
@@ -477,7 +538,7 @@ def docpage(
 
             show_right_sidebar = right_sidebar and len(toc) >= 2
             return docs_layout_shell(
-                docs_navbar(),
+                docs_navbar(active_tab=navbar_tab(path)),
                 rx.el.main(
                     docs_left_sidebar(sidebar),
                     rx.box(
@@ -486,16 +547,21 @@ def docpage(
                                 path=path if show_breadcrumb else "",
                                 nav_sidebar=nav_sidebar,
                                 doc_content=doc_content,
+                                names=[
+                                    name
+                                    for name in (title, sidebar_label(path))
+                                    if name is not None
+                                ],
                             ),
                             class_name=(
-                                "px-0 pt-0 mb-[2rem]"
+                                "docs-breadcrumb px-0 pt-0 mb-4"
                                 + ("" if show_breadcrumb else " lg:hidden")
                             ),
                         ),
                         rx.box(
                             rx.el.article(
                                 comp,
-                                class_name="[&>div]:!p-0"
+                                class_name="docs-article [&>div]:!p-0"
                                 + (
                                     " [&_.rt-TableRoot]:!border-0 [&_.rt-TableRoot]:!rounded-none"
                                     " [&_.rt-TableCell]:!shadow-none [&_.rt-TableCell]:!border-b [&_.rt-TableCell]:!border-border"
@@ -507,7 +573,8 @@ def docpage(
                             ),
                             rx.el.nav(
                                 *links,
-                                class_name="flex flex-row gap-2 mt-8 lg:mt-10 mb-6 lg:mb-12",
+                                aria_label="Adjacent documentation pages",
+                                class_name="docs-page-navigation grid grid-cols-2 gap-2 mt-8 lg:mt-10 mb-6 lg:mb-12",
                             ),
                             docpage_footer(path=path.rstrip("/"), edit_href=edit_href),
                             class_name="lg:mt-0 h-auto"
@@ -518,7 +585,7 @@ def docpage(
                             ),
                         ),
                         class_name=ui.cn(
-                            "flex-1 min-w-0 h-auto mx-auto lg:max-w-[56rem] px-4 lg:px-8 xl:px-12 overflow-y-auto",
+                            "docs-reading-column flex-1 min-w-0 h-auto mx-auto lg:max-w-[56rem] px-4 lg:px-8 xl:px-12 overflow-y-auto",
                             "lg:max-w-[68rem]" if not show_right_sidebar else "",
                         ),
                     ),
@@ -531,14 +598,16 @@ def docpage(
                     else rx.box(
                         class_name="w-[180px] h-screen sticky top-0 shrink-0 hidden xl:block"
                     ),
-                    class_name="flex justify-center mx-auto mt-0 max-w-[108rem] h-full min-h-screen w-full",
+                    class_name="docs-reading-layout flex justify-center mx-auto mt-0 max-w-[108rem] h-full min-h-screen w-full",
                 ),
                 on_mount=rx.call_script(right_sidebar_item_highlight()),
             )
 
         from reflex_docs.pages.docs.metadata import docs_metadata
 
-        seo_title, seo_description = docs_metadata(path, title, description)
+        seo_title, seo_description = docs_metadata(
+            path, title, description, component_name
+        )
         if page_title:
             seo_title = page_title
 

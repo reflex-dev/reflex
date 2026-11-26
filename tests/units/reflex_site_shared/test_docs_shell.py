@@ -4,6 +4,12 @@ from pathlib import Path
 from typing import cast
 
 import pytest
+from reflex_base.components.component import BaseComponent
+from reflex_components_core.base.bare import Bare
+from reflex_components_core.el.elements.sectioning import H4
+from reflex_components_internal.components.base.input import InputRoot
+from reflex_components_internal.components.base.textarea import Textarea
+from reflex_components_radix.themes.typography.link import Link
 from reflex_site_shared.components import docs_shell
 from reflex_site_shared.components.docs_shell import (
     DocsFeedbackState,
@@ -39,6 +45,68 @@ def test_sidebar_active_marker_aligns_with_section_guide() -> None:
     assert "-bottom-1 -top-1 left-0" in rendered
 
 
+def test_sidebar_active_pill_stays_inside_indented_row() -> None:
+    """The active highlight aligns with the indented label (#7956).
+
+    The pill must not carry classes matched by the Reference/Changelog
+    guide-hiding selector.
+    """
+    rendered = docs_sidebar_leaf._definition.component.render()
+
+    def find_pill(node, parents):
+        """Find the active-highlight pill in a render dict.
+
+        Args:
+            node: The render-dict node to search from.
+            parents: The ancestors of node, outermost first.
+
+        Returns:
+            The ancestor list of the pill node (excluding the pill itself),
+            or None if no node carries the pill's exact className.
+        """
+        if not isinstance(node, dict):
+            return None
+        props = node.get("props") or []
+        cls = next(
+            (p for p in props if isinstance(p, str) and p.startswith("className:")),
+            "",
+        )
+        if (
+            cls
+            == 'className:"absolute left-0 top-1/2 h-8 w-full -translate-y-1/2 rounded-lg bg-accent"'
+        ):
+            return parents
+        for child in node.get("children", []):
+            found = find_pill(child, [*parents, node])
+            if found is not None:
+                return found
+        for key in ("true_value", "false_value"):
+            branch = node.get(key)
+            if isinstance(branch, dict):
+                found = find_pill(branch, [*parents, node])
+                if found is not None:
+                    return found
+        return None
+
+    parents = find_pill(rendered, [])
+    assert parents is not None, "active highlight pill not found"
+    flex = next(n for n in reversed(parents) if n.get("name") == "RadixThemesFlex")
+    assert (flex.get("props") or []) == [
+        'className:(isTrue(activeRxMemo) ? ("relative "+guideMarginClassRxMemo+" flex h-8 max-w-[14rem] items-center") : "relative flex h-8 items-center pl-4")'
+    ]
+
+    label = next(
+        n for n in flex.get("children", []) if n.get("name") == "RadixThemesText"
+    )
+    assert (label.get("props") or []) == [
+        'as:"p"',
+        'className:(isTrue(activeRxMemo) ? "relative m-0 pl-4 text-sm font-[475] text-foreground transition-color" : "m-0 w-full text-sm font-[475] text-foreground transition-color")',
+    ]
+
+    pill_top = next(n for n in reversed(parents) if n in flex.get("children", []))
+    assert flex["children"].index(pill_top) < flex["children"].index(label)
+
+
 def test_feedback_choices_are_individual_popover_triggers():
     """Each feedback choice is a real button, without an interactive div parent."""
     choices = docs_feedback_button().children[0]
@@ -59,6 +127,23 @@ def test_shared_feedback_preserves_the_official_form_structure() -> None:
     assert (
         'docs_feedback_state.open_popover_rx_state_?.valueOf?.() === "toc"' in rendered
     )
+
+
+def test_feedback_fields_and_choices_have_accessible_names_and_state() -> None:
+    """Keep field purposes and selected scores available beyond visual styling."""
+    pending: list[BaseComponent] = [docs_shell._feedback_content()]
+    fields: dict[str, InputRoot | Textarea] = {}
+    while pending:
+        node = pending.pop()
+        pending.extend(node.children)
+        if isinstance(node, (InputRoot, Textarea)):
+            fields["email" if isinstance(node, InputRoot) else "feedback"] = node
+
+    assert fields["feedback"].custom_attrs["aria-label"] == "Feedback"
+    assert fields["email"].custom_attrs["aria-label"] == "Contact email (optional)"
+    rendered = str(docs_feedback_button_toc())
+    assert rendered.count('"aria-pressed"') == 2
+    assert '"aria-pressed"' in str(docs_feedback_button())
 
 
 FOOTER = docs_shell._FOOTER_FEEDBACK_POPOVER
@@ -208,6 +293,32 @@ def test_shared_sidebar_rows_keep_official_structure() -> None:
     assert "open:true" in group
 
 
+def _footer_link_groups(footer: BaseComponent) -> list[tuple[str, list[str]]]:
+    """Collect each footer link group's heading and link destinations, in order.
+
+    Args:
+        footer: The rendered footer.
+
+    Returns:
+        ``(heading, hrefs)`` per link group, with values as rendered vars.
+    """
+    groups, pending = [], [footer]
+    while pending:
+        node = pending.pop(0)
+        if node.children and isinstance(node.children[0], H4):
+            heading = cast(Bare, node.children[0].children[0])
+            hrefs = []
+            for link in node.children[1:]:
+                # Internal links wrap a router link that carries the destination.
+                target = link.children[0] if isinstance(link, Link) else link
+                href = target.to if isinstance(link, Link) else target.href  # pyright: ignore [reportAttributeAccessIssue]
+                hrefs.append(str(href))
+            groups.append((str(heading.contents), hrefs))
+            continue
+        pending.extend(node.children)
+    return groups
+
+
 def test_official_docs_footer_content_is_shared() -> None:
     """Keep the complete official footer available to package docs sites."""
     component = docs_page_footer(
@@ -219,28 +330,79 @@ def test_official_docs_footer_content_is_shared() -> None:
     assert "https://github.com/example/project/issues/new" in str(component)
     assert "Raise an issue" in rendered
     assert "Edit this page" in rendered
-    assert "Get started" in rendered
-    assert "Documentation" in rendered
-    assert "Resources" in rendered
     assert "Social link for Github" in rendered
     assert "Social link for Forum" in rendered
     assert "Pynecone, Inc." in rendered
-    assert "https://reflex.dev/docs/getting-started/introduction/" not in rendered
-    assert "/getting-started/introduction/" in rendered
+    # The docs navbar already links the "Get started" destinations.
+    assert _footer_link_groups(component) == [
+        (
+            '"Documentation"',
+            [
+                '"/library/"',
+                '"/api-reference/app/"',
+                '"/ai/integrations/agent-toolkit/"',
+                '"/enterprise/overview/"',
+            ],
+        ),
+        (
+            '"Resources"',
+            [
+                '"https://reflex.dev/"',
+                '"https://reflex.dev/blog/"',
+                '"/changelog/"',
+                '"https://reflex.dev/faq/"',
+            ],
+        ),
+    ]
+    assert _footer_link_groups(
+        _docs_external_page_footer_memo._definition.component
+    ) == [
+        (
+            '"Get started"',
+            [
+                '"https://reflex.dev/docs/"',
+                '"https://reflex.dev/docs/ai/"',
+                '"https://reflex.dev/docs/getting-started/introduction/"',
+                '"https://reflex.dev/docs/hosting/deploy-quick-start/"',
+            ],
+        ),
+        (
+            '"Documentation"',
+            [
+                '"https://reflex.dev/docs/library/"',
+                '"https://reflex.dev/docs/api-reference/app/"',
+                '"https://reflex.dev/docs/ai/integrations/agent-toolkit/"',
+                '"https://reflex.dev/docs/enterprise/overview/"',
+            ],
+        ),
+        (
+            '"Resources"',
+            [
+                '"https://reflex.dev/"',
+                '"https://reflex.dev/blog/"',
+                '"https://reflex.dev/docs/changelog/"',
+                '"https://reflex.dev/faq/"',
+            ],
+        ),
+    ]
 
-    external_rendered = str(_docs_external_page_footer_memo._definition.component)
-    assert "https://reflex.dev/docs/getting-started/introduction/" in external_rendered
-    for path in (
-        "/ai/",
-        "/api-reference/app/",
-        "/ai/integrations/agent-toolkit/",
-        "/enterprise/overview/",
-    ):
-        assert f"https://reflex.dev/docs{path}" in external_rendered
-        assert f"https://reflex.dev/docs{path}" not in rendered
-        assert path in rendered
-    for path in ("/", "/blog/", "/faq/"):
-        assert f'href:"https://reflex.dev{path}"' in rendered
+
+def test_footer_theme_and_social_controls_can_wrap() -> None:
+    """Keep the social links reachable when they cannot fit beside theme controls."""
+    pending: list[BaseComponent] = [
+        docs_page_footer(issue_href="/issues/", edit_href="/edit/")
+    ]
+    while pending:
+        node = pending.pop()
+        if (
+            len(node.children) == 2
+            and "Toggle system color mode" in str(node.children[0])
+            and "Social link for Forum" in str(node.children[1])
+        ):
+            assert "flex-wrap" in str(cast(rx.Component, node).class_name)
+            return
+        pending.extend(node.children)
+    pytest.fail("Footer controls were not rendered")
 
 
 def test_docs_layout_uses_page_aware_footer_renderer() -> None:

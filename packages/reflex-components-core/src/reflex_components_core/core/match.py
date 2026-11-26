@@ -2,7 +2,7 @@
 
 import textwrap
 from collections.abc import Iterator
-from typing import Any, cast
+from typing import Any, cast, overload
 
 from reflex_base.components.component import BaseComponent, Component, field
 from reflex_base.components.memoize_helpers import passthrough_children_var
@@ -14,6 +14,8 @@ from reflex_base.utils.exceptions import MatchTypeError
 from reflex_base.utils.imports import ImportDict
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.sequence import LiteralArrayVar
+from reflex_base.vars.set import SetVar, set_match_operation
 
 from reflex_components_core.base import Fragment
 from reflex_components_core.base.bare import Bare
@@ -35,6 +37,20 @@ class Match(Component):
         default_factory=Fragment.create, is_javascript_property=False
     )
 
+    @overload
+    @classmethod
+    def create(  # pyright: ignore [reportOverlappingOverload]
+        cls,
+        cond: Any,
+        case: tuple[Any, *tuple[Any, ...], BaseComponent],
+        /,
+        *cases: Any,
+    ) -> Component: ...
+
+    @overload
+    @classmethod
+    def create(cls, cond: Any, case: tuple[Any, ...], /, *cases: Any) -> Var: ...
+
     @classmethod
     def create(cls, cond: Any, *cases) -> Component | Var:
         """Create a Match Component.
@@ -52,6 +68,16 @@ class Match(Component):
         match_cond_var = cls._create_condition_var(cond)
         cases, default = cls._process_cases(list(cases))
         match_cases = cls._process_match_cases(cases)
+        set_cases = [
+            condition
+            for conditions, _ in match_cases
+            for condition in conditions
+            if isinstance(condition, SetVar)
+        ]
+        if set_cases:
+            match_cond_var = set_match_operation(
+                match_cond_var, LiteralArrayVar.create(set_cases)
+            )
 
         match_cases = cls._validate_return_types(match_cases)
 

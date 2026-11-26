@@ -4,8 +4,8 @@ import os
 import re
 from pathlib import Path
 
+import httpx2
 import pytest
-import requests
 
 
 def check_urls(repo_dir: Path):
@@ -40,11 +40,11 @@ def check_urls(repo_dir: Path):
                             )
                         url = url.strip('"\n')
                         try:
-                            response = requests.head(
-                                url, allow_redirects=True, timeout=5
+                            response = httpx2.head(
+                                url, follow_redirects=True, timeout=5
                             )
                             response.raise_for_status()
-                        except requests.RequestException as e:
+                        except httpx2.HTTPError as e:
                             errors.append(
                                 f"Error accessing URL: {url} in {file_path} | Error: {e}, , Check your path ends with a /"
                             )

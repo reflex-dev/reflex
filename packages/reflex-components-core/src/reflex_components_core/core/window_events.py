@@ -5,9 +5,8 @@ from __future__ import annotations
 from typing import Any, cast
 
 from reflex_base.components.component import field
-from reflex_base.constants.compiler import Hooks
 from reflex_base.event import EventHandler, key_event, no_args_event_spec
-from reflex_base.vars.base import Var, VarData
+from reflex_base.vars.base import Var
 from reflex_base.vars.object import ObjectVar
 
 from reflex_components_core.base.fragment import Fragment
@@ -125,22 +124,20 @@ class WindowEventListener(Fragment):
         for prop_name, event_trigger in self.event_triggers.items():
             # Get JS event name: remove on_ prefix and underscores
             event_name = prop_name.removeprefix("on_").replace("_", "")
+            handler = Var.create(event_trigger)
 
+            # The handler is memoized on the state it reads, so a listener
+            # registered only once would keep calling it with its first values.
             hook_expr = f"""
 useEffect(() => {{
     if (typeof window === 'undefined') return;
-    const fn = {Var.create(event_trigger)};
+    const fn = {handler};
     window.addEventListener('{event_name}', fn);
     return () => window.removeEventListener('{event_name}', fn);
-}}, []);
-                """
+}}, [{handler}]);
+"""
 
-            hooks.append(
-                Var(
-                    hook_expr,
-                    _var_data=VarData(position=Hooks.HookPosition.POST_TRIGGER),
-                )
-            )
+            hooks.append(Var(hook_expr))
 
         return hooks
 

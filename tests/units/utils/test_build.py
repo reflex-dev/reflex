@@ -8,7 +8,6 @@ import zipfile
 from pathlib import Path
 
 import pytest
-import reflex_base
 from pytest_mock import MockerFixture
 from reflex_base import constants
 
@@ -106,9 +105,7 @@ def test_compress_static_output_overwrites_stale_sidecars(
 
     web_dir = tmp_path / ".web"
     web_dir.mkdir()
-    compress_script = (
-        Path(reflex_base.__file__).parent / ".templates/web/compress-static.js"
-    )
+    compress_script = constants.Templates.Dirs.WEB_TEMPLATE / "compress-static.js"
     (web_dir / "compress-static.js").write_text(compress_script.read_text())
 
     static_dir = tmp_path / "static"
@@ -123,6 +120,29 @@ def test_compress_static_output_overwrites_stale_sidecars(
 
     decompressed = gzip.decompress((static_dir / "app.js.gz").read_bytes())
     assert decompressed == bundle.read_bytes()
+
+
+def test_compress_static_output_compresses_wasm(tmp_path: Path, mocker: MockerFixture):
+    """WebAssembly modules get sidecars like the text assets."""
+    if path_ops.get_node_path() is None and path_ops.get_bun_path() is None:
+        pytest.skip("Node.js or Bun is required for compression test")
+
+    web_dir = tmp_path / ".web"
+    web_dir.mkdir()
+    compress_script = constants.Templates.Dirs.WEB_TEMPLATE / "compress-static.js"
+    (web_dir / "compress-static.js").write_text(compress_script.read_text())
+
+    static_dir = tmp_path / "static"
+    module = static_dir / "assets" / "module-AbCd1234.wasm"
+    module.parent.mkdir(parents=True)
+    module.write_bytes(b"\x00asm\x01\x00\x00\x00" + bytes(1024))
+
+    mocker.patch("reflex.utils.build.prerequisites.get_web_dir", return_value=web_dir)
+
+    build._compress_static_output(static_dir, ("gzip",))
+
+    sidecar = module.with_name(module.name + ".gz")
+    assert gzip.decompress(sidecar.read_bytes()) == module.read_bytes()
 
 
 def _patch_build(
@@ -331,6 +351,16 @@ def test_set_env_json_omits_plugin_keys_when_plugin_absent(
     env = json.loads((web_dir / "env.json").read_text())
     assert "MOUNT_TARGET" not in env
     assert env["TRANSPORT"] == "websocket"
+
+
+def test_set_env_json_holds_the_reflex_version(tmp_path: Path, mocker: MockerFixture):
+    """The frontend reads the socket subprotocol from env.json, not reflex.json."""
+    web_dir = _patch_env_json(mocker, tmp_path)
+
+    build.set_env_json()
+
+    env = json.loads((web_dir / "env.json").read_text())
+    assert env["REFLEX_VERSION"] == constants.Reflex.VERSION
 
 
 def test_set_env_json_later_plugin_wins(tmp_path: Path, mocker: MockerFixture):

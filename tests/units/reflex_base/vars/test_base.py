@@ -2,6 +2,7 @@
 
 import dataclasses
 import datetime
+import decimal
 import enum
 import gc
 import logging
@@ -14,21 +15,25 @@ import traceback
 import typing
 import weakref
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from pathlib import Path
-from typing import Any, ClassVar, Literal, Self, TypeVar
+from typing import Any, ClassVar, Literal, Self, TypedDict, TypeVar
 from unittest import mock
 
 import pytest
 from reflex_base import constants
+from reflex_base.components.component import LiteralComponentVar
 from reflex_base.constants import RouteArgType
+from reflex_base.constants.colors import Color
+from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import _load_dotenv_from_files, environment
+from reflex_base.event import LiteralEventChainVar, LiteralEventVar
 from reflex_base.utils import serializers
 from reflex_base.utils.exceptions import (
     BackendVarFormatError,
+    MixinVarNameConflictError,
     ReflexRuntimeError,
     StateValueError,
-    UntypedVarError,
 )
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import get_field_type
@@ -38,30 +43,90 @@ from reflex_base.vars.base import (
     GLOBAL_CACHE,
     BaseStateMeta,
     CachedVarOperation,
+    CustomVarOperation,
     EvenMoreBasicBaseState,
     Field,
     LiteralVar,
+    StateOperation,
     Var,
     VarData,
     _global_vars,
+    _is_tree_state,
     _linearize_bases,
     _type_check_depth,
+    _validate_state_name,
     cached_property,
     cached_property_no_lock,
     computed_var,
     field,
+    figure_out_type,
+    get_leaf_vars,
+    get_uuid_string_var,
     var_operation,
     var_operation_return,
 )
+from reflex_base.vars.color import LiteralColorVar
+from reflex_base.vars.function import (
+    ArgsFunctionOperation,
+    ArgsFunctionOperationBuilder,
+    FunctionStringVar,
+    FunctionVar,
+    VarOperationCall,
+)
 from reflex_base.vars.number import NumberVar
-from reflex_base.vars.object import ObjectVar
-from reflex_base.vars.sequence import ArrayVar, StringVar
+from reflex_base.vars.object import LiteralObjectVar, ObjectItemOperation, ObjectVar
+from reflex_base.vars.sequence import (
+    ArraySliceOperation,
+    ArrayVar,
+    ConcatVarOperation,
+    LiteralArrayVar,
+    LiteralRangeVar,
+    StringVar,
+)
+from reflex_base.vars.set import LiteralSetVar, SetVar
 from typing_extensions import TypeAliasType, TypeVarTuple
 
+import reflex as rx
+from reflex.istate.data import ReflexURLCastedVar, RouterDataVar
 from reflex.istate.proxy import MutableProxy
 from reflex.state import BaseState, State, _override_base_method
+from tests.units.field_errors import backend_var_error, mixin_var_error
 
 _MARKER_ATTR = "_marker"
+
+
+@pytest.mark.parametrize("size", [0, 1, 100, 101, 1000])
+def test_mapping_type_inference_bounds_iteration(size):
+    """Sampling does not iterate or retrieve values beyond the first 100 items."""
+    keys_seen = []
+    values_seen = []
+
+    class CountingMapping(Mapping):
+        def __len__(self):
+            return size
+
+        def __iter__(self):
+            for index in range(size):
+                keys_seen.append(index)
+                yield index
+
+        def __getitem__(self, key):
+            values_seen.append(key)
+            return str(key)
+
+    expected = Mapping[int, str] if size else Mapping[typing.NoReturn, typing.NoReturn]
+    assert figure_out_type(CountingMapping()) == expected
+    sampled = list(range(min(size, 100)))
+    assert keys_seen == sampled * 2
+    assert values_seen == sampled
+
+
+def test_mapping_type_inference_preserves_sample_boundary():
+    """The hundredth item contributes types, while later items do not."""
+    value: dict[Any, Any] = dict.fromkeys(range(99), 1)
+    value["last sampled"] = "included"
+    value[1.5] = ["not sampled"]
+    assert figure_out_type(value) == Mapping[int | str, int | str]
 
 
 def test_custom_field_attr_survives_annotated_rebuild():
@@ -142,6 +207,24 @@ def test_custom_attr_is_carried_by_reference():
 
     rebuilt = MyState.get_fields()["name"]
     assert rebuilt._check is check  # pyright: ignore[reportAttributeAccessIssue]
+
+
+@pytest.mark.parametrize(
+    ("name", "annotated"),
+    [("item", True), ("item", False), ("_item", True), ("_item", False)],
+)
+def test_dataclasses_field_default_raises(name: str, annotated: bool):
+    """A dataclasses.field(...) default names the var and points to rx.field.
+
+    Args:
+        name: A frontend or backend var name.
+        annotated: Whether the var has a type annotation.
+    """
+    namespace = {"__module__": __name__, name: dataclasses.field(default_factory=list)}
+    if annotated:
+        namespace["__annotations__"] = {name: list}
+    with pytest.raises(StateValueError, match=rf"MyState\.{name}.*rx\.field"):
+        type("MyState", (EvenMoreBasicBaseState,), namespace)
 
 
 def _type_alias_types() -> list[type]:
@@ -354,6 +437,21 @@ def test_var_data_field_name_reports_the_first_field():
     assert VarData().field_name == ""
 
 
+def test_var_data_position_is_deprecated_and_ignored():
+    """Hooks of different positions merge, in order, instead of raising."""
+    with mock.patch("reflex_base.utils.console.deprecate") as deprecate:
+        internal = VarData(
+            hooks=["const a = 1"], position=constants.Hooks.HookPosition.INTERNAL
+        )
+        post = VarData(
+            hooks=["const b = a"], position=constants.Hooks.HookPosition.POST_TRIGGER
+        )
+    assert deprecate.call_count == 2
+    merged = VarData.merge(internal, post)
+    assert merged is not None
+    assert merged.hooks == ("const a = 1", "const b = a")
+
+
 def test_serializer_attribute_error_is_not_masked() -> None:
     """An AttributeError raised inside a serializer surfaces chained, with its own frame."""
 
@@ -520,6 +618,33 @@ def test_literal_var_dispatch_follows_later_registrations():
         del base._var_subclasses[var_subclasses:]
         del base._var_literal_subclasses[literal_subclasses:]
         base._clear_var_subclass_lookup_caches()
+        base._literal_var_by_type.clear()
+
+
+def test_literal_var_dispatch_sees_through_proxies(clean_registration_context):
+    """Proxies of different values dispatch on the wrapped value, not the proxy type.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+    from reflex_base.vars import base
+
+    state_cls = type(
+        "ProxyDispatchState",
+        (BaseState,),
+        {
+            "__module__": __name__,
+            "__annotations__": {"mapping": dict[str, int], "items": list[int]},
+            "mapping": {"a": 1},
+            "items": [1, 2],
+        },
+    )
+    state = state_cls()
+    try:
+        assert str(LiteralVar.create(state.mapping)) == '({ ["a"] : 1 })'  # pyright: ignore [reportAttributeAccessIssue]
+        assert str(LiteralVar.create(state.items)) == "[1, 2]"  # pyright: ignore [reportAttributeAccessIssue]
+        assert MutableProxy not in base._literal_var_by_type
+    finally:
         base._literal_var_by_type.clear()
 
 
@@ -780,6 +905,17 @@ def test_var_operation_str_interpolation_matches_tagged_form() -> None:
     assert str(tagged) == str(untagged) == "wrap(operandValue)"
 
 
+def test_uuid_string_var_memoizes_with_inline_callback():
+    """The UUID hook passes ``useMemo`` an inline callback, as React Compiler requires."""
+    uuid_var = get_uuid_string_var()
+    var_data = uuid_var._get_all_var_data()
+
+    assert var_data is not None
+    assert list(var_data.hooks) == [
+        f"const {uuid_var._js_expr} = useMemo(() => generateUUID(), [])"
+    ]
+
+
 @pytest.mark.parametrize(
     "name",
     [
@@ -822,22 +958,30 @@ def test_reserved_annotation_only(clean_registration_context):
             _init_bookkeeping: int
 
 
-@pytest.mark.parametrize("state_mixin", [False, True])
-def test_reserved_mixin_var(state_mixin: bool, clean_registration_context):
-    """Reject collisions from both ordinary Python mixins and state mixins.
+def test_reserved_mixin_var(clean_registration_context):
+    """Reject a reserved var from an ordinary Python mixin where a state inherits it.
 
     Args:
-        state_mixin: Whether the mixin subclasses BaseState.
+        clean_registration_context: An isolated state registry.
+    """
+    mixin = type("Mixin", (), {"__module__": __name__, "_get_root_state": 7})
+    with pytest.raises(StateValueError, match="_get_root_state"):
+        type("MixedState", (mixin, BaseState), {"__module__": __name__})
+
+
+def test_reserved_state_mixin_var(clean_registration_context):
+    """Reject a reserved var where a state mixin declares it.
+
+    Args:
         clean_registration_context: An isolated state registry.
     """
     with pytest.raises(StateValueError, match="_get_root_state"):
-        mixin = type(
+        type(
             "Mixin",
-            (BaseState,) if state_mixin else (),
+            (BaseState,),
             {"__module__": __name__, "_get_root_state": 7},
-            **({"mixin": True} if state_mixin else {}),
+            mixin=True,
         )
-        type("MixedState", (mixin, BaseState), {"__module__": __name__})
 
 
 @pytest.mark.parametrize("state_mixin", [False, True])
@@ -870,6 +1014,272 @@ def test_abc_mixin(state_mixin: bool, clean_registration_context):
         "ConcreteState", bases, {"__module__": __name__, "_value": lambda self: 7}
     )
     assert concrete_state()._value() == 7
+
+
+def _mixin_conflict_message(key: str, state: str, first: str, second: str) -> str:
+    """Build the message raised for two mixins declaring the same var.
+
+    Args:
+        key: The var name.
+        state: The name of the class combining the mixins.
+        first: The name of the mixin declaring the var first.
+        second: The name of the other mixin.
+
+    Returns:
+        The full message.
+    """
+    return (
+        f"The var `{key}` in {__name__}.{state} is declared by both "
+        f"{__name__}.{first} and {__name__}.{second}, mixins that do not inherit "
+        "from one another; declare it on the state, rename it in one of them, or "
+        "declare it in a mixin both inherit from"
+    )
+
+
+def test_mixin_var_name_conflict(clean_registration_context):
+    """Reject two mixins that do not inherit from one another declaring the same var.
+
+    Declaring it without a default conflicts too when nothing else declares it,
+    which a ClassVar on the state does not. So does declaring a backend var.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class FirstMixin(BaseState, mixin=True):
+        shared: int = 1
+
+    class SecondMixin(BaseState, mixin=True):
+        shared: int = 2
+
+    class AnnotatingMixin(BaseState, mixin=True):
+        shared: int
+
+    class OtherAnnotatingMixin(BaseState, mixin=True):
+        shared: int
+
+    class FirstBackendMixin(BaseState, mixin=True):
+        _shared: int = 1
+
+    class SecondBackendMixin(BaseState, mixin=True):
+        _shared: int = 2
+
+    with pytest.raises(MixinVarNameConflictError) as err:
+
+        class SubState(FirstMixin, SecondMixin, State):
+            pass
+
+    assert str(err.value) == _mixin_conflict_message(
+        "shared", "SubState", "FirstMixin", "SecondMixin"
+    )
+
+    with pytest.raises(MixinVarNameConflictError) as err:
+
+        class RootState(FirstMixin, SecondMixin, BaseState):
+            pass
+
+    assert str(err.value) == _mixin_conflict_message(
+        "shared", "RootState", "FirstMixin", "SecondMixin"
+    )
+
+    with pytest.raises(MixinVarNameConflictError) as err:
+
+        class CombinedMixin(FirstMixin, SecondMixin, mixin=True):
+            pass
+
+    assert str(err.value) == _mixin_conflict_message(
+        "shared", "CombinedMixin", "FirstMixin", "SecondMixin"
+    )
+
+    with pytest.raises(MixinVarNameConflictError) as err:
+
+        class AnnotatedState(AnnotatingMixin, OtherAnnotatingMixin, State):
+            pass
+
+    assert str(err.value) == _mixin_conflict_message(
+        "shared", "AnnotatedState", "AnnotatingMixin", "OtherAnnotatingMixin"
+    )
+
+    with pytest.raises(MixinVarNameConflictError) as err:
+
+        class ClassVarState(AnnotatingMixin, OtherAnnotatingMixin, State):
+            shared: ClassVar[int] = 1  # pyright: ignore[reportIncompatibleVariableOverride]
+
+    assert str(err.value) == _mixin_conflict_message(
+        "shared", "ClassVarState", "AnnotatingMixin", "OtherAnnotatingMixin"
+    )
+
+    with pytest.raises(MixinVarNameConflictError) as err:
+
+        class BackendState(FirstBackendMixin, SecondBackendMixin, State):
+            pass
+
+    assert str(err.value) == _mixin_conflict_message(
+        "_shared", "BackendState", "FirstBackendMixin", "SecondBackendMixin"
+    )
+
+
+def test_mixin_var_without_default_types_a_mixins_var(clean_registration_context):
+    """A mixin's var without a default uses the var another mixin declares with one.
+
+    The parent state declaring the var too changes nothing: the mixin with the
+    default comes first along the MRO.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class TypingMixin(BaseState, mixin=True):
+        count: int
+
+    class ValueMixin(BaseState, mixin=True):
+        count: int = 3
+
+    class Parent(State):
+        count: int = 1
+
+    class NoParent(TypingMixin, ValueMixin, State):
+        pass
+
+    class WithParent(TypingMixin, ValueMixin, Parent):
+        pass
+
+    for state in (NoParent, WithParent):
+        assert state.get_fields()["count"]._owner is state
+        assert state.get_fields()["count"].default == 3
+
+
+def test_mixin_var_without_default_warns_on_another_type(clean_registration_context):
+    """Warn when a mixin types a var as other than the var it uses is declared.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class Point(TypedDict):
+        x: int
+
+    @dataclasses.dataclass
+    class Pair:
+        x: int = 0
+
+    class StrParent(State):
+        word: str = "a"
+
+    class IntParent(State):
+        word: int = 1
+
+    class PairParent(State):
+        point: Pair = Pair()
+
+    class IntMixin(BaseState, mixin=True):
+        word: int
+
+    class PointMixin(BaseState, mixin=True):
+        point: Point
+
+    with mock.patch("reflex_base.utils.console.warn") as warn:
+
+        class StrChild(IntMixin, StrParent):  # pyright: ignore[reportIncompatibleVariableOverride]
+            pass
+
+    warn.assert_called_once_with(
+        f"The var `word` in {__name__}.StrChild is declared as str by "
+        f"{__name__}.StrParent, but the mixin {__name__}.IntMixin types it as int; "
+        "the mixin's code uses the var declared as str"
+    )
+    with mock.patch("reflex_base.utils.console.warn") as warn:
+
+        class IntChild(IntMixin, IntParent):
+            pass
+
+        class PointChild(PointMixin, PairParent):  # pyright: ignore[reportIncompatibleVariableOverride]
+            pass
+
+    warn.assert_not_called()
+
+
+def test_mixins_may_type_a_var_the_state_declares(clean_registration_context):
+    """Mixins may each declare without a default a var the state declares.
+
+    Such a declaration only types the var for the mixin's code: the state keeps
+    the var it declares, or one a mixin declares with a default.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class FirstMixin(BaseState, mixin=True):
+        shared: int
+
+    class SecondMixin(BaseState, mixin=True):
+        shared: int
+
+    class ValueMixin(BaseState, mixin=True):
+        shared: int = 3
+
+    class Parent(State):
+        shared: int = 1
+
+    class Child(FirstMixin, SecondMixin, Parent):
+        pass
+
+    class OwnState(FirstMixin, SecondMixin, State):
+        shared: int = 2
+
+    class RedeclaringChild(FirstMixin, ValueMixin, Parent):
+        pass
+
+    assert Child.get_fields()["shared"]._owner is Parent
+    assert OwnState.get_fields()["shared"].default == 2
+    assert RedeclaringChild.get_fields()["shared"]._owner is RedeclaringChild
+    assert RedeclaringChild.get_fields()["shared"].default == 3
+
+
+def test_state_resolves_its_mixins_var_name_conflict(clean_registration_context):
+    """A state declaring the var its mixins both declare settles the conflict.
+
+    Mixins from different libraries cannot be renamed, so the combining state's
+    own declaration is the var both mixins use.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class FirstMixin(BaseState, mixin=True):
+        shared: int = 1
+
+    class SecondMixin(BaseState, mixin=True):
+        shared: int = 2
+
+    class ResolvedState(FirstMixin, SecondMixin, State):
+        shared: int = 3
+
+    assert ResolvedState.get_fields()["shared"]._owner is ResolvedState
+    assert ResolvedState.get_fields()["shared"].default == 3
+
+
+def test_mixin_may_redeclare_a_var_of_the_parents_mixin(clean_registration_context):
+    """Only mixins combined into the same state conflict, not those of its parent.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class FirstMixin(BaseState, mixin=True):
+        shared: int = 1
+
+    class SecondMixin(BaseState, mixin=True):
+        shared: int = 2
+
+    class Parent(FirstMixin, State):
+        pass
+
+    class Child(SecondMixin, Parent):
+        pass
+
+    assert Child.get_fields()["shared"]._owner is Child
+    assert Child.get_fields()["shared"].default == 2
 
 
 @pytest.mark.parametrize("registration", ["declared", "var"])
@@ -1159,6 +1569,31 @@ def test_state_roots_do_not_share_reserved_names():
             alpha: int = 3
 
 
+def test_only_states_below_a_root_are_tree_states():
+    """Treat neither a root nor a state outside any root's hierarchy as a tree state."""
+
+    class Rootless(EvenMoreBasicBaseState):
+        pass
+
+    class Root(EvenMoreBasicBaseState, state_root=True):
+        pass
+
+    class Child(Root):
+        pass
+
+    assert Rootless._reflex_state_root is None
+    assert not _is_tree_state(Rootless)
+    assert not _is_tree_state(Root)
+    assert _is_tree_state(Child)
+
+
+def test_no_root_reserves_no_names():
+    """Accept any name for a state outside every root's hierarchy."""
+    _validate_state_name(None, "_get_root_state", 7)
+    with pytest.raises(StateValueError, match="_get_root_state"):
+        _validate_state_name(BaseState, "_get_root_state", 7)
+
+
 def test_inherited_field_on_plain_model():
     """An inherited field of a model without a state tree reads from the model itself."""
 
@@ -1188,6 +1623,48 @@ def test_new_default_for_inherited_field_declares_a_field():
     assert child_field.default == 5
     assert child_field.outer_type_ is int
     assert "count" in Child.base_vars
+
+
+def test_field_default_from_type():
+    """A field declared without a default notes that its default comes from its type."""
+    from_type = Field(annotated_type=int)
+    assert from_type._default_from_type
+    assert from_type._replace()._default_from_type
+    assert from_type._replace(annotated_type=bool)._default_from_type
+    assert not from_type._replace(default=1)._default_from_type
+    assert not Field(default=0, annotated_type=int)._default_from_type
+    assert not Field(default_factory=list, annotated_type=list[int])._default_from_type
+
+
+def test_field_default_from_type_follows_new_type():
+    """A default that comes from the type is taken from the replacing type."""
+    from_type = Field(annotated_type=int)
+    assert from_type._replace(annotated_type=str).default == ""
+    assert from_type._replace(annotated_type=list[int]).default_value() == []
+
+
+def test_field_set_default_is_not_from_type():
+    """A default set on a field declared without one no longer comes from its type."""
+    field = Field(annotated_type=int)
+    field.set_default(5)
+    assert not field._default_from_type
+    assert field._replace().default == 5
+
+
+def test_reannotated_mixin_var_default_follows_new_type(clean_registration_context):
+    """Re-annotating a mixin's var declared without a default takes the new type's.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class IntMixin(BaseState, mixin=True):
+        value: int
+
+    class StrState(IntMixin, State):
+        value: str  # pyright: ignore[reportIncompatibleVariableOverride]
+
+    assert StrState.get_fields()["value"].default == ""
 
 
 class TaggedField(Field[FIELD_TYPE]):
@@ -1310,12 +1787,23 @@ def test_backend_field_is_not_type_checked():
     assert model._value == 1
 
 
+@pytest.mark.parametrize(
+    "to_text",
+    [
+        lambda f: f"{f}px",
+        lambda f: f"{f!s}px",
+        lambda f: str(f) + "px",
+        lambda f: "%spx" % f,  # noqa: UP031
+    ],
+    ids=["format", "format_s", "str", "percent"],
+)
 @pytest.mark.parametrize("name", ["_secret", "bookkeeping"])
-def test_backend_field_format_raises(name: str):
-    """Formatting a backend var raises instead of embedding its repr.
+def test_backend_field_format_raises(name: str, to_text: typing.Callable[[Any], str]):
+    """Turning a backend var into text raises instead of embedding its repr.
 
     Args:
         name: The backend field to format, underscore-prefixed or is_var=False.
+        to_text: Turns the field into text.
     """
 
     class Model(EvenMoreBasicBaseState):
@@ -1325,7 +1813,7 @@ def test_backend_field_format_raises(name: str):
     with pytest.raises(
         BackendVarFormatError, match=rf"Backend var 'Model\.{name}' exists only"
     ):
-        f"{getattr(Model, name)}px"
+        to_text(getattr(Model, name))
 
 
 @pytest.mark.parametrize("mixin", [False, True])
@@ -1355,6 +1843,40 @@ def test_backend_field_format_error_names_the_fix(name: str, default: int, mixin
     assert getattr(Model, name).default_value() == default
 
 
+@pytest.mark.parametrize("kind", ["backend", "mixin", "state_var", "unbound"])
+def test_field_format_error_suggests_repr(kind: str):
+    """Printing a field in server code raises an error that points to repr().
+
+    Args:
+        kind: Which field without a frontend var to convert to text.
+    """
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: int = 42
+
+    class Mixin(EvenMoreBasicBaseState, mixin=True):
+        count: int = 0
+
+    class Plain(BaseState):
+        count: int = 0
+
+    fields = {
+        "backend": lambda: Model._secret,
+        "mixin": lambda: Mixin.count,
+        "state_var": lambda: Plain.get_fields()["count"],
+        "unbound": lambda: field(default=0),
+    }
+    the_field = fields[kind]()
+
+    with pytest.raises(BackendVarFormatError) as exc_info:
+        str(the_field)
+
+    assert str(exc_info.value).endswith(
+        " To print or log the field itself in server code, use repr()."
+    )
+    assert repr(the_field).startswith("Field(")
+
+
 def test_mixin_field_format_raises():
     """A mixin's frontend field has no Var, and the error says to use the including state."""
 
@@ -1367,6 +1889,19 @@ def test_mixin_field_format_raises():
         f"{Mixin.count}"
 
 
+def test_state_var_field_format_raises():
+    """A state var's field, read from get_fields(), says to use the var instead."""
+
+    class Model(BaseState):
+        count: int = 0
+
+    with pytest.raises(
+        BackendVarFormatError,
+        match=r"^'Model\.count' is the field of a state var.* Use Model\.count ",
+    ):
+        f"{Model.get_fields()['count']}"
+
+
 def test_unbound_field_format_raises():
     """An unbound field has no Var to format, and the error shows its definition."""
     with pytest.raises(
@@ -1376,26 +1911,113 @@ def test_unbound_field_format_raises():
         f"{field(default=0)}"
 
 
-def test_untyped_var_item_access_reports_backend_var_key():
-    """Indexing an untyped Var with a backend var names the key, not a format error."""
-
-    class Model(EvenMoreBasicBaseState):
-        _secret: int = 42
-
-    with pytest.raises(UntypedVarError, match=r"access the item 'Field\(default=42"):
-        Var(_js_expr="x")[Model._secret]  # pyright: ignore[reportIndexIssue]
-
-
-def test_backend_field_literal_var_reports_repr():
-    """Creating a LiteralVar from a backend var reports its repr, not a format error."""
+def test_untyped_var_item_access_backend_var_key_raises_format_error():
+    """Indexing an untyped Var with a backend var raises the backend var format error."""
 
     class Model(EvenMoreBasicBaseState):
         _secret: int = 42
 
     with pytest.raises(
-        TypeError, match=r"Tried to create a LiteralVar from Field\(default=42"
+        BackendVarFormatError, match=r"Backend var 'Model\._secret' exists only"
     ):
-        LiteralVar.create(Model._secret)
+        Var(_js_expr="x")[Model._secret]  # pyright: ignore[reportIndexIssue]
+
+
+@pytest.mark.parametrize(
+    "use",
+    [
+        LiteralVar.create,
+        lambda f: str(Var.create([f])),
+        lambda f: str(Var.create({"a": f})),
+        lambda f: Var.create([f])._get_all_var_data(),
+        lambda f: Var.create({"a": f})._get_all_var_data(),
+    ],
+    ids=["literal", "list", "dict", "list_var_data", "dict_var_data"],
+)
+def test_backend_field_literal_var_raises_format_error(
+    use: typing.Callable[[Any], Any],
+):
+    """A backend var inside a LiteralVar raises the backend var format error.
+
+    Args:
+        use: Turns the backend field into a LiteralVar, or reads its var data.
+    """
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: int = 42
+
+    with pytest.raises(
+        BackendVarFormatError, match=r"Backend var 'Model\._secret' exists only"
+    ):
+        use(Model._secret)
+
+
+@pytest.mark.parametrize(
+    "use",
+    [
+        lambda f: f == "x",
+        lambda f: f != "x",
+        lambda f: f in ["x", "y"],
+        lambda f: bool(f),
+    ],
+    ids=["eq", "ne", "in_list", "bool"],
+)
+def test_backend_field_comparison_raises_format_error(
+    use: typing.Callable[[Any], Any],
+):
+    """Comparing or truth-testing a backend var raises instead of a plain bool.
+
+    Args:
+        use: Compares or truth-tests the backend field.
+    """
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: str = "s"
+
+    with pytest.raises(BackendVarFormatError) as exc_info:
+        use(Model._secret)
+    assert str(exc_info.value) == backend_var_error("Model._secret")
+
+
+def test_backend_field_identity_and_hash_unchanged():
+    """Fields still compare and hash by identity with other fields."""
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: str = "s"
+        _other: str = "o"
+
+    secret, other = Model._secret, Model._other
+    assert secret == secret
+    assert secret != other
+    assert {secret: 1, other: 2}[secret] == 1
+    assert secret in [other, secret]
+    assert len({secret, other, secret}) == 2
+
+
+def test_mixin_field_comparison_raises_format_error():
+    """Comparing or truth-testing a mixin's field says to use the including state."""
+
+    class Mixin(EvenMoreBasicBaseState, mixin=True):
+        count: int = 0
+
+    with pytest.raises(BackendVarFormatError) as eq_info:
+        Mixin.count == 1  # noqa: B015
+    with pytest.raises(BackendVarFormatError) as bool_info:
+        bool(Mixin.count)
+    assert str(eq_info.value) == mixin_var_error("Mixin.count")
+    assert str(bool_info.value) == mixin_var_error("Mixin.count")
+
+
+def test_mixin_field_literal_var_raises_format_error():
+    """A mixin's field inside a LiteralVar says to use the including state."""
+
+    class Mixin(EvenMoreBasicBaseState, mixin=True):
+        count: int = 0
+
+    with pytest.raises(
+        BackendVarFormatError, match=r"Var 'Mixin\.count' is declared on a mixin state"
+    ):
+        str(Var.create([Mixin.count]))
 
 
 def test_mistyped_backend_field_value_logs_repr(caplog: pytest.LogCaptureFixture):
@@ -2189,3 +2811,277 @@ def test_new_default_for_inherited_private_field_stays_a_field():
         assert child_field.default == 2
         assert isinstance(vars(child)["__counter__"], Field)
         assert child().__counter__ == 2
+
+
+def test_from_state_hook_subscribes_to_the_field():
+    """A state field's hook names the field, so its readers skip other changes."""
+    assert VarData.from_state("s", "a").hooks == (
+        f'const s = useStateContext("s", ["a{FIELD_MARKER}"])',
+    )
+    assert VarData.from_state("s").hooks == ('const s = useStateContext("s")',)
+
+
+@pytest.mark.parametrize("js_expr", ["value", "items_rx_state_[0]"])
+def test_var_set_state_subscribes_to_the_whole_substate(js_expr: str):
+    """The expression may read any key, so its only hook reads the whole substate.
+
+    Args:
+        js_expr: The expression read from the state.
+    """
+    var = Var(_js_expr=js_expr, _var_type=str)._var_set_state("s")
+    var_data = var._get_all_var_data()
+    assert var_data is not None
+    assert var_data.hooks == ('const s = useStateContext("s")',)
+    assert var_data.field_dependencies == {"s": (js_expr,)}
+
+
+def _identical(leaves: Sequence[Var], *expected: Var) -> bool:
+    """Check that the leaves are exactly the given var objects, in order.
+
+    ``Var.__eq__`` builds a var, so lists of vars cannot be compared directly.
+
+    Args:
+        leaves: The leaves returned.
+        *expected: The vars the compound var was built from.
+
+    Returns:
+        Whether each leaf is the expected var object.
+    """
+    return len(leaves) == len(expected) and all(
+        leaf is var for leaf, var in zip(leaves, expected, strict=True)
+    )
+
+
+def test_get_leaf_vars_returns_a_leaf_alone() -> None:
+    var = Var(_js_expr="state.a")
+    (same,) = get_leaf_vars(var)
+    assert same is var
+
+
+def test_get_leaf_vars_dissolves_literals() -> None:
+    """A constant literal reads nothing; a container or a color what it holds.
+
+    A raw item is converted the way the renderer does, so an f-string with a
+    var inside a list still reads that var. Any other literal value stays
+    whole, since what it reads is not known.
+    """
+    a = Var(_js_expr="state.a")
+    b = Var(_js_expr="state.b").to(int)
+
+    assert get_leaf_vars(LiteralVar.create(1)) == []
+    assert get_leaf_vars(LiteralVar.create("text")) == []
+    assert get_leaf_vars(LiteralVar.create(decimal.Decimal("1.5"))) == []
+    assert get_leaf_vars(LiteralVar.create(range(3))) == []
+    assert get_leaf_vars(LiteralVar.create(datetime.datetime(2020, 1, 1))) == []
+    assert get_leaf_vars(LiteralVar.create({1, 2})) == []
+    assert get_leaf_vars(LiteralVar.create(frozenset({1, 2}))) == []
+    assert _identical(get_leaf_vars(LiteralVar.create([1, a, [b]])), a, b)
+    assert _identical(get_leaf_vars(LiteralVar.create({"k": a, b: 2})), a, b)
+    assert _identical(get_leaf_vars(LiteralVar.create({a})), a)
+    assert _identical(get_leaf_vars(LiteralVar.create(frozenset({a}))), a)
+    assert _identical(get_leaf_vars(LiteralVar.create([f"{a}-x"])), a)
+    # A var that is the whole of a formatted string is decoded into a new object.
+    (decoded,) = get_leaf_vars(LiteralVar.create([f"{a}"]))
+    assert decoded is not a
+    assert decoded.equals(a)
+    assert _identical(get_leaf_vars(LiteralVar.create(Color("red", shade=b))), b)
+    event = LiteralVar.create(rx.console_log(a))
+    (same,) = get_leaf_vars(event)
+    assert same is event
+
+
+def test_get_leaf_vars_unwraps_operations_and_casts() -> None:
+    """Operands come back in order, through nested operations and casts, once."""
+    a = Var(_js_expr="state.a").to(int)
+    b = Var(_js_expr="state.b").to(int)
+
+    assert _identical(get_leaf_vars((a + 1) * b), a, b)
+    assert _identical(get_leaf_vars((a + b).to(str)), a, b)
+    assert _identical(get_leaf_vars(a + a), a)
+    # A cast of a leaf is the leaf, as the caller holds it.
+    assert _identical(get_leaf_vars(a), a)
+
+
+def test_get_leaf_vars_reads_through_a_function_body() -> None:
+    """A function reads what its body reads, other than its own parameters."""
+    items = Var(_js_expr="state.items").to(list[str])
+    outer = Var(_js_expr="outer").to(str)
+
+    assert _identical(get_leaf_vars(items.filter(lambda item: item == "r")), items)
+    assert _identical(
+        get_leaf_vars(items.filter(lambda item: item == outer)), items, outer
+    )
+    nested = items.map(lambda item: items.filter(lambda other: other == item))
+    assert _identical(get_leaf_vars(nested), items)
+    rest = Var(_js_expr="rest").to(list[str])
+    spread = ArgsFunctionOperation.create((), rest[0] + outer, rest="rest")
+    assert _identical(get_leaf_vars(spread), outer)
+    colored = items.map(lambda item: Color(outer, shade=item.to(int)))
+    assert _identical(get_leaf_vars(colored), items, outer)
+    priced = items.map(lambda item: item.length() + decimal.Decimal("1.5"))
+    assert _identical(get_leaf_vars(priced), items)
+    # A cast around a function reads like the function.
+    x = Var(_js_expr="x").to(int)
+    cast = ArgsFunctionOperation.create(("x",), x + items.length()).to(FunctionVar)
+    assert _identical(get_leaf_vars(cast), items)
+    # A named function is a leaf.
+    fn = FunctionStringVar.create("fn")
+    assert _identical(get_leaf_vars(fn), fn)
+
+
+def test_get_leaf_vars_keeps_a_function_whole_when_a_leaf_reads_a_parameter() -> None:
+    """A body leaf that is not a parameter itself may still read one.
+
+    Hoisting it out of the function would name something bound only inside.
+    """
+    items = Var(_js_expr="state.items").to(list[str])
+    other = Var(_js_expr="state.other").to(list[str])
+
+    built = items.map(lambda item: Var(_js_expr=f"{item}.length").to(int))
+    array, function = get_leaf_vars(built)
+    assert array is items
+    assert isinstance(function, FunctionVar)
+
+    closing = items.map(lambda item: other.map(lambda o: rx.console_log(item)))
+    array, function = get_leaf_vars(closing)
+    assert array is items
+    assert isinstance(function, FunctionVar)
+
+
+def test_get_leaf_vars_keeps_a_function_with_an_opaque_body_whole() -> None:
+    """A literal kept whole may read the parameters; the function stays whole."""
+    items = Var(_js_expr="state.items").to(list[str])
+
+    array, function = get_leaf_vars(items.map(lambda item: rx.console_log(item)))
+
+    assert str(array) == "state.items"
+    assert isinstance(function, FunctionVar)
+
+
+def test_get_leaf_vars_converts_raw_operands() -> None:
+    """A raw operand is rendered through LiteralVar.create, so it is read that way."""
+    a = Var(_js_expr="state.a")
+    n = Var(_js_expr="state.n").to(int)
+    fn = FunctionStringVar.create("fn")
+
+    call = fn.call(Color("red", shade=n), [a, 1], f"{a}-x")
+    assert _identical(get_leaf_vars(call), fn, n, a)
+
+
+def test_get_leaf_vars_unwraps_operations_with_their_own_fields() -> None:
+    """Operations outside ``var_operation`` keep their operands in fields."""
+    items = Var(_js_expr="state.items").to(list[str])
+    n = Var(_js_expr="state.n").to(int)
+    obj = Var(_js_expr="state.obj").to(dict[str, str])
+    key = Var(_js_expr="state.key").to(str)
+    fn = FunctionStringVar.create("fn")
+
+    assert _identical(get_leaf_vars(items[1:]), items)
+    assert _identical(get_leaf_vars(items[n:][0]), items, n)
+    assert _identical(get_leaf_vars(obj[key]), obj, key)
+    assert _identical(get_leaf_vars(key + "-" + key.upper()), key)
+    assert _identical(get_leaf_vars(fn.call(n, items[0])), fn, n, items)
+
+
+def test_get_leaf_vars_sorts_every_cached_operation() -> None:
+    """Each cached operation is sorted on purpose.
+
+    A new operation class has to be added here after deciding whether every
+    value it holds in a field is one it reads, so the generic unwrapping applies,
+    or whether it needs its own branch or is a leaf.
+
+    Classes are compared by name: a ``slots=True`` dataclass is a rebuilt copy
+    of the class first defined, and the discarded original stays in
+    ``__subclasses__`` until it is garbage collected.
+
+    The walk stops at classes defined outside Reflex: an installed package's
+    var subclass gets a ``*CastedVar`` generated in ``reflex_base.vars.base``,
+    which would otherwise be counted as one of Reflex's own operations.
+    """
+
+    def subclasses(cls: type) -> set[type]:
+        own = {
+            sub
+            for sub in cls.__subclasses__()
+            if sub.__module__.startswith(("reflex_base.", "reflex."))
+        }
+        return own.union(*(subclasses(sub) for sub in own))
+
+    def names(classes: Iterable[type]) -> set[str]:
+        return {f"{cls.__module__}.{cls.__qualname__}" for cls in classes}
+
+    operations = subclasses(CachedVarOperation)
+
+    assert names(operations) == names({
+        CustomVarOperation,
+        ArraySliceOperation,
+        ObjectItemOperation,
+        ConcatVarOperation,
+        VarOperationCall,
+        ReflexURLCastedVar,
+        RouterDataVar,
+        # Literals read what their value holds, or nothing for a constant.
+        LiteralArrayVar,
+        LiteralSetVar,
+        LiteralObjectVar,
+        LiteralColorVar,
+        LiteralRangeVar,
+        # Functions read their body minus their parameters.
+        ArgsFunctionOperation,
+        ArgsFunctionOperationBuilder,
+        # Leaves: a state field access, and literals of other values.
+        StateOperation,
+        LiteralComponentVar,
+        LiteralEventVar,
+        LiteralEventChainVar,
+    })
+
+
+def test_optional_collection_computed_vars_are_typed_by_collection():
+    """A computed var of an optional collection reads as that collection's var."""
+
+    class OptionalCollectionState(rx.State):
+        @rx.var
+        def opt_list(self) -> list[str] | None:
+            return None
+
+        @rx.var
+        def opt_tuple(self) -> tuple[int, ...] | None:
+            return None
+
+        @rx.var
+        def opt_set(self) -> set[str] | None:
+            return None
+
+        @rx.var
+        def opt_frozenset(self) -> frozenset[int] | None:
+            return None
+
+        @rx.var
+        async def async_opt_list(self) -> list[str] | None:
+            return None
+
+        @rx.var
+        async def async_opt_set(self) -> set[str] | None:
+            return None
+
+    typing.assert_type(OptionalCollectionState.opt_list, ArrayVar[list[str]])
+    typing.assert_type(OptionalCollectionState.opt_tuple, ArrayVar[tuple[int, ...]])
+    typing.assert_type(OptionalCollectionState.opt_set, SetVar[set[str]])
+    typing.assert_type(OptionalCollectionState.opt_frozenset, SetVar[frozenset[int]])
+    typing.assert_type(OptionalCollectionState.async_opt_list, ArrayVar[list[str]])
+    typing.assert_type(OptionalCollectionState.async_opt_set, SetVar[set[str]])
+    for var in (
+        OptionalCollectionState.opt_list,
+        OptionalCollectionState.opt_tuple,
+        OptionalCollectionState.async_opt_list,
+    ):
+        assert isinstance(var, ArrayVar)
+    for var in (
+        OptionalCollectionState.opt_set,
+        OptionalCollectionState.opt_frozenset,
+        OptionalCollectionState.async_opt_set,
+    ):
+        assert isinstance(var, SetVar)
+    assert str(OptionalCollectionState.opt_list.length()).endswith(" ?? []).length")
+    assert str(OptionalCollectionState.opt_set.length()).endswith(" ?? []).length")

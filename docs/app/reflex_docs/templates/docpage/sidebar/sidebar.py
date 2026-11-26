@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import functools
+
 import reflex as rx
 from reflex_site_shared.components.docs_shell import (
     docs_sidebar_category as sidebar_category,
@@ -11,6 +13,8 @@ from reflex_site_shared.components.docs_shell import (
     docs_sidebar_section,
 )
 from reflex_site_shared.components.docs_shell import docs_sidebar_leaf as sidebar_leaf
+
+from reflex_docs import sections
 
 from .sidebar_items.ai import (
     agent_toolkit_items,
@@ -25,7 +29,7 @@ from .sidebar_items.enterprise import (
     enterprise_items,
     enterprise_usage_items,
 )
-from .sidebar_items.learn import backend, frontend, hosting, learn
+from .sidebar_items.learn import backend, frontend, hosting, learn, workflows
 from .sidebar_items.recipes import recipes
 from .sidebar_items.reference import api_reference, changelog_items
 from .state import SideBarBase, SideBarItem
@@ -138,7 +142,10 @@ def sidebar_item_comp(
         child = item.children[0]
         return rx.el.li(
             sidebar_link(
-                rx.el.p(item.names, class_name="m-0 text-sm font-[475]"),
+                rx.el.p(
+                    item.names,
+                    class_name="docs-sidebar-group-label m-0 text-sm font-[475] text-foreground",
+                ),
                 href=child.link,
                 aria_current=rx.cond(url == child.link, "page", "false"),
                 class_name="flex min-h-8 w-full items-center rounded-lg py-1 pl-[2.5rem] text-foreground hover:!text-foreground transition-colors [&[aria-current=page]]:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
@@ -199,6 +206,7 @@ append_to_items(
     learn
     + frontend
     + backend
+    + workflows
     + hosting
     + component_lib
     + graphing_libs
@@ -225,6 +233,31 @@ def get_prev_next(url):
             next_link = flat_items[i + 1] if i < len(flat_items) - 1 else None
             return prev_link, next_link
     return None, None
+
+
+@functools.cache
+def _labels_by_route() -> dict[str, str]:
+    """Map each sidebar link, without slashes, to its first sidebar label.
+
+    Returns:
+        The label of each linked page.
+    """
+    labels: dict[str, str] = {}
+    for item in flat_items:
+        labels.setdefault(item.link.strip("/"), item.names)
+    return labels
+
+
+def sidebar_label(url: str) -> str | None:
+    """Get the sidebar label of a docs page.
+
+    Args:
+        url: The page's app-relative route.
+
+    Returns:
+        The label the sidebar shows for the page, or None if it has no entry.
+    """
+    return _labels_by_route().get(url.strip("/"))
 
 
 def filter_out_non_sidebar_items(items: list[SideBarBase]) -> list[SideBarItem]:
@@ -286,10 +319,12 @@ def normalize_url(url: str | None) -> str:
 @rx.memo
 def sidebar_comp(
     url: rx.vars.StringVar[str],
+    section: rx.vars.StringVar[str],
     learn_index: rx.vars.ArrayVar[list[int]],
     component_lib_index: rx.vars.ArrayVar[list[int]],
     frontend_index: rx.vars.ArrayVar[list[int]],
     backend_index: rx.vars.ArrayVar[list[int]],
+    workflows_index: rx.vars.ArrayVar[list[int]],
     hosting_index: rx.vars.ArrayVar[list[int]],
     html_lib_index: rx.vars.ArrayVar[list[int]],
     graphing_libs_index: rx.vars.ArrayVar[list[int]],
@@ -309,16 +344,17 @@ def sidebar_comp(
     The function is decorated with ``rx.memo`` so the rendered tree compiles
     to a single React component that receives the runtime ``url`` and per-section
     indices as props. ``url`` is expected to be pre-normalized by the caller
-    (see ``sidebar`` below).
+    (see ``sidebar`` below), which also computes the route's ``section`` (see
+    ``reflex_docs.sections``).
     """
     from reflex_docs.pages.docs import ai_builder as ai_builder_pages
-    from reflex_docs.pages.docs import enterprise, getting_started, state, ui
-    from reflex_docs.pages.docs import hosting as hosting_page
+    from reflex_docs.pages.docs import cloud, enterprise, getting_started, state, ui
+    from reflex_docs.pages.docs import workflows as workflows_pages
     from reflex_docs.pages.docs.library import library
     from reflex_docs.pages.docs.recipes_overview import overview
 
-    is_docs_hosting = url.startswith("/hosting/")
-    is_docs_ai_builder = url.startswith("/ai/")
+    is_docs_hosting = section == sections.CLOUD
+    is_docs_ai_builder = section == sections.AI
     is_ai_mcp_or_skills = (
         url.startswith("/ai/integrations/agent-toolkit/")
         | url.startswith("/ai/integrations/skills/")
@@ -326,24 +362,15 @@ def sidebar_comp(
         | url.startswith("/ai/integrations/mcp")
     )
 
-    is_library = url.contains("library") | url.contains("/mcp-")
-    is_api_reference = url.contains("api-reference") | url.startswith("/changelog/")
-    is_enterprise = url.contains("enterprise")
-    is_default_docs = ~is_library & ~is_api_reference & ~is_enterprise
+    is_library = section == sections.COMPONENTS
+    is_api_reference = section == sections.API_REFERENCE
+    is_enterprise = section == sections.ENTERPRISE
+    is_default_docs = section == sections.FRAMEWORK
 
-    hosting_categories = rx.el.ul(
-        sidebar_category(
-            "Cloud",
-            hosting_page.deploy_quick_start.path,
-            None,
-            True,
-        ),
-        class_name="flex flex-col items-start gap-2 w-full list-none",
-    )
     hosting_content = rx.el.ul(
         create_sidebar_section(
             "Cloud",
-            hosting_page.deploy_quick_start.path,
+            cloud.overview.path,
             hosting,
             hosting_index,
             url,
@@ -418,7 +445,7 @@ def sidebar_comp(
 
     docs_categories = rx.el.ul(
         sidebar_category(
-            "Learn",
+            "Framework",
             getting_started.introduction.path,
             "graduation-cap",
             is_default_docs,
@@ -433,13 +460,13 @@ def sidebar_comp(
             "API Reference",
             api_reference[0].link,
             "book-text",
-            ~is_library & is_api_reference,
+            is_api_reference,
         ),
         sidebar_category(
             "Enterprise",
             enterprise.overview.path,
             "building-2",
-            ~is_library & ~is_api_reference & is_enterprise,
+            is_enterprise,
         ),
         class_name="flex flex-col items-start gap-2 w-full list-none",
     )
@@ -526,6 +553,13 @@ def sidebar_comp(
             url,
         ),
         create_sidebar_section(
+            "Workflows",
+            workflows_pages.overview.path,
+            filter_out_non_sidebar_items(workflows),
+            workflows_index,
+            url,
+        ),
+        create_sidebar_section(
             "Recipes",
             overview.path,
             recipes,
@@ -550,7 +584,7 @@ def sidebar_comp(
 
     categories = rx.cond(
         is_docs_hosting,
-        hosting_categories,
+        rx.fragment(),
         rx.cond(is_docs_ai_builder, ai_builder_categories, docs_categories),
     )
     content = rx.cond(
@@ -585,10 +619,12 @@ def sidebar(url=None, width: str = "100%") -> rx.Component:
     return rx.box(
         sidebar_comp(
             url=normalized_url,
+            section=sections.docs_section(normalized_url),
             learn_index=calculate_index(learn, normalized_url),
             component_lib_index=calculate_index(component_lib, normalized_url),
             frontend_index=calculate_index(frontend, normalized_url),
             backend_index=calculate_index(backend, normalized_url),
+            workflows_index=calculate_index(workflows, normalized_url),
             hosting_index=calculate_index(hosting, normalized_url),
             html_lib_index=calculate_index(html_lib, normalized_url),
             graphing_libs_index=calculate_index(graphing_libs, normalized_url),

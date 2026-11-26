@@ -1,8 +1,12 @@
+import re
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
 import pytest
 from reflex_base.components.component import Component
 from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.vars.base import Var
 from reflex_base.vars.number import NumberVar
 from reflex_base.vars.sequence import ArrayVar
 from reflex_components_core.core.foreach import (
@@ -53,6 +57,7 @@ class ForEachState(BaseState):
     colors_set: set[str] = {"red", "green"}
     bad_annotation_list: list = [["red", "orange"], ["yellow", "blue"]]
     color_index_tuple: tuple[int, str] = (0, "red")
+    unicode_string: str = "a\U0001f600b"
 
     default_factory_list: rx.Field[list[ForEachTag]] = rx.field(default_factory=list)
 
@@ -228,6 +233,13 @@ def display_color_index_tuple(color):
                 + FIELD_MARKER,
             },
         ),
+        (
+            ForEachState.unicode_string,
+            display_color,
+            {
+                "iterable_state": f'Array.from(({ForEachState.get_full_name()}.unicode_string{FIELD_MARKER}) ?? "")',
+            },
+        ),
     ],
 )
 def test_foreach_render(state_var, render_fn, render_dict):
@@ -273,6 +285,128 @@ def test_foreach_too_many_params_in_signature():
             ForEachState.colors_list,
             lambda color, index, extra: text(color),
         )
+
+
+class _BoundRenderFns:
+    """Render functions bound to a class or an instance."""
+
+    @classmethod
+    def color(cls, color: Var[str]) -> Component:
+        """Render a color.
+
+        Args:
+            color: The color.
+
+        Returns:
+            The rendered color.
+        """
+        return text(color)
+
+    @classmethod
+    def color_with_index(cls, color: Var[str], index: NumberVar[int]) -> Component:
+        """Render a color with its index.
+
+        Args:
+            color: The color.
+            index: The index of the color.
+
+        Returns:
+            The rendered color.
+        """
+        return text(color, index)
+
+    def instance_color_with_index(
+        self, color: Var[str], index: NumberVar[int]
+    ) -> Component:
+        """Render a color with its index.
+
+        Args:
+            color: The color.
+            index: The index of the color.
+
+        Returns:
+            The rendered color.
+        """
+        return text(color, index)
+
+    @classmethod
+    def color_with_keyword_only(
+        cls, color: Var[str], *, key: str | None = None
+    ) -> Component:
+        """Render a color with a keyword-only parameter, which takes no render argument.
+
+        Args:
+            color: The color.
+            key: The key of the rendered color.
+
+        Returns:
+            The rendered color.
+        """
+        return text(color, key=key)
+
+    @classmethod
+    def color_with_kwargs(cls, color: Var[str], **props: Any) -> Component:
+        """Render a color with ``**kwargs``, which take no render argument.
+
+        Args:
+            color: The color.
+            **props: The props of the rendered color.
+
+        Returns:
+            The rendered color.
+        """
+        return text(color, **props)
+
+
+@pytest.mark.parametrize(
+    ("render_fn", "item_name", "takes_index"),
+    [
+        (_BoundRenderFns.color, "color", False),
+        (_BoundRenderFns.color_with_index, "color", True),
+        (_BoundRenderFns().instance_color_with_index, "color", True),
+        (_BoundRenderFns.color_with_keyword_only, "color", False),
+        (_BoundRenderFns.color_with_kwargs, "color", False),
+        (text, "children", False),
+    ],
+    ids=[
+        "classmethod",
+        "classmethod-with-index",
+        "method-with-index",
+        "keyword-only",
+        "kwargs",
+        "component-create",
+    ],
+)
+def test_foreach_render_fn_takes_only_positional_render_args(
+    render_fn: Callable[..., Component], item_name: str, takes_index: bool
+):
+    """Test that only positional parameters take the item and the index.
+
+    The cls/self of a bound method, keyword-only parameters and ``**kwargs`` don't
+    count as render arguments, and a component's ``create`` gets the item as its only
+    child.
+
+    Args:
+        render_fn: The render function.
+        item_name: The name of the parameter that takes the item.
+        takes_index: Whether the render function takes the index.
+    """
+    component = Foreach.create(ForEachState.colors_list, render_fn)
+    # without an index parameter, the index is named after a hash of the render function
+    rendered = re.sub(r"index_[0-9a-f]{32}", "index_<hash>", str(component))
+
+    item = f"{item_name}{FIELD_MARKER}"
+    if takes_index:
+        index = f"index{FIELD_MARKER}"
+        children = f"{item},{index}"
+    else:
+        index = "index_<hash>"
+        children = item
+    iterable = f"{ForEachState.get_full_name()}.colors_list{FIELD_MARKER}"
+    assert rendered == (
+        f"Array.prototype.map.call({iterable} ?? [],(({item},{index})=>"
+        f'(jsx(RadixThemesText,{{as:"p",key:{index}}},{children}))))'
+    )
 
 
 def test_foreach_component_styles():
