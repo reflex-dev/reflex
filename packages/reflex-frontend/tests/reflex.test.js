@@ -2,11 +2,17 @@
  * `reflex` is the API scripts reach Reflex through. These pin each member and
  * that it reads the runtime at call time.
  */
-import { expect, test, vi } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 
 import { eventLoop } from "$/utils/context-registry";
 import { reflex } from "$/utils/reflex";
 import { refs } from "$/utils/state";
+
+const unmountedAddEvents = eventLoop.addEvents;
+
+afterEach(() => {
+  eventLoop.addEvents = unmountedAddEvents;
+});
 
 test("ref finds a component by id, named as format_ref names it", () => {
   const cases = {
