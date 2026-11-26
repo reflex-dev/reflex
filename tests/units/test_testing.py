@@ -609,6 +609,85 @@ def test_app_harness_reloads_cached_descendants_when_parent_module_reloads(
             RegistrationContext.reset(active_token)
 
 
+def test_app_harness_restarts_when_main_defines_a_cached_states_descendant(
+    tmp_path, monkeypatch
+):
+    """Reload an app once when its state inheritance returns to the main module.
+
+    Args:
+        tmp_path: Temporary directory for app modules.
+        monkeypatch: Pytest fixture for isolating imports and harness state.
+    """
+    import reflex as rx
+
+    app_package = "harness_main_descendant"
+    app_module = f"{app_package}.{app_package}"
+    child_module = f"{app_package}.child"
+    package_dir = tmp_path / app_package
+    package_dir.mkdir()
+    (tmp_path / "rxconfig.py").write_text(
+        f"import reflex as rx\nconfig = rx.Config(app_name={app_package!r})\n",
+        encoding="utf-8",
+    )
+    (package_dir / "__init__.py").write_text("", encoding="utf-8")
+    (package_dir / f"{app_package}.py").write_text(
+        "import reflex as rx\n"
+        "class Parent(rx.State):\n"
+        "    count: int = 0\n"
+        "from .child import Child\n"
+        "class Grandchild(Child):\n"
+        "    @rx.var(cache=True)\n"
+        "    def value(self) -> int:\n"
+        "        return self.count + 1\n"
+        "app = rx.App()\n",
+        encoding="utf-8",
+    )
+    (package_dir / "child.py").write_text(
+        f"from .{app_package} import Parent\nclass Child(Parent):\n    pass\n",
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    monkeypatch.setattr(AppHarness, "_cached_app_state_modules", {})
+    monkeypatch.setattr(
+        AppHarness, "_base_registration_context", RegistrationContext.ensure_context()
+    )
+    monkeypatch.setattr(
+        reflex.utils.prerequisites, "initialize_frontend_dependencies", lambda: None
+    )
+    monkeypatch.setattr("reflex.app.is_testing_env", lambda: True)
+    monkeypatch.setattr(rx.App, "__call__", lambda self: None)
+
+    first = AppHarness.create(root=tmp_path, app_name=app_package)
+    restarted = AppHarness.create(root=tmp_path, app_name=app_package)
+    try:
+        try:
+            first._initialize_app()
+            old_module = first.app_module
+            assert old_module is not None
+        finally:
+            if first._registry_token is not None:
+                first.stop()
+        try:
+            restarted._initialize_app()
+            main = restarted.app_module
+            assert main is not None
+            assert main is not old_module
+            assert restarted.app_instance is main.app
+            assert main.Child is sys.modules[child_module].Child
+            assert main.Child.get_parent_state() is main.Parent
+            assert main.Grandchild.get_parent_state() is main.Child
+            assert (
+                main.Grandchild.get_full_name(),
+                "value",
+            ) in main.Parent._var_dependencies["count"]
+        finally:
+            if restarted._registry_token is not None:
+                restarted.stop()
+    finally:
+        for name in (app_module, child_module, app_package):
+            sys.modules.pop(name, None)
+
+
 def _harness_state(module: str) -> type:
     """Define a state class whose ``__module__`` is the given module.
 

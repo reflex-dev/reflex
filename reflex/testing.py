@@ -22,7 +22,7 @@ import threading
 import time
 import types
 from collections import defaultdict
-from collections.abc import Callable, Coroutine, Sequence
+from collections.abc import Callable, Coroutine, Iterator, Sequence
 from graphlib import CycleError, TopologicalSorter
 from importlib.util import find_spec
 from pathlib import Path
@@ -315,32 +315,84 @@ class AppHarness:
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
-            app_package = config.module.partition(".")[0]
-            self._restore_cached_app_module_states(
-                app_package, initialize_var_dependencies=False
+            app_module_name = config.module
+            app_package = app_module_name.partition(".")[0]
+            cached_classes = self._get_cached_app_module_classes(app_package)
+            reload_order, has_cycle = self._get_stale_state_module_order(
+                cached_classes,
+                new_registration_context,
+                reloading_module=app_module_name,
             )
+            # Let Python import interdependent modules together so main creates one App.
+            reimport_app = has_cycle or app_module_name in reload_order
+            if not reimport_app:
+                self._restore_cached_app_module_states(
+                    app_package, initialize_var_dependencies=False
+                )
             # Ensure we compile generated apps, and reload pre-existing app modules
             # that were already imported so they can re-register memo definitions.
-            should_reload_app = (
-                self.app_source is not None or config.module in sys.modules
+            should_reload_app = not reimport_app and (
+                self.app_source is not None or app_module_name in sys.modules
             )
-            self.app_instance, self.app_module = (
-                reflex.utils.prerequisites.get_and_validate_app(
-                    reload=should_reload_app
+            with (
+                self._uncache_app_package(app_package)
+                if reimport_app
+                else contextlib.nullcontext()
+            ):
+                self.app_instance, self.app_module = (
+                    reflex.utils.prerequisites.get_and_validate_app(
+                        reload=should_reload_app
+                    )
                 )
-            )
-            self._restore_cached_app_module_states(app_package)
-            self.app_asgi = self.app_instance()
+                if not reimport_app:
+                    self._restore_cached_app_module_states(app_package)
+                self.app_asgi = self.app_instance()
+
+    @staticmethod
+    def _get_app_package_module_names(app_package: str) -> list[str]:
+        """Find all loaded modules belonging to the app package.
+
+        Args:
+            app_package: Top-level package of the app.
+
+        Returns:
+            Loaded module names for the package.
+        """
+        prefix = f"{app_package}."
+        return [
+            name
+            for name in sys.modules
+            if name == app_package or name.startswith(prefix)
+        ]
+
+    @contextlib.contextmanager
+    def _uncache_app_package(self, app_package: str) -> Iterator[None]:
+        """Let the app package import afresh, restoring the cache on failure.
+
+        Args:
+            app_package: Top-level package of the app.
+
+        Yields:
+            Control while the package is being imported.
+        """
+        saved = {
+            name: sys.modules.pop(name)
+            for name in self._get_app_package_module_names(app_package)
+        }
+        try:
+            yield
+        except BaseException:
+            for name in self._get_app_package_module_names(app_package):
+                sys.modules.pop(name, None)
+            sys.modules.update(saved)
+            raise
 
     def _reload_state_module(self):
         """Forget the states of every module of the app's package, so they never reach the next app."""
         package = (
             self.app_module.__name__ if self.app_module else self.app_name
         ).partition(".")[0]
-        prefix = f"{package}."
-        for module in [
-            name for name in sys.modules if name == package or name.startswith(prefix)
-        ]:
+        for module in self._get_app_package_module_names(package):
             reload_state_module(module=module)
 
     def _cache_app_state_modules(self, app_package: str) -> None:
@@ -362,19 +414,39 @@ class AppHarness:
             key = (str(self.app_path.resolve()), app_package)
             self._cached_app_state_modules.setdefault(key, set()).update(module_names)
 
+    def _get_cached_app_module_classes(
+        self, app_package: str
+    ) -> dict[str, tuple[type[BaseState], ...]]:
+        """Find state definitions in the cached modules for this app.
+
+        Args:
+            app_package: Top-level package of the app.
+
+        Returns:
+            State classes by cached module name.
+        """
+        key = (str(self.app_path.resolve()), app_package)
+        return {
+            name: self._get_app_module_state_classes(name)
+            for name in self._cached_app_state_modules.get(key, ())
+        }
+
     @staticmethod
     def _get_stale_state_module_order(
         module_classes: dict[str, tuple[type[BaseState], ...]],
         context: RegistrationContext,
-    ) -> list[str]:
+        *,
+        reloading_module: str | None = None,
+    ) -> tuple[list[str], bool]:
         """Find stale modules and their descendants in parent-first order.
 
         Args:
             module_classes: Cached state classes defined in each app module.
             context: The current app registration context.
+            reloading_module: A module whose states are about to be replaced.
 
         Returns:
-            The cached modules to reload.
+            The modules to reload and whether their inheritance dependencies cycle.
         """
         parent_modules: dict[str, set[str]] = defaultdict(set)
         child_modules: dict[str, set[str]] = defaultdict(set)
@@ -389,8 +461,15 @@ class AppHarness:
                     parent_modules[module_name].add(parent_module)
                     child_modules[parent_module].add(module_name)
                 registered_parent = context.base_states.get(parent.get_full_name())
-                if registered_parent is not None and registered_parent is not parent:
+                if (
+                    registered_parent is not None and registered_parent is not parent
+                ) or (
+                    parent_module == reloading_module and parent_module != module_name
+                ):
                     stale_modules.add(module_name)
+
+        if not stale_modules:
+            return [], False
 
         pending = list(stale_modules)
         while pending:
@@ -404,15 +483,19 @@ class AppHarness:
         })
         # Dependencies between modules can cycle even though class inheritance cannot.
         # Keep reloading any remaining modules if no parent-first order exists.
-        with contextlib.suppress(CycleError):
+        try:
             sorter.prepare()
+        except CycleError:
+            has_cycle = True
+        else:
+            has_cycle = False
         order: list[str] = []
         while sorter.is_active():
             ready = sorter.get_ready()
             order.extend(ready)
             sorter.done(*ready)
         order.extend(sorted(stale_modules.difference(order)))
-        return order
+        return order, has_cycle
 
     def _restore_cached_app_module_states(
         self, app_package: str, *, initialize_var_dependencies: bool = True
@@ -423,23 +506,17 @@ class AppHarness:
             app_package: Top-level package name for the app being initialized.
             initialize_var_dependencies: Whether to rebuild cached var dependencies.
         """
-        key = (str(self.app_path.resolve()), app_package)
-        module_names = self._cached_app_state_modules.get(key, set())
-        if not module_names:
+        module_classes = self._get_cached_app_module_classes(app_package)
+        if not module_classes:
             return
 
         context = RegistrationContext.get()
-        module_classes = {
-            module_name: self._get_app_module_state_classes(module_name)
-            for module_name in module_names
-        }
-        if reload_order := self._get_stale_state_module_order(module_classes, context):
-            app_package_prefix = f"{app_package}."
+        reload_order, _ = self._get_stale_state_module_order(module_classes, context)
+        if reload_order:
             app_modules = [
                 module
-                for name, module in sys.modules.items()
-                if module is not None
-                and (name == app_package or name.startswith(app_package_prefix))
+                for name in self._get_app_package_module_names(app_package)
+                if (module := sys.modules.get(name)) is not None
             ]
             for module_name in reload_order:
                 reload_state_module(module=module_name)
