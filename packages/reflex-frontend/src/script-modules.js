@@ -442,7 +442,9 @@ const findRepeat = (importer, file, real) => {
  */
 const reach = (module) => {
   /** @type {Map<string, Read>} */
-  const read = new Map([[module, { file: module, real: realpathSync(module) }]]);
+  const read = new Map([
+    [module, { file: module, real: realpathSync(module) }],
+  ]);
   const reached = new Set([module]);
   for (const importer of read.values()) {
     const { file } = importer;
