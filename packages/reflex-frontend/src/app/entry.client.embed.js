@@ -1,9 +1,41 @@
-import { startTransition, createElement } from "react";
+import { startTransition, createElement, Fragment } from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import { HydratedRouter } from "react-router/dom";
 import env from "$/env.json";
 
 const selector = env.MOUNT_TARGET;
+
+// Resolves once the browser has the stylesheet, as React Router waits for a
+// route's stylesheets before showing it.
+const preloadStylesheet = (href) =>
+  new Promise((resolve) => {
+    const link = document.createElement("link");
+    link.rel = "preload";
+    link.as = "style";
+    link.href = href;
+    link.onload = link.onerror = () => {
+      link.remove();
+      resolve();
+    };
+    document.head.append(link);
+  });
+
+// Without <Links/>, a page renders the stylesheets its route module exports as
+// `links` itself, so they apply while it is shown and go when it is left.
+const pageComponent = async (page) => {
+  const links = page.links?.() ?? [];
+  if (!links.length) return page.default;
+  await Promise.all(links.map(({ href }) => preloadStylesheet(href)));
+  return () =>
+    createElement(
+      Fragment,
+      null,
+      ...links.map((link) =>
+        createElement("link", { key: link.href, ...link }),
+      ),
+      createElement(page.default),
+    );
+};
 
 if (selector) {
   const target = document.querySelector(selector);
@@ -34,7 +66,9 @@ if (selector) {
       .then(([, reactRouter, root, manifest]) => {
         const { createMemoryRouter, RouterProvider, Outlet } = reactRouter;
         const children = manifest.default.map(({ path, load }) => {
-          const lazy = async () => ({ Component: (await load()).default });
+          const lazy = async () => ({
+            Component: await pageComponent(await load()),
+          });
           if (path === "") return { index: true, lazy };
           return { path, lazy };
         });
