@@ -83,6 +83,34 @@ def test_compile_progress_ends_at_its_total(
     assert task["current"] == task["total"]
 
 
+@pytest.mark.parametrize("enable_state", [False, True])
+@pytest.mark.usefixtures("clean_registration_context", "preserve_memo_registries")
+def test_app_root_publishes_libraries_only_with_state(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    enable_state: bool,
+):
+    """Only an app with state receives dynamic components, so only it fills window.__reflex.
+
+    Args:
+        tmp_path: The temporary application directory.
+        monkeypatch: Fixture for selecting the application directory.
+        mocker: Fixture for avoiding frontend dependency installation.
+        enable_state: Whether the app has state.
+    """
+    monkeypatch.chdir(tmp_path)
+    config = rx.Config(app_name="app_root_libraries", plugins=[])
+    mocker.patch("reflex_base.config._get_config", return_value=config)
+    app = rx.App(enable_state=enable_state)
+    app.add_page(lambda: rx.el.div("hello"), route="index")
+    mocker.patch.object(app, "_get_frontend_packages")
+    compile_app_root = mocker.spy(compiler, "compile_app_root")
+    compiler.compile_app(app, dry_run=True, use_rich=False)
+
+    assert compile_app_root.call_args.kwargs == {"stateful": enable_state}
+
+
 @pytest.mark.parametrize("remove_assets_directory", [False, True])
 @pytest.mark.usefixtures("clean_registration_context")
 def test_compile_removes_deleted_app_assets(

@@ -313,7 +313,7 @@ def load_dynamic_serializer():
             merge_var_data=VarData.merge(
                 VarData(
                     imports={
-                        f"$/{constants.Dirs.STATE_PATH}": [
+                        f"$/{constants.Dirs.TRANSPORT_PATH}": [
                             imports.ImportVar(tag="evalReactComponent"),
                         ],
                         "react": [

@@ -197,7 +197,7 @@ def app_root_template(
         imports: The list of import statements.
         custom_codes: The set of custom code snippets.
         hooks: The dictionary of hooks.
-        window_libraries: The list of window libraries.
+        window_libraries: The list of window libraries, empty for an app without state.
         render: The dictionary of render functions.
         dynamic_imports: The set of dynamic imports.
         hydrate_fallback_export: The exported name of the hydrate-fallback memo module to re-export as ``HydrateFallback``, or None for no fallback.
@@ -227,12 +227,16 @@ def app_root_template(
         f'    "{lib_path}": {lib_alias},' for lib_alias, lib_path in window_libraries
     ])
 
-    window_imports_effect = f"""useEffect(() => {{
+    window_imports_effect = (
+        f"""useEffect(() => {{
     // Make contexts and state objects available globally for dynamic eval'd components
     window.__reflex = {{
       {window_imports_str}
     }};
   }}, []);"""
+        if window_libraries
+        else ""
+    )
     lazy_imports_setup = ""
     if lazy_window_libraries:
         loaders = "\n".join(
@@ -321,6 +325,65 @@ def theme_template(theme: str):
         Rendered theme file content as string.
     """
     return f"""export default {theme}"""
+
+
+_CLIENT_STATE_STORE = """// Dispatch updates happen outside render; useSyncExternalStore keeps reads
+// consistent while notifying only consumers of the changed substate.
+function createStateStore(initialState) {
+  const state = {};
+  const listeners = new Map();
+  const dispatchers = {};
+  const notify = (substateName) =>
+    listeners.get(substateName)?.forEach((listener) => listener());
+  // Hot reload passes the recompiled initial state: new substates are added,
+  // and existing substates gain new fields at their defaults while keeping
+  // their live values.
+  const mergeInitialState = (nextInitialState) => {
+    for (const [substateName, value] of Object.entries(nextInitialState)) {
+      const liveState = state[substateName];
+      if (liveState !== undefined) {
+        if (Object.keys(value).some((key) => !Object.hasOwn(liveState, key))) {
+          state[substateName] = { ...value, ...liveState };
+          notify(substateName);
+        }
+        continue;
+      }
+      state[substateName] = value;
+      dispatchers[substateName] = (delta) => {
+        const currentState = state[substateName];
+        const nextState = applyDelta(currentState, delta);
+        if (nextState === currentState) return;
+        state[substateName] = nextState;
+        notify(substateName);
+      };
+      notify(substateName);
+    }
+  };
+  mergeInitialState(initialState);
+
+  return {
+    dispatchers,
+    mergeInitialState,
+    getSnapshot: (substateName) => state[substateName],
+    subscribe: (substateName, listener) => {
+      let substateListeners = listeners.get(substateName);
+      if (!substateListeners) {
+        substateListeners = new Set();
+        listeners.set(substateName, substateListeners);
+      }
+      substateListeners.add(listener);
+      return () => substateListeners.delete(listener);
+    },
+  };
+}
+
+function ClientStateProvider({ children }) {
+  const [store] = useState(() => createStateStore(initialState));
+  useEffect(() => store.mergeInitialState(initialState), [store, initialState]);
+  return createElement(StateStoreProviders, { children, store });
+}
+
+"""
 
 
 def context_template(
@@ -457,8 +520,40 @@ if (typeof window !== "undefined") {
         else ""
     )
 
+    # Without state the app never connects, so nothing here imports
+    # utils/transport.js and the build leaves it out.
+    if state_name:
+        runtime_imports_str = (
+            f'import {{ ReflexEvent, refs }} from "$/{constants.Dirs.STATE_PATH}"\n'
+            "import { applyDelta, hydrateClientStorage, useEventLoop, warmUpTransport } "
+            f'from "$/{constants.Dirs.TRANSPORT_PATH}"'
+        )
+        event_loop_str = """  const dispatch = useContext(DispatchContext)
+  const [addEventsLocal, connectErrors] = useEventLoop(
+    dispatch,
+    initialEvents,
+    clientStorage,
+  )"""
+        warm_up_str = """
+warmUpTransport();
+"""
+        client_state_store_str = _CLIENT_STATE_STORE
+        state_provider_str = """export const StateProvider =
+  typeof document === "undefined" ? ServerStateProvider : ClientStateProvider;"""
+    else:
+        runtime_imports_str = (
+            f'import {{ refs, useLocalEventLoop }} from "$/{constants.Dirs.STATE_PATH}"'
+        )
+        event_loop_str = (
+            """  const [addEventsLocal, connectErrors] = useLocalEventLoop()"""
+        )
+        warm_up_str = ""
+        client_state_store_str = ""
+        state_provider_str = """// Without state the client never applies a delta either.
+export const StateProvider = ServerStateProvider;"""
+
     return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ useContext, useMemo, useState, createElement, useEffect }} from "react"
-import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
+{runtime_imports_str}
 import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext, registerApp, eventLoop }} from "$/utils/context-registry"
 import {{ jsx }} from "@emotion/react";
 {disable_owner_stacks_str}
@@ -488,7 +583,7 @@ registerApp({{
   isDevMode,
   defaultColorMode,
 }});
-
+{warm_up_str}
 export function addEvents(events, args, event_actions) {{
   return eventLoop.addEvents(events, args, event_actions);
 }}
@@ -532,12 +627,7 @@ export function ClientSide(component, name) {{
 }}
 
 export function EventLoopProvider({{ children }}) {{
-  const dispatch = useContext(DispatchContext)
-  const [addEventsLocal, connectErrors] = useEventLoop(
-    dispatch,
-    initialEvents,
-    clientStorage,
-  )
+{event_loop_str}
   // Publish the dispatchers so JSX literals constructed outside the
   // React-tree path (e.g. ``ErrorBoundary.onError``) can call ``addEvents``.
   eventLoop.addEvents = addEventsLocal;
@@ -553,68 +643,12 @@ export function EventLoopProvider({{ children }}) {{
   );
 }}
 
-// Dispatch updates happen outside render; useSyncExternalStore keeps reads
-// consistent while notifying only consumers of the changed substate.
-function createStateStore(initialState) {{
-  const state = {{}};
-  const listeners = new Map();
-  const dispatchers = {{}};
-  const notify = (substateName) =>
-    listeners.get(substateName)?.forEach((listener) => listener());
-  // Hot reload passes the recompiled initial state: new substates are added,
-  // and existing substates gain new fields at their defaults while keeping
-  // their live values.
-  const mergeInitialState = (nextInitialState) => {{
-    for (const [substateName, value] of Object.entries(nextInitialState)) {{
-      const liveState = state[substateName];
-      if (liveState !== undefined) {{
-        if (Object.keys(value).some((key) => !Object.hasOwn(liveState, key))) {{
-          state[substateName] = {{ ...value, ...liveState }};
-          notify(substateName);
-        }}
-        continue;
-      }}
-      state[substateName] = value;
-      dispatchers[substateName] = (delta) => {{
-        const currentState = state[substateName];
-        const nextState = applyDelta(currentState, delta);
-        if (nextState === currentState) return;
-        state[substateName] = nextState;
-        notify(substateName);
-      }};
-      notify(substateName);
-    }}
-  }};
-  mergeInitialState(initialState);
-
-  return {{
-    dispatchers,
-    mergeInitialState,
-    getSnapshot: (substateName) => state[substateName],
-    subscribe: (substateName, listener) => {{
-      let substateListeners = listeners.get(substateName);
-      if (!substateListeners) {{
-        substateListeners = new Set();
-        listeners.set(substateName, substateListeners);
-      }}
-      substateListeners.add(listener);
-      return () => substateListeners.delete(listener);
-    }},
-  }};
-}}
-
-function StateStoreProviders({{ children, store }}) {{
+{client_state_store_str}function StateStoreProviders({{ children, store }}) {{
   return createElement(
     StateStoreContext,
     {{ value: store }},
     createElement(DispatchContext, {{ value: store.dispatchers }}, children),
   );
-}}
-
-function ClientStateProvider({{ children }}) {{
-  const [store] = useState(() => createStateStore(initialState));
-  useEffect(() => store.mergeInitialState(initialState), [store, initialState]);
-  return createElement(StateStoreProviders, {{ children, store }});
 }}
 
 // The server renders once and never applies a delta, so it only reads the
@@ -629,8 +663,7 @@ function ServerStateProvider({{ children }}) {{
   return createElement(StateStoreProviders, {{ children, store: serverStateStore }});
 }}
 
-export const StateProvider =
-  typeof document === "undefined" ? ServerStateProvider : ClientStateProvider;"""
+{state_provider_str}"""
 
 
 def component_template(component: Component):
@@ -892,9 +925,13 @@ function prodReactPrebundle() {
     react_compiler_plugin = "    reactCompiler(),\n" if react_compiler else ""
     return rf"""import {{ fileURLToPath, URL }} from "url";
 import {{ reactRouter }} from "@react-router/dev/vite";
-import {{ defineConfig }} from "vite";
+import {{ defineConfig, normalizePath }} from "vite";
 import safariCacheBustPlugin from "./vite-plugin-safari-cachebust.js";
 {react_compiler_import}
+const transportModule = normalizePath(
+  fileURLToPath(new URL("./utils/transport.js", import.meta.url)),
+);
+
 // Ensure that bun always uses the react-dom/server.node functions.
 function alwaysUseReactDomServerNode() {{
   return {{
@@ -970,6 +1007,12 @@ export default defineConfig((config) => ({{
     cssMinify: {"true" if minify else "false"},
     sourcemap: {"true" if sourcemap is True else "false" if sourcemap is False else repr(sourcemap)},
     rollupOptions: {{
+      // utils/transport.js runs nothing when it loads, so an app that never
+      // calls into it (one without state) builds without it and socket.io.
+      // utils/state.js re-exports it, which would keep it otherwise.
+      treeshake: {{
+        moduleSideEffects: (id) => id !== transportModule,
+      }},
       onwarn(warning, warn) {{
         if (warning.code === "EVAL" && warning.id && warning.id.endsWith("state.js")) return;
         warn(warning);

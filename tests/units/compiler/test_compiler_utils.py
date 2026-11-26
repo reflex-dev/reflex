@@ -458,6 +458,7 @@ def test_bundled_libraries_artifact_round_trip(
             "$/utils/context",
             f"$/{constants.Dirs.UTILS}/context-registry",
             "$/utils/state",
+            "$/utils/transport",
             "@radix-ui/themes",
         ]
 

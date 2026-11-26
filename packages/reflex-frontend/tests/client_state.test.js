@@ -594,11 +594,11 @@ test("CLIENT_STATE_REF matches the Python constant", () => {
   expect(declared[1]).toBe(CLIENT_STATE_REF);
 });
 
-test("state.js publishes the store through the shared constant", () => {
+test("runtime.js publishes the store through the shared constant", () => {
   // Guards a regression back to a hardcoded copy: the publisher outside the
   // React tree has to go through the constant, not re-spell the key.
-  const stateJs = readFileSync(`${__WEB_ROOT__}utils/state.js`, "utf8");
+  const runtimeJs = readFileSync(`${__WEB_ROOT__}utils/runtime.js`, "utf8");
 
-  expect(stateJs).toContain("refs[CLIENT_STATE_REF] = getClientStore()");
-  expect(stateJs).not.toContain(`"${CLIENT_STATE_REF}"`);
+  expect(runtimeJs).toContain("refs[CLIENT_STATE_REF] = getClientStore()");
+  expect(runtimeJs).not.toContain(`"${CLIENT_STATE_REF}"`);
 });

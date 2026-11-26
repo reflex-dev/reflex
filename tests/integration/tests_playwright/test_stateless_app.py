@@ -1,39 +1,81 @@
 """Integration tests for a stateless app."""
 
 from collections.abc import Generator
+from urllib.parse import urlsplit
 
 import httpx2
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import (
+    ConsoleMessage,
+    Page,
+    Request,
+    Response,
+    WebSocket,
+    expect,
+)
 from reflex_base.config import get_config
 from reflex_base.constants import Endpoint
 
-from reflex.testing import AppHarness
+from reflex.testing import AppHarness, AppHarnessProd
 
 
 def StatelessApp():
-    """A stateless app that renders a heading."""
+    """A stateless app with client state, scripts and links."""
     import reflex as rx
 
+    menu = rx.client_state(False)
+
     def index():
-        return rx.heading("This is a stateless app")
+        return rx.el.div(
+            rx.heading("This is a stateless app"),
+            rx.el.button("Menu", id="menu-toggle", on_click=menu.set(~menu.value)),
+            rx.cond(menu.value, rx.el.nav("Menu open", id="menu")),
+            rx.el.input(id="function-output"),
+            rx.el.button(
+                "Function",
+                id="call-function",
+                on_click=rx.call_function(
+                    "() => 6 * 7",
+                    callback=lambda result: rx.set_value("function-output", result),
+                ),
+            ),
+            rx.el.input(id="script-output"),
+            rx.el.button(
+                "Script",
+                id="call-script",
+                on_click=rx.call_script(
+                    "'script ' + typeof navigate",
+                    callback=lambda result: rx.set_value("script-output", result),
+                ),
+            ),
+            rx.link("Next", href="/next", id="next-link"),
+            rx.el.button("Redirect", id="redirect", on_click=rx.redirect("/next")),
+        )
+
+    def next_page():
+        return rx.heading("Next page", id="next-heading")
 
     app = rx.App(enable_state=False)
     app.add_page(index)
+    app.add_page(next_page, route="/next")
 
 
 @pytest.fixture(scope="module")
-def stateless_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
-    """Create a stateless app AppHarness.
+def stateless_app(
+    app_harness_env: type[AppHarness], tmp_path_factory: pytest.TempPathFactory
+) -> Generator[AppHarness, None, None]:
+    """Create a dev or prod harness for the stateless app.
 
     Args:
+        app_harness_env: AppHarness (dev) or AppHarnessProd (prod).
         tmp_path_factory: pytest fixture for creating temporary directories.
 
     Yields:
         AppHarness: A harness for testing the stateless app.
     """
-    with AppHarness.create(
+    with app_harness_env.create(
         root=tmp_path_factory.mktemp("stateless_app"),
+        app_name=f"statelessapp_{app_harness_env.__name__.lower()}",
         app_source=StatelessApp,
     ) as harness:
         yield harness
@@ -59,3 +101,91 @@ def test_statelessness(stateless_app: AppHarness, page: Page):
 
     page.goto(stateless_app.frontend_url)
     expect(page.get_by_role("heading")).to_have_text("This is a stateless app")
+
+
+def test_frontend_events_run_without_a_connection(
+    stateless_app: AppHarness, page: Page
+):
+    """Client state, scripts with callbacks, links and redirects work, and nothing connects.
+
+    Args:
+        stateless_app: A harness for testing the stateless app.
+        page: A Playwright page.
+    """
+    assert stateless_app.frontend_url is not None
+    # The dev server's own hot reload socket is not the backend's.
+    backend = urlsplit(get_config().api_url).port
+    websockets: list[str] = []
+    backend_requests: list[str] = []
+    errors: list[str] = []
+
+    def on_websocket(websocket: WebSocket):
+        if urlsplit(websocket.url).port == backend:
+            websockets.append(websocket.url)
+
+    # The polling transport connects over HTTP.
+    def on_request(request: Request):
+        if urlsplit(request.url).port == backend:
+            backend_requests.append(request.url)
+
+    def on_console(message: ConsoleMessage):
+        if message.type == "error":
+            errors.append(message.text)
+
+    page.on("websocket", on_websocket)
+    page.on("request", on_request)
+    page.on("console", on_console)
+
+    page.goto(stateless_app.frontend_url)
+    toggle = page.locator("#menu-toggle")
+    expect(toggle).to_be_visible()
+
+    toggle.click()
+    expect(page.locator("#menu")).to_have_text("Menu open")
+    toggle.click()
+    expect(page.locator("#menu")).to_have_count(0)
+
+    # Compiled callbacks are strings that call ReflexEvent and addEvents.
+    page.locator("#call-function").click()
+    expect(page.locator("#function-output")).to_have_value("42")
+    page.locator("#call-script").click()
+    expect(page.locator("#script-output")).to_have_value("script function")
+
+    page.locator("#next-link").click()
+    expect(page.locator("#next-heading")).to_have_text("Next page")
+    page.go_back()
+    page.locator("#redirect").click()
+    expect(page.locator("#next-heading")).to_have_text("Next page")
+
+    assert websockets == []
+    assert backend_requests == []
+    assert errors == []
+
+
+def test_prod_build_loads_no_transport(stateless_app: AppHarness, page: Page):
+    """A prod build of an app without state loads neither the transport nor socket.io.
+
+    Args:
+        stateless_app: A harness for testing the stateless app.
+        page: A Playwright page.
+    """
+    if not isinstance(stateless_app, AppHarnessProd):
+        pytest.skip("the dev server serves every module, it does not tree-shake")
+    assert stateless_app.frontend_url is not None
+    scripts: list[Response] = []
+
+    def on_response(response: Response):
+        if urlsplit(response.url).path.endswith(".js"):
+            scripts.append(response)
+
+    page.on("response", on_response)
+    page.goto(stateless_app.frontend_url)
+    page.locator("#next-link").click()
+    expect(page.locator("#next-heading")).to_have_text("Next page")
+    page.wait_for_load_state("networkidle")
+
+    bodies = [response.text() for response in scripts]
+    assert bodies
+    # Strings of utils/transport.js and of engine.io-client.
+    for marker in ("A new version of this app is available.", "xhr poll error"):
+        assert not any(marker in body for body in bodies), marker

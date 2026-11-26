@@ -132,6 +132,8 @@ async function browserSession({
       return current;
     },
   });
+  // The context module of an app with state starts the transport.
+  runtime.warmUpTransport();
   return {
     runtime,
     socket,

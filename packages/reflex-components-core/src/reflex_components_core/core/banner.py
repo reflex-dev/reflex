@@ -70,7 +70,7 @@ class WebsocketTargetURL(Var):
             _var_data=VarData(
                 imports={
                     "$/env.json": [ImportVar(tag="env", is_default=True)],
-                    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="getBackendURL")],
+                    f"$/{Dirs.TRANSPORT_PATH}": [ImportVar(tag="getBackendURL")],
                 },
             ),
             _var_type=WebsocketTargetURL,
@@ -346,7 +346,7 @@ class BackendDisabled(Div):
                     "useEffect(() => { setBackendDisabled(isBackendDisabled()); }, []);": None,
                 },
                 imports={
-                    f"$/{constants.Dirs.STATE_PATH}": [
+                    f"$/{constants.Dirs.TRANSPORT_PATH}": [
                         ImportVar(tag="isBackendDisabled")
                     ],
                 },
