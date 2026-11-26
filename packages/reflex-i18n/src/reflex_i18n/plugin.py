@@ -164,12 +164,15 @@ def _reset_provider() -> None:
         cached.cache_clear()
 
 
-def _localized_page(component: Any, locale: str) -> Any:
+def _localized_page(
+    component: Any, locale: str, source_module: str | None = None
+) -> Any:
     """Wrap a page component so it renders in a fixed locale (static catalog).
 
     Args:
         component: The original page component or component callable.
         locale: The locale to render this route in.
+        source_module: The module the page is defined in, if known.
 
     Returns:
         A component callable producing the locale-wrapped tree.
@@ -195,6 +198,11 @@ def _localized_page(component: Any, locale: str) -> Any:
             page = LocalePage.create(page)
         return LocaleRoute.create(page, locale=locale, catalog=_catalog_var(locale))
 
+    if source_module is not None:
+        # The page's memos are compiled into a module named after the page
+        # callable's: one per page and locale, next to the page's own, instead
+        # of one for every localized page that each of them would load.
+        render.__module__ = f"{source_module}.{locale}"
     return render
 
 
@@ -431,7 +439,11 @@ class I18nPlugin(Plugin):
                     # Default-at-root: the app's own page already serves this.
                     continue
                 add_page(
-                    _localized_page(page.component, locale),
+                    _localized_page(
+                        page.component,
+                        locale,
+                        getattr(page, "_source_module", None),
+                    ),
                     route=localized,
                     title=page.title,
                     description=page.description,

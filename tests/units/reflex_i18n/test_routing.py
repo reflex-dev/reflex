@@ -199,6 +199,43 @@ def test_expand_routes_fans_out_non_default_locales():
         assert page_text in str(rendered.children[0])
 
 
+def test_localized_pages_compile_their_memos_next_to_their_own_page():
+    """Each page in each locale gets a memo module of its own, not a shared one."""
+    from reflex_base.utils import memo_paths
+
+    from reflex.app import UnevaluatedPage
+
+    plugin = I18nPlugin(
+        locales=["de", "en", "fr"], default_locale="de", routing=PathPrefixRouting()
+    )
+    ctx = _fake_context([
+        UnevaluatedPage(
+            component=lambda: rx.text("A"), route="a", _source_module="myapp.pages.a"
+        ),
+        UnevaluatedPage(
+            component=lambda: rx.text("B"), route="b", _source_module="myapp.pages.b"
+        ),
+    ])
+    plugin.expand_routes(add_page=ctx["add_page"], pages=ctx["pages"])  # pyright: ignore[reportCallIssue]
+
+    modules = {
+        route: memo_paths.capture_source_module(kwargs["component"])
+        for route, kwargs in ctx["calls"]
+    }
+    assert modules == {
+        "/en/a": "myapp.pages.a.en",
+        "/fr/a": "myapp.pages.a.fr",
+        "/en/b": "myapp.pages.b.en",
+        "/fr/b": "myapp.pages.b.fr",
+    }
+    assert memo_paths.module_to_mirrored_segments("myapp.pages.a.en") == (
+        "myapp",
+        "pages",
+        "a",
+        "en",
+    )
+
+
 @pytest.mark.parametrize("auto_memoize", [True, False])
 def test_localized_page_renders_its_hooks_inside_its_locale_route(
     monkeypatch: pytest.MonkeyPatch, auto_memoize: bool
