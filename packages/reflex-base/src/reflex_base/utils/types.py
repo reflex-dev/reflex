@@ -1296,10 +1296,13 @@ def does_obj_satisfy_typed_dict(
     if not isinstance(obj, Mapping):
         return False
 
-    key_names_to_values = get_type_hints(cls)
-    required_keys: frozenset[str] = getattr(cls, "__required_keys__", frozenset())
-    is_closed = getattr(cls, "__closed__", False)
-    extra_items_type = getattr(cls, "__extra_items__", Any)
+    typed_dict = get_origin_og(cls) or cls
+    key_names_to_values = get_typed_dict_field_types(cls)
+    required_keys: frozenset[str] = getattr(
+        typed_dict, "__required_keys__", frozenset()
+    )
+    is_closed = getattr(typed_dict, "__closed__", False)
+    extra_items_type = getattr(typed_dict, "__extra_items__", Any)
     if any(extra_items_type is sentinel for sentinel in _NO_EXTRA_ITEMS_SENTINELS):
         # Extra keys of a non-closed TypedDict are unconstrained; a closed
         # one already rejected them above.
@@ -1529,6 +1532,14 @@ def _isinstance(
         )
 
     if nested > 0 and args:
+        if typing_extensions.is_typeddict(origin):
+            return does_obj_satisfy_typed_dict(
+                obj,
+                cls,
+                nested=nested,
+                treat_var_as_type=treat_var_as_type,
+                treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+            )
         if origin is list:
             expected_class = Sequence if treat_mutable_obj_as_immutable else list
             return isinstance(obj, expected_class) and _all_isinstance(

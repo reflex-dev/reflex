@@ -626,6 +626,25 @@ class _GenericBase(TypedDict, Generic[_FieldT]):
     maybe: _FieldT | None
 
 
+def test_isinstance_resolves_generic_typed_dict_fields():
+    """Generic TypedDict specializations validate their resolved field types."""
+    assert _isinstance(
+        {"value": "text", "maybe": None}, _GenericBase[str], nested=1
+    )
+    assert _isinstance(
+        {"value": 1, "maybe": 2}, _GenericBase[int], nested=1
+    )
+    assert not _isinstance(
+        {"value": 1, "maybe": None}, _GenericBase[str], nested=1
+    )
+    assert not _isinstance(
+        {"value": "text", "maybe": None}, _GenericBase[int], nested=1
+    )
+    assert _isinstance(
+        {"value": 1, "maybe": None}, _GenericBase[int] | None, nested=1
+    )
+
+
 class _GenericMiddle(_GenericBase[list[_ItemT]], Generic[_ItemT]):
     flag: bool
 
