@@ -1,0 +1,5 @@
+@import url('./party.css') screen;
+.c {
+  background: url("img/my bg.png");
+  background-image: image-set("img/hi.png" 1x, url(img/bg.png) 2x);
+}

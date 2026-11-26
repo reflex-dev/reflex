@@ -28,9 +28,11 @@ from reflex_base.components.memo import (
     reset_memo_component_classes,
 )
 from reflex_base.config import get_config
+from reflex_base.constants.base import Javascript
 from reflex_base.constants.compiler import PageNames, ResetStylesheet
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
+from reflex_base.js.modules import _app_modules
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
 from reflex_base.registry import RegistrationContext, _default_bundled_libraries
 from reflex_base.utils import log, memo_paths
@@ -1285,6 +1287,32 @@ def _read_stateful_pages_marker() -> list[str] | None:
         raise
 
 
+def _install_frontend_packages(
+    app: App, imports: ParsedImportDict
+) -> list[tuple[str, str]]:
+    """Install the frontend packages, with those the app's JavaScript modules import.
+
+    The modules are read with the bundler's parser, which the install provides,
+    so the first compile of an app that imports one installs before reading
+    them, and again with their packages. Later compiles find the parser and
+    install once, which is skipped when the packages have not changed.
+
+    Args:
+        app: The app.
+        imports: The imports of the compiled components.
+
+    Returns:
+        The outputs of the modules: ``utils/scripts.js`` and their type stubs.
+    """
+    script_modules = _app_modules()
+    vite = get_web_dir() / Javascript.NODE_MODULES / "vite"
+    if script_modules and not vite.is_dir():
+        app._get_frontend_packages(imports)
+    outputs, script_imports = utils.compile_script_modules(script_modules)
+    app._get_frontend_packages(utils.merge_imports(imports, script_imports))
+    return outputs
+
+
 def compile_app(
     app: App,
     *,
@@ -1611,7 +1639,7 @@ def compile_app(
         log.timing(logger, "Install Frontend Packages"),
         otel.span("reflex.compile.install_frontend_packages"),
     ):
-        app._get_frontend_packages(all_imports)
+        compile_results.extend(_install_frontend_packages(app, all_imports))
 
     frontend_skeleton.update_react_router_config(
         prerender_routes=prerender_routes,

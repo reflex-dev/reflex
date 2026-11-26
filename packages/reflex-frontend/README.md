@@ -17,7 +17,9 @@ In a checkout of the repository there is no embedded copy: reflex-base reads
 `src/` in place, so the next `reflex init` copies an edit without a rebuild.
 
 Everything in `src/` ships to every app, including the build tooling an app
-runs (`compress-static.js`, the PostCSS config, the Vite plugins). Tests,
+runs (`compress-static.js`, `script-modules.js`, which the compiler runs to read
+the JavaScript modules an app imports from Python, the PostCSS config, the Vite
+plugins). Tests,
 fixtures and this package's own lint and type-check setup stay outside it.
 
 A change under `src/` is a change to reflex-base: its news fragment goes in
@@ -47,15 +49,17 @@ without it appearing in its arguments. What there is, and where it is pinned:
 
 - **Module-level state in `utils/state.js`**: the event queue, the session
   token, the socket warmed up before React mounts, the record of sent
-  localStorage values. Every mounted event loop and every drain shares them.
-  A test that needs a clean copy reloads the module (`vi.resetModules()`, as
+  localStorage values, the app's JavaScript modules loaded so far. Every
+  mounted event loop and every drain shares them. A test that needs a clean
+  copy reloads the module (`vi.resetModules()`, as
   `tests/state_connection.test.js` does). Code that awaits must not assume the
   queue or the socket is as it left them.
 - **Work done on import**: `utils/state.js` creates the cookie reader, always;
   publishes the client state store on `refs`, when there is a `document`; and
-  starts a socket transport, when there is a `window`. A production build
-  evaluates every module in node to prerender pages, so anything added here has
-  to load without either. `tests/public_api.test.js` imports each module in
+  starts a socket transport and loading the JavaScript modules the app imports
+  from Python (`utils/scripts.js`), when there is a `window`. A production
+  build evaluates every module in node to prerender pages, so anything added
+  here has to load without either. `tests/public_api.test.js` imports each module in
   node to keep it that way.
 - **Script scope**: event code sent by the backend (`rx.call_script`, event
   callbacks) runs through `runScript` in `utils/state.js`, which compiles it
@@ -94,6 +98,14 @@ A few modules import packages that are not declared here yet.
 `vite-plugin-react-compiler.js` (babel) belong to an optional component or
 plugin, which installs the package. `app/routes.js` imports `@react-router/dev`
 and `@react-router/fs-routes`, which every app installs as dev dependencies.
+`script-modules.js` imports rolldown's parser through `vite`, another of them;
+here vitest brings both.
+
+What `script-modules.js` prints is a contract with the compiler, which reads
+it with `_read_script_modules` in `reflex/compiler/utils.py` and rejects output
+of any other `format` or shape. Change its `format` with its shape, and the
+TypedDicts there with both; `test_read_script_modules_contract` runs the real
+script through that parser.
 
 ## Before this can be published
 

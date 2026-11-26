@@ -2110,10 +2110,16 @@ class App(MiddlewareMixin, LifespanMixin):
             and package_name not in dev_dependencies
             and any(tag.install for tag in tags)
         }
-        pinned = {i.rpartition("@")[0] for i in page_imports if "@" in i}
+        frontend_packages = get_config().frontend_packages
+        # An unpinned import of a package pinned elsewhere would make the
+        # package manager also fetch it by name, so only the pin is installed.
+        pinned = {
+            i.rpartition("@")[0]
+            for i in (*page_imports, *frontend_packages)
+            if "@" in i
+        }
         page_imports = {i for i in page_imports if i not in pinned}
 
-        frontend_packages = get_config().frontend_packages
         filtered_frontend_packages = []
         for package in frontend_packages:
             if package in page_imports:

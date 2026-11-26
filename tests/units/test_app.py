@@ -3766,6 +3766,38 @@ def test_get_frontend_packages_keeps_local_and_git_specifiers_intact(
     assert install_set == set(specifiers)
 
 
+def test_get_frontend_packages_lets_frontend_packages_pin_an_import(
+    mocker: MockerFixture,
+):
+    """A package imported unpinned installs once, as ``frontend_packages`` pins it.
+
+    Adding both the name and the pinned specifier makes the package manager
+    fetch the name from the registry, which fails for a local package.
+    """
+    conf = rx.Config(
+        app_name="testing",
+        frontend_packages=["local-pkg@file:../local-pkg", "@scope/pkg@2.0.0"],
+    )
+    mocker.patch("reflex.app.get_config", return_value=conf)
+    install_frontend_packages = mocker.patch(
+        "reflex.app.js_runtimes.install_frontend_packages"
+    )
+
+    app = App(theme=None)
+    app._get_frontend_packages({
+        "local-pkg": {ImportVar(tag=None, render=False)},
+        "@scope/pkg/subpath": {ImportVar(tag="Widget")},
+        "other-pkg": {ImportVar(tag="Other")},
+    })
+
+    install_set, _ = install_frontend_packages.call_args.args
+    assert install_set == {
+        "local-pkg@file:../local-pkg",
+        "@scope/pkg@2.0.0",
+        "other-pkg",
+    }
+
+
 def test_get_frontend_packages_maps_subpath_of_local_package_to_its_specifier(
     mocker: MockerFixture,
 ):

@@ -79,6 +79,9 @@ jobs:
       PYTHONUNBUFFERED: 1
       COV: ${{ matrix.coverage && '--cov --no-cov-on-fail --cov-report=' || '' }}
       REFLEX_BENCH_UNCHANGED: ${{ needs.changes.outputs.bench != 'true' && '1' || '' }}
+      # Where the frontend package's dependencies are installed (below), the
+      # tests that run its scripts with them fail rather than skip without them.
+      REFLEX_TEST_REQUIRE_FRONTEND: ${{ matrix.os == 'ubuntu-latest' && '1' || '' }}
 
     # Service containers to run with `runner-job`
     services:
@@ -120,6 +123,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           run-uv-sync: true
+      # The tests that read modules with its parser need it; Linux legs only,
+      # which keeps the Windows legs as they were.
+      - name: Install the frontend package's dependencies
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: npm --prefix packages/reflex-frontend ci
 
       - name: Run unit tests without db dependencies
         run: |

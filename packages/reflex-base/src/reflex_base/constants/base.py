@@ -42,6 +42,11 @@ class Dirs(SimpleNamespace):
     CLIENT_STATE_PATH = UTILS + "/client_state"
     # The module defining `reflex`, the API JavaScript reaches Reflex through.
     REFLEX_API_PATH = UTILS + "/reflex"
+    # The index of the JavaScript modules an app imports from Python.
+    SCRIPTS_PATH = UTILS + "/scripts"
+    # The directory holding a link to the app's package, through which the
+    # bundler reads those modules where they are.
+    SCRIPT_MODULES_PATH = UTILS + "/script_modules"
     # The name of the output directory.
     BUILD_DIR = "build"
     # The name of the static files directory.

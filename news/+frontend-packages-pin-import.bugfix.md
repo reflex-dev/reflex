@@ -1,0 +1,1 @@
+A package pinned in `frontend_packages`, such as `my-lib@file:../my-lib` or `my-lib@1.2.3`, is installed only by that pin when a component or a JavaScript module imports it by name; the package manager no longer also fetches it unpinned from the registry, which failed for a local package.

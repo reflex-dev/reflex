@@ -14,6 +14,7 @@ import { app, eventLoop } from "$/utils/context-registry";
 // This module's own exports, passed to server-provided scripts by runScript.
 import * as stateExports from "$/utils/state";
 import { reflex } from "$/utils/reflex";
+import scriptModules from "$/utils/scripts";
 import {
   CLIENT_STATE_REF,
   getClientState,
@@ -633,6 +634,96 @@ const runScript = (code, addEvents, socket, navigate, params) => {
 };
 
 /**
+ * Each JavaScript module the app imports from Python whose load has settled,
+ * by the module's Python name: its namespace, or the error it failed with.
+ * @type {Record<string, {namespace: Record<string, any>} | {error: any}>}
+ */
+const settledScriptModules = {};
+/**
+ * The load of each of those modules that has started, by the same name.
+ * @type {Record<string, Promise<void>>}
+ */
+const scriptModuleLoads = {};
+
+/**
+ * Load a JavaScript module the app imports from Python, once.
+ * @param {string} module The module's Python name.
+ * @returns {Promise<void>} Resolves once the module has loaded or failed to.
+ */
+const loadScriptModule = (module) =>
+  (scriptModuleLoads[module] ??= scriptModules[module]().then(
+    (namespace) => {
+      settledScriptModules[module] = { namespace };
+    },
+    (error) => {
+      settledScriptModules[module] = { error };
+    },
+  ));
+
+// Load the app's modules with the page, so that a module call rarely waits for
+// one. An app that imports no module loads nothing. A module that fails to load
+// is reported when one of its functions is called.
+if (typeof window !== "undefined") {
+  for (const module of Object.keys(scriptModules)) {
+    void loadScriptModule(module);
+  }
+}
+
+/**
+ * Get the load a module call waits for before it runs.
+ * @param {{name: string, payload: any}} event An event.
+ * @returns {Promise<void> | undefined} The load of the module the event calls a
+ * function of, while it loads; undefined for any other event.
+ */
+const pendingModuleLoad = ({ name, payload }) =>
+  name === "_call_js" &&
+  Object.hasOwn(scriptModules, payload.module) &&
+  !Object.hasOwn(settledScriptModules, payload.module)
+    ? loadScriptModule(payload.module)
+    : undefined;
+
+/**
+ * Call an exported function of a JavaScript module the app imports from
+ * Python, once its module has loaded or failed to. The modules are bundled, so
+ * nothing is evaluated: the event names the module and the function, and
+ * carries the arguments as JSON.
+ *
+ * A promise the function returns is not awaited, as a script's is not: it can
+ * wait on the user, and the events after the call do not wait for it.
+ * @param {{module: string, function: string, args: any[]}} payload The call.
+ */
+const callModuleFunction = ({ module, function: name, args }) => {
+  if (!Object.hasOwn(scriptModules, module)) {
+    throw new TypeError(
+      `Cannot call ${module}.${name}: the frontend does not include the JavaScript module ${module}, as when Python first imports it inside an event handler, after the app compiled. Import it at the top of a Python module that the app imports when it loads.`,
+    );
+  }
+  const settled = settledScriptModules[module];
+  if ("error" in settled) {
+    throw settled.error;
+  }
+  const fn = settled.namespace[name];
+  if (typeof fn !== "function") {
+    throw new TypeError(
+      `Cannot call ${module}.${name}: the JavaScript module ${module} exports no function named ${name}. Export a function named ${name} from it, or correct the name in Python.`,
+    );
+  }
+  fn(...args);
+};
+
+/**
+ * Report an error thrown by code an event ran, as an uncaught error would be.
+ * @param {string} name The event's name, logged with the error.
+ * @param {any} error The error.
+ */
+const reportEventError = (name, error) => {
+  console.log(name, error);
+  if (window?.onerror) {
+    window.onerror(error.message, null, null, null, error);
+  }
+};
+
+/**
  * Invoke an event's result callback, if it declared one.
  *
  * The callback arrives as a string built by ``format_queue_events``, which
@@ -870,10 +961,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
         params,
       );
     } catch (e) {
-      console.log("_client_state_get", e);
-      if (window?.onerror) {
-        window.onerror(e.message, null, null, null, e);
-      }
+      reportEventError("_client_state_get", e);
     }
     return;
   }
@@ -891,10 +979,21 @@ export const applyEvent = async (event, socket, navigate, params) => {
         params,
       );
     } catch (e) {
-      console.log("_call_function", e);
-      if (window?.onerror) {
-        window.onerror(e.message, null, null, null, e);
-      }
+      reportEventError("_call_function", e);
+    }
+    return;
+  }
+
+  if (event.name === "_call_js") {
+    // processEvent applies a module call once its module has settled, but a
+    // caller of this exported function may not. A settled module's function
+    // runs before anything is awaited, so the next event sees what it did.
+    const load = pendingModuleLoad(event);
+    if (load) await load;
+    try {
+      callModuleFunction(event.payload);
+    } catch (e) {
+      reportEventError("_call_js", e);
     }
     return;
   }
@@ -920,10 +1019,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
 
       await applyResultCallback(event, eval_result, socket, navigate, params);
     } catch (e) {
-      console.log("_call_script", e);
-      if (window?.onerror) {
-        window.onerror(e.message, null, null, null, e);
-      }
+      reportEventError("_call_script", e);
     }
     return;
   }
@@ -1066,9 +1162,18 @@ export const processEvent = async (socket, navigate, params) => {
     return;
   }
 
-  // Only proceed if we're not already processing an event.
+  // Stop when nothing is queued. A drain that is already running does not stop
+  // this one: each applies the events it takes off the queue.
   if (event_queue.length === 0) {
     return;
+  }
+
+  // A module call stays at the head of the queue while its module loads, so
+  // no event after it starts before its function has run.
+  const moduleLoad = pendingModuleLoad(event_queue[0]);
+  if (moduleLoad !== undefined) {
+    await moduleLoad;
+    return processEvent(socket, navigate, params);
   }
 
   // Apply the next event in the queue.
@@ -1747,6 +1852,23 @@ export const applyEventActions = (
 };
 
 /**
+ * Get the key that debounce and throttle track events by.
+ *
+ * Every module call is a `_call_js` event, so its key also names the module
+ * and the function: calls of different functions keep separate timers.
+ * @param {{name: string, payload?: any}[]} events The events.
+ * @returns {string} The key.
+ */
+export const eventActionKey = (events) =>
+  events
+    .map(({ name, payload }) =>
+      name === "_call_js"
+        ? `${name}:${payload.module}:${payload.function}`
+        : name,
+    )
+    .join("+++");
+
+/**
  * Package client-side storage values as payload to send to the
  * backend with the hydrate event
  * @param client_storage The client storage object from context.js
@@ -2005,7 +2127,7 @@ export const useEventLoop = (
       () => queueEvents(_events, socket, false, navigate, params),
       event_actions,
       args,
-      _events.map((e) => e.name).join("+++"),
+      eventActionKey(_events),
       () => !!socket.current?.connected,
     );
   }, []);

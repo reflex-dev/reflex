@@ -766,6 +766,9 @@ def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
         log_level=loglevel.value,
         reload=True,
         reload_dirs=list(map(str, get_reload_paths())),
+        # Besides Python files, the files the compile reads for the exports and
+        # npm imports of the app's JavaScript modules, as Granian reloads for.
+        reload_includes=["*.js", "*.jsx", "*.mjs", "*.ts", "*.tsx", "*.mts", "*.css"],
         reload_delay=0.1,
     )
 

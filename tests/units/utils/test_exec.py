@@ -274,6 +274,100 @@ def test_run_granian_backend_sets_reload_env_var_and_clears_marker(
     assert seen["value"] == "True"
 
 
+# The files the compile reads of the app's JavaScript modules, and a data file
+# a module imports, which Vite serves through the link to the app's package.
+_SCRIPT_FILES = ("party.js", "party.ts", "widget.tsx", "theme.css")
+_DATA_FILE = "config.json"
+
+
+def test_run_granian_backend_reloads_for_javascript_modules(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """Granian reloads for the files the compile reads of JavaScript modules, not for data files.
+
+    Args:
+        mocker: Fixture for standing in for Granian.
+        monkeypatch: Fixture restoring the reload environment variable.
+    """
+    watchfiles = pytest.importorskip("watchfiles")
+    granian_server = pytest.importorskip("granian.server")
+    monkeypatch.delenv(DEV_BACKEND_RELOAD_ENV_NAME, raising=False)
+    mocker.patch.object(exec_utils, "reset_dev_backend_reload_marker")
+    mocker.patch.object(
+        exec_utils, "get_app_instance_from_file", return_value="app:app"
+    )
+    mocker.patch.object(exec_utils, "get_reload_paths", return_value=[])
+    options: dict[str, Any] = {}
+
+    class FakeGranian:
+        def __init__(self, *_args, **kwargs):
+            """Record the options the server is made with.
+
+            Args:
+                *_args: The positional options.
+                **kwargs: The keyword options.
+            """
+            options.update(kwargs)
+
+        def on_reload(self, _callback):
+            """Ignore the reload callback.
+
+            Args:
+                _callback: The callback.
+            """
+
+        def serve(self):
+            """Return at once instead of serving."""
+
+    mocker.patch.object(granian_server, "Server", FakeGranian)
+
+    exec_utils.run_granian_backend(
+        host="127.0.0.1", port=0, loglevel=exec_utils.LogLevel.INFO
+    )
+
+    # Granian adds its ignore patterns to those of watchfiles' default filter.
+    default = watchfiles.DefaultFilter
+    reloads = default(
+        ignore_entity_patterns=(
+            *default.ignore_entity_patterns,
+            *options["reload_ignore_patterns"],
+        )
+    )
+    for name in ("app.py", *_SCRIPT_FILES):
+        assert reloads(watchfiles.Change.modified, f"/app/scripts/{name}")
+    assert not reloads(watchfiles.Change.modified, f"/app/scripts/{_DATA_FILE}")
+
+
+def test_run_uvicorn_backend_reloads_for_javascript_modules(
+    tmp_path: Path, mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """Uvicorn reloads for the files the compile reads of JavaScript modules, not for data files.
+
+    Args:
+        tmp_path: The directory the backend watches.
+        mocker: Fixture for capturing the options of Uvicorn.
+        monkeypatch: Fixture restoring the reload environment variable.
+    """
+    uvicorn = pytest.importorskip("uvicorn")
+    from uvicorn.supervisors.watchfilesreload import FileFilter
+
+    monkeypatch.delenv(DEV_BACKEND_RELOAD_ENV_NAME, raising=False)
+    mocker.patch.object(exec_utils, "reset_dev_backend_reload_marker")
+    mocker.patch.object(exec_utils, "get_app_instance", return_value="app:app")
+    mocker.patch.object(exec_utils, "get_reload_paths", return_value=[tmp_path])
+    run = mocker.patch.object(uvicorn, "run")
+
+    exec_utils.run_uvicorn_backend(
+        host="127.0.0.1", port=0, loglevel=exec_utils.LogLevel.INFO
+    )
+
+    # Without its logging config, which would reconfigure the test's logging.
+    reloads = FileFilter(uvicorn.Config(**run.call_args.kwargs, log_config=None))
+    for name in ("app.py", *_SCRIPT_FILES):
+        assert reloads(tmp_path / "app" / "scripts" / name)
+    assert not reloads(tmp_path / "app" / "scripts" / _DATA_FILE)
+
+
 @pytest.mark.parametrize(
     ("strict", "default_method", "expected"),
     [

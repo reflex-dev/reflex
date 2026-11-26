@@ -239,6 +239,7 @@ async function setup({
     "$/utils/helpers/throttle": { default() {} },
     "$/utils/helpers/upload": { uploadFiles() {} },
     "$/utils/reflex": { reflex: {} },
+    "$/utils/scripts": { default: {} },
   };
   const module = new vm.SourceTextModule(source, {
     context,
