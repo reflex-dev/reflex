@@ -604,4 +604,52 @@ describe("events", () => {
       ["blob:test", "download"],
     ]);
   });
+
+  test("_download decodes a data: url without a media type as text/plain", async () => {
+    const blobs = [];
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => {});
+    const createObjectURL = URL.createObjectURL;
+    URL.createObjectURL = (blob) => {
+      blobs.push(blob);
+      return "blob:test";
+    };
+    try {
+      for (const url of [
+        "data:,hello",
+        "data:;base64,aGVsbG8=",
+        "data:;charset=utf-8,h%C3%A9",
+        "data:text/csv;base64,YSxi",
+      ]) {
+        await applyEvent(
+          { name: "_download", payload: { url, filename: "" } },
+          null,
+          null,
+          null,
+        );
+      }
+    } finally {
+      click.mockRestore();
+      URL.createObjectURL = createObjectURL;
+    }
+    // jsdom's Blob has no text(), so read it through a FileReader, which
+    // needs real timers to fire its load event.
+    vi.useRealTimers();
+    const readText = (blob) =>
+      new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsText(blob);
+      });
+    const decoded = await Promise.all(
+      blobs.map(async (blob) => [blob.type, await readText(blob)]),
+    );
+    expect(decoded).toEqual([
+      ["text/plain;charset=us-ascii", "hello"],
+      ["text/plain;charset=us-ascii", "hello"],
+      ["text/plain;charset=utf-8", "hé"],
+      ["text/csv", "a,b"],
+    ]);
+  });
 });

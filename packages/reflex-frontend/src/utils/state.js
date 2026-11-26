@@ -703,11 +703,15 @@ const dataUrlToBlob = (href) => {
   const [url] = href.split("#", 1);
   const comma = url.indexOf(",");
   const meta = url.slice(5, comma);
-  const type = meta.replace(/;\s*base64\s*$/i, "");
+  let type = meta.replace(/;\s*base64\s*$/i, "");
+  const base64 = type !== meta;
+  // A data: url without a media type is text/plain, as fetch decodes it.
+  if (!type) type = "text/plain;charset=US-ASCII";
+  else if (type.startsWith(";")) type = "text/plain" + type;
   // href is serialized ascii, so each percent-decoded char is one byte. "%u"
   // stays literal, so unescape decodes only %XX escapes.
   let raw = unescape(url.slice(comma + 1).replace(/%u/g, "%25u"));
-  if (type !== meta) raw = atob(raw);
+  if (base64) raw = atob(raw);
   const bytes = new Uint8Array(raw.length);
   for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
   return new Blob([bytes], { type });

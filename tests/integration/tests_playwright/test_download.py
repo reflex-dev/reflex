@@ -23,6 +23,7 @@ def DownloadApp():
         text: str = "var;text#%41 ä"
         base64_url: str = "data:text/plain;base64,aGk%3D#part"
         text_url: str = "data:text/plain,a%20b%FF#part"
+        no_type_url: str = "data:,no%20type"
 
         @rx.event
         def download_bytes(self):
@@ -55,6 +56,11 @@ def DownloadApp():
                 "text url",
                 on_click=rx.download(data=State.text_url, filename="text.txt"),
                 id="download-text-url",
+            ),
+            rx.button(
+                "no type url",
+                on_click=rx.download(data=State.no_type_url),
+                id="download-no-type-url",
             ),
             rx.button("bytes", on_click=State.download_bytes, id="download-bytes"),
             rx.button(
@@ -99,6 +105,7 @@ def download_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
         ("download-var", "var.txt", '"var;text#%41 \u00e4"'.encode()),
         ("download-base64-url", "base64.txt", b"hi"),
         ("download-text-url", "text.txt", b"a b\xff"),
+        ("download-no-type-url", "download.txt", b"no type"),
         ("download-bytes", "backend.csv", b"backend,bytes\n"),
         ("download-no-filename", "download.txt", b"no filename"),
     ],
