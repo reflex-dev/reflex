@@ -25,7 +25,7 @@ from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Self, TypeVar
 
-from reflex_base.components.memo import MEMOS
+from reflex_base.components.memo import MEMOS, MemoDefinition
 from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
@@ -168,6 +168,9 @@ class AppHarness:
     backend: uvicorn.Server | None = None
     _frontends: list[WebDriver] = dataclasses.field(default_factory=list)
     _registry_token: contextvars.Token[RegistrationContext] | None = None
+    # The memo registry a generated app cleared, which stop() restores: a real app is
+    # not re-imported, so the memos its prebuilt pages render never register again.
+    _cleared_memos: dict[tuple[str, str | None], MemoDefinition] | None = None
     _base_registration_context: ClassVar[RegistrationContext] | None = None
     # A real app is imported only once, so the states stop() strips from it are
     # kept per app module for its next harness to restore.
@@ -328,6 +331,7 @@ class AppHarness:
 
         # Generated app: reset the global memo registry so a previous AppHarness
         # app does not leak compiled component definitions into the next test app.
+        self._cleared_memos = dict(MEMOS)
         MEMOS.clear()
         app_globals = self._get_globals_from_signature(self.app_source)
         if isinstance(self.app_source, functools.partial):
@@ -567,6 +571,10 @@ class AppHarness:
         self._reload_state_module()
         if self._registry_token is not None:
             RegistrationContext.reset(self._registry_token)
+        if self._cleared_memos is not None:
+            MEMOS.clear()
+            MEMOS.update(self._cleared_memos)
+            self._cleared_memos = None
 
         if self.backend is not None:
             self.backend.should_exit = True
