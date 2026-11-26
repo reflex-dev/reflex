@@ -545,3 +545,32 @@ def test_dynamic_component_codegen_wires_state_var_counter_events() -> None:
     assert '({ ["count"] : -1 }), ({  })' in code
     assert '({ ["count"] : 1 }), ({  })' in code
     assert 'jsx(RadixThemesText, ({as:"p",size:"9"}), 0)' in code
+
+
+@pytest.mark.parametrize("lazy", [False, True])
+def test_app_root_without_state_publishes_no_libraries(mocker, lazy: bool) -> None:
+    """Dynamic components need a backend, so an app without state skips window.__reflex.
+
+    The namespace imports would keep every export of the bundled modules, the
+    transport and socket.io among them, in the bundle.
+
+    Args:
+        mocker: Fixture for patching the config.
+        lazy: Whether optional libraries load lazily.
+    """
+    mocker.patch(
+        "reflex_base.config._get_config",
+        return_value=rx.Config(
+            app_name="stateless_app_root", frontend_lazy_bundled_libraries=lazy
+        ),
+    )
+    with RegistrationContext():
+        bundle_library("lucide-react")
+        _, stateless_code = compiler.compile_app_root(rx.el.div(), stateful=False)
+        _, stateful_code = compiler.compile_app_root(rx.el.div())
+
+    assert "window.__reflex" not in stateless_code
+    assert "import * as" not in stateless_code
+    assert 'import * as utils_state from "$/utils/state";' in stateful_code
+    assert 'import * as utils_transport from "$/utils/transport";' in stateful_code
+    assert "window.__reflex" in stateful_code

@@ -5,11 +5,11 @@ from urllib.parse import urlsplit
 
 import httpx
 import pytest
-from playwright.sync_api import ConsoleMessage, Page, WebSocket, expect
+from playwright.sync_api import ConsoleMessage, Page, Response, WebSocket, expect
 from reflex_base.config import get_config
 from reflex_base.constants import Endpoint
 
-from reflex.testing import AppHarness
+from reflex.testing import AppHarness, AppHarnessProd
 
 
 def StatelessApp():
@@ -145,3 +145,32 @@ def test_frontend_events_run_without_a_connection(
 
     assert websockets == []
     assert errors == []
+
+
+def test_prod_build_loads_no_transport(stateless_app: AppHarness, page: Page):
+    """A prod build of an app without state loads neither the transport nor socket.io.
+
+    Args:
+        stateless_app: A harness for testing the stateless app.
+        page: A Playwright page.
+    """
+    if not isinstance(stateless_app, AppHarnessProd):
+        pytest.skip("the dev server serves every module, it does not tree-shake")
+    assert stateless_app.frontend_url is not None
+    scripts: list[Response] = []
+
+    def on_response(response: Response):
+        if urlsplit(response.url).path.endswith(".js"):
+            scripts.append(response)
+
+    page.on("response", on_response)
+    page.goto(stateless_app.frontend_url)
+    page.locator("#next-link").click()
+    expect(page.locator("#next-heading")).to_have_text("Next page")
+    page.wait_for_load_state("networkidle")
+
+    bodies = [response.text() for response in scripts]
+    assert bodies
+    # Strings of utils/transport.js and of engine.io-client.
+    for marker in ("A new version of this app is available.", "xhr poll error"):
+        assert not any(marker in body for body in bodies), marker

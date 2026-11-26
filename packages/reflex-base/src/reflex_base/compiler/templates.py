@@ -197,7 +197,7 @@ def app_root_template(
         imports: The list of import statements.
         custom_codes: The set of custom code snippets.
         hooks: The dictionary of hooks.
-        window_libraries: The list of window libraries.
+        window_libraries: The list of window libraries, empty for an app without state.
         render: The dictionary of render functions.
         dynamic_imports: The set of dynamic imports.
         hydrate_fallback_export: The exported name of the hydrate-fallback memo module to re-export as ``HydrateFallback``, or None for no fallback.
@@ -227,12 +227,16 @@ def app_root_template(
         f'    "{lib_path}": {lib_alias},' for lib_alias, lib_path in window_libraries
     ])
 
-    window_imports_effect = f"""useEffect(() => {{
+    window_imports_effect = (
+        f"""useEffect(() => {{
     // Make contexts and state objects available globally for dynamic eval'd components
     window.__reflex = {{
       {window_imports_str}
     }};
   }}, []);"""
+        if window_libraries
+        else ""
+    )
     lazy_imports_setup = ""
     if lazy_window_libraries:
         loaders = "\n".join(

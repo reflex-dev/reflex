@@ -166,7 +166,10 @@ def _get_window_libraries() -> list[tuple[str, str]]:
 
 
 def _compile_app(
-    app_root: Component, hydrate_fallback_export: str | None = None
+    app_root: Component,
+    hydrate_fallback_export: str | None = None,
+    *,
+    stateful: bool = True,
 ) -> str:
     """Compile the app template component.
 
@@ -174,13 +177,16 @@ def _compile_app(
         app_root: The app root to compile.
         hydrate_fallback_export: The exported name of the hydrate-fallback memo
             component to re-export as ``HydrateFallback``, or None for no fallback.
+        stateful: Whether the app has state. Dynamic components, which read
+            the bundled libraries from ``window.__reflex``, only arrive from
+            the backend of one.
 
     Returns:
         The compiled app.
     """
-    window_libraries = _get_window_libraries()
+    window_libraries = _get_window_libraries() if stateful else []
     lazy_window_libraries = []
-    if get_config().frontend_lazy_bundled_libraries:
+    if stateful and get_config().frontend_lazy_bundled_libraries:
         core_libraries = set(_default_bundled_libraries())
         lazy_window_libraries = [
             library for library in window_libraries if library[1] not in core_libraries
@@ -720,7 +726,10 @@ def compile_document_root(
 
 
 def compile_app_root(
-    app_root: Component, hydrate_fallback_export: str | None = None
+    app_root: Component,
+    hydrate_fallback_export: str | None = None,
+    *,
+    stateful: bool = True,
 ) -> tuple[str, str]:
     """Compile the app root.
 
@@ -728,6 +737,7 @@ def compile_app_root(
         app_root: The app root component to compile.
         hydrate_fallback_export: The exported name of the hydrate-fallback memo
             component to re-export as ``HydrateFallback``, or None for no fallback.
+        stateful: Whether the app has state.
 
     Returns:
         The path and code of the compiled app wrapper.
@@ -738,7 +748,7 @@ def compile_app_root(
     )
 
     # Compile the document root.
-    code = _compile_app(app_root, hydrate_fallback_export)
+    code = _compile_app(app_root, hydrate_fallback_export, stateful=stateful)
     return output_path, code
 
 
@@ -1592,7 +1602,11 @@ def compile_app(
     ])
     progress.advance(task)
 
-    compile_results.append(compile_app_root(app_root, hydrate_fallback_export))
+    compile_results.append(
+        compile_app_root(
+            app_root, hydrate_fallback_export, stateful=app._state is not None
+        )
+    )
     progress.advance(task)
 
     progress.stop()
