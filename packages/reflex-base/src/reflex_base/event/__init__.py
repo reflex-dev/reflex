@@ -3663,8 +3663,8 @@ class EventDecorator(Protocol):
     """The decorator ``rx.event(...)`` returns."""
 
     # A repeated @rx.event decorates the handler the inner decorator returned.
-    # Reading a handler through a state class also has type EventCallback, so
-    # type checkers can accept that case here. It raises TypeError at runtime.
+    # A decorated state method read from its class also has type EventCallback.
+    # Type checkers can accept it here, and the runtime raises TypeError.
     @overload
     def __call__(self, func: EventCallback[*P]) -> EventCallback[*P]: ...
 
@@ -3816,9 +3816,10 @@ class EventNamespace:
     ) -> "EventCallback | EventDecorator":
         """Wrap a function to be used as an event.
 
-        You can stack `@rx.event` on a function definition. Passing a handler
-        read from a state class raises TypeError even when a type checker
-        accepts it. To configure a trigger, chain event actions on that handler.
+        You can stack `@rx.event` on a function definition. Passing a decorated
+        state method read from its class raises TypeError even when a type
+        checker accepts it. To configure a trigger, chain event actions on the
+        method's handler.
 
         Args:
             func: The function to wrap.

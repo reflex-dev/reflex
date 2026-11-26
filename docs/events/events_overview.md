@@ -46,8 +46,8 @@ Whenever the user hovers over the heading, the `next_word` **event handler** wil
 
 Adding the `@rx.event` decorator above the event handler is strongly recommended. This decorator enables proper static type checking, which ensures event handlers receive the correct number and types of arguments.
 
-You can stack `@rx.event` decorators on a function definition. Passing a handler
-read from a state class back to `rx.event`, such as
+You can stack `@rx.event` decorators on a function definition. Passing a decorated
+state method read from its class back to `rx.event`, such as
 `rx.event(MyState.handle_click, throttle=500)`, raises `TypeError` even if a type
 checker accepts it. To throttle an existing handler on a trigger, pass
 `on_click=MyState.handle_click.throttle(500)`.
