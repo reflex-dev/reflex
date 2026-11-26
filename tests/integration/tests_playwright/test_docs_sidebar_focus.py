@@ -68,7 +68,9 @@ def test_docs_sidebar_focus_outline_matches_active_pill(
     docs_sidebar_focus_app: AppHarness, page: Page
 ) -> None:
     """Keep the focused active link and its highlight the same size."""
-    page.goto(docs_sidebar_focus_app.frontend_url)
+    frontend_url = docs_sidebar_focus_app.frontend_url
+    assert frontend_url is not None
+    page.goto(frontend_url)
     link = page.get_by_role("link", name="Introduction", exact=True)
     pill = link.locator("div.bg-accent")
     expect(link).to_be_visible()
