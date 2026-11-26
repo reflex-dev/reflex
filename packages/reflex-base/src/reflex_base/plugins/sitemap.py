@@ -87,6 +87,26 @@ def configuration_with_loc(
     return link
 
 
+def generate_index_xml(locs: Sequence[Location]) -> str:
+    """Generate an XML sitemap index from the URLs of sitemaps.
+
+    Args:
+        locs: The absolute URLs of the sitemaps the index lists.
+
+    Returns:
+        A pretty-printed XML string representing the sitemap index.
+    """
+    sitemapindex = Element(
+        "sitemapindex", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+    )
+    for loc in locs:
+        SubElement(SubElement(sitemapindex, "sitemap"), "loc").text = loc
+    indent(sitemapindex, "  ")
+    return tostring(sitemapindex, encoding="utf-8", xml_declaration=True).decode(
+        "utf-8"
+    )
+
+
 def generate_xml(links: Sequence[SitemapLink]) -> str:
     """Generate an XML sitemap from a list of links.
 
@@ -207,37 +227,126 @@ def generate_links_for_sitemap(
 
 
 def sitemap_task(
-    unevaluated_pages: Sequence["UnevaluatedPage"], trailing_slash: TrailingSlashOption
+    unevaluated_pages: Sequence["UnevaluatedPage"],
+    trailing_slash: TrailingSlashOption,
+    file_path: Path = Constants.FILE_PATH,
 ) -> tuple[str, str]:
     """Task to generate the sitemap XML file.
 
     Args:
         unevaluated_pages: Sequence of unevaluated pages.
         trailing_slash: Option for handling trailing slashes in URLs.
+        file_path: Where to write the sitemap, relative to the frontend directory.
 
     Returns:
         A tuple containing the file path and the generated XML content.
     """
     return (
-        str(Constants.FILE_PATH),
+        str(file_path),
         generate_xml(generate_links_for_sitemap(unevaluated_pages, trailing_slash)),
+    )
+
+
+def sitemap_index_task(
+    file_path: Path, sitemap_path: str, other_sitemaps: Sequence[Location]
+) -> tuple[str, str]:
+    """Task to generate a sitemap index listing the app's sitemap and others.
+
+    Args:
+        file_path: Where to write the index, relative to the frontend directory.
+        sitemap_path: The app's sitemap's path below the frontend's root URL.
+        other_sitemaps: More sitemaps, as absolute URLs or paths below deploy_url.
+
+    Returns:
+        A tuple containing the file path and the generated XML content.
+    """
+    from reflex_base.config import get_config
+
+    app_config = get_config()
+    sitemap_loc = (
+        f"/{app_config.frontend_path.strip('/')}/{sitemap_path}"
+        if app_config.frontend_path.strip("/")
+        else f"/{sitemap_path}"
+    )
+    return (
+        str(file_path),
+        generate_index_xml([
+            configuration_with_loc(
+                config={},
+                deploy_url=app_config.frontend_url,
+                loc=loc,
+                trailing_slash="preserve",
+            )["loc"]
+            for loc in (sitemap_loc, *other_sitemaps)
+        ]),
     )
 
 
 @dataclass(kw_only=True, frozen=True)
 class SitemapPlugin(PluginBase):
-    """Sitemap plugin for Reflex."""
+    """Sitemap plugin for Reflex.
+
+    Attributes:
+        trailing_slash: Option for handling trailing slashes in the sitemap's URLs.
+        path: The sitemap's path below the frontend's root URL, where it is written in the build.
+        index_path: If set, the path of a sitemap index listing the sitemap followed by index_sitemaps.
+        index_sitemaps: More sitemaps for the index, as absolute URLs or paths below deploy_url.
+    """
 
     trailing_slash: TrailingSlashOption = "preserve"
 
+    path: str = Constants.FILE_PATH.name
+
+    index_path: str | None = None
+
+    index_sitemaps: Sequence[Location] = ()
+
+    def __post_init__(self):
+        """Normalize the paths, which must name different files.
+
+        Raises:
+            ValueError: If a path is empty or both paths name the same file.
+        """
+        object.__setattr__(self, "path", self.path.strip("/"))
+        if not self.path:
+            msg = "SitemapPlugin path must name a file."
+            raise ValueError(msg)
+        if self.index_path is None:
+            return
+        object.__setattr__(self, "index_path", self.index_path.strip("/"))
+        if self.index_path in ("", self.path):
+            msg = (
+                "SitemapPlugin index_path must name a file other than the sitemap "
+                f"{self.path!r}, got {self.index_path!r}."
+            )
+            raise ValueError(msg)
+
+    @property
+    def file_path(self) -> Path:
+        """Where the sitemap is written, relative to the frontend directory.
+
+        Returns:
+            The sitemap's path in the frontend's public directory.
+        """
+        return Path(constants.Dirs.PUBLIC) / self.path
+
     def pre_compile(self, **context):
-        """Generate the sitemap XML file before compilation.
+        """Generate the sitemap XML file, and the index if configured, before compilation.
 
         Args:
             context: The context for the plugin.
         """
         unevaluated_pages = context.get("unevaluated_pages", [])
-        context["add_save_task"](sitemap_task, unevaluated_pages, self.trailing_slash)
+        context["add_save_task"](
+            sitemap_task, unevaluated_pages, self.trailing_slash, self.file_path
+        )
+        if self.index_path is not None:
+            context["add_save_task"](
+                sitemap_index_task,
+                Path(constants.Dirs.PUBLIC) / self.index_path,
+                self.path,
+                self.index_sitemaps,
+            )
 
 
 Plugin = SitemapPlugin

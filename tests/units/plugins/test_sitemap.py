@@ -2,11 +2,15 @@
 
 import datetime
 import logging
+from collections.abc import Callable
+from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 from reflex_base.plugins.sitemap import (
     SitemapLink,
+    SitemapPlugin,
     configuration_with_loc,
     generate_links_for_sitemap,
     generate_xml,
@@ -772,3 +776,108 @@ def test_default_sitemap_locations_include_frontend_path(
     links = generate_links_for_sitemap(pages, trailing_slash="always")
     base = "https://example.com/" + frontend_path.strip("/")
     assert links == [{"loc": base + "/"}, {"loc": base + "/intro/"}]
+
+
+def _pre_compile_context(
+    add_save_task: Callable[..., None], unevaluated_pages: list
+) -> dict[str, Any]:
+    """Build the context the compiler hands a plugin's pre_compile.
+
+    Args:
+        add_save_task: Records each save task the plugin adds.
+        unevaluated_pages: The app's pages.
+
+    Returns:
+        The pre_compile keyword arguments.
+    """
+    return {
+        "add_save_task": add_save_task,
+        "add_modify_task": lambda *args: None,
+        "radix_themes_plugin": None,
+        "unevaluated_pages": unevaluated_pages,
+    }
+
+
+@patch("reflex_base.config.get_config")
+@pytest.mark.parametrize(
+    ("frontend_path", "base"),
+    [("", "https://example.com"), ("/docs/", "https://example.com/docs")],
+)
+def test_sitemap_plugin_writes_its_path_and_index(mock_get_config, frontend_path, base):
+    """The sitemap goes to its configured path, and the index lists it before the others."""
+    mock_get_config.return_value.frontend_url = "https://example.com"
+    mock_get_config.return_value.frontend_path = frontend_path
+    plugin = SitemapPlugin(
+        path="/sitemaps/site.xml",
+        index_path="sitemap.xml",
+        index_sitemaps=["https://cms.example.com/sitemap.xml", "/legacy.xml"],
+    )
+    written = []
+
+    plugin.pre_compile(
+        **_pre_compile_context(
+            lambda task, *args: written.append(task(*args)),
+            [MagicMock(route="about", context={})],
+        )
+    )
+
+    assert plugin.file_path == Path("public/sitemaps/site.xml")
+    assert written == [
+        (
+            str(Path("public/sitemaps/site.xml")),
+            generate_xml([{"loc": f"{base}/about"}]),
+        ),
+        (
+            str(Path("public/sitemap.xml")),
+            (
+                "<?xml version='1.0' encoding='utf-8'?>\n"
+                '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+                "  <sitemap>\n"
+                f"    <loc>{base}/sitemaps/site.xml</loc>\n"
+                "  </sitemap>\n"
+                "  <sitemap>\n"
+                "    <loc>https://cms.example.com/sitemap.xml</loc>\n"
+                "  </sitemap>\n"
+                "  <sitemap>\n"
+                "    <loc>https://example.com/legacy.xml</loc>\n"
+                "  </sitemap>\n"
+                "</sitemapindex>"
+            ),
+        ),
+    ]
+
+
+def test_sitemap_plugin_defaults_to_sitemap_xml():
+    """Without options the plugin writes only public/sitemap.xml."""
+    plugin = SitemapPlugin()
+    tasks = []
+
+    plugin.pre_compile(
+        **_pre_compile_context(lambda task, *args: tasks.append(task), [])
+    )
+
+    assert (plugin.file_path, plugin.index_path, len(tasks)) == (
+        Path("public/sitemap.xml"),
+        None,
+        1,
+    )
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    [
+        ({"path": "/"}, "SitemapPlugin path must name a file."),
+        (
+            {"index_path": "/sitemap.xml"},
+            (
+                "SitemapPlugin index_path must name a file other than the sitemap "
+                "'sitemap.xml', got 'sitemap.xml'."
+            ),
+        ),
+    ],
+)
+def test_sitemap_plugin_rejects_paths(kwargs, message):
+    """An empty path, or an index in the sitemap's place, is a configuration error."""
+    with pytest.raises(ValueError) as err:
+        SitemapPlugin(**kwargs)
+    assert str(err.value) == message
