@@ -19,6 +19,7 @@ import reflex.constants as constants
 from reflex.assets import (
     AssetPathStr,
     _link_shared_asset,
+    _record_external_copy,
     remove_stale_external_asset_symlinks,
 )
 
@@ -452,6 +453,160 @@ def test_link_shared_asset_raises_when_replace_stays_denied(
     assert list(dst_file.parent.iterdir()) == []
 
 
+def _deny_symlinks(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Make symlink creation fail as it does on Windows without the privilege.
+
+    Args:
+        monkeypatch: A pytest fixture for patching.
+    """
+
+    def denied_symlink(self: Path, target, target_is_directory: bool = False):
+        msg = "A required privilege is not held by the client"
+        raise OSError(1314, msg)
+
+    monkeypatch.setattr(Path, "symlink_to", denied_symlink)
+
+
+def test_link_shared_asset_copies_when_symlinks_unavailable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The asset is copied when a symlink cannot be created.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file = _staged_link_fixture(tmp_path)
+    _deny_symlinks(monkeypatch)
+
+    _link_shared_asset(dst_file, src_file)
+
+    assert not dst_file.is_symlink()
+    assert dst_file.read_text() == "script"
+    assert [p.name for p in dst_file.parent.iterdir()] == ["custom_script.js"]
+
+
+def test_link_shared_asset_keeps_up_to_date_copy(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An up to date copy is left alone, so file watchers see no change.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file = _staged_link_fixture(tmp_path)
+    _deny_symlinks(monkeypatch)
+    _link_shared_asset(dst_file, src_file)
+    inode = dst_file.stat().st_ino
+
+    def unexpected_replace(self: Path, target) -> Path:
+        msg = "An up to date copy should not be replaced"
+        raise AssertionError(msg)
+
+    monkeypatch.setattr(Path, "replace", unexpected_replace)
+
+    _link_shared_asset(dst_file, src_file)
+
+    assert dst_file.stat().st_ino == inode
+    assert [p.name for p in dst_file.parent.iterdir()] == ["custom_script.js"]
+
+
+def test_link_shared_asset_refreshes_stale_copy(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A copy is rewritten once the source asset changes.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file = _staged_link_fixture(tmp_path)
+    _deny_symlinks(monkeypatch)
+    _link_shared_asset(dst_file, src_file)
+
+    src_file.write_text("updated script")
+    _link_shared_asset(dst_file, src_file)
+
+    assert not dst_file.is_symlink()
+    assert dst_file.read_text() == "updated script"
+    assert [p.name for p in dst_file.parent.iterdir()] == ["custom_script.js"]
+
+
+def test_link_shared_asset_refreshes_copy_with_same_size_and_mtime(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A rewrite that keeps the source's size and mtime still refreshes the copy.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file = _staged_link_fixture(tmp_path)
+    _deny_symlinks(monkeypatch)
+    _link_shared_asset(dst_file, src_file)
+    _link_shared_asset(dst_file, src_file)
+    stat_result = src_file.stat()
+
+    src_file.write_text("SCRIPT")
+    os.utime(src_file, ns=(stat_result.st_atime_ns, stat_result.st_mtime_ns))
+    _link_shared_asset(dst_file, src_file)
+
+    assert dst_file.read_text() == "SCRIPT"
+
+
+def test_link_shared_asset_concedes_denied_replace_to_copy(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A denied link concedes to a process that copied the same asset.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file = _staged_link_fixture(tmp_path)
+
+    def denied_replace(self: Path, target) -> Path:
+        shutil.copyfile(src_file, dst_file)
+        msg = "Access is denied"
+        raise PermissionError(13, msg)
+
+    monkeypatch.setattr(Path, "replace", denied_replace)
+
+    assert _link_shared_asset(dst_file, src_file) is True
+
+    assert not dst_file.is_symlink()
+    assert dst_file.read_text() == "script"
+    assert [p.name for p in dst_file.parent.iterdir()] == ["custom_script.js"]
+
+
+def test_shared_asset_records_copy(
+    mock_asset_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A shared asset copied in place of a symlink records its source.
+
+    Args:
+        mock_asset_path: The tmp cwd used for assets.
+        monkeypatch: A pytest fixture for patching.
+    """
+    _deny_symlinks(monkeypatch)
+    source_file = Path(__file__).parent / "custom_script.js"
+
+    rx.asset(path="custom_script.js", shared=True)
+
+    result_file = mock_asset_path / "assets" / "external" / "test_assets"
+    assert not (result_file / "custom_script.js").is_symlink()
+    assert (result_file / "custom_script.js").read_bytes() == source_file.read_bytes()
+    record = (
+        mock_asset_path
+        / constants.Dirs.WEB
+        / assets_module._EXTERNAL_COPY_RECORDS_DIR
+        / "test_assets"
+        / "custom_script.js"
+    )
+    assert record.read_text(encoding="utf-8") == str(source_file.resolve())
+
+
 @pytest.mark.parametrize(
     ("path", "shared"),
     [
@@ -804,6 +959,161 @@ def test_remove_stale_external_asset_symlinks(mock_asset_path: Path) -> None:
     # Valid symlink should be preserved.
     assert valid_symlink.is_symlink()
     assert valid_symlink.resolve().exists()
+
+
+def test_remove_stale_external_asset_copies(
+    mock_asset_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Copies whose source was removed are cleaned up with their records.
+
+    Args:
+        mock_asset_path: The tmp cwd used for assets.
+        monkeypatch: A pytest fixture for patching.
+    """
+    _deny_symlinks(monkeypatch)
+    external_dir = (
+        mock_asset_path / constants.Dirs.APP_ASSETS / constants.Dirs.EXTERNAL_APP_ASSETS
+    )
+    records_dir = (
+        mock_asset_path / constants.Dirs.WEB / assets_module._EXTERNAL_COPY_RECORDS_DIR
+    )
+    library = mock_asset_path / "library"
+    library.mkdir()
+    copies = {}
+    for name in ("old_module", "valid_module"):
+        src_file = library / f"{name}.js"
+        src_file.write_text(name)
+        dst_file = external_dir / name / f"{name}.js"
+        dst_file.parent.mkdir(parents=True)
+        assert _link_shared_asset(dst_file, src_file) is True
+        _record_external_copy(dst_file, src_file)
+        copies[name] = dst_file
+
+    (library / "old_module.js").unlink()
+    remove_stale_external_asset_symlinks()
+
+    assert not (external_dir / "old_module").exists()
+    assert not (records_dir / "old_module" / "old_module.js").exists()
+    assert copies["valid_module"].read_text() == "valid_module"
+    assert (records_dir / "valid_module" / "valid_module.js").read_text(
+        encoding="utf-8"
+    ) == str((library / "valid_module.js").resolve())
+
+
+def _stage_recorded_copy(mock_asset_path: Path, name: str) -> tuple[Path, Path, Path]:
+    """Copy a source asset into assets/external/ and record it.
+
+    Args:
+        mock_asset_path: The tmp cwd used for assets.
+        name: The module name the copy is placed under.
+
+    Returns:
+        The source asset, its copy, and the copy's record.
+    """
+    src_file = mock_asset_path / "library" / f"{name}.js"
+    src_file.parent.mkdir(exist_ok=True)
+    src_file.write_text(name)
+    dst_file = (
+        mock_asset_path
+        / constants.Dirs.APP_ASSETS
+        / constants.Dirs.EXTERNAL_APP_ASSETS
+        / name
+        / f"{name}.js"
+    )
+    dst_file.parent.mkdir(parents=True)
+    shutil.copyfile(src_file, dst_file)
+    _record_external_copy(dst_file, src_file)
+    record = (
+        mock_asset_path
+        / constants.Dirs.WEB
+        / assets_module._EXTERNAL_COPY_RECORDS_DIR
+        / name
+        / f"{name}.js"
+    )
+    return src_file, dst_file, record
+
+
+def test_record_external_copy_concedes_denied_replace(
+    mock_asset_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A record replace denied by a compile recording the same source is fine.
+
+    Args:
+        mock_asset_path: The tmp cwd used for assets.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file, record = _stage_recorded_copy(mock_asset_path, "module")
+    other_src = src_file.with_name("other.js")
+    other_src.write_text("other")
+
+    def denied_replace(self: Path, target) -> Path:
+        Path(target).write_text(str(other_src.resolve()), encoding="utf-8")
+        msg = "Access is denied"
+        raise PermissionError(13, msg)
+
+    monkeypatch.setattr(Path, "replace", denied_replace)
+
+    _record_external_copy(dst_file, other_src)
+
+    assert record.read_text(encoding="utf-8") == str(other_src.resolve())
+    assert [p.name for p in record.parent.iterdir()] == ["module.js"]
+
+
+def test_remove_stale_external_copies_handles_tmp_named_assets(
+    mock_asset_path: Path,
+) -> None:
+    """A copied asset named like a temporary file is cleaned up like any other.
+
+    Args:
+        mock_asset_path: The tmp cwd used for assets.
+    """
+    src_file, dst_file, record = _stage_recorded_copy(mock_asset_path, "module")
+    tmp_src = src_file.with_name("data.tmp")
+    tmp_src.write_text("data")
+    tmp_copy = dst_file.with_name("data.tmp")
+    shutil.copyfile(tmp_src, tmp_copy)
+    _record_external_copy(tmp_copy, tmp_src)
+    staging_dir = (
+        mock_asset_path
+        / constants.Dirs.WEB
+        / assets_module._EXTERNAL_COPY_RECORDS_STAGING_DIR
+    )
+
+    tmp_src.unlink()
+    remove_stale_external_asset_symlinks()
+
+    assert [p.name for p in dst_file.parent.iterdir()] == ["module.js"]
+    assert [p.name for p in record.parent.iterdir()] == ["module.js"]
+    assert list(staging_dir.iterdir()) == []
+
+
+def test_remove_stale_external_copies_keeps_concurrent_replacement(
+    mock_asset_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A copy re-recorded by a concurrent compile during cleanup is kept.
+
+    Args:
+        mock_asset_path: The tmp cwd used for assets.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file, record = _stage_recorded_copy(mock_asset_path, "module")
+    new_src = src_file.with_name("renamed.js")
+    new_src.write_text("module")
+    src_file.unlink()
+    real_exists = Path.exists
+
+    def exists_during_concurrent_copy(self: Path, *args, **kwargs) -> bool:
+        if self == src_file:
+            # Another compile copies the asset from its new source meanwhile.
+            _record_external_copy(dst_file, new_src)
+        return real_exists(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "exists", exists_during_concurrent_copy)
+
+    remove_stale_external_asset_symlinks()
+
+    assert dst_file.read_text() == "module"
+    assert record.read_text(encoding="utf-8") == str(new_src.resolve())
 
 
 def test_remove_stale_symlinks_no_external_dir(mock_asset_path: Path) -> None:

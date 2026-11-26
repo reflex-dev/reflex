@@ -3,6 +3,7 @@
 import hashlib
 import inspect
 import logging
+import shutil
 import time
 import uuid
 from pathlib import Path
@@ -10,7 +11,7 @@ from typing import TYPE_CHECKING, overload
 
 from reflex_base import constants
 from reflex_base.config import get_config
-from reflex_base.environment import EnvironmentVariables
+from reflex_base.environment import EnvironmentVariables, environment
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,12 @@ _HASH_CHUNK_SIZE = 1024 * 1024
 _MAX_HASH_ATTEMPTS = 3
 _MAX_LINK_ATTEMPTS = 3
 _LINK_RETRY_DELAY = 0.01
+# Records of shared assets copied in place of a symlink, kept under the web
+# directory so they are never published with the assets themselves.
+_EXTERNAL_COPY_RECORDS_DIR = "external_asset_copies"
+# Records are staged outside the records directory, so cleanup never sees one
+# half written, whatever the name of the asset it records.
+_EXTERNAL_COPY_RECORDS_STAGING_DIR = "external_asset_copies_staging"
 
 if TYPE_CHECKING:
     from typing_extensions import Buffer
@@ -175,19 +182,109 @@ def _versioned_asset_path(relative_path: str, source_file: Path) -> AssetPathStr
     return AssetPathStr(versioned_path, importable_path=relative_path)
 
 
+def _external_assets_dir() -> Path:
+    """Get the app's external assets directory.
+
+    Returns:
+        The directory shared assets are linked or copied into.
+    """
+    return Path.cwd() / constants.Dirs.APP_ASSETS / constants.Dirs.EXTERNAL_APP_ASSETS
+
+
+def _external_copy_records_dir() -> Path:
+    """Get the directory recording the sources of copied shared assets.
+
+    Returns:
+        The records directory, mirroring the external assets directory.
+    """
+    return environment.REFLEX_WEB_WORKDIR.get() / _EXTERNAL_COPY_RECORDS_DIR
+
+
+def _read_copy_record(record: Path) -> str | None:
+    """Read the source a copy record names.
+
+    Args:
+        record: The record to read.
+
+    Returns:
+        The recorded source path, or None if the record cannot be read.
+    """
+    try:
+        return record.read_text(encoding="utf-8")
+    except OSError:
+        return None
+
+
+def _record_external_copy(dst_file: Path, src_file: Path) -> None:
+    """Remember the source of a shared asset that was copied instead of linked.
+
+    The record only lets a later cleanup remove the copy once its source is
+    gone, so failing to write it is logged rather than raised.
+
+    Args:
+        dst_file: The copy in the app's external assets directory.
+        src_file: The asset the copy was made from.
+    """
+    record = _external_copy_records_dir() / dst_file.relative_to(_external_assets_dir())
+    source = str(src_file.resolve())
+    if _read_copy_record(record) == source:
+        return
+    staging_dir = (
+        environment.REFLEX_WEB_WORKDIR.get() / _EXTERNAL_COPY_RECORDS_STAGING_DIR
+    )
+    tmp_record = staging_dir / uuid.uuid4().hex
+    try:
+        staging_dir.mkdir(parents=True, exist_ok=True)
+        record.parent.mkdir(parents=True, exist_ok=True)
+        tmp_record.write_text(source, encoding="utf-8")
+        tmp_record.replace(record)
+    except OSError as err:
+        # Windows denies the replace while a concurrent compile replaces the
+        # same record, which then already names this source.
+        if _read_copy_record(record) != source:
+            logger.debug(f"Could not record the source of {dst_file}: {err}")
+    finally:
+        tmp_record.unlink(missing_ok=True)
+
+
+def _remove_stale_external_copies(external_dir: Path) -> None:
+    """Remove copied shared assets whose source no longer exists.
+
+    Args:
+        external_dir: The app's external assets directory.
+    """
+    records_dir = _external_copy_records_dir()
+    if not records_dir.is_dir():
+        return
+    for record in [p for p in records_dir.rglob("*") if p.is_file()]:
+        source = _read_copy_record(record)
+        if source is None or Path(source).exists():
+            continue
+        copy = external_dir / record.relative_to(records_dir)
+        # Re-read just before deleting: a concurrent compile that copied a new
+        # source here has rewritten the record, and its copy must stay.
+        if _read_copy_record(record) != source:
+            continue
+        # A symlink there was linked since, and is the symlink cleanup's to judge.
+        if copy.is_file() and not copy.is_symlink():
+            copy.unlink(missing_ok=True)
+        record.unlink(missing_ok=True)
+
+
 def remove_stale_external_asset_symlinks():
-    """Remove broken symlinks and empty directories in assets/external/.
+    """Remove stale shared assets and empty directories in assets/external/.
 
     When a Python module directory that uses rx.asset(shared=True) is renamed
     or deleted, stale symlinks remain in assets/external/ pointing to the old
-    path. This cleanup prevents issues with file watchers detecting symlink
-    re-creation during import.
+    path, as do copies made where symlinks are unavailable. This cleanup
+    prevents issues with file watchers detecting symlink re-creation during
+    import, and stops removed assets from being published.
     """
-    external_dir = (
-        Path.cwd() / constants.Dirs.APP_ASSETS / constants.Dirs.EXTERNAL_APP_ASSETS
-    )
+    external_dir = _external_assets_dir()
     if not external_dir.exists():
         return
+
+    _remove_stale_external_copies(external_dir)
 
     # Remove broken symlinks.
     broken = [
@@ -229,7 +326,34 @@ def _links_to(dst_file: Path, src_file: Path) -> bool:
     return resolved == src_file.resolve()
 
 
-def _link_shared_asset(dst_file: Path, src_file: Path) -> None:
+def _copies(dst_file: Path, src_file: Path) -> bool:
+    """Check whether dst_file is already a plain copy of src_file.
+
+    The contents are compared on every call rather than through `filecmp`,
+    whose cache would miss a rewrite that kept the source's size and mtime.
+
+    Args:
+        dst_file: The path to inspect.
+        src_file: The asset the copy should match.
+
+    Returns:
+        Whether dst_file is a regular file with the same contents as src_file.
+    """
+    try:
+        if dst_file.is_symlink() or not dst_file.is_file():
+            return False
+        if dst_file.stat().st_size != src_file.stat().st_size:
+            return False
+        with dst_file.open("rb") as dst, src_file.open("rb") as src:
+            while chunk := dst.read(_HASH_CHUNK_SIZE):
+                if chunk != src.read(_HASH_CHUNK_SIZE):
+                    return False
+            return not src.read(1)
+    except OSError:
+        return False
+
+
+def _link_shared_asset(dst_file: Path, src_file: Path) -> bool:
     """Point dst_file at src_file with a symlink, regardless of what is there.
 
     Several processes routinely compile into the same assets/external/
@@ -242,39 +366,61 @@ def _link_shared_asset(dst_file: Path, src_file: Path) -> None:
 
     Windows is the exception: replacing a destination that another process is
     itself replacing is denied rather than serialised, so the rename is retried
-    there, conceding as soon as the other process turns out to have linked the
-    same asset.
+    there, conceding as soon as the other process turns out to have put the
+    same asset in place.
+
+    Where a symlink cannot be created, such as on Windows without the symlink
+    privilege or on a filesystem that does not support them, the asset is
+    copied instead through the same staged replace, and an up to date copy is
+    left alone.
 
     Args:
         dst_file: The symlink to create in the app's external assets directory.
         src_file: The asset file the symlink should point at.
+
+    Returns:
+        Whether the asset was copied rather than linked.
 
     Raises:
         PermissionError: If the destination could not be replaced.
     """
     if _links_to(dst_file, src_file):
         # Already correct: leave it alone so file watchers see no change.
-        return
+        return False
 
     # The staged name deliberately does not derive from the asset name: that
     # would have to be truncated to fit the filesystem's limit on a path
     # component, and cutting a name to a byte budget without splitting a
     # character is more machinery than a transient name is worth.
     tmp_file = dst_file.with_name(f".{uuid.uuid4().hex}.tmp")
+    copied = False
     try:
-        tmp_file.symlink_to(src_file)
-        for attempt in range(_MAX_LINK_ATTEMPTS):
+        try:
+            tmp_file.symlink_to(src_file)
+        except OSError:
+            # No symlink privilege or support: fall back to copying the asset.
+            copied = True
+            if _copies(dst_file, src_file):
+                # Already up to date: leave it alone so file watchers see no change.
+                return copied
+            shutil.copyfile(src_file, tmp_file)
+        attempts = 0
+        while True:
             try:
                 tmp_file.replace(dst_file)
             except PermissionError:  # bounded, and dwarfed by the syscall
+                # The process that denied us may have put the same asset in
+                # place, as a link or, where it could not link, as a copy.
                 if _links_to(dst_file, src_file):
-                    # The process that denied us wanted the same link.
-                    return
-                if attempt == _MAX_LINK_ATTEMPTS - 1:
+                    return False
+                if _copies(dst_file, src_file):
+                    return True
+                attempts += 1
+                if attempts == _MAX_LINK_ATTEMPTS:
                     raise
-                time.sleep(_LINK_RETRY_DELAY * (attempt + 1))
+                time.sleep(_LINK_RETRY_DELAY * attempts)
             else:
-                return
+                return copied
     finally:
         # A no-op once the rename succeeded, and the cleanup if it did not.
         tmp_file.unlink(missing_ok=True)
@@ -364,7 +510,9 @@ def asset(
         asset_folder = Path.cwd() / assets / external / subfolder
         asset_folder.mkdir(parents=True, exist_ok=True)
 
-        _link_shared_asset(asset_folder / path, src_file_shared)
+        dst_file = asset_folder / path
+        if _link_shared_asset(dst_file, src_file_shared):
+            _record_external_copy(dst_file, src_file_shared)
 
     return _versioned_asset_path(
         f"/{external}/{subfolder}/{path}",
