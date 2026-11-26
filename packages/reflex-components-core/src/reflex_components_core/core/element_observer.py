@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import dataclasses
 from collections.abc import Sequence
 
 from reflex_base.components.component import Component, field
 from reflex_base.event import EventHandler, passthrough_event_spec
 from reflex_base.utils.format import to_camel_case
 from reflex_base.utils.imports import ImportVar
-from reflex_base.vars import get_unique_variable_name
+from reflex_base.vars import use_id
 from reflex_base.vars.base import LiteralVar, Var
 
 from reflex_components_core.base.fragment import Fragment
@@ -74,15 +75,25 @@ class ElementObserver(Fragment):
         Raises:
             ValueError: If there is no target and not exactly one child component to observe.
         """
+        generated_id = False
         if "target" not in props:
             if len(children) != 1 or not isinstance(children[0], Component):
                 msg = "rx.element_observer needs a `target` id or exactly one child component to observe."
                 raise ValueError(msg)
             child = children[0]
             if child.id is None:
-                child.id = f"element_observer_{get_unique_variable_name()}"
+                child.id = use_id()
+                generated_id = True
             props["target"] = child.id
-        return super().create(*children, **props)  # pyright: ignore[reportReturnType]
+        observer = super().create(*children, **props)
+        if generated_id:
+            # useId differs between the observers that one compiled component
+            # renders, as in rx.foreach, but holds only within one compiled
+            # component, so the child compiles into the observer's.
+            observer._memoization_mode = dataclasses.replace(
+                observer._memoization_mode, recursive=False
+            )
+        return observer  # pyright: ignore[reportReturnType]
 
     def _exclude_props(self) -> list[str]:
         """Keep the observer's props off the rendered fragment.

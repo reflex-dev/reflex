@@ -4,6 +4,7 @@ The observers report into client state, in an app without a backend, so every
 value on the page comes from the browser alone.
 """
 
+import re
 from collections.abc import Generator
 
 import pytest
@@ -23,6 +24,7 @@ def ElementObserverApp():
     visible = rx.client_state(False, name="visible")
     expanded = rx.client_state(False, name="expanded")
     ended = rx.client_state("", name="ended")
+    item_widths = rx.client_state("", name="item_widths")
 
     def readout(label: str, value: rx.Var) -> rx.Component:
         return rx.el.p(value, id=label)
@@ -34,6 +36,7 @@ def ElementObserverApp():
                 readout("top", top.value),
                 readout("visible", rx.cond(visible.value, "visible", "hidden")),
                 readout("ended", ended.value),
+                readout("item_widths", item_widths.value),
                 style={"position": "fixed", "right": "0", "top": "0"},
             ),
             rx.el.button("Widen", id="widen", on_click=wide.set(True)),
@@ -71,6 +74,20 @@ def ElementObserverApp():
                 ),
                 on_transition_end=lambda name: ended.set(
                     lambda names: names.to(str) + name + ";"
+                ),
+            ),
+            rx.foreach(
+                rx.Var.create([40, 60]),
+                lambda item_width: rx.element_observer(
+                    rx.el.div(
+                        style={
+                            "width": item_width.to_string() + "px",
+                            "height": "10px",
+                        }
+                    ),
+                    on_resize=lambda w, h: item_widths.set(
+                        lambda widths: widths.to(str) + w.to_string() + ";"
+                    ),
                 ),
             ),
             rx.el.div(style={"height": "200vh"}),
@@ -167,3 +184,11 @@ def test_on_transition_end_ignores_transitions_of_descendants(observer_page: Pag
     """Only the transition of the observed element itself fires on_transition_end."""
     observer_page.click("#expand")
     expect(observer_page.locator("#ended")).to_have_text("height;")
+
+
+def test_items_of_a_loop_observe_their_own_child(observer_page: Page):
+    """Every item of rx.foreach reports the size of its own child."""
+    # React's StrictMode starts the observers twice in dev mode.
+    expect(observer_page.locator("#item_widths")).to_have_text(
+        re.compile(r"^(40;60;)+$")
+    )

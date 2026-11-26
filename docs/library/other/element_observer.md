@@ -17,9 +17,9 @@ Its triggers fit [client state](/docs/wrapping-react/overview): setting a client
 state var from them restyles the page from what the browser measured, without a
 round trip to the backend. They accept backend event handlers as well.
 
-The observed element is the only child, which gets a generated id if it has
-none. To observe an element rendered elsewhere, leave out the child and pass
-its id as `target`.
+The observed element is the only child. If it has no id, it gets one from
+React's `useId`, which differs between the items of an `rx.foreach`. To observe
+an element rendered elsewhere, leave out the child and pass its id as `target`.
 
 ## Size
 
