@@ -68,6 +68,7 @@ const signatures = async (names) => {
 
 test("classifies each parameter's type into the JSON value Python sends", async () => {
   // types.ts declares `mode: "b" | "a" | 2 | true`; the union comes out sorted.
+  // typed.ts declares `picks: ["b", ("c" | "a")?]`, whose items are one union.
   expect(
     await signatures(["jsdoc.js", "typed.ts", "types.ts", "script.js"]),
   ).toEqual(JSON.parse(readFileSync(`${fixtures}signatures.json`, "utf-8")));

@@ -70,13 +70,17 @@ const BOOLEAN_LITERALS = [true, false].map((value) =>
 
 /**
  * Combine types into their union, in an order that does not depend on the
- * order the checker happened to create them in.
+ * order the checker happened to create them in. A member that is a union, as
+ * the type of a tuple's optional element is, adds its members, each once.
  * @param {JsonType[]} types The types.
  * @returns {JsonType} The union; "any" if a member is, or if there is none.
  */
 const union = (types) => {
   if (types.includes("any")) return "any";
-  const members = new Map(types.map((type) => [JSON.stringify(type), type]));
+  const flat = types.flatMap((type) =>
+    typeof type === "object" && type.kind === "union" ? type.members : [type],
+  );
+  const members = new Map(flat.map((type) => [JSON.stringify(type), type]));
   if (BOOLEAN_LITERALS.every((key) => members.has(key))) {
     for (const key of BOOLEAN_LITERALS) members.delete(key);
     members.set(JSON.stringify("bool"), "bool");

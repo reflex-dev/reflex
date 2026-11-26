@@ -166,6 +166,50 @@
             }
           ]
         }
+      ],
+      "optionalItems": [
+        {
+          "parameters": [
+            {
+              "name": "pair",
+              "type": {
+                "kind": "list",
+                "item": {
+                  "kind": "union",
+                  "members": ["None", "str"]
+                }
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "picks",
+              "type": {
+                "kind": "list",
+                "item": {
+                  "kind": "union",
+                  "members": [
+                    "None",
+                    {
+                      "kind": "literal",
+                      "value": "a"
+                    },
+                    {
+                      "kind": "literal",
+                      "value": "b"
+                    },
+                    {
+                      "kind": "literal",
+                      "value": "c"
+                    }
+                  ]
+                }
+              },
+              "optional": false,
+              "rest": false
+            }
+          ]
+        }
       ]
     },
     "types.ts": {
