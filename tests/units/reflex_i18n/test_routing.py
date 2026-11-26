@@ -733,7 +733,7 @@ def test_pre_compile_adds_alternates_to_a_sitemap(
         add_save_task=lambda *args, **kwargs: None,
         add_modify_task=lambda path, _: modified.append(path),
     )  # pyright: ignore[reportCallIssue]
-    assert modified == expected
+    assert [Path(path) for path in modified] == [Path(path) for path in expected]
 
 
 def test_index_module_exports_translated_paths():
