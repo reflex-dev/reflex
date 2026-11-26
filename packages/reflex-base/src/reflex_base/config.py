@@ -192,6 +192,9 @@ class BaseConfig:
         redis_lock_expiration: Maximum expiration lock time for redis state manager.
         redis_lock_warning_threshold: Maximum lock time before warning for redis state manager.
         redis_token_expiration: Token expiration time for redis state manager.
+        session_token_ttl: Browser session lifetime in seconds, defaulting to seven days.
+        session_token_refresh_interval: Session age in seconds before refreshing the cookie. None uses half the session TTL.
+        session_token_max_age: Seconds after a browser session is first issued when renewal stops and the session ends, defaulting to seven days.
         env_file: Path to file containing key-values pairs to load into the environment; Dotenv format. Multiple files may be separated by os.pathsep. Requires the python-dotenv package.
         state_auto_setters: Whether to automatically create setters for state base vars.
         state_explicit_event_handlers: Whether only methods decorated with `@rx.event` become event handlers. By default every public method of a user-defined state is an event handler.
@@ -273,6 +276,12 @@ class BaseConfig:
     redis_lock_warning_threshold: int = constants.Expiration.LOCK_WARNING_THRESHOLD
 
     redis_token_expiration: int = constants.Expiration.TOKEN
+
+    session_token_ttl: int = 7 * 24 * 60 * 60  # Seven days, in seconds.
+
+    session_token_refresh_interval: int | None = None
+
+    session_token_max_age: int = 7 * 24 * 60 * 60  # Seven days, in seconds.
 
     # Attributes that were explicitly set by the user.
     _non_default_attributes: set[str] = dataclasses.field(

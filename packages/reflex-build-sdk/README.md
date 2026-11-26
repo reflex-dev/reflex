@@ -147,6 +147,29 @@ with ReflexBuild() as client:
 
 `client.apps.connections` calls third-party services an app is connected to without the app holding their keys: Reflex Build stores the credentials and hands out a live one per call, so read one for each call rather than storing it. `connect_link` starts a connection and returns the page to send someone to, `status` and `list` report what is connected, and `disconnect` ends it. A connection belongs either to the app or to one of its users, named with `end_user`. These need the app's own token, so a client built with no arguments inside a deployed app is already the right one.
 
+## Receiving trigger deliveries
+
+A trigger in a Reflex Build project feeds events to entry points an app declares. The platform POSTs them in batches to the app's `/_triggers` route, signed in the [Standard Webhooks](https://www.standardwebhooks.com/) format, and reads one result per event from the reply. It signs with an Ed25519 key of the app's own (`v1a`) and ships the app only its public half, in `REFLEX_TRIGGER_PUBLIC_KEY`, so nothing the app holds can sign a delivery another app, or another environment of the same app, would accept. `reflex_build_sdk.triggers` is that protocol. Verifying needs `cryptography`, which the `triggers` extra installs (`reflex-build-sdk[triggers]`):
+
+```python
+from reflex_build_sdk import triggers
+
+entry_points = triggers.EntryPoints()
+
+
+@entry_points.add(event=NewUser, start=Onboarding.welcome)
+def onboard_new_user(event: NewUser) -> Onboarding | None:
+    return Onboarding(user_id=event.user_id, email=event.email)
+```
+
+- `parse_delivery(body, headers)` verifies the signature (five minutes of clock tolerance, any of several signatures while a key rotates) and returns a `Delivery` whose `events` each carry `id`, `trigger_id`, `entry_point`, `payload` and `key` (`"{trigger_id}:{id}"`, for the workflow's unique `trigger_key` column). It raises `InvalidSignature` for a request the platform did not sign (answer 401), and `InvalidDelivery`, its base class, for a signed body this SDK version cannot read (answer 400). With several public keys in `REFLEX_TRIGGER_PUBLIC_KEY`, separated by spaces, any of them verifies. Only `v1a` signatures are accepted; an HMAC (`v1`) signature is refused.
+- `entry_points.get(event.entry_point)` returns `None` for an entry point the app no longer declares, such as one renamed since the trigger was set up. Answer `INVALID` for that event: a retry would fail the same way.
+- `entry_points.get(name).build(payload)` validates the payload against the event class (anything with pydantic's `model_validate` and `model_json_schema`) and calls the function. It raises `InvalidPayload`, and a function returning `None` skips the event. The function only builds a row: side effects belong in workflow steps, since a resent event runs it again.
+- `reply({event.id: triggers.Result.STARTED, ...})` is the response body. The platform retries only `ERROR`; `STARTED`, `DUPLICATE`, `SKIPPED` and `INVALID` are final.
+- `GET /_triggers` answers `entry_points.manifest()` after `verify(b"", headers)`, so the platform can offer the entry points, and their event schemas, to a trigger.
+
+The manifest names each entry point's workflow from the qualified name of its `start` step's function, so declare the step on the workflow class itself rather than on a shared base. Starting the run is `await row.start(entry.start, key=type(row).trigger_key)`, which needs a reflex-workflow newer than 0.1.0. It returns `False` for a resend (`DUPLICATE`) and raises `RunConflict` for a clash on another unique column.
+
 ## Authentication
 
 The client uses the `token` argument, or the `REFLEX_ACCESS_TOKEN` environment variable when none is passed.

@@ -4,7 +4,7 @@ import asyncio
 import contextlib
 from enum import Enum
 
-import httpx
+import httpx2
 
 import reflex as rx
 from reflex_site_shared.constants import (
@@ -34,7 +34,7 @@ async def check_status(check_id: str) -> dict:
         A dictionary with failure and degraded flags.
     """
     status_url = f"{CHECKLY_API_BASE_URL}/check-statuses/{check_id}"
-    async with httpx.AsyncClient() as client:
+    async with httpx2.AsyncClient() as client:
         status_response = await client.get(
             status_url,
             headers={
@@ -76,7 +76,7 @@ async def monitor_checkly_status() -> None:
 
                 # Get checks in this group
                 checks_url = f"{CHECKLY_API_BASE_URL}/check-groups/{CHECKLY_CHECK_GROUP_ID}/checks"
-                async with httpx.AsyncClient(timeout=httpx.Timeout(30)) as client:
+                async with httpx2.AsyncClient(timeout=httpx2.Timeout(30)) as client:
                     checks_response = await client.get(checks_url, headers=headers)
                 if checks_response.status_code == 200:
                     checks = checks_response.json()
