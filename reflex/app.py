@@ -332,6 +332,7 @@ class UnevaluatedPage:
     on_load: EventType[()] | None = None
     meta: Sequence[Mapping[str, Any] | Component] = ()
     context: Mapping[str, Any] = dataclasses.field(default_factory=dict)
+    stylesheets: Sequence[str] = ()
     _source_module: str | None = None
 
     def merged_with(self, other: UnevaluatedPage) -> UnevaluatedPage:
@@ -351,6 +352,7 @@ class UnevaluatedPage:
             else other.description,
             on_load=self.on_load if self.on_load is not None else other.on_load,
             context=self.context if self.context is not None else other.context,
+            stylesheets=self.stylesheets or other.stylesheets,
             _source_module=self._source_module
             if self._source_module is not None
             else other._source_module,
@@ -1581,6 +1583,7 @@ class App(MiddlewareMixin, LifespanMixin):
         on_load: EventType[()] | None = None,
         meta: Sequence[Mapping[str, Any] | Component] = constants.DefaultPage.META_LIST,
         context: dict[str, Any] | None = None,
+        stylesheets: Sequence[str] = (),
     ):
         """Add a page to the app.
 
@@ -1596,6 +1599,9 @@ class App(MiddlewareMixin, LifespanMixin):
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
             context: Values passed to page for custom page-specific logic.
+            stylesheets: Stylesheets only this page loads, after the app's, as
+                ``App.stylesheets`` takes them: files or directories in the
+                assets directory, or URLs.
 
         Raises:
             BackendVarFormatError: When title, description, image or on_load is a field with no frontend var.
@@ -1613,6 +1619,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 on_load,
                 meta,
                 context,
+                stylesheets=stylesheets,
             )
         )
 
@@ -1626,6 +1633,7 @@ class App(MiddlewareMixin, LifespanMixin):
         on_load: EventType[()] | None = None,
         meta: Sequence[Mapping[str, Any] | Component] = constants.DefaultPage.META_LIST,
         context: dict[str, Any] | None = None,
+        stylesheets: Sequence[str] = (),
     ) -> _PreparedPage:
         """Validate and normalize a page without mutating app route state.
 
@@ -1642,6 +1650,7 @@ class App(MiddlewareMixin, LifespanMixin):
             on_load: The event handler(s) called each time the page loads.
             meta: The metadata of the page.
             context: Values passed to page for custom page-specific logic.
+            stylesheets: Stylesheets only this page loads, after the app's.
 
         Returns:
             The validated page descriptor and its dynamic route arguments.
@@ -1698,6 +1707,10 @@ class App(MiddlewareMixin, LifespanMixin):
             on_load=on_load,
             meta=meta,
             context=context or {},
+            # A string is a sequence of strings too, one per character.
+            stylesheets=(stylesheets,)
+            if isinstance(stylesheets, str)
+            else tuple(stylesheets),
             _source_module=source_module,
         )
 

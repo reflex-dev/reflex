@@ -58,7 +58,11 @@ def write_file(path: str | Path, code: str):
     """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    if path.exists() and path.read_text(encoding="utf-8") == code:
+    if path.is_symlink():
+        # Writing through a link, such as a stylesheet the compile linked into
+        # the styles directory, would overwrite the file it points at.
+        path.unlink()
+    elif path.exists() and path.read_text(encoding="utf-8") == code:
         return
     path.write_text(code, encoding="utf-8")
 

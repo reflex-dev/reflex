@@ -80,6 +80,7 @@ class AddPageProtocol(Protocol):
         on_load: "EventType[()] | None" = None,
         meta: Sequence["Mapping[str, Any] | Component"] = ...,
         context: dict[str, Any] | None = None,
+        stylesheets: Sequence[str] = ...,
         **extra_page_args: Any,
     ) -> None:
         """Stage a page contribution owned by the calling plugin.
@@ -93,6 +94,7 @@ class AddPageProtocol(Protocol):
             on_load: The event handler(s) called each time the page loads.
             meta: The metadata of the page.
             context: Values passed to the page for custom page-specific logic.
+            stylesheets: Stylesheets only this page loads, after the app's.
             extra_page_args: Keyword arguments added by concrete ``App``
                 subclasses that extend page registration.
         """

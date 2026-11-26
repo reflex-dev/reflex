@@ -467,6 +467,41 @@ def test_apply_decorated_pages_uses_app_context(
     assert "decorated" in app._unevaluated_pages
 
 
+def test_readded_page_keeps_its_stylesheets(
+    forked_registration_context: RegistrationContext,
+    app: App,
+    index_page: ComponentCallable,
+):
+    """An ``@rx.page`` function the app added with stylesheets keeps them.
+
+    Args:
+        forked_registration_context: The forked registration context.
+        app: The app to test.
+        index_page: The index page.
+    """
+    forked_registration_context.decorated_pages.append((
+        index_page,
+        {"route": "pricing"},
+    ))
+    app.add_page(index_page, route="pricing", stylesheets=["/pricing.css"])
+
+    app._apply_decorated_pages()
+
+    assert app._unevaluated_pages["pricing"].stylesheets == ("/pricing.css",)
+
+
+def test_add_page_single_stylesheet(app: App, index_page: ComponentCallable):
+    """A single stylesheet given as a string is one stylesheet, not one per character.
+
+    Args:
+        app: The app to test.
+        index_page: The index page.
+    """
+    app.add_page(index_page, route="pricing", stylesheets="/pricing.css")
+
+    assert app._unevaluated_pages["pricing"].stylesheets == ("/pricing.css",)
+
+
 def test_add_page_invalid_api_route(app: App, index_page: ComponentCallable):
     """Test adding a page with an invalid route to an app.
 

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from reflex_base import constants
 from reflex_base.utils import memo_paths
 from reflex_base.utils.format import json_dumps
-from reflex_base.vars.base import VarData
+from reflex_base.vars.base import Var, VarData
 
 if TYPE_CHECKING:
     from reflex.compiler.utils import _ImportDict
@@ -653,6 +653,7 @@ def page_template(
     render: dict[str, Any],
     route: str = "",
     client_state_owns: Sequence[str] = (),
+    links: Var | None = None,
 ):
     """Template for a single react page.
 
@@ -684,6 +685,8 @@ def page_template(
             given, the exported component is ``Component`` wrapped in a client
             state scope claiming them, so hooks in the page body resolve inside
             it.
+        links: The link descriptors the route module exports as ``links``,
+            which React Router renders in the head while the route is shown.
 
     Returns:
         Rendered React page component as string.
@@ -703,6 +706,7 @@ def page_template(
         if client_state_owns
         else "Component"
     )
+    links_str = f"export const links = () => {links!s};\n" if links is not None else ""
     return f"""{imports_str}
 
 {dynamic_imports_str}
@@ -716,7 +720,7 @@ function Component() {{
     {_RenderUtils.render(render)}
   )
 }}
-{display_name_str}
+{display_name_str}{links_str}
 export default {export_str};
 """
 
@@ -772,6 +776,7 @@ def vite_config_template(
     prod_react: bool = False,
     warmup_routes: bool = False,
     react_compiler: bool = False,
+    fs_allow: Sequence[str] = (),
 ):
     """Template for vite.config.js.
 
@@ -788,10 +793,18 @@ def vite_config_template(
         warmup_routes: Pre-transform every route module when the dev server
             starts, so the first visit to a page does not wait on Vite.
         react_compiler: Enable React Compiler for generated components.
+        fs_allow: Directories the dev server may serve files from besides the
+            frontend's own, such as the fonts a linked stylesheet references.
 
     Returns:
         Rendered vite.config.js content as string.
     """
+    fs_allow_line = (
+        "\n    fs: { allow: [searchForWorkspaceRoot(process.cwd()), "
+        f"...{json.dumps(list(fs_allow))}] }},"
+        if fs_allow
+        else ""
+    )
     if allowed_hosts is True:
         allowed_hosts_line = "\n    allowedHosts: true,"
     elif isinstance(allowed_hosts, list) and allowed_hosts:
@@ -892,7 +905,7 @@ function prodReactPrebundle() {
     react_compiler_plugin = "    reactCompiler(),\n" if react_compiler else ""
     return rf"""import {{ fileURLToPath, URL }} from "url";
 import {{ reactRouter }} from "@react-router/dev/vite";
-import {{ defineConfig }} from "vite";
+import {{ defineConfig, searchForWorkspaceRoot }} from "vite";
 import safariCacheBustPlugin from "./vite-plugin-safari-cachebust.js";
 {react_compiler_import}
 // Ensure that bun always uses the react-dom/server.node functions.
@@ -991,7 +1004,7 @@ export default defineConfig((config) => ({{
     hmr: {"true" if experimental_hmr else "false"},
   }},{prod_react_str}
   server: {{
-    port: process.env.PORT,{allowed_hosts_line}
+    port: process.env.PORT,{allowed_hosts_line}{fs_allow_line}
     hmr: {"true" if hmr else "false"},{warmup_str}
     watch: {{
       ignored: [

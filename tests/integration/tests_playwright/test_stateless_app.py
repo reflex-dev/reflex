@@ -12,14 +12,31 @@ from reflex.testing import AppHarness
 
 
 def StatelessApp():
-    """A stateless app that renders a heading."""
+    """A stateless app that renders a heading and a page with its own stylesheet."""
+    from pathlib import Path
+
     import reflex as rx
 
     def index():
-        return rx.heading("This is a stateless app")
+        return rx.fragment(
+            rx.heading("This is a stateless app"),
+            rx.el.p("Index", class_name="page-styled", id="index-paragraph"),
+            rx.link("Styled", href="/styled", id="styled-link"),
+        )
 
-    app = rx.App(enable_state=False)
+    def styled():
+        return rx.fragment(
+            rx.el.p("Styled", class_name="page-styled", id="styled-paragraph"),
+            rx.link("Home", href="/", id="home-link"),
+        )
+
+    assets = Path.cwd() / "assets"
+    assets.mkdir(exist_ok=True)
+    (assets / "app.css").write_text(".page-styled { color: rgb(255, 0, 0); }")
+    (assets / "styled.css").write_text(".page-styled { color: rgb(0, 0, 255); }")
+    app = rx.App(enable_state=False, stylesheets=["/app.css"])
     app.add_page(index)
+    app.add_page(styled, route="/styled", stylesheets=["/styled.css"])
 
 
 @pytest.fixture(scope="module")
@@ -59,3 +76,29 @@ def test_statelessness(stateless_app: AppHarness, page: Page):
 
     page.goto(stateless_app.frontend_url)
     expect(page.get_by_role("heading")).to_have_text("This is a stateless app")
+
+
+def test_page_stylesheets(stateless_app: AppHarness, page: Page):
+    """A page's stylesheet applies after the app's, only while the page is shown.
+
+    The links navigate client-side, so React Router itself has to add the
+    stylesheet and remove it again: a document reload would drop it anyway.
+
+    Args:
+        stateless_app: A harness for testing the stateless app.
+        page: A Playwright page.
+    """
+    assert stateless_app.frontend_url is not None
+    page.goto(stateless_app.frontend_url)
+    expect(page.locator("#index-paragraph")).to_have_css("color", "rgb(255, 0, 0)")
+    page.evaluate("() => { window.__same_document = true; }")
+
+    page.locator("#styled-link").click()
+    expect(page.locator("#styled-paragraph")).to_have_css("color", "rgb(0, 0, 255)")
+
+    page.locator("#home-link").click()
+    expect(page.locator("#index-paragraph")).to_have_css("color", "rgb(255, 0, 0)")
+    assert page.evaluate("() => window.__same_document") is True
+
+    page.goto(stateless_app.frontend_url.rstrip("/") + "/styled")
+    expect(page.locator("#styled-paragraph")).to_have_css("color", "rgb(0, 0, 255)")

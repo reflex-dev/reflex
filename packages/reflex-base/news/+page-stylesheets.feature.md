@@ -1,0 +1,1 @@
+Plugins see a page's stylesheets: the `add_page` that `register_route` receives takes `stylesheets=`, and `PageContext.stylesheets` holds them. `page_template` takes `links`, which the route module exports as React Router's `links`, and an embedded app's entry renders them with their page, as it has no `<Links/>`.

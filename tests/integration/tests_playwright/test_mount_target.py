@@ -21,6 +21,8 @@ from reflex.utils.prerequisites import get_web_dir
 
 
 def MountTargetApp():
+    from pathlib import Path
+
     import reflex as rx
 
     class S(rx.State):
@@ -46,13 +48,15 @@ def MountTargetApp():
             rx.button("inc", on_click=S.inc, id="inc"),
             rx.link("about", href="/about", id="link-about"),
             rx.link("counter", href="/counter", id="link-counter"),
+            rx.el.p("index", class_name="page-styled", id="index-styled"),
             id="index-marker",
         )
 
-    @rx.page(route="/about", on_load=S.on_load_about)
+    @rx.page(route="/about", on_load=S.on_load_about, stylesheets=["/about.css"])
     def about():
         return rx.box(
             rx.text("about page"),
+            rx.el.p("about", class_name="page-styled", id="about-styled"),
             rx.text("loaded: ", S.last_loaded_path, id="loaded-path"),
             rx.link("home", href="/", id="link-home"),
             id="about-marker",
@@ -66,7 +70,11 @@ def MountTargetApp():
             id="counter-marker",
         )
 
-    app = rx.App()
+    assets = Path.cwd() / "assets"
+    assets.mkdir(exist_ok=True)
+    (assets / "app.css").write_text(".page-styled { color: rgb(255, 0, 0); }")
+    (assets / "about.css").write_text(".page-styled { color: rgb(0, 0, 255); }")
+    app = rx.App(stylesheets=["/app.css"])
     app.add_page(index)
 
     # Set plugins after rx.App() because App.__post_init__ reloads the config
@@ -167,3 +175,29 @@ def test_on_load_fires_for_embedded_route(mount_target_app: AppHarnessProd, page
     expect(page.locator("#reflex-root #counter-marker")).to_be_visible()
     expect(page.locator("#reflex-root #count")).to_have_text("count: 1")
     expect(page.locator("#reflex-root #loaded-path")).to_have_text("loaded: /counter")
+
+
+def test_page_stylesheets_in_widget(mount_target_app: AppHarnessProd, page: Page):
+    """A page's stylesheet applies after the app's, only while the widget shows the page.
+
+    Args:
+        mount_target_app: The running harness.
+        page: A Playwright page.
+    """
+    static = _static_dir(mount_target_app)
+    _write_host(static)
+
+    base = mount_target_app.frontend_url
+    assert base is not None
+    page.goto(f"{base.rstrip('/')}/host.html")
+
+    styled = page.locator("#reflex-root #index-styled")
+    expect(styled).to_have_css("color", "rgb(255, 0, 0)")
+
+    page.locator("#reflex-root #link-about").click()
+    expect(page.locator("#reflex-root #about-styled")).to_have_css(
+        "color", "rgb(0, 0, 255)"
+    )
+
+    page.locator("#reflex-root #link-home").click()
+    expect(styled).to_have_css("color", "rgb(255, 0, 0)")

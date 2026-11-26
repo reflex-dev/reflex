@@ -5,6 +5,7 @@ import os
 import re
 import shutil
 import sys
+from collections.abc import Sequence
 from pathlib import Path, PureWindowsPath
 
 import pytest
@@ -328,6 +329,217 @@ def test_compile_stylesheets(tmp_path: Path, mocker: MockerFixture):
     ).read_text()
 
 
+def test_page_stylesheets(tmp_path: Path, mocker: MockerFixture):
+    """A page's stylesheets become its route module's ``links`` export.
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+    """
+    project = tmp_path / "test_project"
+    assets_dir = project / "assets"
+    (assets_dir / "pages").mkdir(parents=True)
+    (assets_dir / "pages" / "pricing.css").write_text(".pricing { color: red; }")
+    (assets_dir / "pages" / "pricing.txt").write_text("not a stylesheet")
+    (assets_dir / "shared.css").write_text(".shared { color: blue; }")
+    web_dir = project / constants.Dirs.WEB
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+    mocker.patch("reflex.compiler.compiler.get_web_dir", return_value=web_dir)
+    mocker.patch("reflex.compiler.utils.get_web_dir", return_value=web_dir)
+
+    app = rx.App()
+    app.add_page(
+        rx.el.div("pricing"),
+        route="/pricing",
+        title="Pricing",
+        image="https://example.com/pricing.png",
+        stylesheets=[
+            "/shared.css",
+            "https://fonts.example.com/font.css",
+            "/pages",
+            "/shared.css",
+        ],
+    )
+    app.add_page(rx.el.div("plain"), route="/plain", title="Plain")
+    compile_ctx = CompileContext(
+        app=app,
+        pages=list(app._unevaluated_pages.values()),
+        hooks=CompilerHooks(plugins=default_page_plugins()),
+    )
+    with compile_ctx:
+        compiled = compile_ctx.compile()
+
+    assert compiled["pricing"].output_code == (
+        'import {Fragment,useEffect} from "react"\n'
+        'import {jsx} from "@emotion/react"\n'
+        'import reflexPageStylesheet0 from "$/styles/shared.css?url"\n'
+        'import reflexPageStylesheet2 from "$/styles/pages/pricing.css?url"\n'
+        "\n\n\n\n\n"
+        "function Component() {\n"
+        "\n\n"
+        "  return (\n"
+        '    jsx(Fragment,{},jsx("div",{},"pricing"),jsx("title",{},"Pricing"),'
+        'jsx("meta",{content:"https://example.com/pricing.png",property:"og:image"},))\n'
+        "  )\n"
+        "}\n"
+        'Component.displayName = "Component(pricing)";\n'
+        "export const links = () => ["
+        '({ ["rel"] : "stylesheet", ["href"] : reflexPageStylesheet0 }), '
+        '({ ["rel"] : "stylesheet", ["href"] : "https://fonts.example.com/font.css" }), '
+        '({ ["rel"] : "stylesheet", ["href"] : reflexPageStylesheet2 })];\n'
+        "\n"
+        "export default Component;\n"
+    )
+    assert compiled["plain"].output_code == (
+        'import {Fragment,useEffect} from "react"\n'
+        'import {jsx} from "@emotion/react"\n'
+        "\n\n\n\n\n"
+        "function Component() {\n"
+        "\n\n"
+        "  return (\n"
+        '    jsx(Fragment,{},jsx("div",{},"plain"),jsx("title",{},"Plain"),'
+        'jsx("meta",{content:"favicon.ico",property:"og:image"},))\n'
+        "  )\n"
+        "}\n"
+        'Component.displayName = "Component(plain)";\n'
+        "\n"
+        "export default Component;\n"
+    )
+    assert (web_dir / "styles" / "shared.css").read_text() == ".shared { color: blue; }"
+    assert (web_dir / "styles" / "pages" / "pricing.css").read_text() == (
+        ".pricing { color: red; }"
+    )
+
+
+def test_page_stylesheet_not_found(tmp_path: Path, mocker: MockerFixture):
+    """A page stylesheet missing from the assets directory fails the compile.
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+    """
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=tmp_path)
+
+    with pytest.raises(FileNotFoundError) as err:
+        compiler.compile_page_stylesheets(["/missing.css"])
+
+    assert str(err.value) == (
+        f"The stylesheet file {tmp_path / 'assets' / 'missing.css'} does not exist."
+    )
+
+
+def _linked_stylesheet_project(tmp_path: Path, mocker: MockerFixture) -> Path:
+    """Lay out a shared stylesheet linked into the assets directory, like rx.asset(shared=True).
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+
+    Returns:
+        The real stylesheet in the package directory.
+    """
+    real = tmp_path / "pkg" / "css" / "site.css"
+    real.parent.mkdir(parents=True)
+    real.write_text(".site { background: url(../images/y.png); }")
+    link = tmp_path / "assets" / "external" / "pkg" / "css" / "site.css"
+    link.parent.mkdir(parents=True)
+    link.symlink_to(real)
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=tmp_path)
+    mocker.patch(
+        "reflex.compiler.compiler.get_web_dir",
+        return_value=tmp_path / constants.Dirs.WEB,
+    )
+    return real
+
+
+@pytest.mark.skipif(os.name == "nt", reason="symlinks need a privilege on Windows")
+def test_stylesheets_link_to_their_real_file(tmp_path: Path, mocker: MockerFixture):
+    """App and page stylesheets point at their real file, so its relative urls resolve there.
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+    """
+    real = _linked_stylesheet_project(tmp_path, mocker)
+    styles = tmp_path / constants.Dirs.WEB / "styles"
+
+    _, code = compiler.compile_root_stylesheet(
+        ["/external/pkg/css/site.css"], reset_style=False
+    )
+    links = compiler.compile_page_stylesheets(["/external/pkg/css/site.css"])
+
+    assert code == "@layer __reflex_base;\n@import url('./external/pkg/css/site.css');"
+    assert str(links) == (
+        '[({ ["rel"] : "stylesheet", ["href"] : reflexPageStylesheet0 })]'
+    )
+    target = styles / "external" / "pkg" / "css" / "site.css"
+    assert target.is_symlink()
+    assert target.readlink() == real
+
+
+@pytest.mark.skipif(os.name == "nt", reason="symlinks need a privilege on Windows")
+def test_stylesheet_copied_where_links_fail(tmp_path: Path, mocker: MockerFixture):
+    """Without symlinks a stylesheet is copied, never written through an old link.
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+    """
+    real = _linked_stylesheet_project(tmp_path, mocker)
+    target = (
+        tmp_path
+        / constants.Dirs.WEB
+        / "styles"
+        / "external"
+        / "pkg"
+        / "css"
+        / "site.css"
+    )
+    target.parent.mkdir(parents=True)
+    target.symlink_to(real)
+    mocker.patch(
+        "reflex.compiler.compiler._link_shared_asset",
+        side_effect=OSError("A required privilege is not held by the client"),
+    )
+
+    compiler.compile_root_stylesheet(["/external/pkg/css/site.css"], reset_style=False)
+
+    assert not target.is_symlink()
+    assert target.read_text() == ".site { background: url(../images/y.png); }"
+    assert real.read_text() == ".site { background: url(../images/y.png); }"
+
+
+@pytest.mark.skipif(os.name == "nt", reason="symlinks need a privilege on Windows")
+def test_sass_replaces_a_stylesheet_link(tmp_path: Path, mocker: MockerFixture):
+    """Compiled sass replaces a link an earlier compile left, never the file behind it.
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+    """
+    if importlib.util.find_spec("sass") is None:
+        pytest.skip(
+            'The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`.'
+        )
+    assets_dir = tmp_path / "assets"
+    assets_dir.mkdir()
+    (assets_dir / "theme.css").write_text(".theme { color: red; }")
+    target = tmp_path / constants.Dirs.WEB / "styles" / "theme.css"
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=tmp_path)
+    mocker.patch("reflex.compiler.compiler.get_web_dir", return_value=tmp_path / ".web")
+    compiler.compile_root_stylesheet(["/theme.css"], reset_style=False)
+    assert target.is_symlink()
+
+    (assets_dir / "theme.css").unlink()
+    (assets_dir / "theme.scss").write_text(".theme { color: blue; }")
+    _, code = compiler.compile_root_stylesheet(["/theme.scss"], reset_style=False)
+
+    assert code == "@layer __reflex_base;\n@import url('./theme.css');"
+    assert not target.is_symlink()
+    assert target.read_text() == ".theme{color:blue}\n"
+    assert sorted(path.name for path in assets_dir.iterdir()) == ["theme.scss"]
+
+
 def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
     if importlib.util.find_spec("sass") is None:
         pytest.skip(
@@ -417,6 +629,51 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
     assert (
         project / constants.Dirs.WEB / "styles" / "preprocess" / "styles_b.css"
     ).read_text() == expected_result
+
+
+def test_compile_stylesheets_sharing_a_name(tmp_path: Path, mocker: MockerFixture):
+    """A sass stylesheet named like another one keeps its suffix in the styles directory.
+
+    Otherwise both would compile to the same file, and whichever compiled last
+    would supply the CSS for every page and the app.
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+    """
+    if importlib.util.find_spec("sass") is None:
+        pytest.skip(
+            'The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`.'
+        )
+    assets_dir = tmp_path / "assets"
+    assets_dir.mkdir()
+    (assets_dir / "theme.css").write_text(".theme { color: red; }")
+    (assets_dir / "theme.scss").write_text(".theme { color: blue; }")
+    (assets_dir / "theme.sass").write_text(".theme\n\tcolor: green")
+    styles = tmp_path / constants.Dirs.WEB / "styles"
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=tmp_path)
+    mocker.patch("reflex.compiler.compiler.get_web_dir", return_value=tmp_path / ".web")
+
+    _, code = compiler.compile_root_stylesheet(["/theme.css"], reset_style=False)
+    links = compiler.compile_page_stylesheets(["/theme.scss", "/theme.sass"])
+
+    assert code == "@layer __reflex_base;\n@import url('./theme.css');"
+    assert links is not None
+    var_data = links._get_all_var_data()
+    assert var_data is not None
+    assert var_data.imports == (
+        (
+            "$/styles/theme.scss.css?url",
+            (ImportVar(tag="reflexPageStylesheet0", is_default=True),),
+        ),
+        (
+            "$/styles/theme.sass.css?url",
+            (ImportVar(tag="reflexPageStylesheet1", is_default=True),),
+        ),
+    )
+    assert (styles / "theme.css").read_text() == ".theme { color: red; }"
+    assert (styles / "theme.scss.css").read_text() == ".theme{color:blue}\n"
+    assert (styles / "theme.sass.css").read_text() == ".theme{color:green}\n"
 
 
 def test_compile_stylesheets_nested_import_uses_posix_separators(
@@ -1270,7 +1527,7 @@ def _compile_backend_only_app(
     mocker: MockerFixture,
     plugins: list[rx.plugins.Plugin],
 ) -> list[str]:
-    """Run a backend-only compile with no registry over two Radix pages.
+    """Run a backend-only compile with no registry over two Radix pages, one with a stylesheet.
 
     Args:
         tmp_path: A temporary project directory without a frontend build.
@@ -1296,7 +1553,7 @@ def _compile_backend_only_app(
 
     app = rx.App(_state=BackendWalkState)
     app.add_page(radix_page, route="/radix")
-    app.add_page(radix_page, route="/radix-2")
+    app.add_page(radix_page, route="/radix-2", stylesheets=["/radix.css"])
     mocker.patch.object(app, "_apply_decorated_pages")
     mocker.patch.object(app, "_should_compile", return_value=False)
     mocker.patch.object(app, "_add_optional_endpoints")
@@ -1382,7 +1639,7 @@ def test_backend_compile_runs_radix_plugin_subclass_hooks(
 def test_backend_compile_gives_page_hooks_the_compile_view(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
 ):
-    """Page hooks see the replaced root and every page, as in a frontend compile.
+    """Page hooks see the replaced root, the stylesheets and every page, as in a frontend compile.
 
     Args:
         tmp_path: A temporary project directory without a frontend build.
@@ -1391,6 +1648,7 @@ def test_backend_compile_gives_page_hooks_the_compile_view(
     """
     replacements: dict[str, Component] = {}
     page_roots: dict[str, BaseComponent] = {}
+    page_stylesheets: dict[str, Sequence[str]] = {}
     page_routes: dict[str, list[str]] = {}
 
     class RootReplacingPlugin(rx.plugins.Plugin):
@@ -1422,13 +1680,14 @@ def test_backend_compile_gives_page_hooks_the_compile_view(
             return replacements[page_context.route]
 
         def compile_page(self, page_ctx: PageContext, /, **kwargs) -> None:
-            """Record the page root and the pages of the compile run.
+            """Record the page root, its stylesheets and the pages of the compile run.
 
             Args:
                 page_ctx: The page being compiled.
                 kwargs: The compile hook context.
             """
             page_roots[page_ctx.route] = page_ctx.root_component
+            page_stylesheets[page_ctx.route] = page_ctx.stylesheets
             page_routes[page_ctx.route] = [
                 page.route for page in kwargs["compile_context"].pages
             ]
@@ -1438,6 +1697,10 @@ def test_backend_compile_gives_page_hooks_the_compile_view(
     )
 
     assert page_roots == replacements
+    assert page_stylesheets == {
+        **dict.fromkeys(routes, ()),
+        "radix-2": ("/radix.css",),
+    }
     assert page_routes == dict.fromkeys(routes, routes)
 
 

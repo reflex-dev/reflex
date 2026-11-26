@@ -648,6 +648,9 @@ def _compile_vite_config(config: Config):
         sourcemap=environment.VITE_SOURCEMAP.get(),
         minify=environment.VITE_MINIFY.get(),
         allowed_hosts=config.vite_allowed_hosts,
+        # Stylesheets are linked to their files under the app root, whose
+        # fonts and images the dev server would otherwise refuse to serve.
+        fs_allow=[Path.cwd().as_posix()],
     )
 
 

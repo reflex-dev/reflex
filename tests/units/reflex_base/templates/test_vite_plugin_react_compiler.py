@@ -57,7 +57,10 @@ CONFIG_STUBS = {
     "package.json": '{"type": "module"}',
     "vite-plugin-safari-cachebust.js": 'export default () => ({name: "safari"});',
     "node_modules/vite/package.json": '{"type": "module", "exports": "./index.js"}',
-    "node_modules/vite/index.js": "export const defineConfig = (config) => config;",
+    "node_modules/vite/index.js": (
+        "export const defineConfig = (config) => config;\n"
+        "export const searchForWorkspaceRoot = (root) => root;"
+    ),
     "node_modules/@react-router/dev/package.json": (
         '{"type": "module", "exports": {"./vite": "./index.js"}}'
     ),

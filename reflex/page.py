@@ -13,7 +13,7 @@ from reflex_base.utils import console
 from reflex.utils.misc import is_page_meta_set
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
     from typing import Any
 
     from reflex_base.event import EventType
@@ -30,6 +30,7 @@ def page(
     meta: list[Any] | None = None,
     script_tags: list[Any] | None = None,
     on_load: EventType[()] | None = None,
+    stylesheets: Sequence[str] | None = None,
 ):
     """Decorate a function as a page.
 
@@ -48,6 +49,7 @@ def page(
         meta: Additional meta to add to the page.
         on_load: The event handler(s) called when the page load.
         script_tags: scripts to attach to the page
+        stylesheets: Stylesheets only this page loads, after the app's.
 
     Returns:
         The decorated function.
@@ -69,6 +71,8 @@ def page(
             kwargs["script_tags"] = script_tags
         if on_load:
             kwargs["on_load"] = on_load
+        if stylesheets:
+            kwargs["stylesheets"] = stylesheets
 
         RegistrationContext.ensure_context().decorated_pages.append((render_fn, kwargs))
 
@@ -130,6 +134,7 @@ class PageNamespace(metaclass=PageNamespaceMeta):
         meta: list[Any] | None = None,
         script_tags: list[Any] | None = None,
         on_load: EventType[()] | None = None,
+        stylesheets: Sequence[str] | None = None,
     ):
         """Decorate a function as a page.
 
@@ -148,6 +153,7 @@ class PageNamespace(metaclass=PageNamespaceMeta):
             meta: Additional meta to add to the page.
             on_load: The event handler(s) called when the page load.
             script_tags: scripts to attach to the page
+            stylesheets: Stylesheets only this page loads, after the app's.
 
         Returns:
             The decorated function.
@@ -160,6 +166,7 @@ class PageNamespace(metaclass=PageNamespaceMeta):
             meta=meta,
             script_tags=script_tags,
             on_load=on_load,
+            stylesheets=stylesheets,
         )
 
     page = staticmethod(page)
