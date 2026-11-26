@@ -580,17 +580,19 @@ def test_method_signatures_are_readable():
         m.name: m.signature for m in generate_class_documentation(rx.App).methods
     }
 
-    add_page = methods["add_page"]
-    assert "self" not in add_page
-    # Forward-ref annotation strings are unquoted and optionality is explicit...
-    assert "route: Optional[str] = None" in add_page
-    assert "'str | None'" not in add_page
-    assert "component: Optional[Component | ComponentCallable] = None" in add_page
-    # Bracketed types wrap correctly, and params without None are left untouched.
-    assert "on_load: Optional[EventType[()]] = None" in add_page
-    assert "meta: Sequence[Mapping[str, Any] | Component] = []" in add_page
-    # ...while genuine string-literal defaults keep their quotes.
-    assert "image: str = 'favicon.ico'" in add_page
+    # Forward-ref annotation strings are unquoted and optionality is explicit,
+    # bracketed types wrap correctly, params without None are left untouched,
+    # and genuine string-literal defaults keep their quotes.
+    assert methods["add_page"] == (
+        "(component: Optional[Component | ComponentCallable] = None, "
+        "route: Optional[str] = None, "
+        "title: Optional[str | Var] = None, "
+        "description: Optional[str | Var] = None, "
+        "image: str = '', "
+        "on_load: Optional[EventType[()]] = None, "
+        "meta: Sequence[Mapping[str, Any] | Component] = [], "
+        "context: Optional[dict[str, Any]] = None)"
+    )
 
 
 @pytest.mark.parametrize(

@@ -43,7 +43,7 @@ def page(
     Args:
         route: The route to reach the page.
         title: The title of the page.
-        image: The favicon of the page.
+        image: The URL of the page's og:image preview.
         description: The description of the page.
         meta: Additional meta to add to the page.
         on_load: The event handler(s) called when the page load.
@@ -143,7 +143,7 @@ class PageNamespace(metaclass=PageNamespaceMeta):
         Args:
             route: The route to reach the page.
             title: The title of the page.
-            image: The favicon of the page.
+            image: The URL of the page's og:image preview.
             description: The description of the page.
             meta: Additional meta to add to the page.
             on_load: The event handler(s) called when the page load.

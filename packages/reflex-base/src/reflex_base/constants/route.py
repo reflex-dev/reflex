@@ -95,8 +95,8 @@ class DefaultPage(SimpleNamespace):
     TITLE = "{} | {}"
     # The default description to show for Reflex apps.
     DESCRIPTION = ""
-    # The default image to show for Reflex apps.
-    IMAGE = "favicon.ico"
+    # The default og:image URL: none, so a page without an image gets no og:image tag.
+    IMAGE = ""
     # The default meta list to show for Reflex apps.
     META_LIST = []
 
@@ -107,7 +107,6 @@ class Page404(SimpleNamespace):
 
     SLUG = "404"
     TITLE = "404 - Not Found"
-    IMAGE = "favicon.ico"
     DESCRIPTION = "The page was not found"
 
 

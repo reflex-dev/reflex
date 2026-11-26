@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 def is_page_meta_set(value: str | Var | None) -> bool:
-    """Whether a page title or description was explicitly provided.
+    """Whether a page title, description or image was explicitly provided.
 
     Empty strings mean "unset" and fall back to the default; Vars always
     count as provided.

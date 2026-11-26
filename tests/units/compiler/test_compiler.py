@@ -28,7 +28,7 @@ from reflex_base.utils.exceptions import (
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Var
 from reflex_base.vars.sequence import LiteralStringVar
-from reflex_components_core.base import Description, document
+from reflex_components_core.base import Description, Image, document
 from reflex_components_core.base.document import Links, Scripts
 from reflex_components_core.el.elements.metadata import Head, Link, Meta
 from reflex_components_core.el.elements.other import Html
@@ -983,6 +983,57 @@ def test_add_meta_drops_empty_description():
     )
 
     assert not any(isinstance(child, Description) for child in page.children)
+
+
+@pytest.mark.parametrize(
+    ("image", "expected"),
+    [
+        (None, []),
+        ("", []),
+        ("https://example.com/preview.png", ['"https://example.com/preview.png"']),
+    ],
+    ids=["default", "empty", "url"],
+)
+def test_page_og_image(image: str | None, expected: list[str]):
+    """A page gets an og:image tag only for the image it is given.
+
+    Args:
+        image: The image passed to add_page, None to leave it out.
+        expected: The contents of the og:image tags the compiled page has.
+    """
+    app = rx.App()
+    if image is None:
+        app.add_page(rx.el.div("page"), route="/page")
+    else:
+        app.add_page(rx.el.div("page"), route="/page", image=image)
+
+    page = compiler.compile_unevaluated_page("page", app._unevaluated_pages["page"])
+
+    assert [
+        str(child.content)  # pyright: ignore[reportAttributeAccessIssue]
+        for child in page.children
+        if isinstance(child, Image)
+    ] == expected
+
+
+def test_page_og_image_accepts_var():
+    """A page given its og:image as a Var gets the tag with that Var."""
+
+    class OgImageState(rx.State):
+        preview_url: str = "https://example.com/preview.png"
+
+    app = rx.App()
+    app.add_page(
+        rx.el.div("page"),
+        route="/page",
+        image=OgImageState.preview_url,  # pyright: ignore[reportArgumentType]
+    )
+
+    page = compiler.compile_unevaluated_page("page", app._unevaluated_pages["page"])
+
+    images = [child for child in page.children if isinstance(child, Image)]
+    assert len(images) == 1
+    assert images[0].content is OgImageState.preview_url  # pyright: ignore[reportAttributeAccessIssue]
 
 
 @pytest.mark.usefixtures("dev_mode")
