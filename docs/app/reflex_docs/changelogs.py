@@ -17,6 +17,14 @@ ENTERPRISE_PACKAGE = "reflex-enterprise"
 # everything above it is hand-written preamble that should not be published.
 TOWNCRIER_MARKER = "<!-- towncrier release notes start -->"
 
+# Packages published for building and releasing Reflex itself rather than for
+# use in apps. Their changelogs are not published on the docs site.
+UNPUBLISHED_CHANGELOGS = frozenset({
+    "hatch-reflex-pyi",
+    "reflex-docgen",
+    "reflex-release",
+})
+
 
 def discover_repo_changelogs(repo_root: Path) -> dict[str, Path]:
     """Find the changelogs maintained in this repo.
@@ -26,14 +34,16 @@ def discover_repo_changelogs(repo_root: Path) -> dict[str, Path]:
 
     Returns:
         A mapping of package name to its CHANGELOG.md path — ``reflex`` for
-        the repo-root changelog plus one entry per subpackage that ships one.
+        the repo-root changelog plus one entry per subpackage that ships one,
+        except those in ``UNPUBLISHED_CHANGELOGS``.
     """
     changelogs: dict[str, Path] = {}
     root_changelog = repo_root / "CHANGELOG.md"
     if root_changelog.is_file():
         changelogs["reflex"] = root_changelog
     for pkg_changelog in (repo_root / "packages").glob("*/CHANGELOG.md"):
-        changelogs[pkg_changelog.parent.name] = pkg_changelog
+        if pkg_changelog.parent.name not in UNPUBLISHED_CHANGELOGS:
+            changelogs[pkg_changelog.parent.name] = pkg_changelog
     return changelogs
 
 

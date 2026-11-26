@@ -168,6 +168,37 @@ def test_custom_components_urls_redirect_to_wrapping_react():
     assert result.returncode == 0, result.stderr[-2000:]
 
 
+def test_unpublished_changelogs_redirect_to_the_changelog_index(routes_fixture):
+    """Tooling package changelogs get no page; their old URLs reach the index."""
+    paths = {route.path for route in routes_fixture if route.path}
+    assert "/changelog/" in paths
+    assert "/changelog/reflex-base/" in paths
+    for package in ("hatch-reflex-pyi", "reflex-docgen", "reflex-release"):
+        assert f"/changelog/{package}/" not in paths
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from reflex_docs.reflex_docs import redirects\n"
+            "print(sorted(r for r in redirects if r[0].startswith('/changelog/')))",
+        ],
+        cwd=Path(__file__).resolve().parents[1],
+        # reflex-enterprise exits before the app is built when not logged in.
+        env={**os.environ, "CI": "true"},
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=120,
+    )
+    assert result.returncode == 0, result.stderr[-2000:]
+    assert result.stdout.splitlines()[-1] == str([
+        ("/changelog/hatch-reflex-pyi/", "/changelog/"),
+        ("/changelog/reflex-docgen/", "/changelog/"),
+        ("/changelog/reflex-release/", "/changelog/"),
+    ])
+
+
 def test_cloud_overview_moved_under_hosting_with_a_redirect():
     """The Cloud overview lives in the Cloud section; its old URL redirects there."""
     result = subprocess.run(

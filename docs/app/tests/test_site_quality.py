@@ -1,5 +1,7 @@
 """Regression checks for shared documentation presentation."""
 
+import re
+from pathlib import Path
 from typing import Literal, get_args
 
 import pytest
@@ -128,6 +130,66 @@ def test_multi_component_reference_shares_only_identical_html_props():
     override = str(component_docs((OverrideTitle, "OverrideTitle"), {}, shared))
     assert '"title"' in override
     assert '"access_key"' not in override
+
+
+def test_html_layout_page_lists_plain_elements_in_one_table():
+    """Elements with nothing of their own share a table, not a heading apiece."""
+    from reflex_docs.pages.docs import get_components_from_frontmatter
+    from reflex_docs.pages.docs.component import api_reference, api_reference_toc
+
+    components = get_components_from_frontmatter(
+        str(Path(__file__).parents[2] / "library" / "html" / "layout.md")
+    )
+    toc, section = api_reference(components, {})
+    assert toc == [
+        (2, "API Reference"),
+        (3, "rx.el.blockquote"),
+        (3, "rx.el.del"),
+        (3, "rx.el.details"),
+        (3, "rx.el.dialog"),
+        (3, "rx.el.html"),
+        (3, "rx.el.link"),
+        (3, "rx.el.ol"),
+        (3, "rx.el.script"),
+        (3, "rx.el.title"),
+        (3, "Shared HTML props"),
+        (3, "Other elements"),
+    ]
+    # Each plain element keeps its anchor, now on its table row.
+    assert re.findall(r'id:"([^"]+)"', str(rx.fragment(*section))) == [
+        "rx.el.address",
+        "rx.el.article",
+        "rx.el.aside",
+        "rx.el.body",
+        "rx.el.dd",
+        "rx.el.dl",
+        "rx.el.dt",
+        "rx.el.figcaption",
+        "rx.el.footer",
+        "rx.el.h1",
+        "rx.el.h2",
+        "rx.el.h3",
+        "rx.el.h4",
+        "rx.el.h5",
+        "rx.el.h6",
+        "rx.el.head",
+        "rx.el.header",
+        "rx.el.hr",
+        "rx.el.li",
+        "rx.el.main",
+        "rx.el.nav",
+        "rx.el.noscript",
+        "rx.el.portal",
+        "rx.el.pre",
+        "rx.el.section",
+        "rx.el.template",
+        "rx.el.ul",
+    ]
+    assert api_reference_toc([], has_shared=True, has_other_elements=True) == [
+        (2, "API Reference"),
+        (3, "Shared HTML props"),
+        (3, "Other elements"),
+    ]
 
 
 def test_state_catalog_offers_real_guides_instead_of_an_empty_grid():

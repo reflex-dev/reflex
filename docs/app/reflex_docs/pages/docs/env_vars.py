@@ -14,6 +14,60 @@ from reflex_docs.templates.docpage import docpage, h1_comp, h2_comp
 
 from .api_reference_layout import field_row
 
+# Page sections in display order, each claiming the variables whose names start
+# with one of its prefixes. The first matching section wins, so a narrower
+# section precedes a broader one sharing its prefix.
+ENV_VAR_SECTIONS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (
+        "Hot reload",
+        (
+            "REFLEX_AUTO_RELOAD_",
+            "REFLEX_HOT_RELOAD_",
+            "REFLEX_STRICT_HOT_RELOAD",
+            "VITE_EXPERIMENTAL_HMR",
+            "VITE_FORCE_FULL_RELOAD",
+            "VITE_HMR",
+        ),
+    ),
+    (
+        "Frontend build",
+        (
+            "NPM_",
+            "REFLEX_DEV_PROD_REACT",
+            "REFLEX_NO_AUTOPREFIXER",
+            "REFLEX_PERSIST_WEB_DIR",
+            "REFLEX_REACT_OWNER_STACKS",
+            "REFLEX_SSR",
+            "REFLEX_USE_NPM",
+            "REFLEX_USE_SYSTEM_BUN",
+            "REFLEX_VITE_",
+            "REFLEX_WEB_WORKDIR",
+            "VITE_",
+        ),
+    ),
+    (
+        "State and Redis",
+        ("REFLEX_IGNORE_REDIS_", "REFLEX_OPLOCK_", "REFLEX_REDIS_", "REFLEX_STATE"),
+    ),
+    ("Database", ("ALEMBIC_", "SQLALCHEMY_")),
+    (
+        "Networking",
+        ("REFLEX_HTTP_CLIENT_", "REFLEX_SOCKET_", "SSL_NO_VERIFY"),
+    ),
+    ("Logging", ("REFLEX_ENABLE_FULL_LOGGING", "REFLEX_LOG_")),
+    ("Testing", ("APP_HARNESS_",)),
+)
+# Claims the rest: run modes, ports, servers, directories and the like.
+GENERAL_SECTION = "General"
+
+
+ENV_VARS_INTRO = """
+Reflex provides a number of environment variables that can be used to configure the behavior of your application.
+These environment variables can be set in your shell environment or in a `.env` file.
+
+This page documents the environment variables that `rx.Config` does not define, plus a few, such as the ports, that also override a config parameter. Any other `rx.Config` parameter can be set with a `REFLEX_`-prefixed variable (e.g. `REFLEX_DB_URL`); those are listed in the [config reference](/docs/api-reference/config/).
+"""
+
 
 class EnvVarDocs:
     """Documentation for Reflex environment variables."""
@@ -72,31 +126,61 @@ class EnvVarDocs:
         ]
 
 
+def group_env_vars(
+    fields: list[FieldDocumentation],
+) -> dict[str, list[FieldDocumentation]]:
+    """Sort environment variables into the page's sections.
+
+    Args:
+        fields: The documented environment variables.
+
+    Returns:
+        The non-empty sections in display order, general first, mapped to
+        their variables in the order given.
+    """
+    sections: dict[str, list[FieldDocumentation]] = {
+        GENERAL_SECTION: [],
+        **{title: [] for title, _ in ENV_VAR_SECTIONS},
+    }
+    for field in fields:
+        section = next(
+            (
+                title
+                for title, prefixes in ENV_VAR_SECTIONS
+                if field.name.startswith(prefixes)
+            ),
+            GENERAL_SECTION,
+        )
+        sections[section].append(field)
+    return {title: fields for title, fields in sections.items() if fields}
+
+
 def env_vars_page():
     """Generate the environment variables documentation page.
 
     Returns:
         A Reflex component containing the documentation.
     """
-    fields = EnvVarDocs.get_documented_fields()
-    toc = [(2, "Variables"), *((3, field.name) for field in fields)]
+    sections = group_env_vars(EnvVarDocs.get_documented_fields())
+    # Variables keep their own anchors, but the table of contents lists only
+    # the sections so it stays short enough to scan.
+    toc = [(2, title) for title in sections]
     return toc, rx.el.div(
         h1_comp(text="Environment Variables"),
         rx.el.p(
             f"{EnvironmentVariables.__module__}.{EnvironmentVariables.__qualname__}",
             class_name="mb-5 font-mono text-sm text-muted-foreground",
         ),
-        render_markdown(
-            """
-            Reflex provides a number of environment variables that can be used to configure the behavior of your application.
-            These environment variables can be set in your shell environment or in a `.env` file.
-
-            This page documents the environment variables that are not config parameters. Environment variables that override `rx.Config` parameters (e.g. `REFLEX_FRONTEND_PORT`) are listed in the [config reference](/docs/api-reference/config/).
-            """
-        ),
-        h2_comp(text="Variables"),
-        rx.el.div(
-            *(field_row(field) for field in fields), class_name="border-t border-border"
+        render_markdown(ENV_VARS_INTRO),
+        *(
+            rx.el.section(
+                h2_comp(text=title),
+                rx.el.div(
+                    *(field_row(field) for field in fields),
+                    class_name="border-t border-border",
+                ),
+            )
+            for title, fields in sections.items()
         ),
         class_name="min-w-0 api-reference-detail",
     )

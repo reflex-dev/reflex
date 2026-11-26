@@ -1101,14 +1101,27 @@ def render_inline_markdown(text: str, class_name: str = "") -> rx.Component:
 
     Intended for places like prop-table descriptions where the source contains
     inline markdown (e.g. ``[Foo](/path)``, `` `code` ``) but the surrounding
-    layout expects a single styled text node, not a stack of block-level
-    elements. Block-level markdown (headings, lists, code fences) falls back
-    to the full transformer.
+    layout expects styled text nodes, not the full body-text treatment. Each
+    paragraph takes ``class_name``. Other block-level markdown (headings,
+    lists, code fences) falls back to the full transformer.
+
+    Args:
+        text: The markdown source.
+        class_name: Classes for each rendered paragraph.
+
+    Returns:
+        One paragraph, several stacked paragraphs, or the full rendering.
     """
     if not text:
         return rx.fragment()
     doc = parse_document(text)
-    if len(doc.blocks) == 1 and isinstance(doc.blocks[0], TextBlock):
-        children = _render_spans(doc.blocks[0].children)
-        return rx.text(*children, class_name=class_name)
-    return ReflexDocTransformer().transform(doc)
+    if not all(isinstance(block, TextBlock) for block in doc.blocks):
+        return ReflexDocTransformer().transform(doc)
+    # Paragraphs keep the caller's style rather than the body-text style.
+    paragraphs = [
+        rx.text(*_render_spans(block.children), class_name=class_name)
+        for block in doc.blocks
+    ]
+    if len(paragraphs) == 1:
+        return paragraphs[0]
+    return rx.el.div(*paragraphs, class_name="flex flex-col gap-2")
