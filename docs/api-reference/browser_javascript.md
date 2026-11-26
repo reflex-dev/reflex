@@ -234,9 +234,9 @@ Each error below gives its exact message, with the values of an example call, an
     reloaded or left the page before the script returned a result, so the script stopped. Catch
     BrowserDisconnectedError where the user may reload or leave the page while the script runs.`` If the old connection
     still looks open, for example because the network dropped it without closing it, the backend cannot tell the
-    reloaded page from a duplicated tab: the call raises `TimeoutError` when its timeout ends, or, with a longer timeout,
-    the grace period message once the old connection times out (`REFLEX_SOCKET_INTERVAL` plus `REFLEX_SOCKET_TIMEOUT`,
-    145 seconds by default) and the grace period ends.
+    reloaded page from a duplicated tab: the call raises `TimeoutError` when its timeout ends, unless the timeout outlasts
+    the old connection timing out (`REFLEX_SOCKET_INTERVAL` plus `REFLEX_SOCKET_TIMEOUT`, 145 seconds by default) plus
+    the grace period; then it raises the grace period message.
   - Without a frontend, for example in a test: `` `_call_script` cannot run in a browser: the app is running without a
     frontend connection (for example in a test, or a process that runs only the backend), so no tab can return a
     result. Await browser scripts in handlers triggered from a page of the running app, and catch

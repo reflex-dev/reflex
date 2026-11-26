@@ -298,16 +298,16 @@ describe("awaited script results", () => {
     }
     class MemoryPolling extends PollingTransport {
       outbox = [handshake];
-      poll = null;
+      waiting = false;
       flush() {
-        if (this.poll && this.outbox.length) {
-          const [poll, body] = [this.poll, this.outbox.splice(0).join("\x1e")];
-          this.poll = null;
-          queueMicrotask(() => poll(body));
+        if (this.waiting && this.outbox.length) {
+          const body = this.outbox.splice(0).join("\x1e");
+          this.waiting = false;
+          queueMicrotask(() => this.onData(body));
         }
       }
       doPoll() {
-        this.poll = (body) => this.onData(body);
+        this.waiting = true;
         this.flush();
       }
       doWrite(body, drained) {
