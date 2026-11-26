@@ -68,6 +68,7 @@ class DefaultPagePlugin(Plugin):
             route=page.route,
             root_component=component,
             source_module=getattr(page, "_source_module", None),
+            stylesheets=getattr(page, "stylesheets", ()),
         )
 
 

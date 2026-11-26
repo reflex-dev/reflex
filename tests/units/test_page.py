@@ -87,6 +87,7 @@ def test_page_decorator_with_kwargs(
         meta=[{"name": "keywords", "content": "foo, test"}],
         script_tags=["foo-script"],
         on_load=load_foo,
+        stylesheets=["/foo.css"],
     )(foo_)
     assert decorated_foo_ == foo_
     assert len(clean_registration_context.decorated_pages) == 1
@@ -98,6 +99,7 @@ def test_page_decorator_with_kwargs(
         "on_load": load_foo,
         "route": "foo",
         "script_tags": ["foo-script"],
+        "stylesheets": ["/foo.css"],
         "title": "Foo",
     }
 

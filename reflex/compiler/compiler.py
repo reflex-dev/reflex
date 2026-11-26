@@ -41,8 +41,8 @@ from reflex_base.utils.imports import (
     ImportVar,
     ParsedImportDict,
 )
-from reflex_base.vars.base import LiteralVar, Var
-from reflex_base.vars.sequence import LiteralStringVar
+from reflex_base.vars.base import LiteralVar, Var, VarData
+from reflex_base.vars.sequence import LiteralArrayVar, LiteralStringVar
 from reflex_components_core.base.app_wrap import AppWrap
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_radix.plugin import RadixThemesPlugin
@@ -400,45 +400,94 @@ def _compile_root_stylesheet(
         sheet for plugin in active_plugins for sheet in plugin.get_stylesheet_paths()
     ])
 
-    failed_to_import_sass = False
-    assets_app_path = Path.cwd() / constants.Dirs.APP_ASSETS
-
     stylesheets_files: list[Path] = []
     stylesheets_urls = []
 
     for stylesheet in stylesheets:
-        if not utils.is_valid_url(stylesheet):
-            # check if stylesheet provided exists.
-            stylesheet_full_path = assets_app_path / stylesheet.strip("/")
-
-            if not stylesheet_full_path.exists():
-                msg = f"The stylesheet file {stylesheet_full_path} does not exist."
-                raise FileNotFoundError(msg)
-
-            if stylesheet_full_path.is_dir():
-                all_files = (
-                    file
-                    for ext in constants.Reflex.STYLESHEETS_SUPPORTED
-                    for file in stylesheet_full_path.rglob("*." + ext)
-                )
-                for file in all_files:
-                    if file.is_dir():
-                        continue
-                    # Validate the stylesheet.
-                    _validate_stylesheet(file, assets_app_path)
-                    stylesheets_files.append(file)
-
-            else:
-                # Validate the stylesheet.
-                _validate_stylesheet(stylesheet_full_path, assets_app_path)
-                stylesheets_files.append(stylesheet_full_path)
-        else:
+        if utils.is_valid_url(stylesheet):
             stylesheets_urls.append(stylesheet)
+        else:
+            stylesheets_files.extend(_resolve_stylesheet_files(stylesheet))
 
     sheets.extend(dict.fromkeys(stylesheets_urls))
 
-    for stylesheet in stylesheets_files:
-        target_path = stylesheet.relative_to(assets_app_path).with_suffix(".css")
+    for target_path in _compile_stylesheet_files(stylesheets_files):
+        str_target_path = "./" + target_path
+        sheets.append(str_target_path) if str_target_path not in sheets else None
+
+    return templates.styles_template(stylesheets=sheets)
+
+
+def _resolve_stylesheet_files(stylesheet: str) -> list[Path]:
+    """Find the asset files a stylesheet path names.
+
+    Args:
+        stylesheet: A stylesheet file or directory, relative to the assets directory.
+
+    Returns:
+        The stylesheet file, or the supported stylesheet files below the directory.
+
+    Raises:
+        FileNotFoundError: If the stylesheet does not exist.
+    """
+    assets_app_path = Path.cwd() / constants.Dirs.APP_ASSETS
+    stylesheet_full_path = assets_app_path / stylesheet.strip("/")
+
+    if not stylesheet_full_path.exists():
+        msg = f"The stylesheet file {stylesheet_full_path} does not exist."
+        raise FileNotFoundError(msg)
+
+    if not stylesheet_full_path.is_dir():
+        _validate_stylesheet(stylesheet_full_path, assets_app_path)
+        return [stylesheet_full_path]
+
+    files = [
+        file
+        for ext in constants.Reflex.STYLESHEETS_SUPPORTED
+        for file in stylesheet_full_path.rglob("*." + ext)
+        if not file.is_dir()
+    ]
+    for file in files:
+        _validate_stylesheet(file, assets_app_path)
+    return files
+
+
+def _has_stylesheet_namesake(stylesheet: Path) -> bool:
+    """Check whether a stylesheet of another supported type has the same name.
+
+    Args:
+        stylesheet: The stylesheet file.
+
+    Returns:
+        Whether a file next to it differs from it only in its stylesheet suffix.
+    """
+    return any(
+        stylesheet.with_suffix(f".{ext}").is_file()
+        for ext in constants.Reflex.STYLESHEETS_SUPPORTED
+        if f".{ext}" != stylesheet.suffix
+    )
+
+
+def _compile_stylesheet_files(files: Iterable[Path]) -> list[str]:
+    """Copy stylesheet asset files into the styles directory, compiling sass.
+
+    Args:
+        files: The stylesheet files in the assets directory.
+
+    Returns:
+        The path of each compiled file relative to the styles directory.
+    """
+    failed_to_import_sass = False
+    assets_app_path = Path.cwd() / constants.Dirs.APP_ASSETS
+    target_paths = []
+
+    for stylesheet in files:
+        target_path = stylesheet.relative_to(assets_app_path)
+        if stylesheet.suffix != ".css" and _has_stylesheet_namesake(stylesheet):
+            # Compiling to the namesake's file would overwrite its CSS.
+            target_path = target_path.with_name(target_path.name + ".css")
+        else:
+            target_path = target_path.with_suffix(".css")
         target = get_web_dir() / constants.Dirs.STYLES / target_path
 
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -464,18 +513,62 @@ def _compile_root_stylesheet(
                 failed_to_import_sass = True
 
         # Use POSIX separators: this string is emitted verbatim into a CSS
-        # `@import url(...)`, where a backslash is an escape introducer, not a
+        # `@import url(...)` or a module specifier, where a backslash is not a
         # path separator, so `str(target_path)` would break nested stylesheets
         # on Windows.
-        str_target_path = "./" + target_path.as_posix()
-        sheets.append(str_target_path) if str_target_path not in sheets else None
+        target_paths.append(target_path.as_posix())
 
     if failed_to_import_sass:
         logger.error(
             'The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`.'
         )
 
-    return templates.styles_template(stylesheets=sheets)
+    return target_paths
+
+
+def compile_page_stylesheets(stylesheets: Sequence[str]) -> Var | None:
+    """Compile a page's stylesheets into the value of its route module's ``links``.
+
+    React Router renders a route's ``links`` after the global stylesheet in the
+    prerendered head, loads them before rendering the route on client-side
+    navigation, and removes them when the route is left. Asset files are
+    copied (or compiled from sass) into the styles directory and imported as
+    URLs, so the bundler processes and fingerprints them; URLs are linked as
+    given.
+
+    Args:
+        stylesheets: The page's stylesheets, as ``App.stylesheets`` takes them.
+
+    Returns:
+        The page's stylesheet link descriptors in order, or None if it has none.
+    """
+    hrefs: dict[str, Var | str] = {}
+    for stylesheet in stylesheets:
+        if utils.is_valid_url(stylesheet):
+            hrefs.setdefault(stylesheet, stylesheet)
+            continue
+        for target_path in _compile_stylesheet_files(
+            _resolve_stylesheet_files(stylesheet)
+        ):
+            if target_path in hrefs:
+                continue
+            name = f"reflexPageStylesheet{len(hrefs)}"
+            hrefs[target_path] = Var(
+                _js_expr=name,
+                _var_type=str,
+                _var_data=VarData(
+                    imports={
+                        f"$/{constants.Dirs.STYLES}/{target_path}?url": [
+                            ImportVar(tag=name, is_default=True)
+                        ]
+                    }
+                ),
+            )
+    if not hrefs:
+        return None
+    return LiteralArrayVar.create([
+        {"rel": "stylesheet", "href": href} for href in hrefs.values()
+    ])
 
 
 def _compile_component(component: Component) -> str:
@@ -820,6 +913,9 @@ def compile_page_from_context(page_ctx: PageContext) -> tuple[str, str]:
         ).items()
     }
     _apply_common_imports(imports)
+    links = compile_page_stylesheets(page_ctx.stylesheets)
+    if links is not None and (links_var_data := links._get_all_var_data()):
+        imports = utils.merge_imports(imports, links_var_data.imports)
 
     code = templates.page_template(
         imports=utils.compile_imports(imports),
@@ -829,6 +925,7 @@ def compile_page_from_context(page_ctx: PageContext) -> tuple[str, str]:
         render=page_ctx.root_component.render(),
         route=page_ctx.route,
         client_state_owns=sorted(page_ctx.client_state_names),
+        links=links,
     )
     return output_path, code
 
@@ -1235,7 +1332,10 @@ def _walk_page_with_plugins(
         compile_context.hooks = CompilerHooks(plugins=plugins)
     hooks = compile_context.hooks
     page_context = PageContext(
-        name=page.route, route=page.route, root_component=component
+        name=page.route,
+        route=page.route,
+        root_component=component,
+        stylesheets=page.stylesheets,
     )
     with compile_context, page_context:
         if any(
