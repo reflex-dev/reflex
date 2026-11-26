@@ -1,0 +1,1 @@
+Add `rx.js.ref(id)`, a var that reads a component's ref through the browser's `reflex` API from Python, e.g. `rx.run_script(rx.js.ref("search").current.value, callback=State.set_query)`. See [Reaching Reflex from JavaScript](https://reflex.dev/docs/api-reference/browser-javascript/#reaching-reflex-from-javascript).

@@ -141,6 +141,154 @@ The `callback` parameter may be an `EventHandler` with one argument, or a lambda
 If the callback is None, then no event is triggered.
 ```
 
+## Reaching Reflex from JavaScript
+
+JavaScript you run in the browser reaches Reflex through `reflex`, an object
+whose members stay the same across Reflex versions:
+
+| Member | What it does |
+| --- | --- |
+| `reflex.ref(id)` | The ref of the component with that `id`. `undefined` until a component with that `id` renders, and always for a component whose `id` is a var, which registers no ref; its `current` is `null` until React attaches the element, then the element. |
+| `reflex.addEvents(events)` | Dispatch events, as an event trigger does. |
+| `reflex.event(name, payload)` | Build an event for `reflex.addEvents`: `name` is the event handler's full name, `payload` its arguments by name. |
+
+An event handler's full name encodes the module and class of its state, and its
+format may change between Reflex versions, so never write one out by hand.
+Build it in Python, as `f"{State.get_full_name()}.handler_name"`, and pass it
+into the JavaScript.
+
+Prefer `reflex` over the other names a script can see, such as `refs`,
+`ReflexEvent` or `addEvents`: those are internals of the frontend and may change
+between Reflex versions.
+
+In a script, `reflex` and `env` (the app's config, which `rx.get_upload_url`
+reads) name these values, so a global of the same name on your page is
+reachable only as `window.reflex` or `window.env`.
+
+### From a Script
+
+Code run by `rx.call_script` sees `reflex`:
+
+```python demo exec
+class ReflexApiState(rx.State):
+    result: str = ""
+
+    @rx.event
+    def set_result(self, result: str):
+        self.result = result
+
+
+def reflex_api_demo():
+    return rx.vstack(
+        rx.input(id="reflex_api_search", placeholder="Type something"),
+        rx.hstack(
+            rx.button(
+                "Read",
+                on_click=rx.call_script(
+                    "reflex.ref('reflex_api_search').current.value",
+                    callback=ReflexApiState.set_result,
+                ),
+            ),
+            rx.button(
+                "Send",
+                on_click=rx.call_script(
+                    "reflex.addEvents([reflex.event("
+                    f"'{ReflexApiState.get_full_name()}.set_result', "
+                    "{result: reflex.ref('reflex_api_search').current.value})])"
+                ),
+            ),
+        ),
+        rx.text(f"Result: {ReflexApiState.result}"),
+    )
+```
+
+To focus, blur, set or scroll to a component, use the events that already do
+it: `rx.set_focus(id)`, `rx.blur_focus(id)`, `rx.set_value(id, value)` and
+`rx.scroll_to(id)`.
+
+### From a JavaScript Module
+
+A JavaScript module, such as a [local component](/docs/wrapping-react/local-packages/),
+imports `reflex` from `$/utils/reflex`. This one sends the value of the input
+with `id="search"` to the event handler named by its `handlerName` prop:
+
+```javascript
+// search_saver.jsx
+import { reflex } from "$/utils/reflex";
+
+export function SearchSaver({ handlerName }) {
+  const save = () => {
+    const value = reflex.ref("search").current.value;
+    reflex.addEvents([reflex.event(handlerName, { value })]);
+  };
+  return <button onClick={save}>Save</button>;
+}
+```
+
+The Python side passes the handler's full name as that prop:
+
+```python
+search_saver_path = rx.asset("./search_saver.jsx", shared=True)
+
+
+class SearchSaver(rx.Component):
+    library = search_saver_path.importable_path
+    tag = "SearchSaver"
+
+    # The full name of the event handler to send the value to.
+    handler_name: rx.Var[str]
+
+
+class SavedState(rx.State):
+    saved: str = ""
+
+    @rx.event
+    def save(self, value: str):
+        self.saved = value
+
+
+def saved_search():
+    return rx.vstack(
+        rx.input(id="search"),
+        SearchSaver.create(handler_name=f"{SavedState.get_full_name()}.save"),
+        rx.text(SavedState.saved),
+    )
+```
+
+### From Python
+
+`rx.js.ref(id)` builds `reflex.ref(id)` from Python. It returns a var, which
+`rx.run_script` runs whether an event trigger uses it or an event handler
+returns it:
+
+```python
+class SearchState(rx.State):
+    query: str = ""
+
+    @rx.event
+    def set_query(self, query: str):
+        self.query = query
+
+    @rx.event
+    def read_search(self):
+        # Read the input's current value from the browser.
+        return rx.run_script(
+            rx.js.ref("search").current.value, callback=SearchState.set_query
+        )
+
+
+def search():
+    return rx.vstack(
+        rx.input(id="search"),
+        rx.button("Read", on_click=SearchState.read_search),
+        rx.text(SearchState.query),
+    )
+```
+
+Python has no `reflex.addEvents`: dispatch events from Python as usual, with an
+event trigger or by returning them from an event handler. `reflex.addEvents` is
+for JavaScript that sends a value it computed back to Python.
+
 ## Using React Hooks
 
 To use React Hooks directly in a Reflex app, you must subclass `rx.Component`,

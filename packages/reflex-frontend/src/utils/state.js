@@ -13,6 +13,7 @@ import {
 import { app, eventLoop } from "$/utils/context-registry";
 // This module's own exports, passed to server-provided scripts by runScript.
 import * as stateExports from "$/utils/state";
+import { reflex } from "$/utils/reflex";
 import {
   CLIENT_STATE_REF,
   getClientState,
@@ -584,11 +585,14 @@ function urlFrom(string) {
  * Callback strings and `rx.call_script` code reference helpers compiled
  * pages import from here (`ReflexEvent`, `pyMod`, `isTrue`, ...), and apps
  * written against the former direct eval also use `socket`, `navigate`,
- * `params` and `token`. A direct eval would see them, but it also stops the
- * minifier from mangling every name in the chunk that holds it, so the code
- * is compiled with the Function constructor and those names are passed in as
- * parameters. The eval inside the body still runs the code as a strict
- * script, so statements keep their completion value.
+ * `params` and `token`. Scripts reach Reflex through `reflex`, and
+ * `rx.get_upload_url` compiles to `getBackendURL(env.UPLOAD)`, which reads
+ * `env` from `$/env.json` as the former direct eval did. A direct eval would
+ * see these names, but it also stops the minifier from mangling every name in
+ * the chunk that holds it, so the code is compiled with the Function
+ * constructor and the names are passed in as parameters. The eval inside the
+ * body still runs the code as a strict script, so statements keep their
+ * completion value.
  *
  * Compiled on first use: a Content Security Policy without `unsafe-eval`
  * rejects the Function constructor, and apps that never send scripts must
@@ -610,6 +614,8 @@ const runScript = (code, addEvents, socket, navigate, params) => {
     "navigate",
     "params",
     "token",
+    "env",
+    "reflex",
     "code",
     '"use strict"; return eval(code);',
   );
@@ -620,6 +626,8 @@ const runScript = (code, addEvents, socket, navigate, params) => {
     navigate,
     params,
     token,
+    env,
+    reflex,
     code,
   );
 };
