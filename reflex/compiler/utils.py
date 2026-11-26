@@ -15,7 +15,7 @@ import subprocess
 import sys
 import tempfile
 import traceback
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence, Set
 from dataclasses import MISSING
 from datetime import datetime
 from pathlib import Path
@@ -42,6 +42,7 @@ from reflex_base.js.stubs import (
     _SIGNATURES_SCRIPT,
     _TYPESCRIPT_PACKAGE,
     Signatures,
+    _header_module,
     _is_generated,
     _module_digest,
     _read_header,
@@ -665,17 +666,35 @@ def _warn_untyped(paths: Iterable[Path | str], reason: str) -> None:
     )
 
 
-def _remove_orphan_stubs(modules: Iterable[str]) -> None:
+def _remove_orphan_stubs(imported: Set[str], recorded: Iterable[str]) -> None:
     """Remove the stubs Reflex wrote for modules the app no longer imports.
 
-    A stub that has no header of Reflex's, such as one written by hand, is kept.
+    That is the stub of each module the record lists that the app no longer
+    imports and, in the directories of the modules it imports or the record
+    lists, each stub whose header names a module that no longer exists, as
+    one deleted after the record was. Only the directories of those modules
+    are looked in. A stub of a module the app imports is kept, as is one that
+    has no header of Reflex's, such as one written by hand.
 
     Args:
-        modules: Those modules.
+        imported: The modules the app imports.
+        recorded: The modules the record lists.
     """
-    for module in modules:
-        stub = Path(module).with_suffix(".pyi")
-        if not _is_generated(_read_header(stub)):
+    recorded = set(recorded)
+    dropped = {Path(module).with_suffix(".pyi") for module in recorded - imported}
+    stubs = dropped | {
+        stub
+        for directory in {Path(module).parent for module in imported | recorded}
+        for stub in directory.glob("*.pyi")
+    }
+    for stub in stubs - {Path(module).with_suffix(".pyi") for module in imported}:
+        header = _read_header(stub)
+        if stub in dropped:
+            orphan = _is_generated(header)
+        else:
+            module = _header_module(header)
+            orphan = module is not None and not stub.with_name(module).exists()
+        if not orphan:
             continue
         try:
             stub.unlink()
@@ -765,7 +784,8 @@ def write_script_stubs(modules: Mapping[Path, _ScriptExports]) -> None:
     warned about, the file is left as it is; either way the next compile reads
     the types again. A stub without Reflex's header, as one written by hand,
     is left alone, and a stub Reflex wrote for a module the app no longer
-    imports is removed, or warned about if it cannot be. Each file is replaced whole: a compile killed while
+    imports is removed, as ``_remove_orphan_stubs`` finds them, or warned
+    about if it cannot be. Each file is replaced whole: a compile killed while
     writing one leaves the old file and the old record, so the next compile
     reads the types again.
 
@@ -784,9 +804,9 @@ def write_script_stubs(modules: Mapping[Path, _ScriptExports]) -> None:
     # as a fresh clone's missing one does: the types are read again, and each
     # stub that comes out the same is left as it is.
     old = _parse_json(text, dict[str, _StubRecord | None]) or {}
-    _remove_orphan_stubs(old.keys() - map(str, modules))
     # None for a module whose types the next compile reads again.
     record = {str(path): old.get(str(path)) for path in modules}
+    _remove_orphan_stubs(record.keys(), old)
 
     def current(path: Path) -> bool:
         """Whether a module's stub was made from the module as it is now, and is unchanged.
