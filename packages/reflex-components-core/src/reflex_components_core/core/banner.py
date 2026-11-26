@@ -184,6 +184,7 @@ setTimeout(() => {{
     if ({has_hydration_payload_error!s}) {{
         toast?.error({connection_error!s}, {{id: "{hydration_toast_id}", closeButton: true, duration: Infinity}});
     }} else if ({has_storage_blocked_error!s}) {{
+        toast?.dismiss("{toast_id}");
         toast?.error({connection_error!s}, {{id: "{storage_blocked_toast_id}", closeButton: true, duration: Infinity}});
     }} else if ({has_too_many_connection_errors!s}) {{
         toast?.dismiss("{storage_blocked_toast_id}");
@@ -267,17 +268,12 @@ class ConnectionModal(Component):
         """
         if not comp:
             comp = el.span(*default_connection_error())
-        show_modal = (
-            has_too_many_connection_errors
-            | has_storage_blocked_error
-            | has_hydration_payload_error
-        )
         return cond(
-            show_modal,
+            has_too_many_connection_errors,
             el.dialog(
                 el.h2("Connection Error"),
                 comp,
-                open=show_modal,
+                open=has_too_many_connection_errors,
                 z_index=9999,
             ),
         )

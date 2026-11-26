@@ -417,7 +417,9 @@ describe("session", () => {
       expect(caught).toBeInstanceOf(Error);
       expect(caught.code).toBe("storage_blocked");
       expect(caught.cause).toBe(denied);
-      expect(caught.message).toMatch(/site storage/i);
+      expect(caught.message).toBe(
+        "Site storage is blocked by the browser. Allow cookies and site data for this site and reload.",
+      );
     } finally {
       spy.mockRestore();
     }
@@ -485,6 +487,31 @@ describe("client storage", () => {
 
   test("hydrateClientStorage sends nothing for an app without client storage", () => {
     expect(hydrateClientStorage({})).toEqual({});
+  });
+
+  test("hydrateClientStorage labels blocked localStorage with storage_blocked", () => {
+    const denied = new DOMException("blocked", "SecurityError");
+    const spy = vi
+      .spyOn(Storage.prototype, "getItem")
+      .mockImplementation(() => {
+        throw denied;
+      });
+    try {
+      let caught;
+      try {
+        hydrateClientStorage({ local_storage: { "state.local": {} } });
+      } catch (error) {
+        caught = error;
+      }
+      expect(caught).toBeInstanceOf(Error);
+      expect(caught.code).toBe("storage_blocked");
+      expect(caught.cause).toBe(denied);
+      expect(caught.message).toBe(
+        "Site storage is blocked by the browser. Allow cookies and site data for this site and reload.",
+      );
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
 

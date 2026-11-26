@@ -311,8 +311,9 @@ test("a connection that cannot be attempted is a connection error, not a rejecti
   const error = loop.connectErrors().at(-1);
   expect(error.code).toBe("storage_blocked");
   expect(error.cause).toBe(denied);
-  expect(error.message).toMatch(/site storage/i);
-  expect(error.message).not.toMatch(/reachable/i);
+  expect(error.message).toBe(
+    "Site storage is blocked by the browser. Allow cookies and site data for this site and reload.",
+  );
   await loop.unmount();
 });
 
@@ -358,5 +359,8 @@ test("blocked sessionStorage during new_token records storage_blocked instead of
   const error = loop.connectErrors().at(-1);
   expect(error.code).toBe("storage_blocked");
   expect(error.cause).toBe(denied);
+  expect(error.message).toBe(
+    "Site storage is blocked by the browser. Allow cookies and site data for this site and reload.",
+  );
   await loop.unmount();
 });

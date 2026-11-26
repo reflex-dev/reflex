@@ -140,9 +140,14 @@ async function setup({
         }
         this.finishNamespaceConnect = () => {
           if (typeof this.auth === "function") {
+            let resolved = false;
             this.auth((auth) => {
+              resolved = true;
               this.auth = auth;
             });
+            if (!resolved) {
+              return;
+            }
           }
           // Like Manager._packet: encode the auth callback's resolved payload.
           const frames = this.io.encoder.encode({
@@ -272,6 +277,7 @@ async function setup({
     window,
     localStorage,
     socket,
+    appRegistry: imports["$/utils/context-registry"].app,
     updates,
     consoleErrors,
     get connectErrors() {
@@ -722,7 +728,40 @@ test("blocked session storage does not throw from speculative setup", async () =
     (error) =>
       error.code === "storage_blocked" &&
       error.cause === blocked &&
-      /site storage is blocked/i.test(error.message),
+      error.message ===
+        "Site storage is blocked by the browser. Allow cookies and site data for this site and reload.",
+  );
+});
+
+test("blocked localStorage during delayed bootAuth reports storage_blocked without retrying", async () => {
+  const app = await setup({ deferNamespaceConnect: true });
+  app.flush();
+  const blocked = new Error("localStorage blocked");
+  app.localStorage.getItem = () => {
+    throw blocked;
+  };
+  const { hydrateClientStorage, ReflexEvent } = app.module.namespace;
+  app.appRegistry.initialEvents = () => [
+    ReflexEvent("root.hydrate_and_load", {
+      vars: hydrateClientStorage({ local_storage: { "child.value": {} } }),
+    }),
+  ];
+  await app.connect();
+  const socket = app.socket.current;
+  assert.equal(socket.namespaceConnects, 0);
+
+  socket.finishNamespaceConnect();
+
+  assert.equal(socket.namespaceConnects, 0);
+  assert.equal(socket.disconnects, 1);
+  assert.equal(app.timers.size, 0);
+  assert.equal(app.connectErrors.length, 1);
+  const [error] = app.connectErrors;
+  assert.equal(error.code, "storage_blocked");
+  assert.equal(error.cause, blocked);
+  assert.equal(
+    error.message,
+    "Site storage is blocked by the browser. Allow cookies and site data for this site and reload.",
   );
 });
 

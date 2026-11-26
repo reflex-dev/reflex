@@ -1226,7 +1226,18 @@ export const connect = async (
   // the state schema goes along on every (re)connect, since a reconnect can
   // land on another backend version.
   const bootAuth = (first) => (callback) => {
-    const boot_event = withRouterData(app.initialEvents(first)[0], params);
+    let boot_event;
+    try {
+      boot_event = withRouterData(app.initialEvents(first)[0], params);
+    } catch (error) {
+      // Blocked storage during hydration cannot build the CONNECT auth payload:
+      // report it and abort this pending attempt without scheduling a retry.
+      releaseBootstrap();
+      currentSocket.wait_connect = false;
+      setConnectErrors((errors) => [...errors.slice(-9), error]);
+      currentSocket.disconnect();
+      return;
+    }
     bootRoute = currentRouteKey();
     recordSentStorageValues(boot_event);
     // Instrumentation hook (installed by reflex-otel): may add a traceparent.
@@ -1275,10 +1286,16 @@ export const connect = async (
   };
   // Ask for a new credential once the wait has passed. A browser runs a timer
   // over 2**31 - 1 ms with no delay, so the wait is capped.
-  const scheduleSessionRefresh = (
-    wait = Number(window.localStorage.getItem(sessionRefreshStorageKey())) -
-      Date.now(),
-  ) => {
+  const scheduleSessionRefresh = (wait) => {
+    if (wait === undefined) {
+      try {
+        wait =
+          Number(window.localStorage.getItem(sessionRefreshStorageKey())) -
+          Date.now();
+      } catch {
+        wait = 0;
+      }
+    }
     window.clearTimeout(sessionTimer);
     if (wait > 0) {
       sessionTimer = window.setTimeout(
