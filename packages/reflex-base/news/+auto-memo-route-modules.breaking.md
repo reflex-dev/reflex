@@ -1,0 +1,1 @@
+`create_passthrough_component_memo` no longer takes a `source_module`, since the compiler places auto memos by the pages using them, and its `scope_vars` is keyword-only, so a call passing a source module fails instead of binding it to `scope_vars`.

@@ -1,11 +1,16 @@
 """Integration tests for compiler-generated experimental memos."""
 
+import re
 from collections.abc import Generator
 
 import pytest
 from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
+
+_MEMO_IMPORT = re.compile(
+    r'^import \{([^}]*)\} from "(\$/utils/components/[^"]+)"$', re.MULTILINE
+)
 
 
 def AutoMemoAcrossPagesApp():
@@ -58,11 +63,20 @@ def test_auto_memo_shared_across_pages(auto_memo_app: AppHarness, page: Page):
     """
     assert auto_memo_app.app_instance is not None, "app is not running"
 
-    web_sources = "\n".join(
-        path.read_text() for path in (auto_memo_app.app_path / ".web").rglob("*.jsx")
-    )
-    assert "$/app_components" in web_sources
+    web_dir = auto_memo_app.app_path / ".web"
+    web_sources = "\n".join(path.read_text() for path in web_dir.rglob("*.jsx"))
     assert "$/utils/stateful_components" not in web_sources
+    # Each page imports the shared memo from its own route module.
+    memo_imports = {
+        path.name: _MEMO_IMPORT.findall(path.read_text())
+        for path in (web_dir / "app" / "routes").glob("*.jsx")
+    }
+    ((tag, _),) = memo_imports["_index.jsx"]
+    assert memo_imports == {
+        "[404]._index.jsx": [],
+        "[other]._index.jsx": [(tag, "$/utils/components/routes/[other]._index")],
+        "_index.jsx": [(tag, "$/utils/components/routes/_index")],
+    }
 
     assert auto_memo_app.frontend_url is not None
     page.goto(auto_memo_app.frontend_url)

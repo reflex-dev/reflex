@@ -12,6 +12,9 @@ that:
   instance), skipping framework frames to reach the real user module.
 - Translate a dotted Python module name into mirrored JSX path segments and
   the corresponding ``$/...`` library specifier consumed by the import system.
+
+Auto-memo wrappers are not mirrored: they are placed by the pages that use
+them (see :data:`AUTO_MEMO_LIBRARY`).
 """
 
 from __future__ import annotations
@@ -20,7 +23,7 @@ import hashlib
 import importlib.util
 import inspect
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from pathlib import Path
 
 from reflex_base.constants.base import Dirs
@@ -315,3 +318,55 @@ def library_and_symbol(source_module: str | None, name: str) -> tuple[str, str]:
                 name, source_module
             )
     return unmirrored_library_specifier(name), name
+
+
+# The library an auto-memo wrapper imports from until the compiler places it. A
+# page resolves it to its own route module and a memo module to the module
+# that holds each memo, so it never reaches the output.
+AUTO_MEMO_LIBRARY = f"$/{Dirs.COMPONENTS_PATH}/auto-memo"
+
+# The route module of the app root (``root.jsx``). A page's route module is
+# named like its page module, which ends in ``_index`` or ``$``, so they never
+# clash.
+APP_ROOT_MEMO_STEM = "root"
+
+
+def route_memo_segments(stem: str) -> tuple[str, ...]:
+    """Return the path segments of a route's auto-memo module.
+
+    Args:
+        stem: The file stem of the route's page module.
+
+    Returns:
+        The segments to join under ``.web/``.
+    """
+    return (*Dirs.COMPONENTS_PATH.split("/"), Dirs.ROUTES, stem)
+
+
+def shared_memo_segments(tags: Iterable[str]) -> tuple[str, ...]:
+    """Return the path segments of a module holding memos shared by several routes.
+
+    The name hashes the memos it holds rather than the routes using them, so it
+    stays stable when unrelated pages are added.
+
+    Args:
+        tags: The tags of the memos in the module.
+
+    Returns:
+        The segments to join under ``.web/``.
+    """
+    digest = hashlib.sha256(",".join(sorted(tags)).encode()).hexdigest()[:16]
+    return (*Dirs.COMPONENTS_PATH.split("/"), "shared", digest)
+
+
+def generated_library_specifier(segments: tuple[str, ...]) -> str:
+    """Build the ``$/...`` import specifier for a route or shared memo module.
+
+    Args:
+        segments: Segments from :func:`route_memo_segments` or
+            :func:`shared_memo_segments`.
+
+    Returns:
+        A ``$/`` prefixed module specifier.
+    """
+    return "$/" + "/".join(segments)

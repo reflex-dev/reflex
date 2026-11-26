@@ -489,6 +489,8 @@ def _get_memo_component_class(
             boundary, so they opt out of being auto-memoized themselves;
             user-authored ``@rx.memo`` components do not, so their stateful
             props land in a generated wrapper instead of the page module.
+            Their module is chosen after every page compiled, from the pages
+            using them, so they import from a placeholder until then.
 
     Returns:
         A cached component subclass with the tag set at class definition time.
@@ -496,7 +498,11 @@ def _get_memo_component_class(
     # With a source module the memo is grouped into a file mirroring its
     # Python module; otherwise each memo gets its own per-file module so Vite
     # has distinct module boundaries per memo, enabling code-split by page.
-    library, symbol = memo_paths.library_and_symbol(source_module, export_name)
+    library, symbol = (
+        (memo_paths.AUTO_MEMO_LIBRARY, export_name)
+        if auto_memo_wrapper
+        else memo_paths.library_and_symbol(source_module, export_name)
+    )
     attrs: dict[str, Any] = {
         "__module__": __name__,
         "tag": symbol,
@@ -2130,7 +2136,7 @@ _PASSTHROUGH_PARAMS = (
 
 def create_passthrough_component_memo(
     component: Component,
-    source_module: str | None = None,
+    *,
     scope_vars: Sequence[str] = (),
 ) -> tuple[
     Callable[..., MemoComponent],
@@ -2148,10 +2154,12 @@ def create_passthrough_component_memo(
     in their children — whose generated memo bodies are identical — collapse
     to one wrapper.
 
+    The memo has no source module: the compiler places it by the pages that
+    use it, and its tag alone names it, so identical subtrees anywhere in the
+    app share one definition.
+
     Args:
         component: The component to wrap.
-        source_module: The user-app Python module that triggered creation of
-            this memo (typically the page that contained the wrapped subtree).
         scope_vars: The loop variables that the body reads; the memo
             receives each one as a prop.
 
@@ -2251,7 +2259,6 @@ def create_passthrough_component_memo(
         fn=passthrough,
         python_name=passthrough.__name__,
         params=scoped_params,
-        source_module=source_module,
         export_name=tag,
         _component=_LazyBody.ready(preview),
         _rest_target_fields=rest_target_fields,

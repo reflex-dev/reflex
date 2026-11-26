@@ -1103,6 +1103,46 @@ def get_memo_module_path(segments: tuple[str, ...]) -> str:
     return str(memo_paths.mirrored_jsx_path(get_web_dir(), segments))
 
 
+def get_route_memo_segments(route: str | None) -> tuple[str, ...]:
+    """Get the path segments of the module a page imports its auto memos from.
+
+    Args:
+        route: The route of the page, or None for the app root.
+
+    Returns:
+        The segments, named like the page module.
+    """
+    return memo_paths.route_memo_segments(
+        memo_paths.APP_ROOT_MEMO_STEM if route is None else _path_to_file_stem(route)
+    )
+
+
+def get_route_memo_specifier(route: str | None) -> str:
+    """Get the ``$``-aliased specifier of the module a page imports its auto memos from.
+
+    Args:
+        route: The route of the page, or None for the app root.
+
+    Returns:
+        The import specifier.
+    """
+    return memo_paths.generated_library_specifier(get_route_memo_segments(route))
+
+
+def get_generated_memo_module_path(segments: tuple[str, ...]) -> str:
+    """Get the on-disk path of a route or shared auto-memo module.
+
+    Args:
+        segments: Segments from :func:`memo_paths.route_memo_segments` or
+            :func:`memo_paths.shared_memo_segments`. A route stem can hold
+            dots, so the extension is appended rather than substituted.
+
+    Returns:
+        The path the compiler writes the module to.
+    """
+    return str(get_web_dir().joinpath(*segments[:-1], segments[-1] + constants.Ext.JSX))
+
+
 def add_meta(
     page: Component,
     title: str | Var,

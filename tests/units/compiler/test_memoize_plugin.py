@@ -61,7 +61,9 @@ from reflex.compiler.plugins.memoize import (
     _should_memoize,
     scope_memo_body_hooks,
 )
+from reflex.compiler.utils import get_route_memo_specifier
 from reflex.state import BaseState
+from reflex.utils.prerequisites import get_web_dir
 
 STATE_VAR = LiteralVar.create("value")._replace(
     merge_var_data=VarData(hooks={"useTestState": None}, state="TestState")
@@ -247,7 +249,7 @@ def test_memoize_wrapper_uses_memo_component_and_call_site() -> None:
     wrapper_tag = next(iter(ctx.memoize_wrappers))
     assert (wrapper_tag, None) in ctx.auto_memo_components
     output = page_ctx.output_code or ""
-    assert f'import {{{wrapper_tag}}} from "$/utils/components/{wrapper_tag}"' in output
+    assert f'import {{{wrapper_tag}}} from "{get_route_memo_specifier("/p")}"' in output
     assert f"jsx({wrapper_tag}," in (page_ctx.output_code or "")
     assert f"const {wrapper_tag} = memo" not in output
 
@@ -275,7 +277,7 @@ def test_memoize_wrapper_deduped_across_repeated_subtrees() -> None:
     wrapper_tag = next(iter(ctx.memoize_wrappers))
     assert list(ctx.auto_memo_components) == [(wrapper_tag, None)]
     assert (page_ctx.output_code or "").count(
-        f'import {{{wrapper_tag}}} from "$/utils/components/{wrapper_tag}"'
+        f'import {{{wrapper_tag}}} from "{get_route_memo_specifier("/p")}"'
     ) == 1
 
 
@@ -446,7 +448,9 @@ def test_foreach_snapshot_memo_applies_component_styles() -> None:
         memos=tuple(ctx.auto_memo_components.values()),
     )
     foreach_code = next(
-        code for path, code in memo_files if "/Foreach" in path or "\\Foreach" in path
+        block
+        for name, block in _module_by_export(memo_files).items()
+        if name.startswith("Foreach_")
     )
 
     assert '["width"] : "400px"' in foreach_code
@@ -1039,9 +1043,7 @@ def test_user_memo_with_stateful_prop_is_auto_memoized() -> None:
     memo_files, _memo_imports = compile_memo_components(
         memos=tuple(ctx.auto_memo_components.values()),
     )
-    wrapper_code = next(
-        code for path, code in memo_files if definition.export_name in path
-    )
+    wrapper_code = _module_by_export(memo_files)[definition.export_name]
     assert "useStateContext(" in wrapper_code
     assert f"jsx({wrapped.tag}," in wrapper_code
 
@@ -1087,9 +1089,7 @@ def test_user_memo_event_trigger_usecallback_leaves_page_scope() -> None:
     memo_files, _memo_imports = compile_memo_components(
         memos=tuple(ctx.auto_memo_components.values()),
     )
-    wrapper_code = next(
-        code for path, code in memo_files if definition.export_name in path
-    )
+    wrapper_code = _module_by_export(memo_files)[definition.export_name]
     assert "useCallback" in wrapper_code
 
 
@@ -1129,9 +1129,7 @@ def test_user_memo_children_render_in_page_scope() -> None:
     memo_files, _memo_imports = compile_memo_components(
         memos=tuple(ctx.auto_memo_components.values()),
     )
-    wrapper_code = next(
-        code for path, code in memo_files if wrapper_definition.export_name in path
-    )
+    wrapper_code = _module_by_export(memo_files)[wrapper_definition.export_name]
     inner_tag = wrapper_definition.component.tag
     assert f"jsx({inner_tag}," in wrapper_code
     # The hole, not the authored child, is what the memo body renders.
@@ -1234,14 +1232,10 @@ def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> No
 
     def fake_create_passthrough_component_memo(
         component: Component,
-        source_module: str | None = None,
+        *,
         scope_vars: tuple[str, ...] = (),
     ):
-        definition = SimpleNamespace(
-            export_name=tag,
-            component=component,
-            source_module=source_module,
-        )
+        definition = SimpleNamespace(export_name=tag, component=component)
         return (lambda definition=definition, **_props: definition), definition
 
     monkeypatch.setattr(
@@ -1291,22 +1285,16 @@ def test_shared_subtree_across_pages_uses_same_tag() -> None:
     assert list(ctx.auto_memo_components) == [(tag, None)]
     for route in ("/a", "/b"):
         output = ctx.compiled_pages[route].output_code or ""
-        assert f'import {{{tag}}} from "$/utils/components/{tag}"' in output
+        assert f'import {{{tag}}} from "{get_route_memo_specifier(route)}"' in output
         assert f"jsx({tag}," in output
 
 
-def test_shared_subtree_in_distinct_source_modules_emits_per_module() -> None:
-    """Identical subtrees in different user modules emit one memo per module.
+def test_shared_subtree_in_distinct_source_modules_registers_once() -> None:
+    """Identical subtrees on pages from different user modules share one memo.
 
-    Regression: the auto-memo registry was keyed by tag only, so when two
-    pages from different user modules produced the same memoizable subtree
-    (and therefore the same tag), the second registration overwrote the
-    first. Only the surviving definition's source module got a mirrored
-    memo file, leaving the other page importing a tag from a file that
-    never exported it.
+    The tag names the memo by content, so it carries no source module, and each
+    page imports it from its own route module.
     """
-    from reflex.compiler.compiler import compile_memo_components
-
     ctx = CompileContext(
         pages=[
             FakePage(
@@ -1327,43 +1315,12 @@ def test_shared_subtree_in_distinct_source_modules_emits_per_module() -> None:
 
     assert len(ctx.memoize_wrappers) == 1
     tag = next(iter(ctx.memoize_wrappers))
-    # Both source modules survive registration as distinct entries.
-    assert set(ctx.auto_memo_components) == {
-        (tag, "memo_collision_test.module_a"),
-        (tag, "memo_collision_test.module_b"),
-    }
-
-    # Each module emits and imports the tag under a per-module symbol so the
-    # two pages never collide on a shared JS identifier.
-    symbol_a = memo_paths.mirrored_symbol(tag, "memo_collision_test.module_a")
-    symbol_b = memo_paths.mirrored_symbol(tag, "memo_collision_test.module_b")
-    page_a_output = ctx.compiled_pages["/a"].output_code or ""
-    page_b_output = ctx.compiled_pages["/b"].output_code or ""
-    assert (
-        f'import {{{symbol_a}}} from "$/app_components/memo_collision_test/module_a"'
-        in page_a_output
-    )
-    assert (
-        f'import {{{symbol_b}}} from "$/app_components/memo_collision_test/module_b"'
-        in page_b_output
-    )
-
-    output_files, _ = compile_memo_components(
-        memos=tuple(ctx.auto_memo_components.values()),
-    )
-    emitted = {Path(path).as_posix(): code for path, code in output_files}
-
-    def find_emitted(suffix: str) -> str | None:
-        return next(
-            (code for path, code in emitted.items() if path.endswith(suffix)), None
-        )
-
-    matched_a = find_emitted("memo_collision_test/module_a.jsx")
-    matched_b = find_emitted("memo_collision_test/module_b.jsx")
-    assert matched_a is not None, f"missing module_a memo file in {sorted(emitted)}"
-    assert matched_b is not None, f"missing module_b memo file in {sorted(emitted)}"
-    assert f"const {symbol_a} = memo" in matched_a
-    assert f"const {symbol_b} = memo" in matched_b
+    assert list(ctx.auto_memo_components) == [(tag, None)]
+    for route in ("/a", "/b"):
+        output = ctx.compiled_pages[route].output_code or ""
+        assert [
+            line for line in output.splitlines() if '"$/utils/components/' in line
+        ] == [f'import {{{tag}}} from "{get_route_memo_specifier(route)}"']
 
 
 def test_shared_parent_instance_across_pages_preserves_original() -> None:
@@ -1400,7 +1357,7 @@ def test_shared_parent_instance_across_pages_preserves_original() -> None:
     tag = next(iter(ctx.memoize_wrappers))
     for route in ("/a", "/b"):
         output = ctx.compiled_pages[route].output_code or ""
-        assert f'import {{{tag}}} from "$/utils/components/{tag}"' in output, (
+        assert f'import {{{tag}}} from "{get_route_memo_specifier(route)}"' in output, (
             f"route {route} missing memo tag import"
         )
         assert f"jsx({tag}," in output, f"route {route} does not render the memo tag"
@@ -1445,7 +1402,7 @@ def test_shared_nested_parent_mirroring_common_elements_preserves_original() -> 
     tag = next(iter(ctx.memoize_wrappers))
     for route in ("/a", "/b", "/c"):
         output = ctx.compiled_pages[route].output_code or ""
-        assert f'import {{{tag}}} from "$/utils/components/{tag}"' in output
+        assert f'import {{{tag}}} from "{get_route_memo_specifier(route)}"' in output
         assert f"jsx({tag}," in output
 
 
@@ -1891,11 +1848,7 @@ def test_match_stateful_condition_uses_memoized_branch_wrapper_in_memo_body() ->
     memo_files, _memo_imports = compile_memo_components(
         memos=tuple(ctx.auto_memo_components.values()),
     )
-    match_memo_code = next(
-        code
-        for path, code in memo_files
-        if Path(path).name == f"{match_wrapper_tag}.jsx"
-    )
+    match_memo_code = _module_by_export(memo_files)[match_wrapper_tag]
 
     assert "children?.at?.(0)" in match_memo_code, (
         "Match memo body should select case 0 via children indexing.\n"
@@ -2000,8 +1953,8 @@ def test_client_state_setter_in_call_function_event_imports_hook() -> None:
     memo_files, _memo_imports = compile_memo_components(
         memos=tuple(ctx.auto_memo_components.values()),
     )
-    memo_code = next(
-        code for path, code in memo_files if Path(path).name == f"{wrapper_tag}.jsx"
+    (memo_code,) = (
+        code for _path, code in memo_files if f"export const {wrapper_tag} = " in code
     )
 
     assert "counterRxClientStateSet(42)" in memo_code, (
@@ -2134,8 +2087,8 @@ def test_debounce_input_memo_renders_react_debounce_wrapper() -> None:
     memo_files, _memo_imports = compile_memo_components(
         memos=tuple(ctx.auto_memo_components.values()),
     )
-    memo_code = next(
-        code for path, code in memo_files if Path(path).name == f"{wrapper_tag}.jsx"
+    (memo_code,) = (
+        code for _path, code in memo_files if f"export const {wrapper_tag} = " in code
     )
 
     assert re.search(
@@ -3090,41 +3043,30 @@ def test_restricted_content_element_with_id_and_stateful_child_still_memoizes() 
     )
 
 
-def test_each_memo_wrapper_emits_one_component_module_file() -> None:
-    """Every wrapper tag corresponds to exactly one ``utils/components/{tag}.jsx`` file.
-
-    Locks the per-wrapper file invariant for un-mirrored memos:
-    ``compile_memo_components`` must emit one module per wrapper, so that React
-    can code-split per wrapper. A wrapper without a file (or a file without a
-    wrapper) would mean broken imports at runtime.
-    """
+def test_each_memo_wrapper_is_defined_in_its_route_module() -> None:
+    """Every wrapper a single page uses is defined once, in that page's route module."""
     from reflex.compiler.compiler import compile_memo_components
 
-    ctx, _page_ctx = _compile_single_page(
+    ctx, page_ctx = _compile_single_page(
         lambda: Fragment.create(
             Plain.create(STATE_VAR),
             WithProp.create(label=STATE_VAR),
             LeafComponent.create(Plain.create(STATE_VAR)),
         )
     )
-    memo_files, _imports = compile_memo_components(
-        memos=tuple(ctx.auto_memo_components.values()),
-    )
-    component_module_names = {
-        Path(path).name
-        for path, _ in memo_files
-        if Path(path).parent.name == "components"
-    }
-    expected = {f"{tag}.jsx" for tag in ctx.memoize_wrappers}
-    assert component_module_names == expected, (
-        f"Per-wrapper file invariant broken. wrappers={sorted(ctx.memoize_wrappers)} "
-        f"files={sorted(component_module_names)}"
-    )
     assert len(ctx.memoize_wrappers) == 3, (
         "Test should exercise the multi-wrapper case: one passthrough wrapper "
         "for Plain, one for WithProp, and one snapshot wrapper for the "
         f"LeafComponent boundary. Got: {sorted(ctx.memoize_wrappers)}"
     )
+    memo_files, _imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+        page_imports={"/p": page_ctx.frontend_imports},
+    )
+    assert [path for path, _code in memo_files] == [
+        str(Path(get_web_dir(), get_route_memo_specifier("/p")[2:] + ".jsx"))
+    ]
+    assert sorted(_module_by_export(memo_files)) == sorted(ctx.memoize_wrappers)
 
 
 def _memo_export_line(files: object, symbol: str) -> str:
@@ -3709,9 +3651,8 @@ def _scoped_memo_modules(memo: Any) -> tuple[bool, dict[str, str]]:
         memos=(definition, *ctx.auto_memo_components.values())
     )
     names = {memo_paths.mirrored_symbol(definition.export_name, __name__): "Memo"}
-    # A wrapper lands in the module of the memo whose body it came from.
     for tag, _module in ctx.auto_memo_components:
-        names[memo_paths.mirrored_symbol(tag, __name__)] = "Wrapper"
+        names[tag] = "Wrapper"
     modules = {}
     for name, block in _module_by_export(files).items():
         for symbol, token in names.items():

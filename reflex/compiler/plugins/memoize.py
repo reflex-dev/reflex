@@ -9,9 +9,10 @@ see the original components and collect their imports/hooks as usual.
 
 Each unique subtree shape contributes:
 
-- One generated experimental memo component definition, compiled into a module
-  mirroring its source module under ``$/app_components/`` (or, when it can't be
-  mirrored, a per-memo module at ``$/utils/components/<name>``).
+- One generated experimental memo component definition. Pages import it from
+  their own route module; after every page compiled, the compiler defines it
+  there when one route uses it, in the app root's module when the app root
+  uses it, or else in a module shared by the routes using it.
 - ``useCallback`` hook lines for each non-lifecycle event trigger, emitted into
   the generated memo body so handler hooks stay inside that rendering domain.
 
@@ -428,7 +429,6 @@ def scope_memo_body_hooks(
         name=definition.export_name,
         route=definition.python_name,
         root_component=component,
-        source_module=definition.source_module,
     )
     scoped = _scope_branch_hooks(
         component,
@@ -660,14 +660,11 @@ class MemoizeStatefulPlugin(Plugin):
         # is substituted, so passthrough wrappers that differ only in their
         # children collapse to a single definition.
         wrapper_factory, definition = create_passthrough_component_memo(
-            comp, source_module=page_context.source_module, scope_vars=scope_vars
+            comp, scope_vars=scope_vars
         )
         tag = definition.export_name
         compile_context.memoize_wrappers[tag] = None
-        # Key by (tag, source_module) so identical-rendering subtrees from
-        # different user modules each get their own entry and emit into the
-        # right mirrored memo file.
-        compile_context.auto_memo_components[tag, definition.source_module] = definition
+        compile_context.auto_memo_components[tag, None] = definition
         # The body's hooks leave the page module, but the page still has to own
         # the local client state they use.
         page_context.client_state_names.update(

@@ -1142,6 +1142,7 @@ def memo_components_template(
     functions: list[dict[str, Any]],
     dynamic_imports: Iterable[str],
     custom_codes: Iterable[str],
+    reexports: Mapping[str, Iterable[str]] | None = None,
 ) -> str:
     """Template for custom component.
 
@@ -1151,11 +1152,18 @@ def memo_components_template(
         functions: List of function definitions.
         dynamic_imports: List of dynamic import statements.
         custom_codes: List of custom code snippets.
+        reexports: Names the module exports from other modules, by library.
 
     Returns:
         Rendered custom component code as string.
     """
-    imports_str = "\n".join([_RenderUtils.get_import(imp) for imp in imports])
+    imports_str = "\n".join([
+        *(_RenderUtils.get_import(imp) for imp in imports),
+        *(
+            f'export {{{", ".join(names)}}} from "{library}";'
+            for library, names in (reexports or {}).items()
+        ),
+    ])
     dynamic_imports_str = "\n".join(dynamic_imports)
     custom_code_str = "\n".join(custom_codes)
 

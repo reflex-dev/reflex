@@ -2749,9 +2749,11 @@ def test_app_wrap_compile_theme(
     # the memoized ``onError`` handler instead of the AppWrap chain.
     memo_contents = (
         web_dir
-        / constants.Dirs.COMPONENTS_PATH
-        / f"{error_boundary_tag}{constants.Ext.JSX}"
-    ).read_text()
+        .joinpath(*memo_paths.route_memo_segments(memo_paths.APP_ROOT_MEMO_STEM))
+        .with_suffix(constants.Ext.JSX)
+        .read_text()
+    )
+    assert f"export const {error_boundary_tag} = " in memo_contents
     assert "fallbackRender" in memo_contents
     assert "handle_frontend_exception" in memo_contents
     # The fallback icon's stroke attributes must reach React in camelCase:
@@ -3312,7 +3314,7 @@ def test_stateful_app_wrap_is_memoized(
     memo_dir = web_dir / constants.Dirs.COMPONENTS_PATH
     assert any(
         "useStateContext(" in memo_file.read_text()
-        for memo_file in memo_dir.glob(f"*{constants.Ext.JSX}")
+        for memo_file in memo_dir.rglob(f"*{constants.Ext.JSX}")
     )
 
 
