@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from typing import Any
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -7,30 +8,35 @@ from reflex.testing import AppHarness
 
 
 def DocsSidebarFocusApp():
-    """Render the active sidebar link and highlight for focus geometry checks."""
+    """Render the shared active sidebar leaf for focus geometry checks."""
     import reflex as rx
+    from reflex_site_shared.components.docs_shell import docs_sidebar_leaf
+    from reflex_site_shared.plugins import SharedSiteStylesPlugin
+
+    class SidebarTestStylesPlugin(SharedSiteStylesPlugin):
+        def get_stylesheet_paths(self, **context: Any) -> tuple[str, ...]:
+            """Avoid loading site-wide styles in this focused harness."""
+            return ()
 
     app = rx.App()
 
     @app.add_page
     def index():
         return rx.box(
-            rx.el.li(
-                rx.link(
-                    rx.flex(
-                        rx.el.div(
-                            class_name="absolute left-0 top-1/2 h-8 w-full -translate-y-1/2 rounded-lg bg-accent"
-                        ),
-                        rx.text("Introduction"),
-                        class_name="relative flex h-8 w-full items-center",
-                    ),
-                    href="/docs/introduction/",
-                    class_name="relative block w-auto max-w-[14rem] ml-[2.5rem] rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-                ),
-                class_name="relative m-0 w-full list-none p-0 !overflow-visible",
+            docs_sidebar_leaf(
+                title="Introduction",
+                href="/docs/introduction/",
+                active=True,
+                guide_margin_class="ml-[2.5rem]",
             ),
             style={"width": "80vw", "maxWidth": "19.5rem"},
         )
+
+    rx.config.get_config().plugins = [
+        rx.plugins.TailwindV4Plugin(),
+        rx.plugins.RadixThemesPlugin(),
+        SidebarTestStylesPlugin(),
+    ]
 
 
 @pytest.fixture
