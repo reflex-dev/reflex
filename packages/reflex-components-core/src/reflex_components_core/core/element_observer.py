@@ -73,7 +73,8 @@ class ElementObserver(Fragment):
             The ElementObserver component.
 
         Raises:
-            ValueError: If there is no target and not exactly one child component to observe.
+            ValueError: If there is no target and not exactly one child component
+                that renders an element to observe.
         """
         generated_id = False
         if "target" not in props:
@@ -81,6 +82,12 @@ class ElementObserver(Fragment):
                 msg = "rx.element_observer needs a `target` id or exactly one child component to observe."
                 raise ValueError(msg)
             child = children[0]
+            # A fragment, which rx.cond and rx.match render as well, or an
+            # untagged component such as rx.foreach or text has no element to
+            # carry the id.
+            if isinstance(child, Fragment) or child.tag is None:
+                msg = "rx.element_observer needs a child that renders an element of its own, not a fragment, rx.cond, rx.match, rx.foreach or text; pass the id of the element to observe as `target` instead."
+                raise ValueError(msg)
             if child.id is None:
                 child.id = use_id()
                 generated_id = True

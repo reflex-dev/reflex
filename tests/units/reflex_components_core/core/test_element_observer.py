@@ -5,6 +5,7 @@ from reflex_base.components.memoize_helpers import is_snapshot_boundary
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.vars import special
 from reflex_base.vars.base import Var
+from reflex_components_core.base.bare import Bare
 from reflex_components_core.core.element_observer import ElementObserver
 
 import reflex as rx
@@ -206,4 +207,27 @@ def test_element_observer_needs_a_target_or_one_child(children: tuple):
         ElementObserver.create(*children, on_transition_end=rx.console_log)
     assert str(error.value) == (
         "rx.element_observer needs a `target` id or exactly one child component to observe."
+    )
+
+
+@pytest.mark.parametrize(
+    "child",
+    [
+        rx.fragment(rx.el.div()),
+        rx.cond(Var.create(True), rx.el.div()),
+        rx.match(Var.create(1), (1, rx.el.div()), rx.el.span()),
+        rx.foreach(Var.create(["a"]), rx.el.div),
+        Bare.create(Var.create("text")),
+        ElementObserver.create(target="box", on_transition_end=rx.console_log),
+    ],
+    ids=["fragment", "cond", "match", "foreach", "text", "observer"],
+)
+def test_element_observer_needs_a_child_that_renders_an_element(child: rx.Component):
+    """A child without an element of its own could never carry the id."""
+    with pytest.raises(ValueError) as error:
+        ElementObserver.create(child, on_transition_end=rx.console_log)
+    assert str(error.value) == (
+        "rx.element_observer needs a child that renders an element of its own, "
+        "not a fragment, rx.cond, rx.match, rx.foreach or text; pass the id of the "
+        "element to observe as `target` instead."
     )

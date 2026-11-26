@@ -365,8 +365,10 @@ def element_transition_example():
 
 ## Observing Another Element
 
-With a child, the observer observes the child. A child without an id gets one
-from React's `useId`, which differs between the items of an `rx.foreach`, so an
+With a child, the observer observes the child, which has to render an element
+of its own: a fragment, `rx.cond`, `rx.match` or `rx.foreach` raises an error,
+so wrap the element inside it instead. A child without an id gets one from
+React's `useId`, which differs between the items of an `rx.foreach`, so an
 observer works inside a loop too. Without a child, it observes the element whose
 id is given as `target`, so it can sit anywhere in the page, and several
 observers can observe one element:
