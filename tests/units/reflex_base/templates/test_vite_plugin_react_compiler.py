@@ -59,7 +59,7 @@ CONFIG_STUBS = {
     "node_modules/vite/package.json": '{"type": "module", "exports": "./index.js"}',
     "node_modules/vite/index.js": (
         "export const defineConfig = (config) => config;\n"
-        "export const normalizePath = (id) => id;"
+        'export const normalizePath = (id) => id.replaceAll("\\\\", "/");'
     ),
     "node_modules/@react-router/dev/package.json": (
         '{"type": "module", "exports": {"./vite": "./index.js"}}'
