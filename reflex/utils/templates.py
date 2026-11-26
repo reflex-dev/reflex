@@ -102,7 +102,11 @@ def initialize_app_directory(
         ):
             # The app's code takes the app's name, as it always has.
             continue
-        if file.is_dir():
+        if file.name == constants.Bun.ROOT_LOCKFILE_DIR:
+            # init has just written a lockfile for the bare frontend; the
+            # template's own lockfile is the one that matches its packages.
+            path_ops.cp(str(file), file.name)
+        elif file.is_dir():
             # Add the template's files to a directory that may already hold the
             # user's, keeping any the user has.
             shutil.copytree(

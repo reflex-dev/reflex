@@ -366,6 +366,39 @@ def test_initialize_app_directory_keeps_existing_files(tmp_working_dir, tmp_path
     }
 
 
+def test_initialize_app_directory_uses_the_template_lockfile(tmp_working_dir, tmp_path):
+    """The template's lockfile replaces the one init wrote for the bare frontend.
+
+    Args:
+        tmp_working_dir: a new directory that is the current working directory
+            for the duration of the test.
+        tmp_path: pytest tmp_path fixture, which holds the template.
+    """
+    template = tmp_path / "template"
+    (template / "code").mkdir(parents=True)
+    (template / "code" / "tmpl.py").write_text("")
+    (template / constants.Bun.ROOT_LOCKFILE_DIR).mkdir()
+    (template / constants.Bun.ROOT_LOCKFILE_DIR / "package.json").write_text("template")
+    (template / constants.Bun.ROOT_LOCKFILE_DIR / "bun.lock").write_text("template")
+    (tmp_working_dir / constants.Bun.ROOT_LOCKFILE_DIR).mkdir()
+    (tmp_working_dir / constants.Bun.ROOT_LOCKFILE_DIR / "package.json").write_text(
+        "generated"
+    )
+
+    templates.initialize_app_directory(
+        "shop",
+        template_name="tmpl",
+        template_code_dir_name="code",
+        template_dir=template,
+    )
+
+    lockfile_dir = tmp_working_dir / constants.Bun.ROOT_LOCKFILE_DIR
+    assert {p.name: p.read_text() for p in lockfile_dir.iterdir()} == {
+        "package.json": "template",
+        "bun.lock": "template",
+    }
+
+
 @pytest.mark.parametrize("reverse", [False, True])
 @pytest.mark.parametrize("app_name", ["assets", "Assets", "readme"])
 def test_initialize_app_directory_named_like_a_template_entry(
