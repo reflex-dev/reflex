@@ -46,6 +46,12 @@ Whenever the user hovers over the heading, the `next_word` **event handler** wil
 
 Adding the `@rx.event` decorator above the event handler is strongly recommended. This decorator enables proper static type checking, which ensures event handlers receive the correct number and types of arguments.
 
+You can stack `@rx.event` decorators on a function definition. Passing a handler
+read from a state class back to `rx.event`, such as
+`rx.event(MyState.handle_click, throttle=500)`, raises `TypeError` even if a type
+checker accepts it. To throttle an existing handler on a trigger, pass
+`on_click=MyState.handle_click.throttle(500)`.
+
 ## Explicit Event Handlers
 
 By default, every public method of a state (one whose name does not start with `_`) is treated as an event handler, whether or not it is decorated. To make `@rx.event` mandatory and keep undecorated public methods as plain Python helpers, enable `state_explicit_event_handlers` in `rxconfig.py`:
