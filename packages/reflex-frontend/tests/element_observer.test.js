@@ -47,14 +47,21 @@ class FakeIntersectionObserver {
   }
 }
 
+/** The roots still mounted, unmounted after each test so none follows its id on. */
+let roots;
+
 beforeEach(() => {
   resizeObservers = [];
   intersectionObservers = [];
+  roots = new Set();
   vi.stubGlobal("ResizeObserver", FakeResizeObserver);
   vi.stubGlobal("IntersectionObserver", FakeIntersectionObserver);
 });
 
 afterEach(() => {
+  for (const root of roots) {
+    act(() => root.unmount());
+  }
   vi.unstubAllGlobals();
   document.body.replaceChildren();
 });
@@ -66,6 +73,22 @@ let rect;
 const layOut = (changes) => {
   rect = { ...rect, ...changes };
 };
+
+/** Lay the element out in the stand-in layout. */
+const measured = (element) => {
+  element.getBoundingClientRect = () => rectOf(rect);
+};
+
+/** Put an element with the id on the page, outside of React. */
+const place = (id) => {
+  const element = document.createElement("div");
+  element.id = id;
+  measured(element);
+  return document.body.appendChild(element);
+};
+
+/** Let the page's MutationObservers see the changes made so far. */
+const pageChanged = () => Promise.resolve();
 
 const rectOf = ({ x, y, width, height }) => ({
   x,
@@ -94,7 +117,7 @@ const mount = (props) => {
       id: "box",
       ref: (element) => {
         if (element) {
-          element.getBoundingClientRect = () => rectOf(rect);
+          measured(element);
         }
       },
     });
@@ -102,6 +125,7 @@ const mount = (props) => {
   const container = document.createElement("div");
   document.body.appendChild(container);
   const root = createRoot(container);
+  roots.add(root);
   const render = (next) =>
     act(() => root.render(createElement(Observed, next)));
   render(props(log));
@@ -109,7 +133,10 @@ const mount = (props) => {
     log,
     render: (next) => render(next(log)),
     box: () => document.getElementById("box"),
-    unmount: () => act(() => root.unmount()),
+    unmount: () => {
+      roots.delete(root);
+      act(() => root.unmount());
+    },
   };
 };
 
@@ -284,6 +311,80 @@ describe("observing anew", () => {
       id: "missing",
     }));
     expect(calls).toEqual([]);
+    expect(resizeObservers).toEqual([]);
+  });
+});
+
+describe("following the id", () => {
+  test("an element that comes onto the page later is observed from then on", async () => {
+    const widths = [];
+    mount(() => ({
+      handlers: { onResize: (width) => widths.push(width) },
+      options: {},
+      id: "late",
+    }));
+    expect(resizeObservers).toEqual([]);
+
+    layOut({ width: 70 });
+    const late = place("late");
+    await pageChanged();
+    expect(resizeObservers).toHaveLength(1);
+    expect(resizeObservers[0].observed).toEqual([
+      [late, { box: "border-box" }],
+    ]);
+    expect(widths).toEqual([70]);
+  });
+
+  test("an element that takes the id over is observed instead", async () => {
+    const widths = [];
+    const first = place("target");
+    mount(() => ({
+      handlers: { onResize: (width) => widths.push(width) },
+      options: {},
+      id: "target",
+    }));
+    expect(resizeObservers[0].observed[0][0]).toBe(first);
+
+    first.remove();
+    await pageChanged();
+    expect(resizeObservers[0].disconnected).toBe(true);
+    expect(resizeObservers).toHaveLength(1);
+
+    layOut({ width: 120 });
+    const second = place("target");
+    await pageChanged();
+    expect(resizeObservers).toHaveLength(2);
+    expect(resizeObservers[1].observed[0][0]).toBe(second);
+    expect(widths).toEqual([100, 120]);
+  });
+
+  test("an element that gets the id is observed", async () => {
+    const tops = [];
+    mount(() => ({
+      handlers: { onMove: (_x, y) => tops.push(y) },
+      options: {},
+      id: "renamed",
+    }));
+    const element = place("other");
+    await pageChanged();
+    expect(tops).toEqual([]);
+
+    element.id = "renamed";
+    await pageChanged();
+    expect(tops).toEqual([10]);
+  });
+
+  test("stops following the id when unmounted", async () => {
+    const widths = [];
+    const { unmount } = mount(() => ({
+      handlers: { onResize: (width) => widths.push(width) },
+      options: {},
+      id: "late",
+    }));
+    unmount();
+    place("late");
+    await pageChanged();
+    expect(widths).toEqual([]);
     expect(resizeObservers).toEqual([]);
   });
 });

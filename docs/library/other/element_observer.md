@@ -20,6 +20,9 @@ round trip to the backend. They accept backend event handlers as well.
 The observed element is the only child. If it has no id, it gets one from
 React's `useId`, which differs between the items of an `rx.foreach`. To observe
 an element rendered elsewhere, leave out the child and pass its id as `target`.
+The observer follows the id: it starts observing once an element with it is on
+the page, such as one that `rx.cond` shows later, and moves to an element that
+takes the id over.
 
 ## Size
 
@@ -131,8 +134,9 @@ def element_transition_example():
 
 ## Timing
 
-Observing starts in an effect after the observer mounts, and `disabled` pauses
-it: once `disabled` is false again, observing restarts with a first report.
+Observing starts in an effect after the observer mounts, or once the element is
+on the page if it comes later, and `disabled` pauses it: once `disabled` is
+false again, observing restarts with a first report.
 
 With `layout=True` observing starts in a layout effect instead, so the first
 `on_resize` and `on_move` fire while React commits the render that mounted or

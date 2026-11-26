@@ -55,21 +55,76 @@ const onResized = (element, update) => {
   return () => observer.disconnect();
 };
 
+/** @type {Set<() => void>} */
+const pageChangeListeners = new Set();
+/** @type {MutationObserver | undefined} */
+let pageObserver;
+
 /**
- * Observe the element with the given id for the handlers named in `watched`.
+ * Call `listener` after elements were added to or removed from the page, or an
+ * element's id changed. One MutationObserver serves all listeners.
+ * @param {() => void} listener The callback.
+ * @returns {() => void} Stops calling it.
+ */
+const onPageChange = (listener) => {
+  pageChangeListeners.add(listener);
+  if (pageObserver === undefined) {
+    pageObserver = new MutationObserver(() => {
+      for (const callback of pageChangeListeners) {
+        callback();
+      }
+    });
+    pageObserver.observe(document, {
+      childList: true,
+      subtree: true,
+      attributeFilter: ["id"],
+    });
+  }
+  return () => {
+    pageChangeListeners.delete(listener);
+    if (pageChangeListeners.size === 0) {
+      pageObserver?.disconnect();
+      pageObserver = undefined;
+    }
+  };
+};
+
+/**
+ * Observe whichever element has the given id: from when one is on the page,
+ * moving to another element that takes the id over.
  * @param {string} id The element's id.
+ * @param {(element: Element) => () => void} start Observes an
+ *   element; returns the function that stops it.
+ * @returns {() => void} Stops observing.
+ */
+const follow = (id, start) => {
+  let element = document.getElementById(id);
+  let stop = element === null ? undefined : start(element);
+  const stopFollowing = onPageChange(() => {
+    const next = document.getElementById(id);
+    if (next !== element) {
+      stop?.();
+      element = next;
+      stop = element === null ? undefined : start(element);
+    }
+  });
+  return () => {
+    stopFollowing();
+    stop?.();
+  };
+};
+
+/**
+ * Observe the element for the handlers named in `watched`.
+ * @param {Element} element The element.
  * @param {{current: ElementObserverHandlers}} handlers The handlers, read at
  *   call time so a re-rendered handler takes effect without observing again.
  * @param {string} watched The names of the handlers to observe for, joined by commas.
  * @param {string | undefined} thresholds The IntersectionObserver threshold, as JSON.
  * @param {string | undefined} rootMargin The IntersectionObserver root margin.
- * @returns {(() => void) | undefined} Stops observing.
+ * @returns {() => void} Stops observing.
  */
-const observe = (id, handlers, watched, thresholds, rootMargin) => {
-  const element = document.getElementById(id);
-  if (element === null) {
-    return undefined;
-  }
+const observeElement = (element, handlers, watched, thresholds, rootMargin) => {
   const names = watched.split(",");
   /** @type {(() => void)[]} */
   const cleanups = [];
@@ -152,11 +207,26 @@ const observe = (id, handlers, watched, thresholds, rootMargin) => {
 };
 
 /**
+ * Observe whichever element has the given id for the handlers named in `watched`.
+ * @param {string} id The element's id.
+ * @param {{current: ElementObserverHandlers}} handlers The handlers.
+ * @param {string} watched The names of the handlers to observe for, joined by commas.
+ * @param {string | undefined} thresholds The IntersectionObserver threshold, as JSON.
+ * @param {string | undefined} rootMargin The IntersectionObserver root margin.
+ * @returns {() => void} Stops observing.
+ */
+const observe = (id, handlers, watched, thresholds, rootMargin) =>
+  follow(id, (element) =>
+    observeElement(element, handlers, watched, thresholds, rootMargin),
+  );
+
+/**
  * Report the size, position and visibility of the element with the given id,
  * and the ends of its CSS transitions.
  *
- * Observing restarts when the id, an option or the set of handlers changes,
- * not when a handler is re-rendered.
+ * Observing starts once an element with the id is on the page and moves to
+ * another element that takes the id over. It restarts when the id, an option
+ * or the set of handlers changes, not when a handler is re-rendered.
  * @param {string} id The element's id.
  * @param {ElementObserverHandlers} handlers The handlers to report to.
  * @param {ElementObserverOptions} options The options.

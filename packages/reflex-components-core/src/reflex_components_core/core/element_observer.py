@@ -26,7 +26,7 @@ class ElementObserver(Fragment):
     """
 
     target: Var[str] = field(
-        doc="The id of the element to observe. Defaults to the id of the only child, which gets a generated one if it has none."
+        doc="The id of the element to observe, which may come onto the page later or pass to another element. Defaults to the id of the only child, which gets a generated one if it has none."
     )
 
     threshold: Var[float | Sequence[float]] = field(

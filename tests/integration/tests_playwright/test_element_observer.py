@@ -25,6 +25,8 @@ def ElementObserverApp():
     expanded = rx.client_state(False, name="expanded")
     ended = rx.client_state("", name="ended")
     item_widths = rx.client_state("", name="item_widths")
+    shown = rx.client_state(False, name="shown")
+    late_width = rx.client_state(0.0, name="late_width")
 
     def readout(label: str, value: rx.Var) -> rx.Component:
         return rx.el.p(value, id=label)
@@ -37,11 +39,13 @@ def ElementObserverApp():
                 readout("visible", rx.cond(visible.value, "visible", "hidden")),
                 readout("ended", ended.value),
                 readout("item_widths", item_widths.value),
+                readout("late_width", late_width.value),
                 style={"position": "fixed", "right": "0", "top": "0"},
             ),
             rx.el.button("Widen", id="widen", on_click=wide.set(True)),
             rx.el.button("Stop", id="stop", on_click=tracking.set(False)),
             rx.el.button("Expand", id="expand", on_click=expanded.set(True)),
+            rx.el.button("Show", id="show", on_click=shown.set(True)),
             rx.element_observer(
                 rx.el.div(
                     id="box",
@@ -75,6 +79,13 @@ def ElementObserverApp():
                 on_transition_end=lambda name: ended.set(
                     lambda names: names.to(str) + name + ";"
                 ),
+            ),
+            rx.element_observer(
+                target="late", on_resize=lambda w, h: late_width.set(w)
+            ),
+            rx.cond(
+                shown.value,
+                rx.el.div(id="late", style={"width": "70px", "height": "10px"}),
             ),
             rx.foreach(
                 rx.Var.create([40, 60]),
@@ -192,3 +203,10 @@ def test_items_of_a_loop_observe_their_own_child(observer_page: Page):
     expect(observer_page.locator("#item_widths")).to_have_text(
         re.compile(r"^(40;60;)+$")
     )
+
+
+def test_target_shown_later_is_observed_once_shown(observer_page: Page):
+    """An observer whose target rx.cond shows later reports it once it is shown."""
+    expect(observer_page.locator("#late_width")).to_have_text("0")
+    observer_page.click("#show")
+    expect(observer_page.locator("#late_width")).to_have_text("70")
