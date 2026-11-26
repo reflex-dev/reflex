@@ -436,7 +436,7 @@ def _prepare_event(
 
 
 def _send_event(event_data: _Event) -> bool:
-    # urllib keeps httpx and its import cost out of the backend workers, which
+    # urllib keeps httpx2 and its import cost out of the backend workers, which
     # only ever send from here.
     request = urllib.request.Request(
         POSTHOG_API_URL,
