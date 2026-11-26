@@ -18,7 +18,7 @@ from reflex.testing import AppHarness
 def ClientStateApp():
     """App exercising ``rx.client_state`` runtime behavior."""
     from reflex_base.constants.compiler import MemoizationDisposition, MemoizationMode
-    from reflex_base.vars.function import ArgsFunctionOperationBuilder, FunctionVar
+    from reflex_base.vars.function import ArgsFunctionOperationBuilder
     from reflex_components_core.el.elements.inline import Span
 
     import reflex as rx
@@ -70,9 +70,7 @@ def ClientStateApp():
 
         @rx.event
         def script_set_shared(self):
-            return rx.call_script(
-                shared.global_set.to(FunctionVar).call("from-script-global-set")
-            )
+            return rx.call_script(shared.global_set.call("from-script-global-set"))
 
         @rx.event
         def script_read_shared(self):

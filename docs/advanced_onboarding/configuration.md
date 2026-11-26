@@ -75,6 +75,30 @@ REFLEX_FRONTEND_PORT=3001 uv run reflex run
 
 The [config reference](/docs/api-reference/config/) lists the environment variable corresponding to each config parameter. Reflex also honors additional environment variables that are not config parameters — see [environment variables](/docs/api-reference/environment-variables/) for those.
 
+## HTTP clients and certificates
+
+Reflex and its hosting CLI use [HTTPX2](https://pydantic.dev/docs/httpx2/) for HTTP requests. HTTPS verification uses the operating system's certificate store. Set `SSL_CERT_FILE` or `SSL_CERT_DIR` to use a custom CA bundle or certificate directory. Downloads continue to honor `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, and `NO_PROXY`.
+
+Reflex no longer installs the original `httpx` package as a runtime dependency. For application code that you want to migrate, declare HTTPX2 in your own dependencies:
+
+```bash
+uv add "httpx2>=2.15.1,<3.0"
+```
+
+Then change your imports:
+
+```python
+import httpx2 as httpx
+```
+
+If your application or an SDK still uses the original `httpx`, keep it as an explicit dependency. Installing `sniffio` also avoids repeated failed imports in `httpcore` when handling async requests:
+
+```bash
+uv add httpx sniffio
+```
+
+The two clients can coexist, but their request, response, and exception classes are distinct. Pass an SDK the client type it expects, and catch exceptions from the matching package. See the [HTTPX2 migration guide](https://pydantic.dev/docs/httpx2/get-started/migration/).
+
 ## Command Line Arguments
 
 Finally, you can override the configuration file and environment variables by passing command line arguments to `uv run reflex run`.
