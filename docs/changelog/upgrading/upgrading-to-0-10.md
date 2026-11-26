@@ -9,7 +9,7 @@ This page covers the 0.10 changes most likely to break an existing app, or to be
 
 ## Reading a backend var on a state class
 
-Reading a backend var on the state class, such as `State._items`, now returns its `Field` instead of the var's default value ([#7312](https://github.com/reflex-dev/reflex/pull/7312)). Passing it to a component raises `ChildrenTypeError` (as a child); a prop may raise `BackendVarFormatError` when its value is built or rendered (earlier 0.10 releases may instead raise `TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar`), while typed props can still reject it with `TypeError` during component creation. Turning it into text with an f-string, `str.format()`, `str()` or `%` raises `BackendVarFormatError` (earlier 0.10 releases embed the `Field` text for `!s`, `str()` and `%`; `!r` and `repr()` still do). Reading the var on a state instance, such as `self._items`, is unchanged.
+Reading a backend var on the state class, such as `State._items`, now returns its `Field` instead of the var's default value ([#7312](https://github.com/reflex-dev/reflex/pull/7312)). Passing it to a component as a child or a prop raises `BackendVarFormatError` (earlier releases may instead raise `ChildrenTypeError` for a child, `TypeError` for a typed prop, or `TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar` when the value is built or rendered). Turning it into text with an f-string, `str.format()`, `str()` or `%` raises `BackendVarFormatError` (earlier 0.10 releases embed the `Field` text for `!s`, `str()` and `%`; `!r` and `repr()` still do). Reading the var on a state instance, such as `self._items`, is unchanged.
 
 Replace the class read with what the code meant:
 
@@ -52,18 +52,18 @@ On 0.9, `State.count = 10` replaced the class attribute, but new instances still
 from typing import ClassVar
 from unittest import mock
 
-import httpx
+import httpx2
 
 import reflex as rx
 
 
 class State(rx.State):
     count: int = 0
-    _client: ClassVar[httpx.AsyncClient | None] = None
+    _client: ClassVar[httpx2.AsyncClient | None] = None
 
 
 State.__fields__["count"].set_default(10)
-State._client = httpx.AsyncClient()  # a ClassVar stays an ordinary class attribute
+State._client = httpx2.AsyncClient()  # a ClassVar stays an ordinary class attribute
 
 with mock.patch.object(State.__fields__["count"], "default", 99):
     ...

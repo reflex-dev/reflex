@@ -10,7 +10,7 @@ import reflex as rx
 # Code Block
 
 The Code Block component can be used to display code easily within a website.
-Put in a multiline string with the correct spacing and specify and language to show the desired code.
+Put in a multiline string with the correct spacing and specify a language to show the desired code.
 
 ```python demo
 rx.code_block(

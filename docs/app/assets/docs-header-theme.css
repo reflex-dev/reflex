@@ -57,6 +57,8 @@ html:has(.docs-nav-frame [data-announcement]) { --docs-header-height: 104px; }
 }
 .docs-sidebar-drawer a:hover p { color: var(--foreground); }
 .docs-sidebar-drawer a[aria-current='page'] p { font-weight: 500; }
+.docs-sidebar-drawer summary p,
+.docs-sidebar-drawer .docs-sidebar-group-label { font-weight: 500; }
 .docs-sidebar-drawer a:focus-visible,
 .docs-sidebar-drawer summary:focus-visible {
   outline: 2px solid var(--ring);

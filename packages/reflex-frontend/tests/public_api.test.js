@@ -59,6 +59,7 @@ const PUBLIC_API = {
     "spreadArraysOrObjects",
     "useEventLoop",
     "useRegisteredRef",
+    "waitForSession",
   ],
   "$/utils/client_state": [
     "CLIENT_STATE_REF",
@@ -97,6 +98,7 @@ const PUBLIC_API = {
     "pySetIsDisjoint",
     "pySetIsSubset",
     "pySetKey",
+    "pySetMatch",
     "pySetSymmetricDifference",
     "pySetUnion",
   ],
