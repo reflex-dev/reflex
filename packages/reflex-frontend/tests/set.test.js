@@ -14,6 +14,8 @@ import {
   pySetIntersection,
   pySetIsDisjoint,
   pySetIsSubset,
+  pySetKey,
+  pySetMatch,
   pySetSymmetricDifference,
   pySetUnion,
 } from "$/utils/helpers/set";
@@ -53,6 +55,24 @@ test("set elements compare by value", () => {
   ).toEqual([[5, 6]]);
 });
 
+test("structured elements compare their elements as Python does", () => {
+  expect(pySetHas([[true]], [1])).toBe(true);
+  expect(pySetHas([{ value: [false] }], { value: [0] })).toBe(true);
+  expect(pySetUnion([[true]], [[1]])).toEqual([[true]]);
+  expect(pySetIntersection([[true]], [[1]])).toEqual([[true]]);
+  expect(pySetHas([["1"]], [1])).toBe(false);
+  expect(pySetHas([[NaN]], [null])).toBe(false);
+  expect(pySetHas([[Infinity]], [null])).toBe(false);
+  expect(pySetHas([["o"]], {})).toBe(false);
+});
+
+test("a structured key grows with the element, not with its depth", () => {
+  let nested = "leaf";
+  for (let i = 0; i < 40; i++) nested = [nested];
+  expect(pySetKey(nested).length).toBeLessThan(200);
+  expect(pySetHas([nested], nested)).toBe(true);
+});
+
 describe.each([null, undefined])("a %s set is empty", (none) => {
   const x = ["x", "y"];
 
@@ -88,4 +108,43 @@ describe.each([null, undefined])("a %s set is empty", (none) => {
     expect(union).not.toBe(x);
     expect(pySetDifference(x, none)).not.toBe(x);
   });
+});
+
+test("a set matches the set case it equals, whatever its order", () => {
+  // The switch that rx.match compiles to for a set case.
+  const match = (tags) => {
+    switch (
+      JSON.stringify(
+        pySetMatch(tags, [
+          ["c", "d"],
+          [[1, 2], "a"],
+        ]),
+      )
+    ) {
+      case JSON.stringify(["c", "d"]):
+        return "cd";
+      case JSON.stringify([[1, 2], "a"]):
+        return "pair";
+      default:
+        return "other";
+    }
+  };
+  expect(match(["c", "d"])).toBe("cd");
+  expect(match(["d", "c"])).toBe("cd");
+  expect(match(["d", "c", "d"])).toBe("other");
+  expect(match(["a", [1, 2]])).toBe("pair");
+  expect(match(["c"])).toBe("other");
+  expect(match(["c", "d", "e"])).toBe("other");
+  expect(match("cd")).toBe("other");
+  expect(match(null)).toBe("other");
+});
+
+test("a set case matches by Python equality", () => {
+  expect(pySetMatch([true, 2], [[1, 2]])).toEqual([1, 2]);
+  expect(pySetMatch(["1"], [[1]])).toEqual(["1"]);
+  expect(pySetMatch([[1, 2]], [["o[1,2]"]])).toEqual([[1, 2]]);
+  expect(pySetMatch([NaN], [[null]])).toEqual([NaN]);
+  expect(pySetMatch([], [null, []])).toEqual([]);
+  const value = { a: 1 };
+  expect(pySetMatch(value, [[]])).toBe(value);
 });

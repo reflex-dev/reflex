@@ -11,6 +11,7 @@ from reflex_base.event import (
     IdentityEventReturn,
     LambdaEventCallback,
     event,
+    passthrough_event_spec,
 )
 from reflex_base.vars.base import Var
 
@@ -96,6 +97,23 @@ assert_type(
     _HandlerState.nine(1, "a", True, 1.5, b"", 2, "b", False), EventCallback[float]
 )
 
+# An event spec passes a trigger's values on as Vars of the given types. A
+# union, such as `str | None`, makes a Var of any value.
+assert_type(passthrough_event_spec(str), Callable[[Var[str]], tuple[Var[str]]])
+assert_type(
+    passthrough_event_spec(int, str),
+    Callable[[Var[int], Var[str]], tuple[Var[int], Var[str]]],
+)
+assert_type(passthrough_event_spec(str | None), Callable[[Var[Any]], tuple[Var[Any]]])
+assert_type(
+    passthrough_event_spec(str | int, dict),
+    Callable[[Var[Any], Var[Any]], tuple[Var[Any], Var[Any]]],
+)
+assert_type(
+    passthrough_event_spec(int, str | None),
+    Callable[[Var[Any], Var[Any]], tuple[Var[Any], Var[Any]]],
+)
+
 # A handler is a callable of its arguments, so it can be passed where one is expected.
 _one: Callable[[int], Any] = _HandlerState.one
 _two: Callable[[int, str], Any] = _HandlerState.two
@@ -160,3 +178,23 @@ def _namespace_annotations(
     assert_type(event_type, EventType[str])
     assert_type(spec, EventSpec)
     _event_prop(_HandlerState.one(1))
+
+
+class _RepeatedState(State):
+    @event(throttle=300)
+    @event(background=True)
+    async def configured_twice(self, step: int) -> None: ...
+
+    @event
+    @event(throttle=300)
+    def bare_over_configured(self, step: int, label: str) -> None: ...
+
+    @event(stop_propagation=True)
+    @event
+    def configured_over_bare(self) -> None: ...
+
+
+# A repeated @rx.event is one handler, typed like a single decorator.
+assert_type(_RepeatedState.configured_twice, EventCallback[int])
+assert_type(_RepeatedState.bare_over_configured, EventCallback[int, str])
+assert_type(_RepeatedState.configured_over_bare, EventCallback[()])

@@ -207,14 +207,14 @@ def docs_sidebar_leaf(
     """
     return rx.el.li(
         rx.link(
-            rx.cond(
-                active,
-                rx.el.div(
-                    class_name="absolute left-0 top-1/2 -translate-y-1/2 w-full h-8 rounded-lg bg-accent z-[-1]",
-                ),
-                rx.fragment(),
-            ),
             rx.flex(
+                rx.cond(
+                    active,
+                    rx.el.div(
+                        class_name="absolute left-0 top-1/2 h-8 w-full -translate-y-1/2 rounded-lg bg-accent",
+                    ),
+                    rx.fragment(),
+                ),
                 rx.cond(
                     active,
                     rx.el.div(
@@ -226,7 +226,7 @@ def docs_sidebar_leaf(
                     title,
                     class_name=rx.cond(
                         active,
-                        "m-0 pl-4 text-sm font-[475] text-foreground transition-color",
+                        "relative m-0 pl-4 text-sm font-[475] text-foreground transition-color",
                         "m-0 w-full text-sm font-[475] text-foreground transition-color",
                     ),
                 ),
@@ -524,7 +524,7 @@ def docs_feedback_button() -> rx.Component:
                     ui.cn("rounded-full", shared_class),
                 ),
             ),
-            class_name="flex w-full flex-row items-center gap-1.5 lg:w-auto",
+            class_name="flex flex-row items-center gap-1.5",
         ),
         ui.popover.portal(ui.popover.positioner(ui.popover.popup(_feedback_content()))),
         open=DocsFeedbackState.open_popover == _FOOTER_FEEDBACK_POPOVER,
@@ -642,13 +642,13 @@ def docs_footer_shell(
         rx.box(
             feedback,
             actions,
-            class_name="flex w-full flex-row items-center justify-center border-y-0 border-border-subtle pb-6 pt-0 lg:justify-between lg:border-y lg:pb-8 lg:pt-8",
+            class_name="flex w-full flex-row items-center justify-center border-y-0 border-border-subtle pb-4 pt-0 lg:justify-between lg:border-y lg:py-4",
         ),
         rx.box(
             link_columns,
             controls,
             copyright_status,
-            class_name="flex w-full flex-col justify-between gap-10 py-6 lg:py-8",
+            class_name="flex w-full flex-col justify-between gap-6 py-6",
         ),
         class_name="docs-page-footer flex w-full max-w-full flex-col lg:max-w-none",
     )
@@ -683,22 +683,22 @@ def _docs_footer_link_column(
     heading: str,
     *links: rx.Component,
 ) -> rx.Component:
-    """Render an official documentation footer link column.
+    """Render an official documentation footer link group as one wrapping row.
 
     Args:
-        heading: Column heading.
-        *links: Links displayed in the column.
+        heading: Group heading.
+        *links: Links displayed after the heading.
 
     Returns:
-        Footer link column.
+        Footer link group.
     """
     return rx.box(
         rx.el.h4(
             heading,
-            class_name="text-xs font-book leading-5 text-muted-foreground",
+            class_name="w-full text-xs font-book leading-6 text-muted-foreground sm:w-28",
         ),
         *links,
-        class_name="flex flex-col gap-4",
+        class_name="flex flex-wrap items-baseline gap-x-6 gap-y-1",
     )
 
 
@@ -786,7 +786,7 @@ def _docs_page_footer_content(
             class_name="whitespace-nowrap font-small text-muted-foreground lg:text-subtle-foreground",
         ),
         docs_feedback_button(),
-        class_name="flex w-full flex-col items-center gap-3 rounded-lg bg-accent p-4 lg:w-auto lg:flex-row lg:gap-4 lg:bg-transparent lg:p-0",
+        class_name="flex w-full flex-wrap items-center justify-center gap-x-4 gap-y-2 rounded-lg bg-accent px-4 py-3 lg:w-auto lg:flex-nowrap lg:bg-transparent lg:p-0",
     )
     actions = rx.box(
         _docs_footer_action("Raise an issue", issue_href),
@@ -808,14 +808,21 @@ def _docs_page_footer_content(
                 ),
             )
             for heading, links in (
-                (
-                    "Get started",
+                # Inside the docs app the navbar tabs already lead to these.
+                *(
                     (
-                        ("Docs overview", "/"),
-                        ("Build with AI", "/ai/"),
-                        ("Explore framework", "/getting-started/introduction/"),
-                        ("Deploy your app", "/hosting/deploy-quick-start/"),
-                    ),
+                        (
+                            "Get started",
+                            (
+                                ("Docs overview", "/"),
+                                ("Build with AI", "/ai/"),
+                                ("Explore framework", "/getting-started/introduction/"),
+                                ("Deploy your app", "/hosting/deploy-quick-start/"),
+                            ),
+                        ),
+                    )
+                    if external_docs_links
+                    else ()
                 ),
                 (
                     "Documentation",
@@ -839,7 +846,7 @@ def _docs_page_footer_content(
             ),
             _docs_footer_link("FAQ", "https://reflex.dev/faq/", root_site=True),
         ),
-        class_name="flex w-full flex-wrap justify-between gap-12",
+        class_name="flex w-full flex-col gap-2",
     )
     controls = rx.box(
         rx.box(dark_mode_toggle(), class_name="[&>div]:!ml-0"),
