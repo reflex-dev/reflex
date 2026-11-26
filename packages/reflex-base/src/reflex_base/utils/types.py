@@ -34,14 +34,13 @@ from typing import (  # noqa: UP035
     _SpecialGenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
     cast,
     get_args,
-    is_typeddict,
 )
 from typing import Self as Self
 from typing import get_origin as get_origin_og
 from typing import get_type_hints as get_type_hints_og
 
 import typing_extensions
-from typing_extensions import TypeAliasType, TypeIs, TypeVarTuple
+from typing_extensions import TypeAliasType, TypeIs, TypeVarTuple, is_typeddict
 from typing_extensions import override as override
 
 from reflex_base import constants
@@ -495,7 +494,7 @@ def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
     annotations = _typed_dict_annotations(origin)
     for base in typing_extensions.get_original_bases(origin):
         base_origin = get_origin_og(base) or base
-        if typing_extensions.is_typeddict(base_origin):
+        if is_typeddict(base_origin):
             if base is base_origin and (
                 params := getattr(base_origin, "__parameters__", ())
             ):
@@ -1118,7 +1117,7 @@ def _get_column_access_type(cls: type, name: str) -> GenericType | None:
         and (declared := _get_mapped_annotation(cls, name)) is not None
         and (
             (get_origin(declared) or declared) is type_
-            or (type_ is dict and typing_extensions.is_typeddict(declared))
+            or (type_ is dict and is_typeddict(declared))
         )
     ):
         type_ = declared
@@ -1219,7 +1218,7 @@ def get_attribute_access_type(
         return unionize(
             *(get_attribute_access_type(arg, name) for arg in get_args(cls))
         )
-    if is_generic_alias(cls) and typing_extensions.is_typeddict(get_origin_og(cls)):
+    if is_generic_alias(cls) and is_typeddict(get_origin_og(cls)):
         # A specialized generic TypedDict: its fields name the type parameters.
         return get_typed_dict_field_types(cls).get(name)
     if isinstance(cls, type):

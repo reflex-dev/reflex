@@ -1,6 +1,7 @@
 from typing import Any, Literal, TypedDict
 
 import pytest
+import typing_extensions
 from reflex_base.utils import types
 from reflex_base.vars.base import Var
 
@@ -136,3 +137,21 @@ class UserInfoTotal(TypedDict, total=True):
 )
 def test_isinstance(value, cls, expected: bool) -> None:
     assert types._isinstance(value, cls, nested=2, treat_var_as_type=True) == expected
+
+
+class ExtensionsUserInfo(typing_extensions.TypedDict, total=False):
+    """A sample typed dict from typing_extensions."""
+
+    sub: str
+    name: str
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ({"sub": "123", "name": "John"}, True),
+        ({"sub": 123}, False),
+    ],
+)
+def test_isinstance_typing_extensions_typed_dict(value: dict, expected: bool) -> None:
+    assert types._isinstance(value, ExtensionsUserInfo, nested=2) == expected

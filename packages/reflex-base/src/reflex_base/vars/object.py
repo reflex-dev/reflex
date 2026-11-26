@@ -7,15 +7,9 @@ import dataclasses
 import typing
 from collections.abc import Mapping
 from importlib.util import find_spec
-from typing import (
-    Any,
-    NoReturn,
-    TypeVar,
-    get_args,
-    get_type_hints,
-    is_typeddict,
-    overload,
-)
+from typing import Any, NoReturn, TypeVar, get_args, get_type_hints, overload
+
+from typing_extensions import is_typeddict
 
 from reflex_base.utils import types
 from reflex_base.utils.exceptions import VarAttributeError
