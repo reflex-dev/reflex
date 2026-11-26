@@ -67,7 +67,7 @@ const { uploadFiles } = module.namespace;
 
 /** Start an upload with `handler` as the socket's event listener. */
 function startUpload(handler) {
-  const socket = { _callbacks: { $event: [handler] } };
+  const socket = { connected: true, _callbacks: { $event: [handler] } };
   const uploaded = uploadFiles(
     "state.handle_upload",
     [],

@@ -1,3 +1,10 @@
+## v0.1.1 (2026-11-23)
+
+### Features
+
+- `start(first, key=Model.column)` keys a run on one unique column: `False` then means exactly "a run with this key already exists", and a clash on any other unique column raises `RunConflict`, which names the constraint when the database driver reports it. Without `key=`, `start` behaves as before. ([#7925](https://github.com/reflex-dev/reflex/issues/7925))
+
+
 ## v0.1.0 (2026-11-17)
 
 First release. `reflex-workflow` runs durable workflows on Postgres: each workflow is a SQLAlchemy table, each row is a run, and workers in your app claim due rows and run their steps. Requires Python 3.11 or newer and SQLAlchemy 2.0.20 or newer. The [documentation](https://reflex.dev/docs/workflows/overview/) covers defining workflows, running workers, and how the engine works.
