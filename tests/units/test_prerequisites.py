@@ -17,6 +17,7 @@ import pytest
 from click.testing import CliRunner
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.compiler.templates import vite_config_template
 from reflex_base.config import Config
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
@@ -605,10 +606,16 @@ def test_initialise_vite_config(config, expected_output):
     assert expected_output in output
 
 
-def test_vite_config_allows_the_app_root(tmp_path: Path, monkeypatch):
-    """The dev server may serve files under the app root, which linked stylesheets reference."""
-    from reflex_base.compiler.templates import vite_config_template
+def test_vite_config_allows_the_app_root(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """The dev server may serve files under the app root, which linked stylesheets reference.
 
+    Args:
+        tmp_path: The app root.
+        monkeypatch: Fixture for entering the app root.
+        mocker: Fixture for spying on the vite config template.
+    """
     kwargs = {
         "base": "/",
         "hmr": True,
@@ -616,24 +623,23 @@ def test_vite_config_allows_the_app_root(tmp_path: Path, monkeypatch):
         "experimental_hmr": False,
         "sourcemap": False,
     }
-    fs_line = (
-        "\n    fs: { allow: [searchForWorkspaceRoot(process.cwd()), "
-        '...["/app", "/lib"]] },'
-    )
-    without = vite_config_template(**kwargs)
-
-    assert vite_config_template(**kwargs, fs_allow=["/app", "/lib"]) == without.replace(
-        "    port: process.env.PORT,", "    port: process.env.PORT," + fs_line
-    )
-    assert "fs:" not in without
-
-    monkeypatch.chdir(tmp_path)
-    output = _compile_vite_config(Config(app_name="test"))
-    app_root_line = (
+    server = "    port: process.env.PORT,\n    hmr: true,"
+    server_with_fs = (
+        "    port: process.env.PORT,\n"
         "    fs: { allow: [searchForWorkspaceRoot(process.cwd()), "
-        f"...{json.dumps([tmp_path.as_posix()])}] }},"
+        '...["/app", "/lib"]] },\n'
+        "    hmr: true,"
     )
-    assert [line for line in output.splitlines() if "fs:" in line] == [app_root_line]
+
+    assert vite_config_template(
+        **kwargs, fs_allow=["/app", "/lib"]
+    ) == vite_config_template(**kwargs).replace(server, server_with_fs)
+
+    template = mocker.spy(frontend_skeleton.templates, "vite_config_template")
+    monkeypatch.chdir(tmp_path)
+    _compile_vite_config(Config(app_name="test"))
+
+    assert template.call_args.kwargs["fs_allow"] == [tmp_path.as_posix()]
 
 
 def test_react_compiler_vite_config():
