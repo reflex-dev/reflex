@@ -1,0 +1,1 @@
+Remove unused modules, static assets, and dependencies (`orjson`, `fastapi`, `psycopg`, `uvicorn`) from the documentation app, and depend on `plotly` directly instead of the `plotly-express` shim, which drops `statsmodels` and `scipy` from its install.
