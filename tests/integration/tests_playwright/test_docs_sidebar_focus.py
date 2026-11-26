@@ -9,13 +9,18 @@ from reflex.testing import AppHarness
 
 def DocsSidebarFocusApp():
     """Render the shared active sidebar leaf for focus geometry checks."""
-    import reflex as rx
     from reflex_site_shared.components.docs_shell import docs_sidebar_leaf
     from reflex_site_shared.plugins import SharedSiteStylesPlugin
 
+    import reflex as rx
+
     class SidebarTestStylesPlugin(SharedSiteStylesPlugin):
         def get_stylesheet_paths(self, **context: Any) -> tuple[str, ...]:
-            """Avoid loading site-wide styles in this focused harness."""
+            """Avoid loading site-wide styles in this focused harness.
+
+            Returns:
+                No stylesheet imports.
+            """
             return ()
 
     app = rx.App()
