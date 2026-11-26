@@ -100,5 +100,8 @@ def find_spec(fullname: str, path: Sequence[str]) -> ModuleSpec | None:
             if os.path.isfile(file):  # noqa: PTH113
                 if fullname.partition(".")[0] != _app_package():
                     return None
-                return ModuleSpec(fullname, _ScriptLoader(file), origin=file)
+                spec = ModuleSpec(fullname, _ScriptLoader(file), origin=file)
+                # Sets `__file__`, so `inspect.getfile` finds the file.
+                spec.has_location = True
+                return spec
     return None

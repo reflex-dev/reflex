@@ -2,6 +2,7 @@
 
 import importlib
 import importlib.util
+import inspect
 import subprocess
 import sys
 from pathlib import Path
@@ -35,6 +36,22 @@ def test_importing_a_module_registers_it(app_package: Path):
         "js_app.typed": _ScriptModule(app_package / "typed.ts", {"typed"}),
         "js_app.widget": _ScriptModule(app_package / "widget.jsx", {"show"}),
         "js_app.counter": _ScriptModule(app_package / "counter.tsx", {"count"}),
+    }
+
+
+def test_a_module_has_its_file(app_package: Path):
+    """A JavaScript module's ``__file__`` is its file, which ``inspect`` finds.
+
+    Looking it up records no name for the compiler to check.
+
+    Args:
+        app_package: the app package, on sys.path.
+    """
+    party = importlib.import_module("js_app.party")
+    assert inspect.getfile(party) == str(app_package / "party.js")
+    assert party.__file__ == str(app_package / "party.js")
+    assert _app_modules() == {
+        "js_app.party": _ScriptModule(app_package / "party.js"),
     }
 
 
