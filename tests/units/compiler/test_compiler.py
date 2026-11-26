@@ -1031,11 +1031,9 @@ def test_page_og_image_accepts_var():
 
     page = compiler.compile_unevaluated_page("page", app._unevaluated_pages["page"])
 
-    assert [
-        str(child.content)  # pyright: ignore[reportAttributeAccessIssue]
-        for child in page.children
-        if isinstance(child, Image)
-    ] == [str(OgImageState.preview_url)]
+    images = [child for child in page.children if isinstance(child, Image)]
+    assert len(images) == 1
+    assert images[0].content is OgImageState.preview_url  # pyright: ignore[reportAttributeAccessIssue]
 
 
 @pytest.mark.usefixtures("dev_mode")
