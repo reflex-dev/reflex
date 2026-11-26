@@ -67,7 +67,11 @@ def test_upgrade_guide_leads_the_changelog_section():
 
 
 @pytest.mark.parametrize("active", [False, True])
-def test_single_page_group_is_a_direct_link(active):
+@pytest.mark.parametrize(
+    "guide_margin_class",
+    ["ml-[2.5rem]", "ml-[1.5rem] [&_.pointer-events-none]:hidden"],
+)
+def test_single_page_group_is_a_direct_link(active, guide_margin_class):
     """Single-page groups navigate directly and announce the selected page."""
     import reflex as rx
 
@@ -78,13 +82,20 @@ def test_single_page_group_is_a_direct_link(active):
         names="Webhooks",
         children=[SideBarItem(names="Webhooks", link="/ai/webhooks/")],
     )
-    rendered = str(
-        sidebar_item_comp(
-            0,
-            group,
-            rx.Var.create([0, 0]),
-            rx.Var.create("/ai/webhooks/" if active else "/ai/files/"),
-        )
+    component = sidebar_item_comp(
+        0,
+        group,
+        rx.Var.create([0, 0]),
+        rx.Var.create("/ai/webhooks/" if active else "/ai/files/"),
+        guide_margin_class=guide_margin_class,
+    )
+    rendered = str(component)
+    link = component.children[0]
+    assert link.class_name == (
+        f"flex min-h-8 w-auto {guide_margin_class} items-center rounded-lg py-1 "
+        "text-foreground hover:!text-foreground transition-colors "
+        "[&[aria-current=page]]:bg-accent focus-visible:outline-2 "
+        "focus-visible:outline-offset-2 focus-visible:outline-ring"
     )
     assert 'jsx("details"' not in rendered
     assert 'jsx("summary"' not in rendered
