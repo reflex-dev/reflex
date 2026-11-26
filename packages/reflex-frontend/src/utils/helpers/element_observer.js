@@ -25,35 +25,246 @@ import { useEffect, useLayoutEffect, useRef } from "react";
  */
 
 /**
- * Report a pair of measurements now, and again whenever it changes.
+ * @typedef {object} Tracker
+ * @property {Element} element The element measured.
+ * @property {() => boolean} measure Measures the pair; true if it changed.
+ * @property {() => void} report Reports the pair `measure` found changed.
+ */
+
+/**
+ * Report a pair of measurements now, and again whenever `refresh` finds it changed.
+ * @param {Element} element The element measured.
  * @param {() => [number, number]} measure Measures the pair.
  * @param {(first: number, second: number) => void} report Receives the pair.
- * @param {(update: () => void) => () => void} subscribe Calls `update` when
- *   the pair may have changed; returns the unsubscribe function.
- * @returns {() => void} Stops reporting.
+ * @returns {Tracker} The tracker to refresh.
  */
-const track = (measure, report, subscribe) => {
+const track = (element, measure, report) => {
   let last = measure();
+  let next = last;
   report(...last);
-  return subscribe(() => {
-    const next = measure();
-    if (next[0] !== last[0] || next[1] !== last[1]) {
+  return {
+    element,
+    measure: () => {
+      next = measure();
+      return next[0] !== last[0] || next[1] !== last[1];
+    },
+    report: () => {
       last = next;
       report(...next);
-    }
-  });
+    },
+  };
 };
 
 /**
- * Call `update` whenever the element's border box changes size.
- * @param {Element} element The element.
- * @param {() => void} update The callback.
- * @returns {() => void} Stops observing.
+ * Measure all trackers before reporting any, so a report that writes to the
+ * DOM cannot force a layout for the next measurement, and the reports land in
+ * one task, which React renders once.
+ * @param {Iterable<Tracker>} trackers The trackers to refresh.
  */
-const onResized = (element, update) => {
-  const observer = new ResizeObserver(update);
-  observer.observe(element, { box: "border-box" });
-  return () => observer.disconnect();
+const refresh = (trackers) => {
+  const changed = [];
+  for (const tracker of trackers) {
+    if (tracker.measure()) {
+      changed.push(tracker);
+    }
+  }
+  for (const tracker of changed) {
+    tracker.report();
+  }
+};
+
+// One ResizeObserver for every observed element, while any is observed: many
+// observers cost more to run, and each calls back in its own task.
+/** @type {Map<Element, Set<Tracker>>} */
+const resizeTrackers = new Map();
+/** @type {ResizeObserver | null} */
+let resizeObserver = null;
+
+/** @param {ResizeObserverEntry[]} entries The elements that resized. */
+const onResized = (entries) => {
+  /** @type {Set<Tracker>} */
+  const due = new Set();
+  for (const { target } of entries) {
+    for (const tracker of resizeTrackers.get(target) ?? []) {
+      due.add(tracker);
+    }
+  }
+  refresh(due);
+};
+
+/**
+ * Refresh `tracker` whenever its element's border box changes size.
+ * @param {Tracker} tracker The tracker.
+ * @returns {() => void} Stops refreshing it.
+ */
+const refreshOnResize = (tracker) => {
+  const { element } = tracker;
+  let trackers = resizeTrackers.get(element);
+  if (trackers === undefined) {
+    trackers = new Set();
+    resizeTrackers.set(element, trackers);
+    resizeObserver ??= new ResizeObserver(onResized);
+    resizeObserver.observe(element, { box: "border-box" });
+  }
+  trackers.add(tracker);
+  return () => {
+    trackers.delete(tracker);
+    if (trackers.size > 0) {
+      return;
+    }
+    resizeTrackers.delete(element);
+    resizeObserver?.unobserve(element);
+    if (resizeTrackers.size === 0) {
+      resizeObserver?.disconnect();
+      resizeObserver = null;
+    }
+  };
+};
+
+// One scroll and one resize listener on the window for every tracked position.
+/** @type {Set<Tracker>} */
+const scrollTrackers = new Set();
+
+/** @param {Event} event A scroll of the page or of any scroll container. */
+const onScroll = (event) => {
+  const scrolled = event.target;
+  if (!(scrolled instanceof Element)) {
+    refresh(scrollTrackers);
+    return;
+  }
+  // A scroll container's scroll moves only what is inside it.
+  const due = [];
+  for (const tracker of scrollTrackers) {
+    if (scrolled.contains(tracker.element)) {
+      due.push(tracker);
+    }
+  }
+  refresh(due);
+};
+
+const onWindowResize = () => refresh(scrollTrackers);
+
+// Capturing on the window catches the scrolls of every scroll container, which
+// do not bubble.
+const LISTENER = { capture: true, passive: true };
+
+/**
+ * Refresh `tracker` after the page or a scroll container around its element
+ * scrolled, or the window resized.
+ * @param {Tracker} tracker The tracker.
+ * @returns {() => void} Stops refreshing it.
+ */
+const refreshOnScroll = (tracker) => {
+  if (scrollTrackers.size === 0) {
+    window.addEventListener("scroll", onScroll, LISTENER);
+    window.addEventListener("resize", onWindowResize, LISTENER);
+  }
+  scrollTrackers.add(tracker);
+  return () => {
+    scrollTrackers.delete(tracker);
+    if (scrollTrackers.size === 0) {
+      window.removeEventListener("scroll", onScroll, LISTENER);
+      window.removeEventListener("resize", onWindowResize, LISTENER);
+    }
+  };
+};
+
+/** @typedef {(entry: IntersectionObserverEntry) => void} IntersectionCallback */
+
+/**
+ * @typedef {object} IntersectionTarget
+ * @property {Set<IntersectionCallback>} callbacks The element's callbacks.
+ * @property {IntersectionObserverEntry} [entry] The element's latest entry.
+ */
+
+/**
+ * @typedef {object} SharedIntersectionObserver
+ * @property {IntersectionObserver} observer The observer.
+ * @property {Map<Element, IntersectionTarget>} targets The elements it observes.
+ */
+
+// One IntersectionObserver for every element observed with the same options.
+/** @type {Map<string, SharedIntersectionObserver>} */
+const intersectionObservers = new Map();
+
+/**
+ * Create the IntersectionObserver shared by the elements observed with the
+ * given options.
+ * @param {string | undefined} thresholds The threshold, as JSON.
+ * @param {string | undefined} rootMargin The root margin.
+ * @returns {SharedIntersectionObserver} The observer and its targets.
+ */
+const shareIntersectionObserver = (thresholds, rootMargin) => {
+  /** @type {SharedIntersectionObserver["targets"]} */
+  const targets = new Map();
+  const observer = new IntersectionObserver(
+    (entries) => {
+      // An element that changed more than once since the last callback has
+      // several entries, the latest last.
+      /** @type {Map<IntersectionTarget, IntersectionObserverEntry>} */
+      const latest = new Map();
+      for (const entry of entries) {
+        const target = targets.get(entry.target);
+        if (target !== undefined) {
+          target.entry = entry;
+          latest.set(target, entry);
+        }
+      }
+      for (const [{ callbacks }, entry] of latest) {
+        for (const callback of callbacks) {
+          callback(entry);
+        }
+      }
+    },
+    {
+      threshold: thresholds === undefined ? undefined : JSON.parse(thresholds),
+      rootMargin,
+    },
+  );
+  return { observer, targets };
+};
+
+/**
+ * Call `callback` with the element's intersection entry when observing starts
+ * and whenever the fraction in view crosses a threshold.
+ * @param {Element} element The element.
+ * @param {IntersectionCallback} callback The callback.
+ * @param {string | undefined} thresholds The threshold, as JSON.
+ * @param {string | undefined} rootMargin The root margin.
+ * @returns {() => void} Stops calling `callback`.
+ */
+const onIntersection = (element, callback, thresholds, rootMargin) => {
+  const key = JSON.stringify([thresholds, rootMargin]);
+  let shared = intersectionObservers.get(key);
+  if (shared === undefined) {
+    shared = shareIntersectionObserver(thresholds, rootMargin);
+    intersectionObservers.set(key, shared);
+  }
+  const { observer, targets } = shared;
+  let target = targets.get(element);
+  if (target === undefined) {
+    target = { callbacks: new Set() };
+    targets.set(element, target);
+    observer.observe(element);
+  } else if (target.entry !== undefined) {
+    // The observer reports an element once when observing starts, so a later
+    // callback starts from the element's latest entry.
+    callback(target.entry);
+  }
+  const { callbacks } = target;
+  callbacks.add(callback);
+  return () => {
+    callbacks.delete(callback);
+    if (callbacks.size > 0) {
+      return;
+    }
+    targets.delete(element);
+    observer.unobserve(element);
+    if (targets.size === 0) {
+      observer.disconnect();
+      intersectionObservers.delete(key);
+    }
+  };
 };
 
 /** @type {Set<() => void>} */
@@ -132,61 +343,40 @@ const observeElement = (element, handlers, watched, thresholds, rootMargin) => {
 
   if (names.includes("onResize")) {
     // The observer's first callback reports the size just measured, which
-    // `track` drops as unchanged.
-    cleanups.push(
-      track(
-        () => {
-          const { width, height } = element.getBoundingClientRect();
-          return [width, height];
-        },
-        (width, height) => handlers.current.onResize?.(width, height),
-        (update) => onResized(element, update),
-      ),
+    // `refresh` drops as unchanged.
+    const size = track(
+      element,
+      () => {
+        const { width, height } = element.getBoundingClientRect();
+        return [width, height];
+      },
+      (width, height) => handlers.current.onResize?.(width, height),
     );
+    cleanups.push(refreshOnResize(size));
   }
 
   if (names.includes("onMove")) {
-    cleanups.push(
-      track(
-        () => {
-          const { left, top } = element.getBoundingClientRect();
-          return [left, top];
-        },
-        (x, y) => handlers.current.onMove?.(x, y),
-        (update) => {
-          // Capturing on the window catches the scrolls of every scroll
-          // container, which do not bubble.
-          const listener = { capture: true, passive: true };
-          window.addEventListener("scroll", update, listener);
-          window.addEventListener("resize", update, listener);
-          const stopObserving = onResized(element, update);
-          return () => {
-            window.removeEventListener("scroll", update, listener);
-            window.removeEventListener("resize", update, listener);
-            stopObserving();
-          };
-        },
-      ),
+    const position = track(
+      element,
+      () => {
+        const { left, top } = element.getBoundingClientRect();
+        return [left, top];
+      },
+      (x, y) => handlers.current.onMove?.(x, y),
     );
+    cleanups.push(refreshOnScroll(position), refreshOnResize(position));
   }
 
   if (names.includes("onIntersect")) {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[entries.length - 1];
-        handlers.current.onIntersect?.(
-          entry.isIntersecting,
-          entry.intersectionRatio,
-        );
-      },
-      {
-        threshold:
-          thresholds === undefined ? undefined : JSON.parse(thresholds),
+    cleanups.push(
+      onIntersection(
+        element,
+        ({ isIntersecting, intersectionRatio }) =>
+          handlers.current.onIntersect?.(isIntersecting, intersectionRatio),
+        thresholds,
         rootMargin,
-      },
+      ),
     );
-    observer.observe(element);
-    cleanups.push(() => observer.disconnect());
   }
 
   if (names.includes("onTransitionEnd")) {
