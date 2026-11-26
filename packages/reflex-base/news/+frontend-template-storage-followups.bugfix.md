@@ -1,0 +1,1 @@
+Prefer `packages/reflex-frontend/src` over a leftover or stale `.templates/web` directory in source checkouts, and report a dedicated `storage_blocked` connection error when browser site storage is blocked.

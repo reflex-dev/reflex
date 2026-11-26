@@ -711,12 +711,19 @@ test("hot reload before the microtask runs prevents speculative setup", async ()
 
 test("blocked session storage does not throw from speculative setup", async () => {
   const app = await setup();
+  const blocked = new Error("storage blocked");
   app.window.sessionStorage.getItem = () => {
-    throw new Error("storage blocked");
+    throw blocked;
   };
   app.flush();
   assert.equal(app.sockets.length, 0);
-  await assert.rejects(app.connect(), /storage blocked/);
+  await assert.rejects(
+    app.connect(),
+    (error) =>
+      error.code === "storage_blocked" &&
+      error.cause === blocked &&
+      /site storage is blocked/i.test(error.message),
+  );
 });
 
 test("a caller selecting another transport gets its requested configuration", async () => {

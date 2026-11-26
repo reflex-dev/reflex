@@ -54,6 +54,14 @@ has_hydration_payload_error = Var(
     _var_data=connect_error_var_data,
 ).to(BooleanVar)
 
+has_storage_blocked_error = Var(
+    _js_expr=(
+        "((connectErrors.length > 0) && "
+        f"(connectErrors[connectErrors.length - 1].code === '{constants.ClientErrorType.STORAGE_BLOCKED}'))"
+    ),
+    _var_data=connect_error_var_data,
+).to(BooleanVar)
+
 
 class WebsocketTargetURL(Var):
     """A component that renders the websocket target URL."""
@@ -84,10 +92,16 @@ def default_connection_error() -> list[str | Var | Component]:
         The default connection error message.
     """
     return [
-        "Cannot connect to server: ",
-        connection_error,
-        ". Check if server is reachable at ",
-        WebsocketTargetURL.create(),
+        cond(
+            has_storage_blocked_error | has_hydration_payload_error,
+            connection_error,
+            Fragment.create(
+                "Cannot connect to server: ",
+                connection_error,
+                ". Check if server is reachable at ",
+                WebsocketTargetURL.create(),
+            ),
+        ),
     ]
 
 
@@ -103,6 +117,7 @@ class ConnectionToaster(Fragment):
         toast_id = "websocket-error"
         # Its own id, so a pending dismiss of the connection toast cannot remove it.
         hydration_toast_id = "hydration-payload-error"
+        storage_blocked_toast_id = "storage-blocked-error"
         target_url = WebsocketTargetURL.create()
         props = ToastProps(
             description=LiteralVar.create(
@@ -168,11 +183,15 @@ setTimeout(() => {{
 () => {{
     if ({has_hydration_payload_error!s}) {{
         toast?.error({connection_error!s}, {{id: "{hydration_toast_id}", closeButton: true, duration: Infinity}});
+    }} else if ({has_storage_blocked_error!s}) {{
+        toast?.error({connection_error!s}, {{id: "{storage_blocked_toast_id}", closeButton: true, duration: Infinity}});
     }} else if ({has_too_many_connection_errors!s}) {{
+        toast?.dismiss("{storage_blocked_toast_id}");
         if (!userDismissed) {{
             {toast_var!s}
         }}
     }} else {{
+        toast?.dismiss("{storage_blocked_toast_id}");
         toast?.dismiss("{toast_id}");
         setUserDismissed(false);  // after reconnection reset dismissed state
     }}
@@ -248,12 +267,17 @@ class ConnectionModal(Component):
         """
         if not comp:
             comp = el.span(*default_connection_error())
+        show_modal = (
+            has_too_many_connection_errors
+            | has_storage_blocked_error
+            | has_hydration_payload_error
+        )
         return cond(
-            has_too_many_connection_errors,
+            show_modal,
             el.dialog(
                 el.h2("Connection Error"),
                 comp,
-                open=has_too_many_connection_errors,
+                open=show_modal,
                 z_index=9999,
             ),
         )

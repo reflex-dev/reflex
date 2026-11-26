@@ -74,6 +74,7 @@ class ClientErrorType(SimpleNamespace):
     DISPATCH_MISSING = "dispatch_function_missing"
     STATE_UPDATE = "state_update_processing_error"
     HYDRATION_PAYLOAD_TOO_LARGE = "hydration_payload_too_large"
+    STORAGE_BLOCKED = "storage_blocked"
 
 
 class EventTriggers(SimpleNamespace):

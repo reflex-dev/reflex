@@ -63,3 +63,22 @@ def test_connection_toaster_shows_hydration_errors_at_once():
     assert hydration_check < hooks.index("(connectErrors.length >= 2)")
     assert 'id: "hydration-payload-error"' in hooks
     assert "duration: Infinity" in hooks
+
+
+def test_connection_toaster_shows_storage_blocked_errors_at_once():
+    hooks = "\n".join(map(str, ConnectionToaster.create()._get_all_hooks()))
+    storage_check = hooks.index(".code === 'storage_blocked'")
+
+    assert storage_check < hooks.index("(connectErrors.length >= 2)")
+    assert 'id: "storage-blocked-error"' in hooks
+    assert "duration: Infinity" in hooks
+
+
+def test_connection_banner_and_modal_handle_storage_blocked_errors():
+    banner_rendered = str(ConnectionBanner.create().render())
+    modal_rendered = str(ConnectionModal.create().render())
+
+    assert "storage_blocked" in banner_rendered
+    assert "storage_blocked" in modal_rendered
+    assert "Check if server is reachable at " in banner_rendered
+    assert "Check if server is reachable at " in modal_rendered

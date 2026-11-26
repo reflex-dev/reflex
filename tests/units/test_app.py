@@ -5647,6 +5647,14 @@ def test_client_error_constants_match_frontend():
         f'const ERROR_TYPE_STATE_UPDATE = "{constants.ClientErrorType.STATE_UPDATE}"'
         in state_js
     )
+    assert (
+        f'const ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE = "{constants.ClientErrorType.HYDRATION_PAYLOAD_TOO_LARGE}"'
+        in state_js
+    )
+    assert (
+        f'const ERROR_TYPE_STORAGE_BLOCKED = "{constants.ClientErrorType.STORAGE_BLOCKED}"'
+        in state_js
+    )
 
 
 @pytest_asyncio.fixture

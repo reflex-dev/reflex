@@ -400,6 +400,29 @@ describe("session", () => {
     expect(sessionStorage.getItem("token")).toBeNull();
   });
 
+  test("getToken labels blocked sessionStorage with storage_blocked", () => {
+    const denied = new DOMException("blocked", "SecurityError");
+    const spy = vi
+      .spyOn(Storage.prototype, "getItem")
+      .mockImplementation(() => {
+        throw denied;
+      });
+    try {
+      let caught;
+      try {
+        getToken();
+      } catch (error) {
+        caught = error;
+      }
+      expect(caught).toBeInstanceOf(Error);
+      expect(caught.code).toBe("storage_blocked");
+      expect(caught.cause).toBe(denied);
+      expect(caught.message).toMatch(/site storage/i);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
   test("isBackendDisabled reads the backend-enabled cookie", () => {
     expect(isBackendDisabled()).toBe(false);
     document.cookie = "other=1";
