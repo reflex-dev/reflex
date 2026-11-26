@@ -337,7 +337,8 @@ def app_with_catalog_package(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         "de",
         'msgid "Save"\nmsgstr "Sichern"\n\n'
         'msgid "Cancel"\nmsgstr ""\n\n'
-        '#, fuzzy\nmsgid "Delete"\nmsgstr "Entfernen"\n',
+        '#, fuzzy\nmsgid "Delete"\nmsgstr "Entfernen"\n\n'
+        '#, read-only\nmsgid "Imprint"\nmsgstr ""\n',
     )
     _write_catalog(
         package_dir / "locales",
@@ -346,6 +347,7 @@ def app_with_catalog_package(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         'msgid "Cancel"\nmsgstr "Abbrechen"\n\n'
         'msgid "Delete"\nmsgstr "L\u00f6schen"\n\n'
         'msgid "Back"\nmsgstr ""\n\n'
+        'msgid "Imprint"\nmsgstr "Impressum"\n\n'
         'msgctxt "menu"\nmsgid "Open"\nmsgstr "\u00d6ffnen"\n',
     )
     _write_catalog(
@@ -363,7 +365,7 @@ def test_load_catalog_completes_the_app_catalog_with_package_catalogs():
     catalog = load_catalog("de")
     assert catalog is not None
     # The app's translation wins; a package fills in where the app has none,
-    # an empty or a fuzzy one.
+    # an empty or a fuzzy one, but not where it leaves one out on purpose.
     assert {
         (message.id, message.context): message.string
         for message in catalog
@@ -374,6 +376,9 @@ def test_load_catalog_completes_the_app_catalog_with_package_catalogs():
         ("Delete", None): "L\u00f6schen",
         ("Open", "menu"): "\u00d6ffnen",
     }
+    imprint = catalog.get("Imprint")
+    assert imprint is not None
+    assert is_left_untranslated(imprint)
 
 
 @pytest.mark.usefixtures("app_with_catalog_package")

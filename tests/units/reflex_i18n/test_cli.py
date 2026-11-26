@@ -19,6 +19,7 @@ from reflex_i18n.cli import (
     _catalog_stats,
     _report,
     _resolve_plugin,
+    _write_catalog,
     check_command,
     extract_catalog,
     extract_command,
@@ -734,3 +735,15 @@ def test_extraction_leaves_a_catalog_alone_when_no_message_changes(tmp_path: Pat
     assert extract(2) == '"POT-Creation-Date: 2026-11-01 00:00+0000\\n"'
     (app_dir / "app.py").write_text('x = _("Server hello again")\n', encoding="utf-8")
     assert extract(3) == '"POT-Creation-Date: 2026-11-03 00:00+0000\\n"'
+
+
+def test_catalog_write_ignores_only_the_header_creation_date(tmp_path: Path):
+    """A message line reading like the date header is a change of its own."""
+    from babel.messages.catalog import Catalog
+
+    po_path = tmp_path / "de.po"
+    for build in (1, 2):
+        catalog = Catalog(locale="de")
+        catalog.add(f"Built\nPOT-Creation-Date: {build}")
+        _write_catalog(catalog, po_path)
+    assert '"POT-Creation-Date: 2"' in po_path.read_text(encoding="utf-8")

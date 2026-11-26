@@ -807,6 +807,16 @@ def test_language_switcher_links_stay_on_site(
             "/en/neuigkeiten",
             ["/neuigkeiten", "/en/news", "/neuigkeiten", "/en/news"],
         ),
+        # The router matches paths case-insensitively.
+        (
+            "/EN/NEWS",
+            ["/neuigkeiten", "/en/news", "/neuigkeiten", "/en/news"],
+        ),
+        # Links to the page itself keep the path it was asked for.
+        (
+            "/NEUIGKEITEN",
+            ["/NEUIGKEITEN", "/en/news", "/NEUIGKEITEN", "/NEUIGKEITEN"],
+        ),
     ],
 )
 def test_client_follows_a_pages_translated_paths(

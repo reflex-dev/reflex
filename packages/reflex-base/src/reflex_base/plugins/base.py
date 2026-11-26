@@ -287,11 +287,13 @@ class Plugin:
         page: "PageDefinition",
         /,
         **kwargs: Any,
-    ) -> AbstractContextManager[None] | None:
+    ) -> "AbstractContextManager[PageDefinition | None] | None":
         """Get a context to evaluate a page in, e.g. one setting its language.
 
         Every plugin's context is entered around a page's evaluation, whichever
         ``eval_page`` hook evaluates it, so the page function runs inside it.
+        A context that enters with a page, e.g. a copy with its title
+        translated, has that page evaluated in place of this one.
 
         Args:
             page: The page about to be evaluated.

@@ -6,7 +6,7 @@ import gettext
 import json
 import logging
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -124,7 +124,8 @@ def load_catalog(locale: str) -> Catalog | None:
     """Read a locale's catalogs: the app's, completed by its catalog packages'.
 
     The app's translation of a message wins; a package's fills in where the app
-    has none (or only a fuzzy or partial one).
+    has none (or only a fuzzy or partial one) and does not leave it untranslated
+    on purpose.
 
     Args:
         locale: The locale whose catalogs to read.
@@ -146,7 +147,7 @@ def load_catalog(locale: str) -> Catalog | None:
                 continue
             current = merged.get(message.id, message.context)
             if current is not None:
-                if is_translated(current):
+                if is_translated(current) or is_left_untranslated(current):
                     continue
                 # Assigning onto an existing entry would keep its empty string.
                 merged.delete(message.id, message.context)
@@ -256,7 +257,7 @@ def compile_index_module(
     default_at_root: bool = True,
     deploy_url: str = "",
     default_plural_expr: str = _FALLBACK_PLURAL_EXPR,
-    page_paths: Mapping[str, Mapping[str, str]] | None = None,
+    page_paths: dict[str, dict[str, str]] | None = None,
 ) -> str:
     """Render the JS module describing the app's locales and catalog loaders.
 

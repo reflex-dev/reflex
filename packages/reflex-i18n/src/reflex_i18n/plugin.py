@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import logging
 import os
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, get_args
 from urllib.parse import urlsplit, urlunsplit
@@ -231,6 +232,32 @@ def _translate_meta(meta: Any) -> Any:
     return meta
 
 
+@contextlib.contextmanager
+def _page_in_locale(page: PageDefinition, locale: str) -> Iterator[Any]:
+    """Evaluate a page in a locale, with its plain string head texts in it.
+
+    Args:
+        page: The page about to be evaluated.
+        locale: The locale its route serves.
+
+    Yields:
+        A copy of the page with its title, description and meta tag content
+        translated, or None for a page that is not an app page.
+    """
+    from reflex.app import UnevaluatedPage
+
+    with active_locale(locale):
+        if not isinstance(page, UnevaluatedPage):
+            yield None
+            return
+        yield dataclasses.replace(
+            page,
+            title=_translate_text(page.title),
+            description=_translate_text(page.description),
+            meta=[_translate_meta(meta) for meta in page.meta],
+        )
+
+
 def _text_direction(locale: str) -> str:
     """Return the writing direction of a locale's language.
 
@@ -290,9 +317,14 @@ class I18nPlugin(Plugin):
     _page_paths: dict[str, dict[str, str]] = dataclasses.field(
         default_factory=dict, init=False, repr=False, compare=False
     )
-    # The other way round: (locale, translated path) -> base path.
+    # The other way round, matched case-insensitively as the router matches
+    # paths: (locale, lowered translated path) -> base path.
     _base_paths: dict[tuple[str, str], str] = dataclasses.field(
         default_factory=dict, init=False, repr=False, compare=False
+    )
+    # The lowered URL path of every page in every locale.
+    _page_urls: set[str] = dataclasses.field(
+        default_factory=set, init=False, repr=False, compare=False
     )
 
     def _config(self) -> I18nConfig:
@@ -372,6 +404,7 @@ class I18nPlugin(Plugin):
         add_page = context["add_page"]
         self._page_paths = {}
         self._base_paths = {}
+        self._page_urls = set()
         for page in context["pages"]:
             base_path = "/" if page.route == "index" else f"/{page.route}"
             head = base_path.lstrip("/").partition("/")[0]
@@ -387,25 +420,21 @@ class I18nPlugin(Plugin):
             if paths := self._translated_paths(base_path, page.context or {}):
                 self._page_paths[base_path] = paths
                 for locale, path in paths.items():
-                    self._base_paths[locale, path] = base_path
+                    self._base_paths[locale, path.lower()] = base_path
             for locale in self.locales:
                 localized = self._localize(base_path, locale)
+                self._page_urls.add(localized.lower())
                 if localized == base_path:
                     # Default-at-root: the app's own page already serves this.
                     continue
-                # A plain string head text is a message, like the page's own.
-                with active_locale(locale):
-                    title = _translate_text(page.title)
-                    description = _translate_text(page.description)
-                    meta = [_translate_meta(meta) for meta in page.meta]
                 add_page(
                     _localized_page(page.component, locale),
                     route=localized,
-                    title=title,
-                    description=description,
+                    title=page.title,
+                    description=page.description,
                     image=page.image,
                     on_load=page.on_load,
-                    meta=meta,
+                    meta=page.meta,
                     context={**(page.context or {}), _PAGE_LOCALE_KEY: locale},
                 )
 
@@ -457,7 +486,17 @@ class I18nPlugin(Plugin):
             The localized URL path.
         """
         assert self.routing is not None
-        translated = self._page_paths.get(path, {}).get(locale, path)
+        # Matched case-insensitively, as the router matches paths.
+        lowered = path.lower()
+        paths = next(
+            (
+                paths
+                for base, paths in self._page_paths.items()
+                if base.lower() == lowered
+            ),
+            {},
+        )
+        translated = paths.get(locale, path)
         return self.routing.localize(translated, locale, self.default_locale)
 
     def _alternates(self, path: str) -> dict[str, str]:
@@ -472,7 +511,7 @@ class I18nPlugin(Plugin):
         assert self.routing is not None
         locale = self.routing.locale_of(path, self.locales, self.default_locale)
         rest = self.routing.delocalize(path, self.locales)
-        base_path = self._base_paths.get((locale, rest), rest)
+        base_path = self._base_paths.get((locale, rest.lower()), rest)
         alternates = {loc: self._localize(base_path, loc) for loc in self.locales}
         alternates["x-default"] = alternates[self.default_locale]
         return alternates
@@ -499,7 +538,10 @@ class I18nPlugin(Plugin):
         urlset.set("xmlns:xhtml", _XHTML_NAMESPACE)
         for url in urlset.iter("url"):
             loc = urlsplit(url.findtext("loc", ""))
-            path = loc.path.removeprefix(prefix) or "/"
+            if prefix and loc.path != prefix and not loc.path.startswith(prefix + "/"):
+                # Not one of the app's pages, e.g. a page's custom loc.
+                continue
+            path = loc.path[len(prefix) :] or "/"
             slash = "/" if path != "/" and path.endswith("/") else ""
             for locale, alternate in self._alternates(path).items():
                 if alternate != "/":
@@ -525,6 +567,8 @@ class I18nPlugin(Plugin):
     def _path_redirects(self) -> dict[str, str]:
         """Map each translated page's path in one locale under another to its own.
 
+        A path that is another page's own URL is left to that page.
+
         Returns:
             Source path -> target path, both relative to ``frontend_path``.
         """
@@ -535,17 +579,19 @@ class I18nPlugin(Plugin):
                 target = self._localize(base_path, locale)
                 for path in (base_path, *paths.values()):
                     source = self.routing.localize(path, locale, self.default_locale)
-                    if source != target:
+                    if source != target and source.lower() not in self._page_urls:
                         redirects[source] = target
         return redirects
 
     def eval_page_scope(
         self, page: PageDefinition, /, **kwargs: Any
-    ) -> AbstractContextManager[None] | None:
+    ) -> AbstractContextManager[Any] | None:
         """Build a page in the locale its route serves, when URL routing is on.
 
         The page function, and so ``get_locale()``, ``gettext`` and
-        :func:`~reflex_i18n.nav.localized_url`, run in that locale.
+        :func:`~reflex_i18n.nav.localized_url`, run in that locale, and a plain
+        string ``title``, ``description`` or meta tag ``content`` is a message
+        translated into it.
 
         Args:
             page: The page about to be evaluated.
@@ -557,7 +603,7 @@ class I18nPlugin(Plugin):
         if self.routing is None:
             return None
         context = getattr(page, "context", None) or {}
-        return active_locale(context.get(_PAGE_LOCALE_KEY, self.default_locale))
+        return _page_in_locale(page, context.get(_PAGE_LOCALE_KEY, self.default_locale))
 
     def compile_page(self, page_ctx: PageContext, /, **kwargs: Any) -> None:
         """Inject the hreflang app-wrap on every page when URL routing is on.

@@ -31,6 +31,7 @@ else:
 
 
 _BaseComponentT = TypeVar("_BaseComponentT", bound=BaseComponent)
+_PageT = TypeVar("_PageT", bound="PageDefinition")
 
 
 class PageDefinition(Protocol):
@@ -266,24 +267,27 @@ class CompilerHooks:
     @contextlib.contextmanager
     def eval_page_scope(
         self,
-        page: PageDefinition,
+        page: _PageT,
         /,
         **kwargs: Any,
-    ) -> Iterator[None]:
+    ) -> Iterator[_PageT]:
         """Enter every plugin's ``eval_page_scope`` context, in plugin order.
+
+        A context entering with a page passes that page on to the later
+        plugins' hooks and to the evaluation.
 
         Args:
             page: The page about to be evaluated.
             kwargs: Additional compiler-specific context.
 
         Yields:
-            None, while all the contexts are entered.
+            The page to evaluate, while all the contexts are entered.
         """
         with contextlib.ExitStack() as stack:
             for hook_impl in self._eval_page_scope_hooks:
                 if (scope := hook_impl(page, **kwargs)) is not None:
-                    stack.enter_context(scope)
-            yield
+                    page = stack.enter_context(scope) or page
+            yield page
 
     def eval_page(
         self,
@@ -749,12 +753,14 @@ class CompileContext(BaseContext):
         self.auto_memo_components.clear()
 
         for page in self.pages:
-            page_fn = page.component
             n_states_before = len(all_base_state_classes)
-            with self.hooks.eval_page_scope(page, compile_context=self, **kwargs):
+            with self.hooks.eval_page_scope(
+                page, compile_context=self, **kwargs
+            ) as scoped_page:
+                page_fn = scoped_page.component
                 page_ctx = self.hooks.eval_page(
                     page_fn,
-                    page=page,
+                    page=scoped_page,
                     compile_context=self,
                     **kwargs,
                 )

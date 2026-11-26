@@ -547,11 +547,14 @@ const pathLocale = (pathname) =>
 // trailing one: a nested page is prerendered at "/a/b/" but addressed as "/a/b".
 const sitePath = (path) => "/" + path.replace(/^\/+|\/+$/g, "");
 
-// A translated page path's base path, by locale and path.
+// Translated page paths, keyed case-insensitively as React Router matches
+// paths: each base path's paths by locale, and a path's base path by locale.
+const pathsByBase = new Map();
 const basePaths = new Map(locales.map((locale) => [locale, new Map()]));
 for (const [base, paths] of Object.entries(localizedPaths)) {
+  pathsByBase.set(base.toLowerCase(), paths);
   for (const [locale, path] of Object.entries(paths)) {
-    basePaths.get(locale).set(path, base);
+    basePaths.get(locale).set(path.toLowerCase(), base);
   }
 }
 
@@ -562,12 +565,11 @@ const delocalizePath = (pathname) => {
     return sitePath(pathname);
   }
   const path = sitePath(rest.join("/"));
-  return basePaths.get(locale).get(path) ?? path;
+  return basePaths.get(locale).get(path.toLowerCase()) ?? path;
 };
 
-// Paths start with "/", so no key names an Object prototype member.
 const localizePath = (base, locale) => {
-  const path = localizedPaths[base]?.[locale] ?? base;
+  const path = pathsByBase.get(base.toLowerCase())?.[locale] ?? base;
   if (locale === defaultLocale && defaultAtRoot) {
     return path;
   }

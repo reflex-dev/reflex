@@ -455,8 +455,9 @@ def _write_catalog(catalog: Catalog, path: Path) -> None:
         include_lineno=plugin.catalog_locations == "line",
     )
     content = buffer.getvalue()
-    if path.exists() and _CREATION_DATE_RE.sub(b"", path.read_bytes()) == (
-        _CREATION_DATE_RE.sub(b"", content)
+    # The header's date is the first: a message's own line may read like one.
+    if path.exists() and _CREATION_DATE_RE.sub(b"", path.read_bytes(), count=1) == (
+        _CREATION_DATE_RE.sub(b"", content, count=1)
     ):
         # Nothing but the date would change.
         return

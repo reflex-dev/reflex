@@ -364,6 +364,44 @@ def test_backend_evaluates_url_routed_pages_in_their_locale(
     assert evaluated == [("en", "Hello"), ("de", "Hallo")]
 
 
+def _scoped_page(plugin: I18nPlugin, page: Any) -> Any:
+    """The page the plugin's scope has evaluated in place of a page.
+
+    Args:
+        plugin: The plugin.
+        page: The page about to be evaluated.
+
+    Returns:
+        The page its scope enters with.
+    """
+    scope = plugin.eval_page_scope(page)
+    assert scope is not None
+    with scope as scoped:
+        return scoped
+
+
+def _fanned_page(call: tuple[str, dict[str, Any]]) -> Any:
+    """The page an expand_routes call registers.
+
+    Args:
+        call: The recorded add_page call.
+
+    Returns:
+        The page.
+    """
+    from reflex.app import UnevaluatedPage
+
+    route, kwargs = call
+    return UnevaluatedPage(
+        component=kwargs["component"],
+        route=route,
+        title=kwargs["title"],
+        description=kwargs["description"],
+        meta=kwargs["meta"],
+        context=kwargs["context"],
+    )
+
+
 def test_fanned_page_head_is_translated_into_its_locale(tmp_path: Path):
     """A page's plain string title, description and meta content are msgids."""
     from reflex.app import UnevaluatedPage
@@ -395,10 +433,11 @@ def test_fanned_page_head_is_translated_into_its_locale(tmp_path: Path):
     ])
     plugin.expand_routes(add_page=ctx["add_page"], pages=ctx["pages"])  # pyright: ignore[reportCallIssue]
 
-    [(route, kwargs)] = ctx["calls"]
-    assert route == "/de/pricing"
-    assert (kwargs["title"], kwargs["description"]) == ("Preise", "Unsere Preise")
-    assert kwargs["meta"] == [
+    [call] = ctx["calls"]
+    assert call[0] == "/de/pricing"
+    page = _scoped_page(plugin, _fanned_page(call))
+    assert (page.title, page.description) == ("Preise", "Unsere Preise")
+    assert page.meta == [
         {"property": "og:title", "content": "Preise"},
         {"name": "robots", "content": "index"},
         # A meta component is the app's own and stays as built.
@@ -432,9 +471,36 @@ def test_fanned_page_head_text_is_translated_in_its_context(tmp_path: Path):
     ])
     plugin.expand_routes(add_page=ctx["add_page"], pages=ctx["pages"])  # pyright: ignore[reportCallIssue]
 
-    [(_, kwargs)] = ctx["calls"]
-    assert (kwargs["title"], kwargs["description"]) == ("Geöffnet", "Öffnen")
-    assert kwargs["meta"] == [{"property": "og:title", "content": "Geöffnet"}]
+    [call] = ctx["calls"]
+    page = _scoped_page(plugin, _fanned_page(call))
+    assert (page.title, page.description) == ("Geöffnet", "Öffnen")
+    assert page.meta == [{"property": "og:title", "content": "Geöffnet"}]
+
+
+def test_default_locale_page_head_is_translated_into_it(tmp_path: Path):
+    """The app's own page at the root serves the default locale, head included."""
+    from reflex.app import UnevaluatedPage
+
+    (tmp_path / "de.po").write_text(
+        'msgid "Pricing"\nmsgstr "Preise"\n', encoding="utf-8"
+    )
+    plugin = I18nPlugin(
+        locales=["de", "en"],
+        default_locale="de",
+        catalog_dir=tmp_path,
+        routing=PathPrefixRouting(),
+    )
+    app_page = UnevaluatedPage(
+        component=lambda: rx.text("Prices"),
+        route="pricing",
+        title="Pricing",
+        meta=[{"property": "og:title", "content": "Pricing"}],
+    )
+    page = _scoped_page(plugin, app_page)
+    assert page.title == "Preise"
+    assert page.meta == [{"property": "og:title", "content": "Preise"}]
+    # The app's page itself is left as registered.
+    assert app_page.title == "Pricing"
 
 
 def test_eval_page_scope_leaves_pages_alone_without_routing(tmp_path: Path):
@@ -487,6 +553,41 @@ def test_translated_paths_redirect_to_each_locales_own():
         "/blog/news": "/blog/neuigkeiten",
         "/en/blog/neuigkeiten": "/en/blog/news",
         "/fr/blog/news": "/fr/blog/neuigkeiten",
+    }
+
+
+def test_translated_paths_never_redirect_another_pages_url():
+    """Two pages whose paths swap between locales both stay reachable."""
+    from reflex.app import UnevaluatedPage
+
+    plugin = I18nPlugin(
+        locales=["de", "en", "fr"], default_locale="de", routing=PathPrefixRouting()
+    )
+    ctx = _fake_context([
+        UnevaluatedPage(
+            component=lambda: rx.text("Foo"),
+            route="foo",
+            context={"i18n_paths": {"en": "/bar"}},
+        ),
+        UnevaluatedPage(
+            component=lambda: rx.text("Bar"),
+            route="bar",
+            context={"i18n_paths": {"en": "/foo"}},
+        ),
+    ])
+    plugin.expand_routes(add_page=ctx["add_page"], pages=ctx["pages"])  # pyright: ignore[reportCallIssue]
+    assert plugin._path_redirects() == {}
+
+
+def test_translated_paths_match_case_insensitively():
+    """The router serves /EN/Blog/News too, so it is the same page."""
+    plugin, _ = _translated_news_plugin()
+    assert plugin._localize("/Blog/Neuigkeiten", "en") == "/en/blog/news"
+    assert plugin._alternates("/EN/Blog/News") == {
+        "de": "/blog/neuigkeiten",
+        "en": "/en/blog/news",
+        "fr": "/fr/blog/neuigkeiten",
+        "x-default": "/blog/neuigkeiten",
     }
 
 
@@ -595,6 +696,16 @@ def test_sitemap_names_each_page_in_every_locale(
         "  </url>\n"
         "</urlset>"
     )
+
+
+def test_sitemap_leaves_a_url_outside_the_app_alone(monkeypatch: pytest.MonkeyPatch):
+    from reflex_base.config import get_config
+    from reflex_base.plugins.sitemap import generate_xml
+
+    plugin, _ = _translated_news_plugin()
+    monkeypatch.setattr(get_config(), "frontend_path", "/app")
+    sitemap = generate_xml([{"loc": "https://example.com/application/"}])
+    assert "xhtml:link" not in plugin._add_sitemap_alternates(sitemap)
 
 
 @pytest.mark.parametrize(

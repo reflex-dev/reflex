@@ -342,6 +342,53 @@ def test_eval_page_scope_wraps_a_page_the_backend_evaluates(
     assert calls == ["enter a demo", "page", "leave a"]
 
 
+class _RetitlingPlugin(StubPlugin):
+    """A plugin whose scope has a copy of the page with another title evaluated."""
+
+    @contextlib.contextmanager
+    def eval_page_scope(
+        self, page: PageDefinition, /, **kwargs: Any
+    ) -> Iterator[PageDefinition]:
+        assert isinstance(page, (FakePage, UnevaluatedPage))
+        yield dataclasses.replace(page, title=f"{page.title} (scoped)")
+
+
+def test_eval_page_scope_can_have_a_copy_of_the_page_evaluated() -> None:
+    seen: list[Any] = []
+
+    class EvaluatingPlugin(StubPlugin):
+        def eval_page(
+            self, page_fn: Any, /, *, page: PageDefinition, **kwargs: Any
+        ) -> PageContext:
+            del kwargs
+            seen.append(getattr(page, "title", None))
+            return PageContext(name="page", route=page.route, root_component=page_fn())
+
+    page = FakePage(route="demo", component=Fragment.create, title="Demo")
+    ctx = CompileContext(
+        pages=[page],
+        hooks=CompilerHooks(plugins=(_RetitlingPlugin(), EvaluatingPlugin())),
+    )
+    with ctx:
+        ctx.compile()
+
+    assert seen == ["Demo (scoped)"]
+    assert page.title == "Demo"
+
+
+def test_eval_page_scope_copy_gives_the_backend_page_its_head(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from reflex_base.config import get_config
+
+    monkeypatch.setattr(get_config(), "plugins", [_RetitlingPlugin()])
+    component = compiler.compile_unevaluated_page(
+        "demo", UnevaluatedPage(component=Fragment.create, route="demo", title="Demo")
+    )
+
+    assert "Demo (scoped)" in str(component.render())
+
+
 def test_compile_page_runs_plugins_in_registration_order() -> None:
     calls: list[str] = []
     page_ctx = PageContext(

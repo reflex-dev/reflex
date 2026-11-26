@@ -1038,8 +1038,10 @@ def compile_unevaluated_page(
     try:
         # Generate the component if it is a callable, in the context the
         # plugins evaluate pages in.
-        with CompilerHooks(plugins=tuple(get_config().plugins)).eval_page_scope(page):
-            component = into_component(page.component)
+        with CompilerHooks(plugins=tuple(get_config().plugins)).eval_page_scope(
+            page
+        ) as scoped_page:
+            component = into_component(scoped_page.component)
 
         component._add_style_recursive(style or {}, theme)
 
@@ -1049,16 +1051,16 @@ def compile_unevaluated_page(
 
         meta_args = {
             "title": (
-                page.title
-                if page.title is not None
+                scoped_page.title
+                if scoped_page.title is not None
                 else make_default_page_title(get_config().app_name, route)
             ),
-            "image": page.image,
-            "meta": page.meta,
+            "image": scoped_page.image,
+            "meta": scoped_page.meta,
         }
 
-        if page.description is not None:
-            meta_args["description"] = page.description
+        if scoped_page.description is not None:
+            meta_args["description"] = scoped_page.description
 
         # Add meta information to the component.
         utils.add_meta(
