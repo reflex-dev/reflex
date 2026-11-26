@@ -1131,7 +1131,7 @@ def add_meta(
     children: list[Any] = [Title.create(title)]
     if is_page_meta_set(description):
         children.append(Description.create(content=description))
-    if image:
+    if is_page_meta_set(image):
         children.append(Image.create(content=image))
 
     page.children.extend(children)

@@ -1016,6 +1016,28 @@ def test_page_og_image(image: str | None, expected: list[str]):
     ] == expected
 
 
+def test_page_og_image_accepts_var():
+    """A page given its og:image as a Var gets the tag with that Var."""
+
+    class OgImageState(rx.State):
+        preview_url: str = "https://example.com/preview.png"
+
+    app = rx.App()
+    app.add_page(
+        rx.el.div("page"),
+        route="/page",
+        image=OgImageState.preview_url,  # pyright: ignore[reportArgumentType]
+    )
+
+    page = compiler.compile_unevaluated_page("page", app._unevaluated_pages["page"])
+
+    assert [
+        str(child.content)  # pyright: ignore[reportAttributeAccessIssue]
+        for child in page.children
+        if isinstance(child, Image)
+    ] == [str(OgImageState.preview_url)]
+
+
 @pytest.mark.usefixtures("dev_mode")
 def test_create_document_root_with_scripts():
     # Test with components.
