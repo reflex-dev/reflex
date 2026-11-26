@@ -39,6 +39,9 @@ NoValue = object()
 _CLIENT_STATE_IMPORT = {
     f"$/{Dirs.CLIENT_STATE_PATH}": [ImportVar(tag="useClientState")],
 }
+_CLIENT_STATE_SETTER_IMPORT = {
+    f"$/{Dirs.CLIENT_STATE_PATH}": [ImportVar(tag="useClientStateSetter")],
+}
 _CLIENT_STATE_ESCAPE_IMPORT = {
     f"$/{Dirs.CLIENT_STATE_PATH}": [
         ImportVar(tag="getClientState"),
@@ -87,15 +90,16 @@ _GETTER_SUFFIX = CAMEL_CASE_CLIENT_STATE_MARKER
 _SETTER_SUFFIX = f"{CAMEL_CASE_CLIENT_STATE_MARKER}Set"
 _PLACEHOLDER_SUFFIX = f"{CAMEL_CASE_CLIENT_STATE_MARKER}Arg"
 
-# A `useClientState` declaration: the default expression, which may span
-# lines, then the name.
+# A `useClientState` or `useClientStateSetter` declaration: the default
+# expression, which may span lines, then the name.
 _DECLARATION = re.compile(
-    r'= useClientState\((.*), "([A-Za-z0-9_$]+)"(?:, true)?\)\Z', re.DOTALL
+    r'= useClientState(?:Setter)?\((.*), "([A-Za-z0-9_$]+)"(?:, true)?\)\Z',
+    re.DOTALL,
 )
 
-# The declarations rendered so far in the current compile, by name. Unset
-# outside a compile, where only declarations within one body are compared.
-_compile_declarations: ContextVar[dict[str, str] | None] = ContextVar(
+# The default and hook of each name declared so far in the current compile.
+# Unset outside a compile, where only declarations within one body are compared.
+_compile_declarations: ContextVar[dict[str, tuple[str, str]] | None] = ContextVar(
     "_compile_declarations", default=None
 )
 
@@ -205,11 +209,11 @@ def _check_declarations(hooks: Iterable[str]) -> None:
     if seen is None:
         seen = {}
     for hook in hooks:
-        if "= useClientState(" not in hook or not (match := _DECLARATION.search(hook)):
+        if "= useClientState" not in hook or not (match := _DECLARATION.search(hook)):
             continue
-        name = match[2]
-        first = seen.setdefault(name, hook)
-        if first != hook:
+        default, name = match.groups()
+        first_default, first = seen.setdefault(name, (default, hook))
+        if first_default != default:
             msg = (
                 f"Client state var {name!r} is declared with two different "
                 f"defaults: {_describe_declaration(first)} and "
@@ -358,6 +362,10 @@ class ClientStateVar(Var):
     # reachable from the backend) rather than being owned by a component tree.
     _is_global: bool = dataclasses.field(default=True)
 
+    # VarData of `set`, whose hook binds the setter without subscribing to
+    # the value.
+    _setter_var_data: VarData | None = dataclasses.field(default=None)
+
     # VarData without the hook, for accessors that work in any JS scope.
     _escape_var_data: VarData | None = dataclasses.field(default=None)
 
@@ -463,12 +471,21 @@ class ClientStateVar(Var):
         args = f"{default_var!s}, {LiteralVar.create(var_name)!s}"
         if is_global:
             args += ", true"
-        hook = f"const [{getter_name}, {setter_name}] = useClientState({args})"
+        # Separate hooks, so a component that only writes the var does not
+        # subscribe to it and re-render on every change.
+        value_hook = f"const [{getter_name}] = useClientState({args})"
+        setter_hook = f"const {setter_name} = useClientStateSetter({args})"
         if is_global and "$" not in var_name:
             # Only a chosen name can be declared twice (a generated one, `$`
             # and all, is unique), so only its site is kept.
-            _declaration_sites[hook] = _caller_site()
-        hooks: dict[str, VarData | None] = {hook: None}
+            _declaration_sites[value_hook] = _declaration_sites[setter_hook] = (
+                _caller_site()
+            )
+        # ``_get_all_var_data``, not ``._var_data``: a derived or cast default
+        # (a state var read, a cast var) keeps its hooks and imports on the var
+        # it wraps, and dropping them compiles the default's identifier into a
+        # dangling reference.
+        default_var_data = default_var._get_all_var_data()
         app_wraps = get_client_state_app_wraps()
         return cls(
             _js_expr="null",
@@ -478,14 +495,18 @@ class ClientStateVar(Var):
             _is_global=is_global,
             _var_type=default_var._var_type,
             _var_data=VarData.merge(
-                # ``_get_all_var_data``, not ``._var_data``: a derived or cast
-                # default (a state var read, a cast var) keeps its hooks and
-                # imports on the var it wraps, and dropping them compiles the
-                # default's identifier into a dangling reference.
-                default_var._get_all_var_data(),
+                default_var_data,
                 VarData(
-                    hooks=hooks,
+                    hooks={value_hook: None},
                     imports=_CLIENT_STATE_IMPORT,
+                    app_wraps=app_wraps,
+                ),
+            ),
+            _setter_var_data=VarData.merge(
+                default_var_data,
+                VarData(
+                    hooks={setter_hook: None},
+                    imports=_CLIENT_STATE_SETTER_IMPORT,
                     app_wraps=app_wraps,
                 ),
             ),
@@ -556,7 +577,7 @@ class ClientStateVar(Var):
         return ClientStateSetter(
             _js_expr=self._setter_name,
             _var_type=EventChain,
-            _var_data=self._var_data,
+            _var_data=self._setter_var_data,
             _value_type=self._var_type,
         )
 

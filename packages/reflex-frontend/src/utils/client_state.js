@@ -1,10 +1,11 @@
 /**
  * Client-only state, scoped by name down the component tree.
  *
- * `useClientState` is the only thing compiled components call. Everything else
- * here is the bookkeeping it needs: independently-subscribable slots, the scope
- * chain that decides which slot a name resolves to, and a module-level door for
- * JS that runs outside the React tree (`getClientState` / `setClientState`).
+ * `useClientState` and `useClientStateSetter` are the only things compiled
+ * components call. Everything else here is the bookkeeping they need:
+ * independently-subscribable slots, the scope chain that decides which slot a
+ * name resolves to, and a module-level door for JS that runs outside the React
+ * tree (`getClientState` / `setClientState`).
  *
  * Scoping: a scope owns some names and delegates the rest to its parent. The
  * compiler wraps each page and each `@rx.memo` body in a `ClientStateScope` that
@@ -273,15 +274,13 @@ export const withClientStateScope = (Component, owns) => {
 };
 
 /**
- * Subscribe to a piece of client state.
+ * Bind the slot a name resolves to, claiming it with the default if needed.
  * @param defaultValue The initial value.
- * @param name The name identifying this var. Compiler-generated when the caller
- *   did not choose one, and always a compile-time constant.
- * @param isGlobal When true the name resolves in the root scope, ignoring any
- *   enclosing boundary, so it is shared app-wide and reachable from the backend.
- * @returns A `[value, setValue]` pair, like `useState`.
+ * @param name The name identifying this var.
+ * @param isGlobal Whether the name resolves in the root scope.
+ * @returns The slot.
  */
-export function useClientState(defaultValue, name, isGlobal) {
+const useClientStateSlot = (defaultValue, name, isGlobal) => {
   const contextScope = useContext(ClientStateScopeContext);
   const nearest = contextScope ?? getClientStore().root;
   const scope = isGlobal ? rootOf(nearest) : nearest;
@@ -299,11 +298,39 @@ export function useClientState(defaultValue, name, isGlobal) {
   if (slot.value === UNSET) {
     slot.value = defaultValue;
   }
+  return slot;
+};
 
+/**
+ * Subscribe to a piece of client state.
+ * @param defaultValue The initial value.
+ * @param name The name identifying this var. Compiler-generated when the caller
+ *   did not choose one, and always a compile-time constant.
+ * @param isGlobal When true the name resolves in the root scope, ignoring any
+ *   enclosing boundary, so it is shared app-wide and reachable from the backend.
+ * @returns A `[value, setValue]` pair, like `useState`.
+ */
+export function useClientState(defaultValue, name, isGlobal) {
+  const slot = useClientStateSlot(defaultValue, name, isGlobal);
   const value = useSyncExternalStore(
     slot.subscribe,
     slot.getSnapshot,
     slot.getSnapshot,
   );
   return [value, slot.set];
+}
+
+/**
+ * Get the setter of a piece of client state without subscribing to it.
+ *
+ * A component that only writes the var does not re-render when it changes. It
+ * still binds the slot, so it can write before any reader has mounted.
+ * @param defaultValue The initial value.
+ * @param name The name identifying this var, as for `useClientState`.
+ * @param isGlobal Whether the name resolves in the root scope, as for
+ *   `useClientState`.
+ * @returns The setter, a stable function taking a value or an updater.
+ */
+export function useClientStateSetter(defaultValue, name, isGlobal) {
+  return useClientStateSlot(defaultValue, name, isGlobal).set;
 }

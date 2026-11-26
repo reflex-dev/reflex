@@ -25,9 +25,11 @@ from reflex_base.vars.function import FunctionVar
 CLIENT_STATE_APP_WRAP_PRIORITY = 50
 
 
-# The hook ``ClientStateVar.create`` emits for a local var ends with its quoted
+# The hooks ``ClientStateVar.create`` emits for a local var end with its quoted
 # name; a global one ends with ``, true)`` instead.
-_LOCAL_HOOK = re.compile(r'= useClientState\(.*, "([A-Za-z_$][A-Za-z0-9_$]*)"\)$')
+_LOCAL_HOOK = re.compile(
+    r'= useClientState(?:Setter)?\(.*, "([A-Za-z_$][A-Za-z0-9_$]*)"\)$'
+)
 
 
 def local_client_state_names(hooks: Iterable[str]) -> list[str]:

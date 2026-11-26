@@ -21,6 +21,7 @@ import {
   getClientStore,
   setClientState,
   useClientState,
+  useClientStateSetter,
   withClientStateScope,
 } from "$/utils/client_state";
 
@@ -241,6 +242,101 @@ describe("useClientState", () => {
     act(() => counter.renders.set((previous) => previous + 41));
 
     expect(counter.renders.value).toBe(42);
+
+    unmount();
+  });
+});
+
+describe("useClientStateSetter", () => {
+  /** Render `useClientStateSetter(default, name)` and report renders and setter. */
+  const writer = (defaultValue, name, isGlobal) => {
+    const renders = { count: 0, set: undefined };
+    const Writer = () => {
+      renders.set = useClientStateSetter(defaultValue, name, isGlobal);
+      renders.count += 1;
+      return null;
+    };
+    return { renders, element: createElement(Writer) };
+  };
+
+  /** Render `useClientState(default, name)` and report renders and value. */
+  const reader = (defaultValue, name, isGlobal) => {
+    const renders = { count: 0, value: undefined, set: undefined };
+    const Reader = () => {
+      const [value, set] = useClientState(defaultValue, name, isGlobal);
+      renders.count += 1;
+      renders.value = value;
+      renders.set = set;
+      return null;
+    };
+    return { renders, element: createElement(Reader) };
+  };
+
+  test("writes without re-rendering its own component", () => {
+    const write = writer(0, "writeOnly");
+    const read = reader(0, "writeOnly");
+    const { unmount } = mount(
+      createElement(ClientStateProvider, null, write.element, read.element),
+    );
+    const before = write.renders.count;
+
+    act(() => write.renders.set(1));
+    act(() => write.renders.set((previous) => previous + 1));
+
+    expect(read.renders.value).toBe(2);
+    expect(write.renders.count).toBe(before);
+    // The slot's own stable setter, the one `useClientState` returns.
+    expect(write.renders.set).toBe(read.renders.set);
+
+    unmount();
+  });
+
+  test("claims the slot with its default before any reader mounts", () => {
+    const write = writer(41, "writerFirst");
+    const first = mount(
+      createElement(ClientStateProvider, null, write.element),
+    );
+
+    act(() => write.renders.set((previous) => previous + 1));
+
+    const read = reader(0, "writerFirst");
+    const second = mount(
+      createElement(ClientStateProvider, null, read.element),
+    );
+
+    expect(read.renders.value).toBe(42);
+
+    second.unmount();
+    first.unmount();
+  });
+
+  test("resolves a name in the same scope a reader does", () => {
+    const scopedWrite = writer("initial", "writerScoped");
+    const scopedRead = reader("initial", "writerScoped");
+    const siblingRead = reader("initial", "writerScoped");
+    const globalWrite = writer("initial", "writerGlobal", true);
+    const { unmount } = mount(
+      createElement(
+        ClientStateProvider,
+        null,
+        createElement(
+          ClientStateScope,
+          null,
+          scopedWrite.element,
+          scopedRead.element,
+          globalWrite.element,
+        ),
+        createElement(ClientStateScope, null, siblingRead.element),
+      ),
+    );
+
+    act(() => scopedWrite.renders.set("mine"));
+    act(() => globalWrite.renders.set("everyone's"));
+
+    expect(scopedRead.renders.value).toBe("mine");
+    expect(siblingRead.renders.value).toBe("initial");
+    expect(getClientState("writerScoped")).toBeUndefined();
+    expect(getClientState("writerGlobal")).toBe("everyone's");
 
     unmount();
   });

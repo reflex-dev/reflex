@@ -4,7 +4,8 @@ Covers what unit tests cannot: the React runtime in ``utils/client_state.js``.
 Shared named vars staying in sync across components, backend ``push``/``retrieve``
 over the new wire events, ``global_ref=False`` isolation, the non-React escape
 hatch, functional updaters, and — the property the store exists to guarantee —
-that writing one var does not re-render components subscribed only to another.
+that writing one var does not re-render components subscribed only to another,
+nor a component that only writes it.
 """
 
 from collections.abc import Generator
@@ -18,6 +19,8 @@ from reflex.testing import AppHarness
 def ClientStateApp():
     """App exercising ``rx.client_state`` runtime behavior."""
     from reflex_base.constants.compiler import MemoizationDisposition, MemoizationMode
+    from reflex_base.utils.imports import ImportVar
+    from reflex_base.vars.base import VarData
     from reflex_base.vars.function import ArgsFunctionOperationBuilder, FunctionVar
     from reflex_components_core.el.elements.inline import Span
 
@@ -37,6 +40,18 @@ def ClientStateApp():
     lifted = rx.client_state(0)
     # Unnamed, used at page level on two pages.
     page_local = rx.client_state(0)
+    # Written by one component and read by another.
+    written = rx.client_state(0, name="written")
+
+    def render_count(name: str) -> rx.Var[int]:
+        # How often the component rendering it has rendered so far.
+        return rx.Var(
+            f"{name}Renders",
+            _var_data=VarData(
+                hooks={f"const {name}Renders = ++useRef(0).current": None},
+                imports={"react": [ImportVar(tag="useRef")]},
+            ),
+        ).to(int)
 
     class ClientStateAppState(rx.State):
         retrieved: str = ""
@@ -164,6 +179,21 @@ def ClientStateApp():
                 "page-local-inc",
                 id="page-local-inc",
                 on_click=page_local.set(lambda v: v + 1),
+            ),
+            rx.el.button(
+                "write",
+                id="writer",
+                on_click=written.set(lambda v: v + 1),
+                custom_attrs={"data-renders": render_count("writer")},
+            ),
+            # The value is a prop rather than a child, which could render in a
+            # memo of its own, so the count is of the component reading it.
+            rx.el.span(
+                id="written-reader",
+                custom_attrs={
+                    "data-value": written.value,
+                    "data-renders": render_count("reader"),
+                },
             ),
             rx.link("other", href="/other", id="to-other"),
         )
@@ -340,6 +370,27 @@ def test_writing_one_var_leaves_other_readers_untouched(page: Page) -> None:
 
     expect(page.locator("#shared-a")).to_have_text("churn")
     expect(page.locator("#other-value")).to_have_text("untouched")
+
+
+def test_writing_a_var_does_not_re_render_the_writer(page: Page) -> None:
+    """A component that only sets a var is not subscribed to it.
+
+    The setter used to bring the value's ``useClientState`` hook along, so the
+    writer re-rendered on every write it made.
+    """
+    writer = page.locator("#writer")
+    reader = page.locator("#written-reader")
+    writer_renders = writer.get_attribute("data-renders")
+    reader_renders = reader.get_attribute("data-renders")
+    assert writer_renders is not None
+    assert reader_renders is not None
+
+    for expected in ("1", "2", "3"):
+        writer.click()
+        expect(reader).to_have_attribute("data-value", expected)
+
+    expect(writer).to_have_attribute("data-renders", writer_renders)
+    expect(reader).not_to_have_attribute("data-renders", reader_renders)
 
 
 def ClientStateLateMountApp():

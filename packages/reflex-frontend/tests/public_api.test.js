@@ -68,6 +68,7 @@ const PUBLIC_API = {
     "getClientStore",
     "setClientState",
     "useClientState",
+    "useClientStateSetter",
     "withClientStateScope",
   ],
   "$/utils/context-registry": [

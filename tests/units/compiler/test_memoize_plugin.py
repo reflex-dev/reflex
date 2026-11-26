@@ -1971,8 +1971,8 @@ def test_memoized_match_wrapper_receives_case_children_in_page_output() -> None:
 
 def test_client_state_setter_in_call_function_event_imports_hook() -> None:
     """A button whose ``on_click`` calls a ``ClientStateVar`` setter must memoize
-    and the resulting memo body must declare the ``useClientState`` hook and
-    import it from ``$/utils/client_state``.
+    and the resulting memo body must declare the ``useClientStateSetter`` hook
+    and import it from ``$/utils/client_state``.
 
     The setter is the local binding returned by the hook, so the memo body is
     only valid if ``ClientStateVar.set`` carries its own hook VarData. When it
@@ -2008,7 +2008,10 @@ def test_client_state_setter_in_call_function_event_imports_hook() -> None:
         "Expected the memo body to call the client-state setter.\n"
         f"Memo code snippet: {memo_code[:2000]}"
     )
-    assert 'useClientState(0, "counter", true)' in memo_code, (
+    assert (
+        'const counterRxClientStateSet = useClientStateSetter(0, "counter", true)'
+        in memo_code
+    ), (
         "Expected the memo body to declare the client-state hook so the setter "
         f"binding exists.\nMemo code snippet: {memo_code[:2000]}"
     )
@@ -2020,12 +2023,13 @@ def test_client_state_setter_in_call_function_event_imports_hook() -> None:
     )
     assert import_match is not None, (
         "Memo body must import from $/utils/client_state since it calls "
-        f"useClientState.\nMemo code snippet: {memo_code[:2000]}"
+        f"useClientStateSetter.\nMemo code snippet: {memo_code[:2000]}"
     )
     imported_names = {name.strip() for name in import_match.group(1).split(",")}
-    assert "useClientState" in imported_names, (
-        f"Memo body imports {imported_names!r} from $/utils/client_state but is "
-        f"missing 'useClientState'.\nMemo code snippet: {memo_code[:2000]}"
+    # Only the setter: the body never reads the value, so it does not subscribe.
+    assert imported_names == {"useClientStateSetter"}, (
+        f"Memo body imports {imported_names!r} from $/utils/client_state.\n"
+        f"Memo code snippet: {memo_code[:2000]}"
     )
 
     assert "refs['_client_state" not in memo_code, (
@@ -2043,8 +2047,8 @@ def test_client_state_setter_only_sibling_memo_initializes_state(
     Regression (reflex-dev/reflex#7286): the setter used to reference the
     setter function without the hook defining it, so a button memo relied on a
     sibling rendering ``.value`` to initialize the state and threw when that
-    sibling was not mounted. The setter now carries the ``useClientState`` hook,
-    so a setter-only memo registers its own slot binding. That holds for scoped
+    sibling was not mounted. The setter now carries the ``useClientStateSetter``
+    hook, so a setter-only memo registers its own slot binding. That holds for scoped
     vars too: the slot lives in the shared scope store, not in a private copy,
     so a setter-only writer is seen by every reader in the scope.
 
@@ -2068,7 +2072,7 @@ def test_client_state_setter_only_sibling_memo_initializes_state(
     )
     # A global var passes ``true`` as the third argument; a scoped var omits it.
     hook = re.search(
-        r'const \[[\w$]+, ([\w$]+RxClientStateSet)\] = useClientState\("a", "([\w$]+)"(, true)?\)',
+        r'const ([\w$]+RxClientStateSet) = useClientStateSetter\("a", "([\w$]+)"(, true)?\)',
         button_memo,
     )
     assert hook is not None, button_memo
@@ -2076,6 +2080,8 @@ def test_client_state_setter_only_sibling_memo_initializes_state(
     assert (global_flag is not None) is is_global
     assert name == shared._state_name
     assert f'{setter}("b")' in button_memo
+    # Writing does not subscribe the button to the value.
+    assert "useClientState(" not in button_memo
 
 
 def test_debounce_input_memo_renders_react_debounce_wrapper() -> None:
@@ -4029,8 +4035,7 @@ _SET_ONE = (
     '_e?.["buttons"], ["client_x"] : _e?.["clientX"], ["client_y"] : '
     '_e?.["clientY"], ["alt_key"] : _e?.["altKey"], ["ctrl_key"] : '
     '_e?.["ctrlKey"], ["meta_key"] : _e?.["metaKey"], ["shift_key"] : '
-    '_e?.["shiftKey"] }), ...args)))(_e))), [cs$0RxClientState, '
-    "cs$0RxClientStateSet])"
+    '_e?.["shiftKey"] }), ...args)))(_e))), [cs$0RxClientStateSet])'
 )
 
 
@@ -4094,7 +4099,7 @@ def test_memo_scope_owns_client_state_used_only_under_a_branch_or_loop(
 ) -> None:
     """Client state used only under a branch or a loop stays per memo instance.
 
-    The wrapper takes the ``useClientState`` hook out of the memo function,
+    The wrapper takes the client state hook out of the memo function,
     which no longer names the state itself; the scope the memo opens must
     still own it, or every instance of the memo would share one slot. The
     wrapper opens no scope of its own, or every branch and item would get a
@@ -4134,7 +4139,7 @@ def test_memo_scope_owns_client_state_used_only_under_a_branch_or_loop(
             f"const Wrapper = memo(({{children, {wrapper_params}...rest}}) => {{",
             "    ",
             *_mount_effect(_PING),
-            'const [cs$0RxClientState, cs$0RxClientStateSet] = useClientState(0, "cs$0")',
+            'const cs$0RxClientStateSet = useClientStateSetter(0, "cs$0")',
             _SET_ONE,
             "    return(",
             f'        jsx("button",{{...mergeSlotProps(rest, ({{ {wrapper_props}'
