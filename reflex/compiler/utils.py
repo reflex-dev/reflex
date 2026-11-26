@@ -36,7 +36,7 @@ from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
 from reflex_base.utils import format, imports, memo_paths, serializers, types
 from reflex_base.utils.exceptions import VarTypeError
-from reflex_base.utils.imports import ImportVar, ParsedImportDict
+from reflex_base.utils.imports import ImportVar, ParsedImportDict, merge_parsed_imports
 from reflex_base.vars.base import Field, Var, VarData
 from reflex_base.vars.function import DestructuredArg
 from reflex_components_core.base import Description, Image, Scripts
@@ -597,9 +597,9 @@ def compile_experimental_component_memo(
     hole_child = definition.passthrough_hole_child
     if hole_child is not None:
         # Passthrough memo: shallow-copy the root only — ``render.children``
-        # still aliases the user-authored descendants so root-level walkers
-        # (e.g. ``Form._get_form_refs``) can introspect the real subtree, but
-        # we skip the O(n) deepcopy + recursive style pass. Descendants are
+        # still aliases any user-authored descendants while computing root hooks
+        # so helpers (e.g. ``Form._get_form_refs``) can introspect the subtree,
+        # without the O(n) deepcopy + recursive style pass. Descendants are
         # rendered AND styled in the page scope, not here, so only the root
         # needs app-level style merged.
         render = copy.copy(definition.component)
@@ -619,18 +619,28 @@ def compile_experimental_component_memo(
                 {analysis.dynamic_import} if analysis.dynamic_import else set()
             )
             render._imports_cache = analysis.imports
-        # Strings returned by the root's ``add_hooks`` can reference symbols
-        # (``refs``, ``EventLoopContext``, etc.) that normally reach this module
-        # through descendants' ``_get_hooks_imports`` / ``_get_imports``. JS
-        # imports are side-effect-free and dedup cleanly, so pulling the
-        # whole subtree's imports here is safe even when some go unused.
-        # ``_get_all_imports`` is read-only on the descendants, so the shallow
-        # aliasing above is fine.
-        all_imports = render._get_all_imports()
-
-        # Swap children for JSX render: the memo body template emits a
-        # ``{children}`` hole in place of the real descendants.
+        # Swap children before import collection and JSX render: descendants
+        # render at the call site behind ``{children}``, so pulling their
+        # imports here drags unused child libraries and child memo wrappers
+        # into the passthrough module. Keep form/ref lookup delegated to the
+        # original component so ``Form._get_vars`` (``_get_form_refs``) still
+        # emits the ``refs`` import needed by root ``Form.add_hooks``.
+        if "_form_control_source" not in render.__dict__:
+            object.__setattr__(render, "_form_control_source", definition.component)
+        if "_get_all_refs" not in render.__dict__:
+            object.__setattr__(
+                render, "_get_all_refs", definition.component._get_all_refs
+            )
         render.children = [hole_child]
+        all_imports = render._get_all_imports()
+        if analysis is None:
+            hook_imports = [
+                dict(data.imports)
+                for data in hooks.values()
+                if data is not None and data.imports
+            ]
+            if hook_imports:
+                all_imports = merge_parsed_imports(all_imports, *hook_imports)
         if analysis is None:
             rendered = render.render()
         else:
