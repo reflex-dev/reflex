@@ -3163,5 +3163,6 @@ def test_decode_writes_out_hoisted_literals(
     outer = Var.create({"inner": inner}).hoist()
 
     assert inner._decode() == ["a", "b"]
+    assert outer._decode() == {"inner": ["a", "b"]}
     assert inner.length()._decode() == '["a", "b"].length'
     assert outer["inner"]._decode() == '({ ["inner"] : ["a", "b"] })?.["inner"]'

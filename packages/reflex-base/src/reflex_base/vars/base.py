@@ -1608,7 +1608,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         if isinstance(self, LiteralVar):
             return self._var_value
         if (hoisted := _HOISTED_VARS.get(self._js_expr)) is not None:
-            return hoisted._var_value
+            return _decode_hoisted(hoisted._var_value)
         code = _inline_hoisted_vars(str(self))
         try:
             return json.loads(code)
@@ -2150,6 +2150,28 @@ def _inline_hoisted_vars(code: str) -> str:
         ),
         code,
     )
+
+
+def _decode_hoisted(value: Any) -> Any:
+    """Decode the vars a hoisted literal's value holds, at any depth.
+
+    Args:
+        value: The value of a hoisted literal, or a part of it.
+
+    Returns:
+        The value with each var it holds replaced by that var's decoded value.
+    """
+    if isinstance(value, Var):
+        return _decode_hoisted(value._decode())
+    if isinstance(value, Mapping):
+        return {
+            _decode_hoisted(key): _decode_hoisted(item) for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_decode_hoisted(item) for item in value]
+    if isinstance(value, (tuple, set, frozenset)):
+        return type(value)(_decode_hoisted(item) for item in value)
+    return value
 
 
 @serializers.serializer
