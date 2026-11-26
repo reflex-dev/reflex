@@ -2,8 +2,10 @@
 
 A trigger in a Reflex Build project feeds events to entry points that an app
 declares. The platform POSTs them in batches to the app's ``/_triggers`` route,
-signed in the Standard Webhooks format with ``REFLEX_TRIGGER_SECRET``, and reads
-one result per event from the reply::
+signed in the Standard Webhooks format, and reads one result per event from the
+reply. It signs with an Ed25519 key of the app's own (``v1a``) and ships the app
+only the public half, in ``REFLEX_TRIGGER_PUBLIC_KEY``, so nothing the app holds
+can sign a delivery::
 
     entry_points = triggers.EntryPoints()
 
@@ -26,27 +28,34 @@ one result per event from the reply::
 ``start_event`` answers ``Result.INVALID`` for an event whose entry point
 ``entry_points.get`` doesn't find, or whose payload raises ``InvalidPayload``.
 
-The module uses the standard library only. ``event=`` takes any class with
-pydantic's ``model_validate`` and ``model_json_schema``, and ``start`` is kept as
-given, so neither pydantic nor reflex-workflow is imported here.
+Signing and verifying need ``cryptography``, which the ``triggers`` extra
+installs; it is imported when a key is first used, so declaring entry points and
+answering a delivery need nothing beyond the standard library. ``event=`` takes
+any class with pydantic's ``model_validate`` and ``model_json_schema``, and
+``start`` is kept as given, so neither pydantic nor reflex-workflow is imported
+here.
 """
 
 from __future__ import annotations
 
 import base64
-import binascii
 import dataclasses
 import enum
-import hashlib
-import hmac
 import json
 import os
 import time
 from collections.abc import Callable, Iterable, Iterator, Mapping
-from typing import Any, Generic, Protocol, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Protocol, TypeVar
+
+if TYPE_CHECKING:
+    from cryptography.exceptions import InvalidSignature as BadSignature
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+        Ed25519PrivateKey,
+        Ed25519PublicKey,
+    )
 
 __all__ = [
-    "SECRET_ENV",
+    "PUBLIC_KEY_ENV",
     "TOLERANCE_SECONDS",
     "WIRE_VERSION",
     "Delivery",
@@ -59,13 +68,14 @@ __all__ = [
     "InvalidSignature",
     "Result",
     "parse_delivery",
+    "public_key",
     "reply",
     "sign",
     "verify",
 ]
 
-SECRET_ENV = "REFLEX_TRIGGER_SECRET"
-"""The environment variable the platform ships the app's trigger secret in."""
+PUBLIC_KEY_ENV = "REFLEX_TRIGGER_PUBLIC_KEY"
+"""The environment variable the platform ships the app's public key in."""
 
 TOLERANCE_SECONDS = 300
 """How far a delivery's timestamp may be from the app's clock, either way."""
@@ -76,8 +86,11 @@ WIRE_VERSION = 1
 _ID_HEADER = "webhook-id"
 _TIMESTAMP_HEADER = "webhook-timestamp"
 _SIGNATURE_HEADER = "webhook-signature"
-_SECRET_PREFIX = "whsec_"
-_SIGNATURE_VERSION = "v1"
+_SIGNING_KEY_PREFIX = "whsk_"
+_PUBLIC_KEY_PREFIX = "whpk_"
+_SIGNATURE_VERSION = "v1a"
+_ED25519_KEY_BYTES = 32
+_ED25519_SIGNATURE_BYTES = 64
 
 E = TypeVar("E")
 E_co = TypeVar("E_co", covariant=True)
@@ -89,7 +102,7 @@ class InvalidDelivery(Exception):  # noqa: N818
 
 
 class InvalidSignature(InvalidDelivery):
-    """The request was not signed by the platform with this app's secret."""
+    """The request was not signed by the platform with this app's key."""
 
 
 class InvalidPayload(Exception):  # noqa: N818
@@ -147,72 +160,134 @@ class Delivery:
     events: tuple[Event, ...]
 
 
-def _key_bytes(secret: str) -> bytes:
-    """Decode a secret into the HMAC key.
+def _keys(value: str | Iterable[str]) -> list[str]:
+    """List the keys given as one space-separated string or several.
 
     Args:
-        secret: A ``whsec_``-prefixed base64 key, or a raw string.
+        value: The key or keys.
 
     Returns:
-        The key bytes.
+        The non-empty keys.
+    """
+    return value.split() if isinstance(value, str) else [v for v in value if v]
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class _Ed25519:
+    """What signing and verifying use from cryptography."""
+
+    private_key: type[Ed25519PrivateKey]
+    public_key: type[Ed25519PublicKey]
+    bad_signature: type[BadSignature]
+
+
+def _ed25519() -> _Ed25519:
+    """Import cryptography's Ed25519 keys and its signature error.
+
+    Every use of cryptography goes through here, so it is imported only when a
+    key is first used, and its absence is reported the same way everywhere.
+
+    Returns:
+        The key classes and the error a failed verification raises.
 
     Raises:
-        ValueError: If a ``whsec_`` key is not base64 or decodes to nothing,
-            since an empty key is one anyone can sign with.
+        ImportError: If cryptography is not installed.
     """
-    if not secret.startswith(_SECRET_PREFIX):
-        return secret.encode()
     try:
-        key = base64.b64decode(secret.removeprefix(_SECRET_PREFIX), validate=True)
-    except binascii.Error:
-        key = b""
-    if not key:
-        msg = f"a trigger secret is not a valid {_SECRET_PREFIX} key"
-        raise ValueError(msg)
-    return key
+        from cryptography.exceptions import InvalidSignature as BadSignature
+        from cryptography.hazmat.primitives.asymmetric import ed25519
+    except ImportError as error:
+        msg = (
+            "trigger signatures need the cryptography package: install"
+            " reflex-build-sdk[triggers]"
+        )
+        raise ImportError(msg) from error
+    return _Ed25519(ed25519.Ed25519PrivateKey, ed25519.Ed25519PublicKey, BadSignature)
 
 
-def _signature(key: bytes, msg_id: str, timestamp: int, body: bytes) -> str:
-    """Compute one Standard Webhooks signature.
+def _ed25519_key(value: str, prefix: str) -> bytes:
+    """Decode a ``whsk_`` or ``whpk_`` key into its 32 raw bytes.
 
     Args:
-        key: The HMAC key to sign with.
+        value: The key.
+        prefix: The prefix it must carry.
+
+    Returns:
+        The raw key.
+
+    Raises:
+        ValueError: If it lacks the prefix, is not base64, or is not 32 bytes.
+    """
+    raw = b""
+    if value.startswith(prefix):
+        try:
+            raw = base64.b64decode(value.removeprefix(prefix), validate=True)
+        except ValueError:
+            raw = b""
+    if len(raw) != _ED25519_KEY_BYTES:
+        msg = f"a trigger key is not a valid {prefix} key"
+        raise ValueError(msg)
+    return raw
+
+
+def _private_key(signing_key: str) -> Ed25519PrivateKey:
+    """Load a ``whsk_`` signing key.
+
+    Args:
+        signing_key: A ``whsk_``-prefixed base64 Ed25519 private key (32 bytes).
+
+    Returns:
+        The ``Ed25519PrivateKey``.
+    """
+    return _ed25519().private_key.from_private_bytes(
+        _ed25519_key(signing_key, _SIGNING_KEY_PREFIX)
+    )
+
+
+def _signed_content(msg_id: str, timestamp: int, body: bytes) -> bytes:
+    """The bytes a Standard Webhooks signature covers.
+
+    Args:
         msg_id: The request's id.
         timestamp: The request's timestamp.
         body: The request body.
 
     Returns:
-        The base64 HMAC-SHA256 of ``{msg_id}.{timestamp}.{body}``.
+        ``{msg_id}.{timestamp}.{body}``.
     """
-    signed = f"{msg_id}.{timestamp}.".encode() + body
-    digest = hmac.new(key, signed, hashlib.sha256).digest()
-    return base64.b64encode(digest).decode()
+    return f"{msg_id}.{timestamp}.".encode() + body
 
 
-def _secrets(secret: str | Iterable[str]) -> list[str]:
-    """List the secrets given as one space-separated string or several.
+def public_key(signing_key: str) -> str:
+    """The public key an app verifies a ``whsk_`` signing key's deliveries with.
 
     Args:
-        secret: The secret or secrets.
+        signing_key: A ``whsk_``-prefixed base64 Ed25519 private key (32 bytes).
 
     Returns:
-        The non-empty secrets.
+        The ``whpk_``-prefixed base64 public key.
+
+    Raises:
+        ValueError: If the signing key is not a valid ``whsk_`` key.
+        ImportError: If cryptography is not installed.
     """
-    return secret.split() if isinstance(secret, str) else [v for v in secret if v]
+    raw = _private_key(signing_key).public_key().public_bytes_raw()
+    return _PUBLIC_KEY_PREFIX + base64.b64encode(raw).decode()
 
 
 def sign(
     body: bytes,
-    secret: str | Iterable[str],
+    signing_key: str | Iterable[str],
     *,
     msg_id: str,
     timestamp: int | None = None,
 ) -> dict[str, str]:
-    """Sign a request the way the platform does, one signature per secret.
+    """Sign a request the way the platform does, one ``v1a`` signature per key.
 
     Args:
         body: The request body.
-        secret: The app's trigger secret, or several while one is rotated out.
+        signing_key: The ``whsk_`` signing key, or several while one is rotated
+            out, separated by spaces or as an iterable.
         msg_id: The request's id, ``webhook-id``.
         timestamp: Seconds since the epoch; now when omitted.
 
@@ -220,16 +295,17 @@ def sign(
         The ``webhook-id``, ``webhook-timestamp`` and ``webhook-signature`` headers.
 
     Raises:
-        ValueError: If no secret is given, or one is not a valid key.
+        ValueError: If no key is given, or one is not a valid ``whsk_`` key.
+        ImportError: If cryptography is not installed.
     """
-    secrets = _secrets(secret)
-    if not secrets:
-        msg = "sign needs at least one secret"
+    keys = [_private_key(value) for value in _keys(signing_key)]
+    if not keys:
+        msg = "sign needs at least one signing key"
         raise ValueError(msg)
-    keys = [_key_bytes(value) for value in secrets]
     timestamp = int(time.time()) if timestamp is None else timestamp
+    content = _signed_content(msg_id, timestamp, body)
     signatures = " ".join(
-        f"{_SIGNATURE_VERSION},{_signature(key, msg_id, timestamp, body)}"
+        f"{_SIGNATURE_VERSION},{base64.b64encode(key.sign(content)).decode()}"
         for key in keys
     )
     return {
@@ -239,15 +315,43 @@ def sign(
     }
 
 
+def _matches(key: Ed25519PublicKey, content: bytes, offered: str) -> bool:
+    """Check one offered ``v1a`` signature value against one public key.
+
+    Args:
+        key: The public key.
+        content: The signed content, from ``_signed_content``.
+        offered: The base64 value after the version in ``webhook-signature``.
+
+    Returns:
+        Whether the value is that key's signature of the content.
+    """
+    try:
+        signature = base64.b64decode(offered, validate=True)
+    except ValueError:
+        return False
+    if len(signature) != _ED25519_SIGNATURE_BYTES:
+        return False
+    try:
+        key.verify(signature, content)
+    except _ed25519().bad_signature:
+        return False
+    return True
+
+
 def verify(
     body: bytes,
     headers: Mapping[str, str],
     *,
-    secret: str | Iterable[str] | None = None,
+    public_keys: str | Iterable[str] | None = None,
     tolerance: int = TOLERANCE_SECONDS,
     now: float | None = None,
 ) -> tuple[str, int]:
-    """Check that a request was signed by the platform with this app's secret.
+    """Check that a request was signed by the platform for this app.
+
+    Only ``v1a`` Ed25519 signatures are accepted, against a public key the app
+    holds; nothing it holds can make one. When no key is given,
+    ``REFLEX_TRIGGER_PUBLIC_KEY`` is read.
 
     A ``GET /_triggers`` is signed over an empty body, so this is what that route
     calls before answering the manifest.
@@ -255,8 +359,8 @@ def verify(
     Args:
         body: The raw request body.
         headers: The request headers; any mapping, matched without case.
-        secret: The secret to check against, or several separated by spaces;
-            ``REFLEX_TRIGGER_SECRET`` by default.
+        public_keys: The ``whpk_`` public key to check against, or several
+            while one is rotated out, separated by spaces or as an iterable.
         tolerance: Seconds the timestamp may be off the clock by, either way.
         now: The clock, for tests.
 
@@ -264,16 +368,23 @@ def verify(
         The request's id and timestamp.
 
     Raises:
-        InvalidSignature: If no secret is set or one is not a valid key, a
+        InvalidSignature: If no key is set or one is not a valid key, a
             header is missing, the timestamp is out of tolerance, or no
             signature matches.
+        ImportError: If cryptography is not installed.
     """
-    secrets = _secrets(os.environ.get(SECRET_ENV, "") if secret is None else secret)
-    if not secrets:
-        msg = f"no trigger secret: {SECRET_ENV} is not set"
+    if public_keys is None:
+        public_keys = os.environ.get(PUBLIC_KEY_ENV, "")
+    values = _keys(public_keys)
+    if not values:
+        msg = f"no trigger key: {PUBLIC_KEY_ENV} is not set"
         raise InvalidSignature(msg)
+    public_key_type = _ed25519().public_key
     try:
-        keys = [_key_bytes(value) for value in secrets]
+        keys = [
+            public_key_type.from_public_bytes(_ed25519_key(value, _PUBLIC_KEY_PREFIX))
+            for value in values
+        ]
     except ValueError as error:
         raise InvalidSignature(str(error)) from None
     lowered = {name.lower(): value for name, value in headers.items()}
@@ -294,16 +405,15 @@ def verify(
         msg = "webhook-timestamp is outside the allowed tolerance"
         raise InvalidSignature(msg)
     offered = [
-        value.encode()
-        for version, _, value in (
+        value
+        for given, _, value in (
             part.partition(",") for part in presented.split(" ") if part
         )
-        if version == _SIGNATURE_VERSION
+        if given == _SIGNATURE_VERSION
     ]
-    for key in keys:
-        expected = _signature(key, msg_id, timestamp, body).encode()
-        if any(hmac.compare_digest(expected, candidate) for candidate in offered):
-            return msg_id, timestamp
+    content = _signed_content(msg_id, timestamp, body)
+    if any(_matches(key, content, value) for key in keys for value in offered):
+        return msg_id, timestamp
     msg = "no signature matches"
     raise InvalidSignature(msg)
 
@@ -352,7 +462,7 @@ def parse_delivery(
     body: bytes,
     headers: Mapping[str, str],
     *,
-    secret: str | Iterable[str] | None = None,
+    public_keys: str | Iterable[str] | None = None,
     tolerance: int = TOLERANCE_SECONDS,
     now: float | None = None,
 ) -> Delivery:
@@ -365,7 +475,7 @@ def parse_delivery(
     Args:
         body: The raw request body.
         headers: The request headers.
-        secret: The secret to check against; ``REFLEX_TRIGGER_SECRET`` by default.
+        public_keys: The public keys to check against, as ``verify`` takes them.
         tolerance: Seconds the timestamp may be off the clock by, either way.
         now: The clock, for tests.
 
@@ -377,7 +487,11 @@ def parse_delivery(
         InvalidDelivery: If it is, but this version of the SDK cannot read it.
     """
     msg_id, timestamp = verify(
-        body, headers, secret=secret, tolerance=tolerance, now=now
+        body,
+        headers,
+        public_keys=public_keys,
+        tolerance=tolerance,
+        now=now,
     )
     try:
         parsed = json.loads(body)
