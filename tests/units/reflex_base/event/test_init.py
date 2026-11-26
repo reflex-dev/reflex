@@ -319,3 +319,20 @@ def test_scripts_bind_hoisted_literals(
             f'callback:null}})])}}))(["a", "b"])'
         ),
     }
+
+
+def test_call_script_binds_hoisted_literals_interpolated_into_code(
+    hoisted_vars: dict[str, LiteralVar],
+) -> None:
+    """Code interpolating a hoisted literal keeps its var data, so it binds it."""
+    hoisted = Var.create(["a", "b"]).hoist()
+    name = str(hoisted)
+
+    event = rx.call_script(f"console.log({hoisted.length()})")._to_event()
+
+    assert event.payload == {
+        "javascript_code": (
+            f'(({name}) => (("console.log("+{name}.length+")")))(["a", "b"])'
+        ),
+        "callback": None,
+    }
