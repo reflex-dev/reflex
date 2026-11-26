@@ -1285,6 +1285,37 @@ def _read_stateful_pages_marker() -> list[str] | None:
         raise
 
 
+def _backend_imports(
+    compile_ctx: CompileContext,
+    app_root_imports: ParsedImportDict,
+    memo_imports: ParsedImportDict,
+) -> list[str]:
+    """List the compiled modules that import the backend transport.
+
+    Args:
+        compile_ctx: The compile context holding the compiled pages.
+        app_root_imports: The imports of the app root.
+        memo_imports: The imports of every memo module.
+
+    Returns:
+        One line per module, naming it and what it imports from the transport.
+    """
+    transport = f"$/{constants.Dirs.TRANSPORT_PATH}"
+    modules = [
+        (
+            f"page {route!r}",
+            page_ctx.frontend_imports or page_ctx.merged_imports(collapse=True),
+        )
+        for route, page_ctx in compile_ctx.compiled_pages.items()
+    ]
+    modules += [("the app root", app_root_imports), ("a memo", memo_imports)]
+    return [
+        f"{module}: {', '.join(sorted({var.tag for var in imports[transport] if var.tag}))}"
+        for module, imports in modules
+        if transport in imports
+    ]
+
+
 def compile_app(
     app: App,
     *,
@@ -1473,7 +1504,8 @@ def compile_app(
 
     app_wrappers = _resolve_app_wrap_components(app, compile_ctx.app_wrap_components)
     app_root = _memoize_stateful_app_wraps(app._app_root(app_wrappers), compile_ctx)
-    all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
+    app_root_imports = app_root._get_all_imports()
+    all_imports = utils.merge_imports(all_imports, app_root_imports)
 
     hydrate_fallback = app._resolve_hydrate_fallback()
     hydrate_fallback_export = None
@@ -1504,6 +1536,24 @@ def compile_app(
     )
     compile_results.extend(memo_component_files)
     all_imports = utils.merge_imports(all_imports, memo_components_imports)
+
+    # Without state nothing connects, so code that needs the backend would
+    # fail in the browser; utils/transport.js is where all of it lives.
+    if app._state is None and (
+        backend_imports := _backend_imports(
+            compile_ctx, app_root_imports, memo_components_imports
+        )
+    ):
+        progress.stop()
+        msg = (
+            "These modules use the backend, which an app with state disabled "
+            "(`rx.App(enable_state=False)`) does not have:\n  "
+            + "\n  ".join(backend_imports)
+            + f"\nThey import these names from $/{constants.Dirs.TRANSPORT_PATH}, "
+            "for example through `rx.get_upload_url`. Remove `enable_state=False` "
+            "or the components and vars that use the backend."
+        )
+        raise ReflexRuntimeError(msg)
     progress.advance(task)
 
     compile_results.append(

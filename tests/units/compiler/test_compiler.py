@@ -23,6 +23,7 @@ from reflex_base.utils.console import PoorProgress
 from reflex_base.utils.exceptions import (
     DynamicRouteArgShadowsStateVarError,
     PageValueError,
+    ReflexRuntimeError,
     RouteValueError,
 )
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
@@ -81,6 +82,105 @@ def test_compile_progress_ends_at_its_total(
     assert len(progress_bars) == 1
     (task,) = progress_bars[0].tasks.values()
     assert task["current"] == task["total"]
+
+
+def _compile_stateless_app(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    page: rx.Component,
+    *,
+    enable_state: bool = False,
+) -> None:
+    """Compile a one-page app without writing it.
+
+    Args:
+        tmp_path: The temporary application directory.
+        monkeypatch: Fixture for selecting the application directory.
+        mocker: Fixture for avoiding frontend dependency installation.
+        page: The page to compile.
+        enable_state: Whether the app has state.
+    """
+    monkeypatch.chdir(tmp_path)
+    config = rx.Config(app_name="transport_guard", plugins=[])
+    mocker.patch("reflex_base.config._get_config", return_value=config)
+    app = rx.App(enable_state=enable_state)
+    app.add_page(lambda: page, route="files")
+    mocker.patch.object(app, "_get_frontend_packages")
+    compiler.compile_app(app, dry_run=True, use_rich=False)
+
+
+@pytest.mark.usefixtures("clean_registration_context", "preserve_memo_registries")
+def test_stateless_app_rejects_backend_imports(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """An app without state fails to compile a page that needs the backend.
+
+    Args:
+        tmp_path: The temporary application directory.
+        monkeypatch: Fixture for selecting the application directory.
+        mocker: Fixture for avoiding frontend dependency installation.
+    """
+    page = rx.el.a("Download", href=rx.get_upload_url("report.pdf"))
+    with pytest.raises(ReflexRuntimeError) as error:
+        _compile_stateless_app(tmp_path, monkeypatch, mocker, page)
+    message = str(error.value)
+    assert "page 'files': getBackendURL" in message
+    assert "enable_state=False" in message
+    assert "$/utils/transport" in message
+
+
+@pytest.mark.usefixtures("clean_registration_context", "preserve_memo_registries")
+def test_stateless_app_rejects_backend_imports_in_memos(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """The check covers memo modules, not only page modules.
+
+    Args:
+        tmp_path: The temporary application directory.
+        monkeypatch: Fixture for selecting the application directory.
+        mocker: Fixture for avoiding frontend dependency installation.
+    """
+
+    @rx.memo
+    def download_link(name: rx.Var[str]) -> rx.Component:
+        return rx.el.a(name, href=rx.get_upload_url("report.pdf"))
+
+    with pytest.raises(ReflexRuntimeError, match="a memo: getBackendURL"):
+        _compile_stateless_app(
+            tmp_path, monkeypatch, mocker, download_link(name="Download")
+        )
+
+
+@pytest.mark.parametrize("enable_state", [False, True])
+@pytest.mark.usefixtures("clean_registration_context", "preserve_memo_registries")
+def test_backend_imports_need_only_be_absent_without_state(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    enable_state: bool,
+):
+    """Frontend-only pages compile without state, backend imports with state.
+
+    Args:
+        tmp_path: The temporary application directory.
+        monkeypatch: Fixture for selecting the application directory.
+        mocker: Fixture for avoiding frontend dependency installation.
+        enable_state: Whether the app has state.
+    """
+    client_state = rx.client_state("closed")
+    page = rx.el.div(
+        rx.el.button(
+            client_state.value,
+            on_click=[client_state.set("open"), rx.redirect("/")],
+        ),
+        rx.el.a("Download", href=rx.get_upload_url("report.pdf"))
+        if enable_state
+        else rx.el.a("Home", href="/"),
+    )
+    _compile_stateless_app(
+        tmp_path, monkeypatch, mocker, page, enable_state=enable_state
+    )
 
 
 @pytest.mark.parametrize("remove_assets_directory", [False, True])
