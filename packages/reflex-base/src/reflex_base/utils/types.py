@@ -34,14 +34,13 @@ from typing import (  # noqa: UP035
     _SpecialGenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
     cast,
     get_args,
-    is_typeddict,
 )
 from typing import Self as Self
 from typing import get_origin as get_origin_og
 from typing import get_type_hints as get_type_hints_og
 
 import typing_extensions
-from typing_extensions import TypeAliasType, TypeIs, TypeVarTuple
+from typing_extensions import TypeAliasType, TypeIs, TypeVarTuple, is_typeddict
 from typing_extensions import override as override
 
 from reflex_base import constants
@@ -1283,7 +1282,7 @@ def _runtime_typed_dict_field_types(cls: GenericType) -> dict[str, Any]:
     Returns:
         The field types used for runtime validation.
     """
-    if sys.version_info[:2] == (3, 11) and is_typeddict(cls):
+    if sys.version_info[:2] == (3, 11) and typing.is_typeddict(cls):
         if "__orig_bases__" not in vars(cls):
             # Python 3.11 can discard specialized bases of stdlib TypedDicts.
             # Keep checking the available field hints when they cannot be recovered.
@@ -1467,6 +1466,17 @@ def _isinstance(
     origin = origin_attr if origin_attr is not None else _get_origin_cached(cls)
 
     if origin is None:
+        if is_typeddict(cls):
+            if nested:
+                return does_obj_satisfy_typed_dict(
+                    obj,
+                    cls,
+                    nested=nested - 1,
+                    treat_var_as_type=treat_var_as_type,
+                    treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+                )
+            return isinstance(obj, dict)
+
         # cls is a float
         if cls is float:
             return isinstance(obj, (float, int))
@@ -1475,17 +1485,6 @@ def _isinstance(
         try:
             return isinstance(obj, cls)
         except TypeError:
-            if typing_extensions.is_typeddict(cls):
-                if nested:
-                    return does_obj_satisfy_typed_dict(
-                        obj,
-                        cls,
-                        nested=nested - 1,
-                        treat_var_as_type=treat_var_as_type,
-                        treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
-                    )
-                return isinstance(obj, dict)
-
             # A bare PEP 695 type alias is opaque to ``isinstance``; unwrap it
             # and re-dispatch. Alias members of a union resolve in the
             # per-member recursion of the union branch above.
