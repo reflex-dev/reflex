@@ -29,13 +29,20 @@ def ProdBuildPipelineApp():
     import reflex as rx
 
     app = rx.App()
+    # Written out in place, a literal both pages use would ship in each of them.
+    words = rx.Var.create(["hoisted-literal-marker", "b"]).hoist()
 
     @app.add_page
     def index():
         return rx.el.main(
             rx.heading("Build Pipeline Test"),
             rx.text("Hello"),
+            rx.text(words.join(" ")),
         )
+
+    @app.add_page
+    def other():
+        return rx.el.main(rx.text(words[1]))
 
 
 @pytest.fixture(scope="module")
@@ -177,3 +184,17 @@ def test_bundles_exclude_embedded_core_js(prod_app: AppHarness):
     ]
 
     assert not offenders, f"bundles embed a core-js runtime: {offenders}"
+
+
+def test_hoisted_literal_ships_once(prod_app: AppHarness):
+    """A literal hoisted out of the two pages using it ships in a single chunk."""
+    js_files = _find_build_files(prod_app, "**/*.js")
+    assert js_files, "No JS files in build"
+
+    assert (
+        sum(
+            path.read_text(encoding="utf-8").count("hoisted-literal-marker")
+            for path in js_files
+        )
+        == 1
+    )

@@ -1,5 +1,6 @@
 """Tests for trigger-argument placeholders and the event chains built on them."""
 
+from collections.abc import Callable
 from typing import Any, cast
 
 import pytest
@@ -19,7 +20,7 @@ from reflex_base.event import (
     passthrough_event_spec,
 )
 from reflex_base.utils.exceptions import EventFnArgMismatchError
-from reflex_base.vars.base import Var
+from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.number import NumberVar
 
 import reflex as rx
@@ -288,3 +289,50 @@ def test_a_callable_with_a_required_keyword_only_parameter_is_rejected() -> None
         "before the `*` so it takes one of the trigger's arguments.\n"
         "See https://reflex.dev/docs/events/event-arguments/"
     )
+
+
+@pytest.mark.parametrize(
+    ("script", "code_arg"),
+    [(rx.call_script, "javascript_code"), (rx.call_function, "function")],
+)
+def test_scripts_bind_hoisted_literals(
+    hoisted_vars: dict[str, LiteralVar],
+    script: Callable[..., EventSpec],
+    code_arg: str,
+) -> None:
+    """The browser runs a script and its callback outside any module.
+
+    So both bind the hoisted literals they read to their values.
+    """
+    hoisted = Var.create(["a", "b"]).hoist()
+    name = str(hoisted)
+
+    event = script(
+        hoisted.length(), callback=lambda result: rx.console_log(hoisted[0])
+    )._to_event()
+
+    assert event.payload == {
+        code_arg: f'(({name}) => ({name}.length))(["a", "b"])',
+        "callback": (
+            f"(({name}) => ((_result) => {{addEvents([ReflexEvent("
+            f'"_call_function", {{function:(() => (console?.["log"]({name}?.at?.(0)))),'
+            f'callback:null}})])}}))(["a", "b"])'
+        ),
+    }
+
+
+def test_call_script_binds_hoisted_literals_interpolated_into_code(
+    hoisted_vars: dict[str, LiteralVar],
+) -> None:
+    """Code interpolating a hoisted literal keeps its var data, so it binds it."""
+    hoisted = Var.create(["a", "b"]).hoist()
+    name = str(hoisted)
+
+    event = rx.call_script(f"console.log({hoisted.length()})")._to_event()
+
+    assert event.payload == {
+        "javascript_code": (
+            f'(({name}) => (("console.log("+{name}.length+")")))(["a", "b"])'
+        ),
+        "callback": None,
+    }

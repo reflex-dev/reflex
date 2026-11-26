@@ -11,7 +11,7 @@ from reflex_base.constants import Dirs
 from reflex_base.event import Event
 from reflex_base.utils.exceptions import ClientStateConflictError, VarTypeError
 from reflex_base.utils.imports import ImportVar
-from reflex_base.vars.base import Var, VarData
+from reflex_base.vars.base import LiteralVar, Var, VarData
 from reflex_base.vars.function import FunctionVar
 
 import reflex as rx
@@ -620,6 +620,29 @@ def test_retrieve_with_callback_serializes_the_handler() -> None:
     assert args["var_name"] == '"counter"'
     assert "addEvents" in args["callback"]
     assert "got" in args["callback"]
+
+
+def test_retrieve_callback_binds_hoisted_literals(
+    hoisted_vars: dict[str, LiteralVar],
+) -> None:
+    """The browser runs the callback outside any module, so it binds them."""
+    hoisted = Var.create(["a", "b"]).hoist()
+    name = str(hoisted)
+
+    event = (
+        client_state(0, name="counter")
+        .retrieve(lambda result: rx.console_log(hoisted[0]))
+        ._to_event()
+    )
+
+    assert event.payload == {
+        "var_name": "counter",
+        "callback": (
+            f"(({name}) => ((_result) => {{addEvents([ReflexEvent("
+            f'"_call_function", {{function:(() => (console?.["log"]({name}?.at?.(0)))),'
+            f'callback:null}})])}}))(["a", "b"])'
+        ),
+    }
 
 
 def test_push_plain_value_uses_json_payload() -> None:

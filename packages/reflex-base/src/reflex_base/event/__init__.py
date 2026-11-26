@@ -2140,16 +2140,7 @@ def call_script(
     Returns:
         EventSpec: An event that will execute the client side javascript.
     """
-    callback_kwargs = {"callback": None}
-    if callback is not None:
-        callback_kwargs = {
-            "callback": str(
-                format.format_queue_events(
-                    callback,
-                    args_spec=lambda result: [result],
-                )
-            ),
-        }
+    callback_kwargs = {"callback": format._format_script_callback(callback)}
     if isinstance(javascript_code, str):
         # When there is VarData, include it and eval the JS code inline on the client.
         javascript_code, original_code = (
@@ -2181,16 +2172,7 @@ def call_function(
     Returns:
         EventSpec: An event that will execute the client side javascript.
     """
-    callback_kwargs = {"callback": None}
-    if callback is not None:
-        callback_kwargs = {
-            "callback": str(
-                format.format_queue_events(
-                    callback,
-                    args_spec=lambda result: [result],
-                ),
-            )
-        }
+    callback_kwargs = {"callback": format._format_script_callback(callback)}
 
     javascript_code = (
         Var(javascript_code) if isinstance(javascript_code, str) else javascript_code

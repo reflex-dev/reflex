@@ -1,0 +1,1 @@
+Add `LiteralVar.hoist()`, which moves a large literal into a module of its own so the compiled pages and components using it import it instead of each repeating it: `POSTS = rx.Var.create(posts).hoist()`.

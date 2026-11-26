@@ -12,7 +12,13 @@ from reflex_base.utils.format import format_library_name
 from reflex_base.utils.imports import ParsedImportDict
 from reflex_base.utils.serializers import serializer
 from reflex_base.vars import Var, get_unique_variable_name
-from reflex_base.vars.base import VarData, transform
+from reflex_base.vars.base import (
+    _HOISTED_LIBRARY_PREFIX,
+    _HOISTED_VARS,
+    VarData,
+    _hoisted_var_names,
+    transform,
+)
 
 if TYPE_CHECKING:
     from reflex_base.components.component import Component
@@ -199,6 +205,20 @@ def load_dynamic_serializer():
 
         component_imports = component._get_all_imports()
         compiler._apply_common_imports(component_imports)
+        # The browser evaluates the component outside any module, so it declares
+        # the hoisted literals it reads itself, with what they import.
+        hoisted_names = _hoisted_var_names(list(component_imports))
+        for name in hoisted_names:
+            component_imports.pop(_HOISTED_LIBRARY_PREFIX + name, None)
+            if var_data := _HOISTED_VARS[name]._get_all_var_data():
+                component_imports = utils.merge_imports(
+                    component_imports,
+                    {
+                        lib: list(fields)
+                        for lib, fields in var_data.imports
+                        if not lib.startswith(_HOISTED_LIBRARY_PREFIX)
+                    },
+                )
 
         imports = {}
         for lib, names in component_imports.items():
@@ -250,6 +270,9 @@ def load_dynamic_serializer():
                 bundled_declarations.append(
                     f"const {{{','.join(named_imports)}}} = {window_library}"
                 )
+        bundled_declarations.extend(
+            f"const {name} = {_HOISTED_VARS[name]!s};" for name in hoisted_names
+        )
         bundled_declarations.extend(rendered_components)
 
         module_code_lines = templates.dynamic_components_module_template(

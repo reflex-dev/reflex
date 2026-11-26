@@ -26,8 +26,8 @@ from reflex_base.utils.exceptions import (
     RouteValueError,
 )
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
-from reflex_base.vars.base import Var
-from reflex_base.vars.sequence import LiteralStringVar
+from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.sequence import ArrayVar, LiteralStringVar
 from reflex_components_core.base import Description, document
 from reflex_components_core.base.document import Links, Scripts
 from reflex_components_core.el.elements.metadata import Head, Link, Meta
@@ -37,6 +37,7 @@ import reflex as rx
 from reflex.compiler import compiler, utils
 from reflex.compiler.plugins import default_page_plugins
 from reflex.state import BaseState
+from reflex.testing import chdir
 from reflex.utils import prerequisites
 
 
@@ -2402,3 +2403,168 @@ def test_custom_code_may_declare_refs(auto_memoize: bool):
     assert any("const refs = {};" in code for _, code in memo_files)
     for code in modules:
         assert not _IMPORTS_REFS.search(code), code
+
+
+def test_compile_hoisted_vars(hoisted_vars: dict[str, LiteralVar]):
+    """The literals the emitted code imports, and those they hold, get a module."""
+    inner = Var.create(["a", "b"]).hoist()
+    outer = Var.create({"inner": inner}).hoist()
+    Var.create(["unused"]).hoist()
+    inner_library = f"$/utils/hoisted/{inner!s}"
+
+    files, imports = compiler.compile_hoisted_vars([
+        f'import {{{outer!s}}} from "$/utils/hoisted/{outer!s}"\n'
+    ])
+
+    hoisted_dir = prerequisites.get_web_dir() / "utils" / "hoisted"
+    assert files == sorted([
+        (
+            str(hoisted_dir / f"{inner!s}.js"),
+            f'\n\n\nexport const {inner!s} = ["a", "b"];\n',
+        ),
+        (
+            str(hoisted_dir / f"{outer!s}.js"),
+            (
+                f'\nimport {{{inner!s}}} from "{inner_library}"\n\n'
+                f'export const {outer!s} = ({{ ["inner"] : {inner!s} }});\n'
+            ),
+        ),
+    ])
+    assert imports == {inner_library: [ImportVar(tag=str(inner))]}
+
+
+def _compile_texts_app(
+    texts: ArrayVar[list[str]], root: Path, mocker: MockerFixture
+) -> dict[str, str]:
+    """Compile an app whose pages and memos render ``texts`` into a fresh ``.web``.
+
+    Args:
+        texts: The list the app renders.
+        root: The directory to compile the app in.
+        mocker: Fixture for avoiding frontend dependency installation.
+
+    Returns:
+        The code of every module the compile wrote, by its path in ``.web``.
+    """
+
+    @rx.memo
+    def text_count(items: ArrayVar[list[str]]) -> rx.Component:
+        return rx.el.span(items.length())
+
+    @rx.memo
+    def first_text() -> rx.Component:
+        return rx.el.span(texts[0])
+
+    def index() -> Component:
+        return rx.el.div(
+            rx.cond(texts.contains("b"), rx.el.p("has b")),
+            text_count(items=texts),
+            first_text(),
+        )
+
+    with chdir(root), RegistrationContext():
+        shutil.rmtree(prerequisites.get_web_dir(), ignore_errors=True)
+        app = rx.App(enable_state=False)
+        app.add_page(index, route="index")
+        app.add_page(lambda: rx.el.span(texts[1]), route="other")
+        mocker.patch.object(app, "_get_frontend_packages")
+        compiler.compile_app(app, use_rich=False)
+        web_dir = prerequisites.get_web_dir().resolve()
+    return {
+        path.relative_to(web_dir).as_posix(): path.read_text()
+        for path in sorted(web_dir.rglob("*"))
+        if path.suffix in {".js", ".jsx"}
+    }
+
+
+@pytest.mark.usefixtures("clean_registration_context", "preserve_memo_registries")
+def test_compile_app_emits_a_hoisted_literal_once(
+    tmp_path: Path,
+    mocker: MockerFixture,
+    hoisted_vars: dict[str, LiteralVar],
+):
+    """Pages and memos using a hoisted literal import the one module holding it.
+
+    Compiled without hoisting, the same app writes the same modules, each with
+    the literal written out where the hoisted one has its name and no import.
+
+    Args:
+        tmp_path: The temporary directory to compile both apps in.
+        mocker: Fixture for avoiding frontend dependency installation.
+        hoisted_vars: The emptied hoisted literal registry.
+    """
+    mocker.patch(
+        "reflex_base.config._get_config",
+        return_value=rx.Config(app_name="hoist_test", plugins=[]),
+    )
+    literal = Var.create(["only in the hoisted module", "b"])
+    hoisted = literal.hoist()
+    name = str(hoisted)
+    import_line = f'import {{{name}}} from "$/utils/hoisted/{name}"\n'
+
+    # One directory for both, as a compile may write its own into the output.
+    plain_modules = _compile_texts_app(literal, tmp_path, mocker)
+    hoisted_modules = _compile_texts_app(hoisted, tmp_path, mocker)
+
+    assert hoisted_modules.pop(f"utils/hoisted/{name}.js") == (
+        f'\n\n\nexport const {name} = ["only in the hoisted module", "b"];\n'
+    )
+    assert sorted(
+        path for path, code in hoisted_modules.items() if code.count(import_line) == 1
+    ) == [
+        "app/routes/[other]._index.jsx",
+        "app/routes/_index.jsx",
+        "app_components/tests/units/compiler/test_compiler.jsx",
+    ]
+    assert {
+        path: code.replace(import_line, "").replace(name, str(literal))
+        for path, code in hoisted_modules.items()
+    } == plain_modules
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_compile_app_prunes_hoisted_literals_no_longer_emitted(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    hoisted_vars: dict[str, LiteralVar],
+):
+    """A compile deletes the module of a literal its pages no longer render.
+
+    The literal stays registered, as a module-level constant would.
+
+    Args:
+        tmp_path: The temporary application directory.
+        monkeypatch: Fixture for selecting the application directory.
+        mocker: Fixture for avoiding frontend dependency installation.
+        hoisted_vars: The emptied hoisted literal registry.
+    """
+    monkeypatch.chdir(tmp_path)
+    mocker.patch(
+        "reflex_base.config._get_config",
+        return_value=rx.Config(app_name="hoist_prune_test", plugins=[]),
+    )
+    texts = Var.create(["a", "b"]).hoist()
+    render = [True]
+    app = rx.App(enable_state=False)
+    app.add_page(
+        lambda: rx.el.span(texts.length() if render[0] else "none"), route="index"
+    )
+    mocker.patch.object(app, "_get_frontend_packages")
+    web_dir = prerequisites.get_web_dir()
+    manifest = web_dir / utils._HOISTED_VAR_MANIFEST_FILENAME
+    module = web_dir / "utils" / "hoisted" / f"{texts!s}.js"
+
+    compiler.compile_app(app, use_rich=False)
+    assert module.is_file()
+    assert json.loads(manifest.read_text()) == [f"utils/hoisted/{texts!s}.js"]
+
+    render[0] = False
+    compiler.compile_app(app, dry_run=True, use_rich=False)
+    assert module.is_file()
+
+    compiler.compile_app(app, use_rich=False)
+    assert list(hoisted_vars) == [str(texts)]
+    assert not module.exists()
+    assert not module.parent.exists()
+    assert json.loads(manifest.read_text()) == []

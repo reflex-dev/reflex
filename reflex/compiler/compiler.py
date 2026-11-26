@@ -6,6 +6,7 @@ import collections
 import dataclasses
 import json
 import logging
+import re
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getattr_static, getmodule
 from pathlib import Path
@@ -41,7 +42,13 @@ from reflex_base.utils.imports import (
     ImportVar,
     ParsedImportDict,
 )
-from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.base import (
+    _HOISTED_LIBRARY_PREFIX,
+    _HOISTED_VARS,
+    LiteralVar,
+    Var,
+    _hoisted_var_names,
+)
 from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_core.base.app_wrap import AppWrap
 from reflex_components_core.base.fragment import Fragment
@@ -59,6 +66,11 @@ from reflex.utils.prerequisites import get_web_dir
 logger = logging.getLogger(__name__)
 
 RADIX_THEMES_STYLESHEET = "@radix-ui/themes/styles.css"
+
+# The library of a hoisted literal's module, in the import statements it renders.
+_HOISTED_IMPORT = re.compile(
+    rf'from "({re.escape(_HOISTED_LIBRARY_PREFIX)}hoisted_[0-9a-f]{{16}})"'
+)
 
 
 def _set_progress_total(
@@ -848,6 +860,43 @@ def compile_memo_components(
     return _compile_memo_components(memos)
 
 
+def compile_hoisted_vars(
+    emitted_code: Iterable[str],
+) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
+    """Compile a module for each hoisted literal the emitted code imports.
+
+    Only these and the literals they hold are written: the registry keeps every
+    literal a module of the process hoisted, which the current app may not use.
+
+    Args:
+        emitted_code: The code of every other file this compile writes.
+
+    Returns:
+        A list of ``(path, code)`` pairs (one per hoisted literal) alongside the
+        aggregated imports across all of these modules.
+    """
+    output_files: list[tuple[str, str]] = []
+    aggregate_imports: dict[str, list[ImportVar]] = {}
+    imported = {
+        library for code in emitted_code for library in _HOISTED_IMPORT.findall(code)
+    }
+    for name in sorted(_hoisted_var_names(imported)):
+        literal = _HOISTED_VARS[name]
+        var_data = literal._get_all_var_data()
+        imports = (
+            {lib: list(fields) for lib, fields in var_data.imports} if var_data else {}
+        )
+        output_files.append((
+            utils.get_hoisted_var_path(name),
+            templates.memo_single_function_template(
+                imports=utils.compile_imports(imports),
+                function={"name": name, "function": str(literal)},
+            ),
+        ))
+        _extend_imports_in_place(aggregate_imports, imports)
+    return output_files, aggregate_imports
+
+
 def purge_web_pages_dir():
     """Empty out .web/pages directory."""
     if not is_prod_mode() and environment.REFLEX_PERSIST_WEB_DIR.get():
@@ -1597,12 +1646,20 @@ def compile_app(
 
     progress.stop()
 
+    # Last, so every module importing a hoisted literal is rendered.
+    hoisted_var_files, hoisted_vars_imports = compile_hoisted_vars(
+        code for _, code in compile_results
+    )
+    compile_results.extend(hoisted_var_files)
+    all_imports = utils.merge_imports(all_imports, hoisted_vars_imports)
+
     if dry_run:
         return True
 
     # Delete memo files this compile no longer emits. Done here (not before the
     # dry-run return) so ``--dry`` never mutates ``.web`` or the manifest.
     utils.prune_stale_memo_files(path for path, _ in memo_component_files)
+    utils.prune_stale_hoisted_var_files(path for path, _ in hoisted_var_files)
     # A leftover ``.js`` module would win extensionless resolution of
     # ``$/utils/context`` over the ``.jsx`` file written below.
     Path(utils.get_context_path()).with_suffix(constants.Ext.JS).unlink(missing_ok=True)

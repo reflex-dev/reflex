@@ -29,6 +29,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import log
+from reflex_base.vars.base import _HOISTED_VARS, LiteralVar
 
 from reflex.app import App
 from reflex.istate.manager import StateManager
@@ -602,6 +603,17 @@ def preserve_memo_registries():
     finally:
         MEMOS.clear()
         MEMOS.update(memos)
+
+
+@pytest.fixture
+def hoisted_vars() -> Generator[dict[str, LiteralVar], None, None]:
+    """Empty the global hoisted literal registry for a test, then restore it.
+
+    Yields:
+        The emptied registry.
+    """
+    with mock.patch.dict(_HOISTED_VARS, clear=True):
+        yield _HOISTED_VARS
 
 
 @pytest.fixture

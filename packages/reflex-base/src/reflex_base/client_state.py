@@ -656,21 +656,11 @@ class ClientStateVar(Var):
             ValueError: If the ClientStateVar is not global.
         """
         self._require_global("retrieve the value")
-        callback_kwargs = {"callback": None}
-        if callback is not None:
-            callback_kwargs = {
-                "callback": str(
-                    format.format_queue_events(
-                        callback,
-                        args_spec=lambda result: [result],
-                    )
-                ),
-            }
         return server_side(
             "_client_state_get",
             inspect.signature(_client_state_get),
             var_name=self._state_name,
-            **callback_kwargs,
+            callback=format._format_script_callback(callback),
         )
 
     def push(self, value: Any) -> EventSpec:
