@@ -3662,7 +3662,9 @@ if TYPE_CHECKING:
 class EventDecorator(Protocol):
     """The decorator ``rx.event(...)`` returns."""
 
-    # A repeated @rx.event decorates the handler the inner one returned.
+    # A repeated @rx.event decorates the handler the inner decorator returned.
+    # A decorated state method read from its class also has type EventCallback.
+    # Type checkers can accept it here, and the runtime raises TypeError.
     @overload
     def __call__(self, func: EventCallback[*P]) -> EventCallback[*P]: ...
 
@@ -3771,6 +3773,7 @@ class EventNamespace:
         temporal: bool | None = None,
     ) -> EventDecorator: ...
 
+    # This overload has the same limitation for stacked decorators as EventDecorator.
     @overload
     def __new__(
         cls,
@@ -3812,6 +3815,11 @@ class EventNamespace:
         temporal: bool | None = None,
     ) -> "EventCallback | EventDecorator":
         """Wrap a function to be used as an event.
+
+        You can stack `@rx.event` on a function definition. Passing a decorated
+        state method read from its class raises TypeError even when a type
+        checker accepts it. To configure a trigger, chain event actions on the
+        method's handler.
 
         Args:
             func: The function to wrap.
