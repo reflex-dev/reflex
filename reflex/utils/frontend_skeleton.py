@@ -14,7 +14,11 @@ from reflex_base.plugins.embed import get_embed_plugin
 from reflex.compiler import templates
 from reflex.utils import net, path_ops
 from reflex.utils.path_ops import write_file
-from reflex.utils.prerequisites import get_project_hash, get_web_dir
+from reflex.utils.prerequisites import (
+    get_project_hash,
+    get_web_dir,
+    get_web_template_hash,
+)
 from reflex.utils.registry import get_npm_registry
 
 logger = logging.getLogger(__name__)
@@ -706,6 +710,7 @@ def init_reflex_json(project_hash: int | None):
     # Write the hash and version to the reflex json file.
     reflex_json = {
         "version": constants.Reflex.VERSION,
+        "web_template_hash": get_web_template_hash(),
         "project_hash": project_hash,
     }
     path_ops.update_json_file(get_web_dir() / constants.Reflex.JSON, reflex_json)

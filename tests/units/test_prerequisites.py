@@ -617,6 +617,179 @@ def test_initialize_web_directory_persists_package_json_to_root(tmp_path, monkey
     assert json.loads(root_pkg.read_text())["overrides"]["user-pkg"] == "2.0.0"
 
 
+@pytest.fixture
+def web_template(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> Generator[Path, None, None]:
+    """Point the web template at a small temporary tree.
+
+    Args:
+        tmp_path: Temporary test directory.
+        monkeypatch: Pytest monkeypatch fixture.
+
+    Yields:
+        The temporary web template directory.
+    """
+    template_dir = tmp_path / "template"
+    (template_dir / "utils" / "helpers").mkdir(parents=True)
+    (template_dir / "utils" / "state.js").write_text("export const state = 1;\n")
+    (template_dir / "utils" / "helpers" / "range.js").write_text(
+        "export const range = 1;\n"
+    )
+    monkeypatch.setattr(constants.Templates.Dirs, "WEB_TEMPLATE", template_dir)
+    prerequisites.get_web_template_hash.cache_clear()
+    yield template_dir
+    prerequisites.get_web_template_hash.cache_clear()
+
+
+def _rehash_web_template() -> str:
+    """Hash the web template again, as a new process would.
+
+    Returns:
+        The fresh web template hash.
+    """
+    prerequisites.get_web_template_hash.cache_clear()
+    return prerequisites.get_web_template_hash()
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        pytest.param(
+            lambda t: (t / "utils" / "helpers" / "range.js").write_text(
+                "export const range = 2;\n"
+            ),
+            id="changed",
+        ),
+        pytest.param(
+            lambda t: (t / "utils" / "helpers" / "observer.js").write_text(
+                "export const observe = 1;\n"
+            ),
+            id="added",
+        ),
+        pytest.param(
+            lambda t: (t / "utils" / "helpers" / "range.js").unlink(), id="removed"
+        ),
+        pytest.param(
+            lambda t: (t / "utils" / "helpers" / "range.js").rename(
+                t / "utils" / "range.js"
+            ),
+            id="moved",
+        ),
+        pytest.param(
+            lambda t: (
+                (t / "utils" / "state.js").write_text("export const state = 1;"),
+                (t / "utils" / "helpers" / "range.js").write_text(
+                    "\nexport const range = 1;\n"
+                ),
+            ),
+            id="bytes-moved-between-files",
+        ),
+    ],
+)
+def test_web_template_hash_tracks_template(
+    web_template: Path, mutate: Callable[[Path], object]
+):
+    """The hash is stable for an unchanged template and changes with any edit.
+
+    Args:
+        web_template: The temporary web template directory.
+        mutate: Applies one edit to the template.
+    """
+    original = prerequisites.get_web_template_hash()
+    assert _rehash_web_template() == original
+
+    mutate(web_template)
+
+    assert _rehash_web_template() != original
+
+
+def test_needs_reinit_tracks_version_and_web_template(
+    web_template: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """The web dir is reinitialized when the Reflex version or the web template changes.
+
+    Args:
+        web_template: The temporary web template directory.
+        tmp_path: Temporary test directory.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("REFLEX_DIR", str(tmp_path))
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    monkeypatch.setattr(prerequisites, "get_web_dir", lambda: web_dir)
+    reflex_json = web_dir / constants.Reflex.JSON
+    up_to_date = {
+        "version": constants.Reflex.VERSION,
+        "web_template_hash": prerequisites.get_web_template_hash(),
+    }
+
+    reflex_json.write_text(json.dumps(up_to_date))
+    assert not prerequisites.needs_reinit()
+
+    reflex_json.write_text(json.dumps({**up_to_date, "version": "0.0.0"}))
+    assert prerequisites.needs_reinit()
+
+    # Written by a Reflex that did not record the template.
+    reflex_json.write_text(json.dumps({"version": constants.Reflex.VERSION}))
+    assert prerequisites.needs_reinit()
+
+    reflex_json.write_text(json.dumps(up_to_date))
+    (web_template / "utils" / "helpers" / "range.js").write_text(
+        "export const range = 2;\n"
+    )
+    _rehash_web_template()
+    assert prerequisites.needs_reinit()
+
+
+def test_initialize_web_directory_refreshes_changed_web_template(
+    web_template: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """A template edit that keeps the version still reaches an existing web dir.
+
+    Args:
+        web_template: The temporary web template directory.
+        tmp_path: Temporary test directory.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("REFLEX_DIR", str(tmp_path))
+    web_dir = tmp_path / constants.Dirs.WEB
+    _patch_web_dir(monkeypatch, web_dir)
+    monkeypatch.setattr(prerequisites, "get_web_dir", lambda: web_dir)
+    for name in _SKELETON_INITIALIZERS:
+        monkeypatch.setattr(frontend_skeleton, name, lambda: None)
+    reflex_json = web_dir / constants.Reflex.JSON
+
+    with chdir(tmp_path):
+        frontend_skeleton.initialize_web_directory()
+        project_hash = json.loads(reflex_json.read_text())["project_hash"]
+        assert not prerequisites.needs_reinit()
+
+        (web_template / "utils" / "helpers" / "range.js").write_text(
+            "export const range = 2;\n"
+        )
+        (web_template / "utils" / "helpers" / "observer.js").write_text(
+            "export const observe = 1;\n"
+        )
+        template_hash = _rehash_web_template()
+        assert prerequisites.needs_reinit()
+
+        frontend_skeleton.initialize_web_directory()
+
+    assert (web_dir / "utils" / "helpers" / "range.js").read_text() == (
+        "export const range = 2;\n"
+    )
+    assert (web_dir / "utils" / "helpers" / "observer.js").read_text() == (
+        "export const observe = 1;\n"
+    )
+    assert json.loads(reflex_json.read_text()) == {
+        "version": constants.Reflex.VERSION,
+        "web_template_hash": template_hash,
+        "project_hash": project_hash,
+    }
+    assert not prerequisites.needs_reinit()
+
+
 def test_sync_root_lockfile_to_web_prune_false_preserves_web_copy(
     tmp_path, monkeypatch
 ):

@@ -1,0 +1,1 @@
+`reflex run`, `export` and `compile` reinitialize an existing `.web` directory when the frontend template changed without a version bump, e.g. in an editable install, instead of building with stale or missing template files.

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import contextlib
+import functools
+import hashlib
 import importlib
 import importlib.metadata
 import inspect
@@ -735,7 +737,7 @@ def needs_reinit() -> bool:
     if not get_web_dir().exists():
         return True
 
-    if not _is_app_compiled_with_same_reflex_version():
+    if not _is_web_dir_up_to_date():
         return True
 
     if constants.IS_WINDOWS:
@@ -751,12 +753,38 @@ def needs_reinit() -> bool:
     return False
 
 
-def _is_app_compiled_with_same_reflex_version() -> bool:
+def _is_web_dir_up_to_date() -> bool:
     json_file = get_web_dir() / constants.Reflex.JSON
     if not json_file.exists():
         return False
-    app_version = json.loads(json_file.read_text()).get("version")
-    return app_version == constants.Reflex.VERSION
+    reflex_json = json.loads(json_file.read_text())
+    return (
+        reflex_json.get("version") == constants.Reflex.VERSION
+        and reflex_json.get("web_template_hash") == get_web_template_hash()
+    )
+
+
+@functools.cache
+def get_web_template_hash() -> str:
+    """Hash the paths and contents of the frontend template copied into the web directory.
+
+    The version alone misses template changes that keep it, e.g. in an editable
+    install or a fork, which would leave the web directory with stale files.
+
+    Returns:
+        The hex digest of the template tree, computed once per process.
+    """
+    template_dir = constants.Templates.Dirs.WEB_TEMPLATE
+    digest = hashlib.sha256()
+    for path in sorted(template_dir.rglob("*")):
+        if not path.is_file():
+            continue
+        content = path.read_bytes()
+        digest.update(
+            f"{path.relative_to(template_dir).as_posix()}\0{len(content)}\0".encode()
+        )
+        digest.update(content)
+    return digest.hexdigest()
 
 
 def ensure_reflex_installation_id() -> int | None:
