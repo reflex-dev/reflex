@@ -6,6 +6,7 @@ Tests precompressed assets against a real prod build served via AppHarnessProd.
 from __future__ import annotations
 
 import re
+import sys
 from collections.abc import Generator
 from pathlib import Path
 
@@ -136,6 +137,8 @@ def linked_stylesheet_app(
     """
     if app_harness_env is not AppHarnessProd:
         pytest.skip("build pipeline checks are prod-only")
+    if sys.platform == "win32":
+        pytest.skip("symlinks need a privilege on Windows")
 
     root = tmp_path_factory.mktemp("linked_stylesheet")
     # Without Tailwind, which rewrites the urls of the stylesheets it imports
