@@ -389,7 +389,21 @@ def test_page_stylesheets(tmp_path: Path, mocker: MockerFixture):
         "\n"
         "export default Component;\n"
     )
-    assert "export const links" not in (compiled["plain"].output_code or "")
+    assert compiled["plain"].output_code == (
+        'import {Fragment,useEffect} from "react"\n'
+        'import {jsx} from "@emotion/react"\n'
+        "\n\n\n\n\n"
+        "function Component() {\n"
+        "\n\n"
+        "  return (\n"
+        '    jsx(Fragment,{},jsx("div",{},"plain"),jsx("title",{},"Plain"),'
+        'jsx("meta",{content:"favicon.ico",property:"og:image"},))\n'
+        "  )\n"
+        "}\n"
+        'Component.displayName = "Component(plain)";\n'
+        "\n"
+        "export default Component;\n"
+    )
     assert (web_dir / "styles" / "shared.css").read_text() == ".shared { color: blue; }"
     assert (web_dir / "styles" / "pages" / "pricing.css").read_text() == (
         ".pricing { color: red; }"
