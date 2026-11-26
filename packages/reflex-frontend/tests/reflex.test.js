@@ -2,11 +2,17 @@
  * `reflex` is the API scripts reach Reflex through. These pin each member and
  * that it reads the runtime at call time.
  */
-import { expect, test, vi } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 
 import { eventLoop } from "$/utils/context-registry";
 import { reflex } from "$/utils/reflex";
 import { refs } from "$/utils/state";
+
+const unmountedAddEvents = eventLoop.addEvents;
+
+afterEach(() => {
+  eventLoop.addEvents = unmountedAddEvents;
+});
 
 test("ref finds a component by id, named as format_ref names it", () => {
   const cases = {
@@ -36,13 +42,14 @@ test("addEvents dispatches through the event loop mounted at call time", () => {
 });
 
 test("event builds the event addEvents takes", () => {
-  expect(reflex.event("state.my_state.save", { value: 3 })).toEqual({
-    name: "state.my_state.save",
+  // A script gets the name from Python, here as
+  // f"{SearchState.get_full_name()}.save" builds it for a state in __main__.
+  const save = "reflex___state____state.__main______search_state.save";
+  expect(reflex.event(save, { value: 3 })).toEqual({
+    name: save,
     payload: { value: 3 },
   });
-  expect(reflex.event("state.my_state.reset")).toEqual({
-    name: "state.my_state.reset",
-  });
+  expect(reflex.event(save)).toEqual({ name: save });
 });
 
 test("is frozen, so a script cannot replace a member for everyone", () => {

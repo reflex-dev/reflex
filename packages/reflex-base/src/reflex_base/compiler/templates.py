@@ -1020,7 +1020,9 @@ export default defineConfig((config) => ({{
       }},
     ],
     // utils/script_modules/<package> links to the app's package: its files
-    // resolve their imports from there, so packages come from .web.
+    // resolve their imports from there, so packages come from .web. Not
+    // scoped to that link: Vite resolves stylesheet imports and dependencies
+    // without plugins, so it applies to links in node_modules too.
     preserveSymlinks: true,
   }},
 }}));"""

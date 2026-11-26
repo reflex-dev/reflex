@@ -837,12 +837,13 @@ def script_app(
 
     Yields:
         The package's directory, the output of the stand-in, which the test
-        fills, and the paths each of its runs read.
+        fills (it starts with no link loops), and the paths each of its runs
+        read.
     """
     clean_registration_context._set_config(rx.Config(app_name="app"))
     monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path / ".web")
     monkeypatch.syspath_prepend(str(tmp_path))
-    report: dict = {}
+    report: dict = {"loops": []}
     runs: list[list[Path]] = []
 
     def read_script_modules(paths: list[Path]) -> dict:
@@ -1102,6 +1103,39 @@ def test_compile_script_modules_errors(
     assert str(error.value) == fill(message)
 
 
+def test_compile_script_modules_rejects_a_link_loop(
+    script_app: tuple[Path, dict, list[list[Path]]],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A file that reaches itself again through a directory link names the link and how to avoid it.
+
+    Args:
+        script_app: the app package, the stand-in script's output and its runs.
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    package, report, _ = script_app
+    party = package / "scripts" / "party.js"
+    link = package / "scripts" / "loop"
+    _import_script_module(monkeypatch, "app.scripts.party", party, {"celebrate"})
+    report.update({
+        "modules": {str(party): _script_exports([party], ["celebrate"])},
+        "imports": {},
+        "errors": [],
+        "loops": [
+            {"importer": str(party), "file": str(link / "party.js"), "link": str(link)}
+        ],
+    })
+    with pytest.raises(ReflexRuntimeError) as error:
+        utils.compile_script_modules(_app_modules())
+    assert str(error.value) == (
+        f"The JavaScript file {party} imports {link / 'party.js'} through {link}, "
+        "a link back to a directory its imports were already in, so the bundler "
+        "would import the same files again one link deeper, without end. Import "
+        f"the file by a path that does not go through {link}, or replace {link} "
+        "with a real directory."
+    )
+
+
 @pytest.mark.parametrize("linked", ["module", "import"])
 def test_compile_script_modules_reads_links_where_they_are(
     script_app: tuple[Path, dict, list[list[Path]]],
@@ -1237,6 +1271,27 @@ def _write_stand_in(web_dir: Path, output: str) -> None:
     (web_dir / "script-modules.js").write_text(f"process.stdout.write({output});\n")
 
 
+def test_read_script_modules_without_a_runtime(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Without Node.js or Bun to run the script, the error names both.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
+    monkeypatch.setattr(utils.path_ops, "get_node_path", lambda: None)
+    monkeypatch.setattr(utils.path_ops, "get_bun_path", lambda: None)
+    with pytest.raises(FileNotFoundError) as error:
+        utils._read_script_modules([Path("/app/a.js")])
+    assert str(error.value) == (
+        "Node.js or Bun not found: Reflex runs one to read the JavaScript modules "
+        "the app imports from Python. You might need to rerun `reflex init` or "
+        "install either."
+    )
+
+
 def test_read_script_modules(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     """The script runs in .web on the modules, and its failure says how to recover.
 
@@ -1249,7 +1304,7 @@ def test_read_script_modules(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(utils, "get_web_dir", lambda: web_dir)
     _write_stand_in(
         web_dir,
-        "JSON.stringify({ format: 1, modules: {}, errors: [],\n"
+        "JSON.stringify({ format: 1, modules: {}, errors: [], loops: [],\n"
         "  imports: { [process.cwd()]: process.argv.slice(2) } })",
     )
     paths = [Path("/app/a.js"), Path("/app/b.ts")]
@@ -1258,6 +1313,7 @@ def test_read_script_modules(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         "modules": {},
         "imports": {str(web_dir): [str(path) for path in paths]},
         "errors": [],
+        "loops": [],
     }
     (web_dir / "script-modules.js").write_text(
         'process.stderr.write("Error: boom\\n"); process.exit(3);\n'
@@ -1282,15 +1338,20 @@ def test_read_script_modules(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         "JSON.stringify({ modules: {}, imports: {}, errors: [] })",
         "JSON.stringify({ format: 2, modules: {}, imports: {}, errors: [] })",
         # The right version, of another shape.
-        "JSON.stringify({ format: 1, modules: {}, imports: {} })",
+        "JSON.stringify({ format: 1, modules: {}, imports: {}, loops: [] })",
+        "JSON.stringify({ format: 1, modules: {}, imports: {}, errors: [] })",
         (
-            "JSON.stringify({ format: 1, imports: {}, errors: [],\n"
+            "JSON.stringify({ format: 1, imports: {}, errors: [], loops: [],\n"
             '  modules: { "/app/a.js": { files: [1], functions: [], values: [],\n'
             "    exportsAll: false } } })"
         ),
         (
-            "JSON.stringify({ format: 1, modules: {}, imports: {},\n"
+            "JSON.stringify({ format: 1, modules: {}, imports: {}, loops: [],\n"
             '  errors: [{ file: "/app/a.js", line: "3", column: 1, message: "" }] })'
+        ),
+        (
+            "JSON.stringify({ format: 1, modules: {}, imports: {}, errors: [],\n"
+            '  loops: [{ importer: "/app/a.js", file: "/app/l/a.js" }] })'
         ),
     ],
     ids=[
@@ -1298,8 +1359,10 @@ def test_read_script_modules(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         "no-format",
         "format-2",
         "no-errors",
+        "no-loops",
         "file-not-a-string",
         "line-not-a-number",
+        "loop-without-link",
     ],
 )
 def test_read_script_modules_rejects_output_of_another_shape(
@@ -1356,6 +1419,45 @@ def test_read_script_modules_contract(tmp_path: Path, monkeypatch: pytest.Monkey
     assert report["errors"] == [
         {"file": str(broken), "line": 1, "column": 14, "message": "Unexpected token"}
     ]
+    assert report["loops"] == []
+
+
+def test_read_script_modules_reports_a_link_loop(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, windows_platform: bool
+):
+    """The real script reports a file that reaches itself again through a directory link.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+        monkeypatch: pytest monkeypatch fixture.
+        windows_platform: Whether symlinks require Windows privileges.
+    """
+    if windows_platform:
+        pytest.skip("Symlinks require additional privileges on Windows")
+    _require_node(packages=True)
+    monkeypatch.setattr(
+        utils, "get_web_dir", lambda: constants.Templates.Dirs.WEB_TEMPLATE
+    )
+    directory = tmp_path.resolve()
+    party, link = directory / "party.js", directory / "loop"
+    party.write_text('import "./loop/party.js";\nexport function go() {}\n')
+    link.symlink_to(directory)
+    assert utils._read_script_modules([party]) == {
+        "format": 1,
+        "modules": {
+            str(party): {
+                "files": [str(party)],
+                "functions": ["go"],
+                "values": [],
+                "exportsAll": False,
+            }
+        },
+        "imports": {str(party): []},
+        "errors": [],
+        "loops": [
+            {"importer": str(party), "file": str(link / "party.js"), "link": str(link)}
+        ],
+    }
 
 
 def test_link_directory(tmp_path: Path, windows_platform: bool):

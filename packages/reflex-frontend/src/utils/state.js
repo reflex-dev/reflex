@@ -985,7 +985,11 @@ export const applyEvent = async (event, socket, navigate, params) => {
   }
 
   if (event.name === "_call_js") {
-    // processEvent applies a module call once its module has settled.
+    // processEvent applies a module call once its module has settled, but a
+    // caller of this exported function may not. A settled module's function
+    // runs before anything is awaited, so the next event sees what it did.
+    const load = pendingModuleLoad(event);
+    if (load) await load;
     try {
       callModuleFunction(event.payload);
     } catch (e) {

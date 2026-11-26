@@ -347,6 +347,14 @@ class _ScriptSyntaxError(TypedDict):
     message: str
 
 
+class _ScriptLinkLoop(TypedDict):
+    """An import of a file that reaches itself again through a directory link."""
+
+    importer: str
+    file: str
+    link: str
+
+
 class _ScriptModulesReport(TypedDict):
     """What ``script-modules.js`` prints."""
 
@@ -356,6 +364,7 @@ class _ScriptModulesReport(TypedDict):
     # Per script or stylesheet, the specifiers it imports that are not local files.
     imports: dict[str, list[str]]
     errors: list[_ScriptSyntaxError]
+    loops: list[_ScriptLinkLoop]
 
 
 def _run_web_script(
@@ -370,8 +379,18 @@ def _run_web_script(
 
     Returns:
         The finished process, with its output.
+
+    Raises:
+        FileNotFoundError: If neither Node.js nor Bun is installed to run it.
     """
     runtime = path_ops.get_node_path() or path_ops.get_bun_path()
+    if runtime is None:
+        msg = (
+            "Node.js or Bun not found: Reflex runs one to read the JavaScript "
+            "modules the app imports from Python. You might need to rerun "
+            "`reflex init` or install either."
+        )
+        raise FileNotFoundError(msg)
     return subprocess.run(
         [str(runtime), script, *map(str, paths)],
         cwd=get_web_dir(),
@@ -426,9 +445,11 @@ def _read_script_modules(paths: Sequence[Path]) -> _ScriptModulesReport:
 
     Returns:
         Each module's files and exports, each script's and stylesheet's
-        imports, and the first syntax error of each file.
+        imports, the first syntax error of each file, and each import of a
+        file that reaches itself again through a directory link.
 
     Raises:
+        FileNotFoundError: If neither Node.js nor Bun is installed to run it.
         ReflexRuntimeError: If the script fails, or prints output of another
             shape, as one that another Reflex version left in ``.web`` can.
     """
@@ -562,9 +583,10 @@ def compile_script_modules(
         ``write_script_stubs``; and what was read of each module, by its file.
 
     Raises:
-        ReflexRuntimeError: If a file does not parse, and as the checks this
-            calls do, if Python uses a name a module does not export as a
-            function, or a module reaches a file outside the app's package.
+        ReflexRuntimeError: If a file does not parse, or reaches itself again
+            through a directory link, and as the checks this calls do, if
+            Python uses a name a module does not export as a function, or a
+            module reaches a file outside the app's package.
     """
     web_dir = get_web_dir()
     index = str(web_dir / (constants.Dirs.SCRIPTS_PATH + constants.Ext.JS))
@@ -583,6 +605,17 @@ def compile_script_modules(
             f"Syntax error at {error['file']}:{error['line']}:{error['column']}: "
             f"{error['message']}. Fix the code there: the app imports this file "
             "from Python, directly or through another JavaScript module."
+        )
+        raise ReflexRuntimeError(msg)
+    if report["loops"]:
+        loop = report["loops"][0]
+        msg = (
+            f"The JavaScript file {loop['importer']} imports {loop['file']} "
+            f"through {loop['link']}, a link back to a directory its imports were "
+            "already in, so the bundler would import the same files again one link "
+            "deeper, without end. Import the file by a path that does not go "
+            f"through {loop['link']}, or replace {loop['link']} with a real "
+            "directory."
         )
         raise ReflexRuntimeError(msg)
     modules_dir = web_dir / constants.Dirs.SCRIPT_MODULES_PATH
