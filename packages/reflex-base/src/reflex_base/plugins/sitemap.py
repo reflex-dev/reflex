@@ -4,7 +4,7 @@ import datetime
 import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Literal, NotRequired, TypedDict
 from xml.etree.ElementTree import Element, SubElement, indent, tostring
@@ -296,7 +296,8 @@ def _public_file_path(option: str, path: str) -> str:
         ValueError: If the path names no file or leaves the public directory.
     """
     normalized = PurePosixPath(path.strip("/"))
-    if ".." in normalized.parts:
+    # Path honors backslashes and drives on Windows, which PurePosixPath does not see.
+    if ".." in normalized.parts or "\\" in path or PureWindowsPath(normalized).drive:
         msg = f"SitemapPlugin {option} must stay in the public directory, got {path!r}."
         raise ValueError(msg)
     if not normalized.name:
@@ -328,10 +329,13 @@ class SitemapPlugin(PluginBase):
         """Normalize the paths, which must name different files.
 
         Raises:
-            ValueError: If both paths name the same file.
+            ValueError: If index_sitemaps come without index_path, or both paths name the same file.
         """
         object.__setattr__(self, "path", _public_file_path("path", self.path))
         if self.index_path is None:
+            if self.index_sitemaps:
+                msg = "SitemapPlugin index_sitemaps requires index_path."
+                raise ValueError(msg)
             return
         object.__setattr__(
             self, "index_path", _public_file_path("index_path", self.index_path)

@@ -892,6 +892,21 @@ def test_sitemap_plugin_normalizes_paths():
             ),
         ),
         (
+            {"path": "sitemaps\\..\\..\\sitemap.xml"},
+            (
+                "SitemapPlugin path must stay in the public directory, "
+                "got 'sitemaps\\\\..\\\\..\\\\sitemap.xml'."
+            ),
+        ),
+        (
+            {"index_path": "C:/index.xml"},
+            "SitemapPlugin index_path must stay in the public directory, got 'C:/index.xml'.",
+        ),
+        (
+            {"index_sitemaps": ["https://cms.example.com/sitemap.xml"]},
+            "SitemapPlugin index_sitemaps requires index_path.",
+        ),
+        (
             {"index_path": "/sitemap.xml"},
             (
                 "SitemapPlugin index_path must name a file other than the sitemap "
@@ -908,7 +923,7 @@ def test_sitemap_plugin_normalizes_paths():
     ],
 )
 def test_sitemap_plugin_rejects_paths(kwargs, message):
-    """An empty path, one leaving public, or an index in the sitemap's place is an error."""
+    """A path naming no file or leaving public, or a misconfigured index, is an error."""
     with pytest.raises(ValueError) as err:
         SitemapPlugin(**kwargs)
     assert str(err.value) == message
