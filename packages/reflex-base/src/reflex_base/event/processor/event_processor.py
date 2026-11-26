@@ -30,6 +30,8 @@ from reflex_base.event.processor.blocking import (
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.event.processor.timeout import DrainTimeoutManager
 from reflex_base.registry import RegisteredEventHandler, RegistrationContext
+from reflex_base.session import SessionToken
+from reflex_base.utils.compat import MISSING_TYPE
 
 logger = logging.getLogger(__name__)
 
@@ -310,6 +312,7 @@ class EventProcessor:
 
         self._root_context = EventContext(
             token="",
+            session_token=SessionToken.SYSTEM,
             # Belongs to no event: the events forked from it are top-level.
             txid="",
             parent_txid=None,
@@ -513,6 +516,8 @@ class EventProcessor:
         event: Event,
         ev_ctx: EventContext | None = None,
         request_id: str | None = None,
+        *,
+        session_token: SessionToken | MISSING_TYPE | None = dataclasses.MISSING,
     ) -> EventFuture:
         """Enqueue an event to be processed.
 
@@ -524,6 +529,7 @@ class EventProcessor:
                 handler yields or returns are sent back to the caller and the
                 request is completed exactly once. Applies to a context created
                 here, not to an ``ev_ctx`` passed in.
+            session_token: The session authorizing the event, or omitted to inherit it.
 
         Returns:
             An EventFuture that resolves to the result of the associated task.
@@ -537,7 +543,10 @@ class EventProcessor:
         if ev_ctx is None:
             try:
                 ev_ctx = EventContext.get().fork(
-                    token=token, router_data=event.router_data, request_id=request_id
+                    token=token,
+                    router_data=event.router_data,
+                    request_id=request_id,
+                    session_token=session_token,
                 )
             except LookupError as le:
                 if self._root_context is not None:
@@ -545,6 +554,7 @@ class EventProcessor:
                         token=token,
                         router_data=event.router_data,
                         request_id=request_id,
+                        session_token=session_token,
                     )
                 else:
                     msg = "Event processor is not running, call .start(...) first."
@@ -623,6 +633,8 @@ class EventProcessor:
         self,
         token: str,
         event: Event,
+        *,
+        session_token: SessionToken | MISSING_TYPE | None = dataclasses.MISSING,
     ) -> AsyncGenerator[Mapping[str, Any]]:
         """Enqueue an event and yield the deltas its chain emits for ``token``.
 
@@ -641,6 +653,7 @@ class EventProcessor:
         Args:
             token: The client token associated with the event.
             event: The event to be enqueued.
+            session_token: The session authorizing the event, or omitted to inherit it.
 
         Yields:
             Deltas for the token emitted by the event handler and the events it chains.
@@ -665,17 +678,19 @@ class EventProcessor:
                 # go to the client the usual way.
                 await root.emit_delta_impl(token, delta)
 
+        try:
+            parent_context = EventContext.get()
+        except LookupError:
+            parent_context = root
         task_future = await self.enqueue(
             token,
             event,
-            # A fresh context rather than a copy of the root, which has no txid:
-            # this event needs one of its own, so the events it chains find its
-            # future and concurrent streams stay apart. As a top-level event,
-            # it has no parent.
-            ev_ctx=type(root)(
-                token=token,
-                state_manager=root.state_manager,
-                enqueue_impl=root.enqueue_impl,
+            ev_ctx=dataclasses.replace(
+                parent_context.fork(
+                    token=token,
+                    router_data=event.router_data,
+                    session_token=session_token,
+                ),
                 emit_delta_impl=_emit_delta_impl,
                 emit_event_impl=root.emit_event_impl,
                 middleware=root.middleware,
@@ -817,7 +832,15 @@ class EventProcessor:
             f"{key[1]}, superseded by a newer invocation."
         )
         for previous in slot.values():
-            previous.cancel()
+            task = self._tasks.get(previous.txid)
+            if task is not None and task.done() and not previous.done():
+                # The run finished, and its done callback has yet to resolve
+                # the future with its outcome: only the events it chained
+                # are left to supersede.
+                for child in previous.children:
+                    child.cancel()
+            else:
+                previous.cancel()
         slot.clear()
 
     def _on_future_done(self, future: EventFuture) -> None:  # type: ignore[override]
@@ -1192,6 +1215,12 @@ class EventProcessor:
         else:
             task_ctx = task.get_context().run(EventContext.get)
         self._tasks.pop(task_ctx.txid, None)
+        future = self._futures.get(task_ctx.txid)
+        # Before the next event starts: a handler started eagerly below can
+        # supersede this one, which must not cancel a future still unresolved.
+        handling_exception = task.done() and self._resolve_future(
+            task, task_ctx, future
+        )
         # Chain the next sequential event for this token if applicable.
         token_queue = self._token_queues.get(task_ctx.token)
         if token_queue and token_queue[0][0].ctx.txid == task_ctx.txid:
@@ -1200,8 +1229,7 @@ class EventProcessor:
                 self._dispatch_next_for_token(task_ctx.token)
             else:
                 del self._token_queues[task_ctx.token]
-        future = self._futures.get(task_ctx.txid)
-        if task.done() and self._resolve_future(task, task_ctx, future):
+        if handling_exception:
             return
         if future is not None:
             # The task is gone; clean up now in case the future resolved
@@ -1236,6 +1264,10 @@ class EventProcessor:
                 with contextlib.suppress(BaseException):
                     # Trigger the future to avoid warnings if the caller didn't wait.
                     future.result()
+                if future.awaited:
+                    # The caller awaiting the event received the exception:
+                    # reporting is its failure path's, if it does not catch it.
+                    return False
             telemetry.send_error(ex, context="backend")
             if (
                 not task.get_name().startswith("reflex_backend_exception_handler|")

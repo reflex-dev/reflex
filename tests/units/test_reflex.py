@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import logging
 import os
 import select
 import signal
@@ -19,6 +20,7 @@ import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
 from reflex_base.environment import environment
+from reflex_base.utils import log
 
 from reflex import reflex
 from reflex.testing import DEFAULT_TIMEOUT
@@ -29,6 +31,7 @@ _CLI_STARTUP_DENIED_MODULES = frozenset({
     "fastapi",
     "granian",
     "httpx",
+    "httpx2",
     "numpy",
     "pandas",
     "plotly",
@@ -251,6 +254,42 @@ def test_run_prod_sends_telemetry_synchronously(
     queued.assert_not_called()
     calls.send.assert_called_once_with("run-prod", config.telemetry_enabled)
     assert [name for name, _args, _kwargs in calls.mock_calls] == ["send", "serve"]
+
+
+@pytest.mark.parametrize(
+    ("running_mode", "generated"),
+    [
+        (constants.RunningMode.BACKEND_ONLY, True),
+        (constants.RunningMode.FRONTEND_ONLY, False),
+    ],
+)
+def test_run_exports_secret_key_before_backend_starts(
+    mocker, monkeypatch, running_mode: constants.RunningMode, generated: bool
+):
+    """Generate the secret key in the run process, so backend workers inherit it.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        monkeypatch: The environment override fixture.
+        running_mode: The parts of the app to run.
+        generated: Whether the run must export a secret key.
+    """
+    from reflex.utils import exec
+
+    generated_key = environment.REFLEX_GENERATED_SECRET_KEY.name
+    monkeypatch.setenv("REFLEX_SECRET_KEY", "unset")
+    monkeypatch.delenv("REFLEX_SECRET_KEY")
+    monkeypatch.setenv(generated_key, "unset")
+    monkeypatch.delenv(generated_key)
+    monkeypatch.setenv("REFLEX_ENV_MODE", "dev")
+    mocker.patch.object(reflex, "get_config")
+    # Stop before the servers start; the key must already be exported.
+    mocker.patch.object(exec, "output_system_info", side_effect=SystemExit)
+
+    with pytest.raises(SystemExit):
+        reflex._run(running_mode=running_mode)
+
+    assert (generated_key in os.environ) is generated
 
 
 def test_cloud_commands_registered():
@@ -1422,7 +1461,6 @@ def test_run_uses_config_ports_only_for_the_running_side(
 )
 def test_run_rejects_a_port_flag_for_the_side_that_does_not_run(
     mocker: MockerFixture,
-    caplog: pytest.LogCaptureFixture,
     argv: list[str],
     message: str,
 ):
@@ -1430,7 +1468,6 @@ def test_run_rejects_a_port_flag_for_the_side_that_does_not_run(
 
     Args:
         mocker: The pytest-mock fixture.
-        caplog: The pytest log capture fixture.
         argv: Extra ``reflex run`` arguments.
         message: The expected error message.
     """
@@ -1441,7 +1478,7 @@ def test_run_rejects_a_port_flag_for_the_side_that_does_not_run(
     result = click.testing.CliRunner().invoke(reflex.cli, ["run", *argv])
 
     assert result.exit_code == 1
-    assert message in caplog.text
+    assert result.output == f"{message}\n"
 
 
 @pytest.mark.parametrize(
@@ -1495,6 +1532,27 @@ def test_db_commands_run_without_sqlmodel(
 
     assert result.exit_code == 1, result.output
     assert "pip install reflex[db]" not in caplog.text
+
+
+def test_cli_enables_managed_logging():
+    """Invoking the CLI in-process switches this process to managed logging."""
+    result = click.testing.CliRunner().invoke(reflex.cli, ["db", "--help"])
+
+    assert result.exit_code == 0, result.output
+    assert os.environ.get(log._MANAGED_ENV_VAR) == "true"
+    assert logging.getLogger("reflex").propagate is False
+
+
+def test_managed_logging_does_not_leak_into_the_next_test():
+    """A test after an in-process CLI invocation starts without managed logging.
+
+    Runs right after test_cli_enables_managed_logging, in file order.
+    """
+    reflex_logger = logging.getLogger("reflex")
+
+    assert os.environ.get(log._MANAGED_ENV_VAR) is None
+    assert reflex_logger.handlers == []
+    assert reflex_logger.propagate is True
 
 
 @pytest.fixture

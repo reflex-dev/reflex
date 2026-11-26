@@ -11,7 +11,7 @@ Reflex support two type of exception handlers `frontend_exception_handler` and `
 
 They are used to handle exceptions that occur in the `frontend` and `backend` respectively.
 
-The `frontend` errors are coming from the JavaScript side of the application, while `backend` errors are coming from the the event handlers on the Python side.
+The `frontend` errors are coming from the JavaScript side of the application, while `backend` errors are coming from the event handlers on the Python side.
 
 ### Frontend and backend state mismatches
 

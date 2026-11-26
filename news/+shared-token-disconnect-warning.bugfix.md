@@ -1,0 +1,1 @@
+Modifying a state with `app.modify_state` no longer logs an "Attempting to send delta to disconnected client" warning when no client is connected with the token, such as the shared token of a shared state. The clients linked to a shared state still get the update.

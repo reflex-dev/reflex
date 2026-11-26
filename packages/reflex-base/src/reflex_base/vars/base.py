@@ -57,6 +57,7 @@ from reflex_base.utils.exceptions import (
     BackendVarFormatError,
     ComputedVarSignatureError,
     EventHandlerShadowsBuiltInStateMethodError,
+    MixinVarNameConflictError,
     ReflexRuntimeError,
     StateValueError,
     UntypedComputedVarError,
@@ -631,12 +632,13 @@ class VarData:
 
         state_name = state if isinstance(state, str) else state.get_full_name()
         state_var_name = format.format_state_name(state_name)
+        hook_args = json.dumps(state_name)
+        if field_name:
+            hook_args += f", {json.dumps([field_name + FIELD_MARKER])}"
         return VarData(
             state=state_name,
             field_name=field_name,
-            hooks={
-                f"const {state_var_name} = useStateContext({json.dumps(state_name)})": None
-            },
+            hooks={f"const {state_var_name} = useStateContext({hook_args})": None},
             imports={
                 f"$/{constants.Dirs.UTILS}/context-registry": [
                     ImportVar(tag="useStateContext")
@@ -1148,10 +1150,12 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     ) -> ObjectVar[VAR_TYPE]: ...
 
     @overload
-    def to(self, output: VAR_SUBCLASS, var_type: None = None) -> VAR_SUBCLASS: ...
+    def to(
+        self, output: type[VAR_SUBCLASS], var_type: types.GenericType | None = None
+    ) -> VAR_SUBCLASS: ...
 
     @overload
-    def to(
+    def to(  # pyright: ignore[reportOverlappingOverload]
         self,
         output: type[OUTPUT] | types.GenericType,
         var_type: types.GenericType | None = None,
@@ -1393,8 +1397,15 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         return StateOperation.create(  # pyright: ignore [reportReturnType]
             formatted_state_name,
             self,
+            # The expression can read any key of the substate, so its hook
+            # subscribes to the whole substate rather than a named field.
             _var_data=VarData.merge(
-                VarData.from_state(state, self._js_expr), self._var_data
+                VarData.from_state(state),
+                VarData(
+                    state=state if isinstance(state, str) else state.get_full_name(),
+                    field_name=self._js_expr,
+                ),
+                self._var_data,
             ),
         ).guess_type()
 
@@ -4008,6 +4019,23 @@ def get_unique_variable_name() -> str:
     return get_unique_variable_name()
 
 
+@functools.cache
+def scoped_var_data(name: str) -> VarData:
+    """Get the var data that makes a scoped variable name itself as a dependency.
+
+    Every var built from a loop variable, or from an ``@rx.memo`` parameter,
+    carries the name, so a generated function that reads it can receive it as
+    a prop.
+
+    Args:
+        name: The JavaScript name of the scoped variable.
+
+    Returns:
+        The var data, shared by every var with this name.
+    """
+    return VarData(deps=[Var(_js_expr=name)])
+
+
 # Compile regex for finding reflex var tags.
 _decode_var_pattern_re = (
     rf"{constants.REFLEX_VAR_OPENING_TAG}(.*?){constants.REFLEX_VAR_CLOSING_TAG}"
@@ -4173,6 +4201,7 @@ _RESERVED_FIELD_ATTRS = frozenset({
     "_tracked",
     "_plain_types",
     "_var",
+    "_default_from_type",
 })
 
 # Exact types of values that are never wrapped in a MutableProxy. Checking them
@@ -4246,6 +4275,8 @@ class Field(Generic[FIELD_TYPE]):
     _plain_types: frozenset[Any] = frozenset()
     # The Var standing for the field on its owner, if sent to the client.
     _var: Var | None = None
+    # Whether the declaration gave no default, so it comes from the type.
+    _default_from_type: bool = False
 
     def __init__(
         self,
@@ -4281,6 +4312,7 @@ class Field(Generic[FIELD_TYPE]):
                 type_origin = get_origin(annotated_type) or annotated_type
 
             if self.default is MISSING and self.default_factory is None:
+                self._default_from_type = True
                 # A type with no computed default gets None, even when FIELD_TYPE
                 # itself excludes None; `annotated_type` is widened to match below.
                 default_value: FIELD_TYPE | None = types.get_default_value_for_type(
@@ -4337,9 +4369,11 @@ class Field(Generic[FIELD_TYPE]):
         Returns:
             The new field.
         """
+        # A default from the type is derived again, from the new type if any.
+        from_type = self._default_from_type
         return type(self)(**{
-            "default": self.default,
-            "default_factory": self.default_factory,
+            "default": MISSING if from_type else self.default,
+            "default_factory": None if from_type else self.default_factory,
             "is_var": self.is_var,
             "annotated_type": self.annotated_type,
             "source_field": self,
@@ -4392,6 +4426,7 @@ class Field(Generic[FIELD_TYPE]):
         else:
             self.default = MISSING
             self.default_factory = default_factory
+        self._default_from_type = False
 
     def default_value(self) -> FIELD_TYPE | None:
         """Get the default value for the field.
@@ -4446,6 +4481,56 @@ class Field(Generic[FIELD_TYPE]):
             BackendVarFormatError: Always; the field has no frontend var.
         """
         raise self._no_frontend_var_error()
+
+    def _has_no_frontend_var(self) -> bool:
+        """Whether class access reaches the field itself, not a Var.
+
+        Returns:
+            Whether the field is a backend var or a mixin's field.
+        """
+        return self._var is None and (
+            self._backend or getattr(self._owner, "_mixin", False)
+        )
+
+    def __eq__(self, other: object) -> bool:
+        """Compare by identity, refusing to compare a backend var with a value.
+
+        Class access reaches a backend var's field itself, so ``State._x == "a"``
+        would otherwise be a plain ``False``, and ``rx.cond`` on it would always
+        take the same branch. Comparing two fields still works, by identity.
+        ``!=`` uses this method too.
+
+        Args:
+            other: The object to compare with.
+
+        Returns:
+            Whether the two are the same field.
+
+        Raises:
+            BackendVarFormatError: If the field has no frontend var and the
+                other object is not a field.
+        """
+        if not isinstance(other, Field):
+            if self._has_no_frontend_var():
+                raise self._no_frontend_var_error()
+            return NotImplemented
+        return self is other
+
+    # Defining __eq__ would otherwise make fields unhashable.
+    __hash__ = object.__hash__
+
+    def __bool__(self) -> bool:
+        """Refuse to truth-test a backend var, which would always be true.
+
+        Returns:
+            True, for a field with a frontend var.
+
+        Raises:
+            BackendVarFormatError: If the field has no frontend var.
+        """
+        if self._has_no_frontend_var():
+            raise self._no_frontend_var_error()
+        return True
 
     def _no_frontend_var_error(self) -> BackendVarFormatError:
         """Build the error for using the field where a frontend var is needed.
@@ -4779,6 +4864,49 @@ def _inherited_value(lookup_order: Sequence[type], name: str) -> Any:
     return MISSING
 
 
+def _restates_type(value: Any) -> bool:
+    """Whether a class attribute is a var a mixin declares without a default.
+
+    Args:
+        value: The class attribute.
+
+    Returns:
+        True for a mixin's field whose default comes from its type.
+    """
+    return (
+        isinstance(value, Field)
+        and value._default_from_type
+        and getattr(value._owner, "_mixin", False)
+    )
+
+
+def _declared_value(lookup_order: Sequence[type], name: str) -> Any:
+    """Look up the class attribute declaring a name, as `_inherited_value` does.
+
+    A var a mixin declares without a default only restates the type of a var
+    declared further along the lookup order, as re-annotating that var on a
+    substate does, so that var is the one found. Only when no field further
+    along declares it does the mixin's var declare it.
+
+    Args:
+        lookup_order: The bases in method resolution order.
+        name: The attribute name to look up.
+
+    Returns:
+        The value declaring `name`, or MISSING.
+    """
+    found = MISSING
+    for klass in lookup_order:
+        if name not in klass.__dict__:
+            continue
+        value = klass.__dict__[name]
+        if not _restates_type(value):
+            return value if found is MISSING or isinstance(value, Field) else found
+        if found is MISSING:
+            found = value
+    return found
+
+
 _FIELD_MAP_NAMES = frozenset({"__fields__", "__own_fields__", "__inherited_fields__"})
 
 # ``ABCMeta`` writes this onto every class it creates, so an ``ABC`` mixin carries its own.
@@ -4900,6 +5028,101 @@ def _validate_state_declaration(
         seen.update(vars(base))
 
 
+def _type_name(hint: Any) -> str:
+    """Name a type hint for a message.
+
+    Args:
+        hint: The type hint.
+
+    Returns:
+        A class's qualified name, or the hint as written otherwise.
+    """
+    return hint.__qualname__ if isinstance(hint, type) else str(hint)
+
+
+def _warn_restated_type(
+    class_name: str, key: str, mixin: type, restated: Field, declared: Any
+) -> None:
+    """Warn when a mixin types a var as other than the var it uses is declared.
+
+    Args:
+        class_name: The qualified name of the class being created.
+        key: The var name.
+        mixin: The mixin declaring the var without a default.
+        restated: The mixin's field.
+        declared: What the var resolves to further along the lookup order.
+    """
+    owner = declared._owner if isinstance(declared, Field) else None
+    if owner is None:
+        return
+    try:
+        matches = types.typehint_issubclass(
+            declared.annotated_type, restated.annotated_type
+        )
+    except TypeError:
+        # A TypedDict refuses class checks, so it cannot be compared.
+        return
+    if matches:
+        return
+    # A registered state's module is rewritten; name the one it was declared in.
+    module = getattr(owner, "__original_module__", owner.__module__)
+    declared_type = _type_name(declared.annotated_type)
+    console.warn(
+        f"The var `{key}` in {class_name} is declared as {declared_type} by "
+        f"{module}.{owner.__name__}, but the mixin "
+        f"{mixin.__module__}.{mixin.__name__} types it as "
+        f"{_type_name(restated.annotated_type)}; the mixin's code uses the var "
+        f"declared as {declared_type}"
+    )
+
+
+def _validate_mixin_vars(
+    class_name: str, lookup_order: Sequence[type], own_fields: Mapping[str, Field]
+) -> None:
+    """Reject a var that two mixins not inheriting from one another both declare.
+
+    A state combines its mixins into one coherent state, and two independent
+    mixins would each use their shared var as their own. A var the class
+    declares itself is the one its mixins share. A mixin's var without a
+    default only types the var `_declared_value` finds further along, if any,
+    for the mixin. The mixins of the parent state are left out: they were
+    checked with it, and its vars may be redeclared.
+
+    Args:
+        class_name: The qualified name of the class being created.
+        lookup_order: The bases of the class in method resolution order.
+        own_fields: The fields the class declares itself.
+
+    Raises:
+        MixinVarNameConflictError: If two such mixins declare the same var.
+    """
+    parent = next((base for base in lookup_order if _is_tree_state(base)), None)
+    declared_by: dict[str, type] = {}
+    for base in lookup_order:
+        if not getattr(base, "_mixin", False) or (
+            parent is not None and issubclass(parent, base)
+        ):
+            continue
+        for key, base_field in base.__own_fields__.items():
+            if key in own_fields:
+                continue
+            if base_field._default_from_type:
+                declared = _declared_value(lookup_order, key)
+                if not _restates_type(declared):
+                    _warn_restated_type(class_name, key, base, base_field, declared)
+                    continue
+            first = declared_by.setdefault(key, base)
+            if not issubclass(first, base):
+                msg = (
+                    f"The var `{key}` in {class_name} is declared "
+                    f"by both {first.__module__}.{first.__name__} and "
+                    f"{base.__module__}.{base.__name__}, mixins that do not inherit "
+                    "from one another; declare it on the state, rename it in one of "
+                    "them, or declare it in a mixin both inherit from"
+                )
+                raise MixinVarNameConflictError(msg)
+
+
 def _private_prefixes(class_name: str) -> tuple[str, str]:
     """Get the prefixes of the names Python treats as private in a class body.
 
@@ -4976,7 +5199,7 @@ def _annotated_fields(
         if key in slots:
             continue
         value = namespace.get(key, MISSING)
-        inherited = _inherited_value(lookup_order, key)
+        inherited = _declared_value(lookup_order, key)
         if (
             key.startswith(private)
             and not isinstance(value, Field)
@@ -5206,6 +5429,9 @@ class BaseStateMeta(ABCMeta):
 
         Returns:
             The new class.
+
+        Raises:
+            StateValueError: If a class attribute is a dataclasses.field(...).
         """
         lookup_order = _linearize_bases(bases)
         state_bases = [
@@ -5233,6 +5459,13 @@ class BaseStateMeta(ABCMeta):
                     ).items()
                     if key.startswith("_")
                 )
+        for key, value in namespace.items():
+            if isinstance(value, dataclasses.Field):
+                msg = (
+                    f"{name}.{key} uses dataclasses.field(...), which state "
+                    "classes do not support. Use rx.field(...) instead."
+                )
+                raise StateValueError(msg)
         private = _private_prefixes(name)
         own_fields = _unannotated_fields(namespace, private) | _annotated_fields(
             namespace, lookup_order, private, strict=True
@@ -5251,6 +5484,9 @@ class BaseStateMeta(ABCMeta):
                 own_fields[key] = inherited_fields[key]._replace(
                     **_default_arguments(value)
                 )
+        _validate_mixin_vars(
+            f"{namespace['__module__']}.{name}", lookup_order, own_fields
+        )
 
         # The fields are the class attributes: descriptors storing the values.
         namespace.update(own_fields)

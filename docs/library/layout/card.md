@@ -43,7 +43,9 @@ commonly used to make a Card clickable.
 rx.card(
     rx.link(
         rx.flex(
-            rx.avatar(src="https://web.reflex-assets.dev/other/reflex_banner.png"),
+            rx.avatar(
+                src="https://web.reflex-assets.dev/other/reflex_banner.png", alt=""
+            ),
             rx.box(
                 rx.heading("Quick Start", as_="h2"),
                 rx.text("Get started with Reflex in 5 minutes."),

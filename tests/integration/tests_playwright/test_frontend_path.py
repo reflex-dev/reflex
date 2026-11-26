@@ -12,7 +12,7 @@ from __future__ import annotations
 import re
 from collections.abc import Generator
 
-import httpx
+import httpx2
 import pytest
 from playwright.sync_api import Page, expect
 
@@ -441,7 +441,7 @@ def test_uploaded_file_download(frontend_path_app: AppHarness, page: Page):
     href = link.get_attribute("href")
     assert href is not None
 
-    resp = httpx.get(href, follow_redirects=True)
+    resp = httpx2.get(href, follow_redirects=True)
     assert resp.status_code == 200
     assert resp.text == "uploaded file content"
 

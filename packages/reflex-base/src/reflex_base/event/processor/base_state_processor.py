@@ -14,14 +14,21 @@ from enum import Enum
 from importlib.util import find_spec
 from time import perf_counter
 from types import FunctionType, MethodType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, get_args
 
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.utils import types
 from reflex_base import otel
 from reflex_base.constants import CompileVars
-from reflex_base.event import Event, EventHandler, EventSpec, _is_bound_event_handler
+from reflex_base.event import (
+    _UNDECORATED_STATE_METHOD_HINT,
+    _UNDECORATED_STATE_METHOD_MARKER,
+    Event,
+    EventHandler,
+    EventSpec,
+    _is_bound_event_handler,
+)
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import (
     EventProcessor,
@@ -177,11 +184,14 @@ def _is_mistaken_event(value: Any) -> bool:
         value: The value a handler returned.
 
     Returns:
-        True for ``self.handler`` (meant ``type(self).handler``) and for an
+        True for ``self.handler`` (meant ``type(self).handler``), for a state
+        method left undecorated by explicit event handler mode, and for an
         uncalled event creator such as ``rx.redirect``.
     """
     return callable(value) and (
-        _is_bound_event_handler(value) or _is_event_creator(value)
+        getattr(value, _UNDECORATED_STATE_METHOD_MARKER, False) is True
+        or _is_bound_event_handler(value)
+        or _is_event_creator(value)
     )
 
 
@@ -275,7 +285,39 @@ def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
         msg += f" Did you mean to call {'it' if len(creators) == 1 else 'them'}" + (
             "?" if None in refs else f": {', '.join(f'{r}(...)' for r in refs)}?"
         )
+    for e in events:
+        if getattr(e, _UNDECORATED_STATE_METHOD_MARKER, False) is True:
+            msg += (
+                f" {e.__qualname__} is not an event handler. "
+                f"{_UNDECORATED_STATE_METHOD_HINT}"
+            )
     raise TypeError(msg)
+
+
+def _transform_set_arg(
+    value: list, origin: type[set | frozenset], hinted_args: Any
+) -> set | frozenset | list:
+    """Build the set or frozenset an argument is annotated with from its array.
+
+    Args:
+        value: The received array.
+        origin: set or frozenset.
+        hinted_args: The type hint for the argument.
+
+    Returns:
+        The set, or the array unchanged when its elements stay unhashable.
+    """
+    try:
+        return origin(value)
+    except TypeError:
+        pass
+    # Arrays and objects are unhashable until the element hint turns them into
+    # tuples, frozensets or dataclasses.
+    (element_hint,) = get_args(hinted_args) or (Any,)
+    try:
+        return origin([_transform_event_arg(x, element_hint) for x in value])
+    except (TypeError, ValueError):
+        return value
 
 
 def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
@@ -312,10 +354,12 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
             return hinted_args(**value)
         if BaseModelV2 is not None and issubclass(hinted_args, BaseModelV2):
             return hinted_args.model_validate(value)
-    if isinstance(value, list) and (hinted_args is set or hinted_args is frozenset):
-        return set(value)
-    if isinstance(value, list) and hinted_args is tuple:
-        return tuple(value)
+    if isinstance(value, list):
+        origin = types.get_origin(hinted_args) or hinted_args
+        if origin is tuple:
+            return tuple(value)
+        if origin is set or origin is frozenset:
+            return _transform_set_arg(value, origin, hinted_args)
     if isinstance(hinted_args, type) and issubclass(hinted_args, Enum):
         try:
             return hinted_args(value)
@@ -671,6 +715,9 @@ async def execute_event_inline(spec: EventSpec) -> Any:
     root_state = ctx.locked_root
     if root_state is None:
         (future,) = await ctx.enqueue(event)
+        # An exception the event raises is delivered here, like the inline
+        # call's, so it is this caller's to catch or to fail with.
+        future.awaited = True
         return await future
     if handler.is_background:
         msg = (

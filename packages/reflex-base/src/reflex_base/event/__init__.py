@@ -14,6 +14,7 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    ClassVar,
     Generic,
     Literal,
     NoReturn,
@@ -290,6 +291,13 @@ def _scan_detach(value: Any, memo: dict[int, Any], active: set[int]) -> Any:
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 SUPERSEDES_MARKER = "_reflex_supersedes"
 EVENT_ACTIONS_MARKER = "_rx_event_actions"
+_UNDECORATED_STATE_METHOD_MARKER = "_rx_undecorated_state_method"
+# How to fix a reference to an undecorated state method; ends its error.
+_UNDECORATED_STATE_METHOD_HINT = (
+    "Decorate it with `@rx.event`: with `state_explicit_event_handlers` enabled, "
+    "undecorated methods stay plain methods. "
+    "See https://reflex.dev/docs/events/events-overview/#explicit-event-handlers"
+)
 UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
 
 # Payload key listing the names of the extra bound handler args in an upload
@@ -565,6 +573,11 @@ class EventHandler(EventActionsMixin):
 
     state: "type[BaseState] | None" = dataclasses.field(default=None, repr=False)
 
+    # The StateProxy type, installed by reflex.istate.proxy, which binds the
+    # handlers `super()` reaches from a background task. Until then nothing is one:
+    # isinstance against () is always false.
+    _state_proxy: ClassVar[Any] = ()
+
     _type_hints: dict[str, Any] | None = dataclasses.field(
         default=None, repr=False, compare=False
     )
@@ -777,11 +790,22 @@ class EventHandler(EventActionsMixin):
         if not isinstance(instance, self.state):
             # Held by a class that is not its state, nor a substate of it.
             return self
-        state = (
-            instance
-            if type(instance) is self.state
-            else _owner_state(instance, self.state)
-        )
+        instance_type = type(instance)
+        if instance_type is self.state:
+            state = instance
+        elif instance_type is not owner and issubclass(
+            instance_type, EventHandler._state_proxy
+        ):
+            # Only `super()` hands a background task's proxy to the descriptor
+            # (the proxy binds its own attributes), to run the overridden
+            # handler in the same task. Attribute access passes the instance's
+            # own type as `owner`, so the check stays off that path; `super()`
+            # passes the wrapped state's class.
+            return EventHandler._state_proxy._bind_overridden_handler(
+                instance, self.fn, self.state
+            )
+        else:
+            state = _owner_state(instance, self.state)
         if self.is_background:
             return _no_chain_background_task(state, self.fn)
         return types.MethodType(self.fn, state)
@@ -800,8 +824,12 @@ class EventHandler(EventActionsMixin):
 
         Raises:
             EventHandlerTypeError: If the arguments are invalid.
+            BackendVarFormatError: If an argument is a field with no frontend var.
         """
-        from reflex_base.utils.exceptions import EventHandlerTypeError
+        from reflex_base.utils.exceptions import (
+            BackendVarFormatError,
+            EventHandlerTypeError,
+        )
 
         if args and isinstance(args[0], self.state or _base_state_type()):
             # A decorator stacked above @rx.event calls the handler like the
@@ -819,11 +847,10 @@ class EventHandler(EventActionsMixin):
             return self.fn(*args, **kwargs)
 
         # Get the function args.
-        if self.state is not None:
-            # Skip the `self` arg for state-bound event handlers.
-            fn_args = list(self._parameters)[1:]
-        else:
-            fn_args = list(self._parameters)
+        # Skip the `self` arg for state-bound event handlers.
+        fn_args = _named_parameters(
+            self._parameters, 1 if self.state is not None else 0
+        )
 
         if not isinstance(
             repeated_arg := next(
@@ -868,6 +895,8 @@ class EventHandler(EventActionsMixin):
             # Otherwise, convert to JSON.
             try:
                 payload.append((Var(_js_expr=fn_arg), LiteralVar.create(arg)))
+            except BackendVarFormatError:
+                raise
             except TypeError as e:
                 msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg!r} of type {type(arg)}."
                 raise EventHandlerTypeError(msg) from e
@@ -1033,13 +1062,19 @@ class EventSpec(EventActionsMixin):
 
         Raises:
             EventHandlerTypeError: If the arguments are invalid.
+            BackendVarFormatError: If an argument is a field with no frontend var.
         """
-        from reflex_base.utils.exceptions import EventHandlerTypeError
+        from reflex_base.utils.exceptions import (
+            BackendVarFormatError,
+            EventHandlerTypeError,
+        )
 
         n_self_args = 1 if self.handler.state is not None else 0
 
         # Get the remaining unfilled function args.
-        fn_args = list(self.handler._parameters)[n_self_args + len(self.args) :]
+        fn_args = _named_parameters(self.handler._parameters, n_self_args)[
+            len(self.args) :
+        ]
         fn_args = (Var(_js_expr=arg) for arg in fn_args)
 
         # Construct the payload.
@@ -1048,6 +1083,8 @@ class EventSpec(EventActionsMixin):
         try:
             for arg in args:
                 values.append(LiteralVar.create(value=arg))  # noqa: PERF401, RUF100
+        except BackendVarFormatError:
+            raise
         except TypeError as e:
             msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg!r} of type {type(arg)}."
             raise EventHandlerTypeError(msg) from e
@@ -1485,6 +1522,20 @@ def passthrough_event_spec(  # pyright: ignore [reportOverlappingOverload]
 def passthrough_event_spec(
     event_type_1: type[T], event_type2: type[U], /
 ) -> Callable[[Var[T], Var[U]], tuple[Var[T], Var[U]]]: ...
+
+
+@overload
+def passthrough_event_spec(
+    event_type: types.UnionType, /
+) -> Callable[[Var[Any]], tuple[Var[Any]]]: ...
+
+
+@overload
+def passthrough_event_spec(
+    event_type_1: types.UnionType | type[T],
+    event_type2: types.UnionType | type[U],
+    /,
+) -> Callable[[Var[Any], Var[Any]], tuple[Var[Any], Var[Any]]]: ...
 
 
 @overload
@@ -2390,18 +2441,14 @@ def call_event_handler(
             event_callback.handler.fn.__qualname__,
         )
 
-        event_callback_spec_args = list(parameters)
+        event_callback_spec_args = _named_parameters(parameters, n_self_args)
 
         type_hints_of_provided_callback = event_callback.handler._get_type_hints()
 
         argument_names = [str(arg) for arg, value in event_callback.args]
 
         _check_event_args_subclass_of_callback(
-            [
-                arg
-                for arg in event_callback_spec_args[n_self_args:]
-                if arg not in argument_names
-            ],
+            [arg for arg in event_callback_spec_args if arg not in argument_names],
             event_spec_return_types,
             type_hints_of_provided_callback,
             event_callback.handler.fn.__qualname__,
@@ -2425,12 +2472,12 @@ def call_event_handler(
     )
 
     if event_spec_return_types:
-        event_callback_spec_args = list(parameters)
+        event_callback_spec_args = _named_parameters(parameters, n_self_args)
 
         type_hints_of_provided_callback = event_callback._get_type_hints()
 
         _check_event_args_subclass_of_callback(
-            event_callback_spec_args[n_self_args:],
+            event_callback_spec_args,
             event_spec_return_types,
             type_hints_of_provided_callback,
             event_callback.fn.__qualname__,
@@ -2617,6 +2664,87 @@ def args_specs_from_fields(
     }
 
 
+# The parameter kinds that take any number of arguments, none included.
+_VARIADIC_PARAMETER_KINDS = (
+    inspect.Parameter.VAR_POSITIONAL,
+    inspect.Parameter.VAR_KEYWORD,
+)
+
+
+def _named_parameters(
+    parameters: Mapping[str, inspect.Parameter], n_self_args: int = 0
+) -> list[str]:
+    """Get the names an event handler's arguments are sent by.
+
+    ``*args`` and ``**kwargs`` take no argument by their own name.
+
+    Args:
+        parameters: The parameters of the event handler's function.
+        n_self_args: How many leading parameters take the state, which is
+            not sent.
+
+    Returns:
+        The names of its other parameters, in order.
+    """
+    return [
+        parameter.name
+        for parameter in list(parameters.values())[n_self_args:]
+        if parameter.kind not in _VARIADIC_PARAMETER_KINDS
+    ]
+
+
+def _max_positional_args(parameters: Mapping[str, inspect.Parameter]) -> int | None:
+    """Get how many of a trigger's arguments a function takes by position.
+
+    Args:
+        parameters: The parameters of the function.
+
+    Returns:
+        The number of its positional parameters, or None when it takes ``*args``.
+    """
+    count = 0
+    for parameter in parameters.values():
+        if parameter.kind is inspect.Parameter.VAR_POSITIONAL:
+            return None
+        if parameter.kind in (
+            inspect.Parameter.POSITIONAL_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        ):
+            count += 1
+    return count
+
+
+def _check_no_required_keyword_only(
+    fn: Callable, parameters: Mapping[str, inspect.Parameter], key: str | None
+) -> None:
+    """Reject a callable with a keyword-only parameter that has no default.
+
+    A callable gets the trigger's arguments by position, so it never gets one.
+
+    Args:
+        fn: The callable given to the event trigger.
+        parameters: Its parameters.
+        key: The name of the event trigger.
+
+    Raises:
+        EventFnArgMismatchError: If it has a required keyword-only parameter.
+    """
+    for parameter in parameters.values():
+        if (
+            parameter.kind is inspect.Parameter.KEYWORD_ONLY
+            and parameter.default is inspect.Parameter.empty
+        ):
+            msg = (
+                f"Event {key} cannot pass the keyword-only argument "
+                f"{parameter.name!r} of {fn}: a function given to an event "
+                "trigger gets the trigger's arguments by position only. Give "
+                f"{parameter.name!r} a default value, or move it before the `*` "
+                "so it takes one of the trigger's arguments.\n"
+                "See https://reflex.dev/docs/events/event-arguments/"
+            )
+            raise EventFnArgMismatchError(msg)
+
+
 def check_fn_match_arg_spec(
     user_func: Callable,
     user_func_parameters: Mapping[str, inspect.Parameter],
@@ -2639,15 +2767,19 @@ def check_fn_match_arg_spec(
     Raises:
         EventFnArgMismatchError: Raised if the number of mandatory arguments do not match
     """
-    user_args = list(user_func_parameters)
+    # `*args` and `**kwargs` take no argument of their own; a keyword-only
+    # parameter without a default is as required as a positional one.
+    user_args = [
+        p
+        for p in user_func_parameters.values()
+        if p.kind not in _VARIADIC_PARAMETER_KINDS
+    ]
     # Drop the first argument if it's a bound method
     if inspect.ismethod(user_func) and user_func.__self__ is not None:
         user_args = user_args[1:]
 
     user_default_args = [
-        p.default
-        for p in user_func_parameters.values()
-        if p.default is not inspect.Parameter.empty
+        p.default for p in user_args if p.default is not inspect.Parameter.empty
     ]
     number_of_user_args = len(user_args) - number_of_bound_args
     number_of_user_default_args = len(user_default_args) if user_default_args else 0
@@ -2662,6 +2794,26 @@ def check_fn_match_arg_spec(
             "See https://reflex.dev/docs/events/event-arguments/"
         )
         raise EventFnArgMismatchError(msg)
+
+
+def _check_not_undecorated_state_method(value: Any, key: str | None) -> None:
+    """Reject a state method that explicit event handler mode left undecorated.
+
+    Args:
+        value: The value wired to the event trigger.
+        key: The name of the event trigger.
+
+    Raises:
+        EventHandlerValueError: If value is an undecorated state method.
+    """
+    if getattr(value, _UNDECORATED_STATE_METHOD_MARKER, False) is True:
+        from reflex_base.utils.exceptions import EventHandlerValueError
+
+        msg = (
+            f"{value.__qualname__} is wired to {key or 'an event trigger'} but is not an "
+            f"event handler. {_UNDECORATED_STATE_METHOD_HINT}"
+        )
+        raise EventHandlerValueError(msg)
 
 
 def event_sequence(events: Any) -> Sequence[Any]:
@@ -2705,23 +2857,25 @@ def call_event_fn(
         The event-like values from calling the function.
 
     Raises:
-        EventHandlerValueError: If the lambda returns an unusable value.
+        EventHandlerValueError: If fn is an undecorated state method or returns
+            an unusable value.
     """
     # Import here to avoid circular imports.
     from reflex_base.event import EventHandler, EventSpec
     from reflex_base.utils.exceptions import EventHandlerValueError
+
+    _check_not_undecorated_state_method(fn, key)
 
     parsed_args, _ = parse_args_spec(arg_spec)
 
     parameters = inspect.signature(fn).parameters
 
     # Check that fn signature matches arg_spec
+    _check_no_required_keyword_only(fn, parameters, key)
     check_fn_match_arg_spec(fn, parameters, parsed_args, key=key)
 
-    number_of_fn_args = len(parameters)
-
-    # Call the function with the parsed args.
-    out = fn(*[*parsed_args][:number_of_fn_args])
+    # Call the function with as many of the parsed args as it takes.
+    out = fn(*parsed_args[: _max_positional_args(parameters)])
 
     def _dispatch_mixed_event_var(event_like_var: Var) -> FunctionVar:
         """Wrap a mixed event-like Var into a callable frontend dispatcher.
@@ -2797,6 +2951,7 @@ def call_event_fn(
 
         # Make sure the event spec is valid.
         if not isinstance(e, (EventSpec, FunctionVar, EventVar)):
+            _check_not_undecorated_state_method(e, key)
             hint = ""
             if isinstance(e, VarOperationCall):
                 hint = " Hint: use `fn.partial(...)` instead of calling the FunctionVar directly."
@@ -3507,8 +3662,17 @@ if TYPE_CHECKING:
 class EventDecorator(Protocol):
     """The decorator ``rx.event(...)`` returns."""
 
+    # A repeated @rx.event decorates the handler the inner one returned.
+    @overload
+    def __call__(self, func: EventCallback[*P]) -> EventCallback[*P]: ...
+
+    @overload
     def __call__(
         self, func: "Callable[[BASE_STATE, Unpack[P]], Any]"
+    ) -> EventCallback[*P]: ...
+
+    def __call__(
+        self, func: "EventCallback[*P] | Callable[[BASE_STATE, Unpack[P]], Any]"
     ) -> EventCallback[*P]:
         """Wrap a function to be used as an event.
 
@@ -3569,6 +3733,8 @@ class EventNamespace:
     SUPERSEDES_MARKER = SUPERSEDES_MARKER
     EVENT_ACTIONS_MARKER = EVENT_ACTIONS_MARKER
     _EVENT_FIELDS = _EVENT_FIELDS
+    _UNDECORATED_STATE_METHOD_MARKER = _UNDECORATED_STATE_METHOD_MARKER
+    _UNDECORATED_STATE_METHOD_HINT = _UNDECORATED_STATE_METHOD_HINT
     FORM_DATA = FORM_DATA
     FORM_SUBMIT_MAPPING = FORM_SUBMIT_MAPPING
     upload_files = upload_files
@@ -3584,6 +3750,9 @@ class EventNamespace:
     )
     _values_returned_from_event = staticmethod(_values_returned_from_event)
     _is_bound_event_handler = staticmethod(_is_bound_event_handler)
+    _check_not_undecorated_state_method = staticmethod(
+        _check_not_undecorated_state_method
+    )
     _check_event_args_subclass_of_callback = staticmethod(
         _check_event_args_subclass_of_callback
     )
@@ -3601,6 +3770,20 @@ class EventNamespace:
         debounce: int | None = None,
         temporal: bool | None = None,
     ) -> EventDecorator: ...
+
+    @overload
+    def __new__(
+        cls,
+        func: EventCallback[*P],
+        *,
+        background: bool | None = None,
+        supersedes: bool | None = None,
+        stop_propagation: bool | None = None,
+        prevent_default: bool | None = None,
+        throttle: int | None = None,
+        debounce: int | None = None,
+        temporal: bool | None = None,
+    ) -> EventCallback[*P]: ...
 
     @overload
     def __new__(

@@ -394,10 +394,10 @@ describe("session", () => {
     }
   });
 
-  test("getToken saves one token for the tab and keeps returning it", () => {
-    const token = getToken();
-    expect(sessionStorage.getItem("token")).toBe(token);
-    expect(getToken()).toBe(token);
+  test("getToken has no token until the server issues one", () => {
+    // The backend binds the tab token to the browser session it issues.
+    expect(getToken()).toBe("");
+    expect(sessionStorage.getItem("token")).toBeNull();
   });
 
   test("isBackendDisabled reads the backend-enabled cookie", () => {
