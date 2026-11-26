@@ -863,12 +863,43 @@ def test_sitemap_plugin_defaults_to_sitemap_xml():
     )
 
 
+def test_sitemap_plugin_normalizes_paths():
+    """Dot segments and repeated slashes are dropped from both paths."""
+    plugin = SitemapPlugin(path="./sitemaps//site.xml", index_path="/./index.xml/")
+
+    assert (plugin.path, plugin.index_path, plugin.file_path) == (
+        "sitemaps/site.xml",
+        "index.xml",
+        Path("public/sitemaps/site.xml"),
+    )
+
+
 @pytest.mark.parametrize(
     ("kwargs", "message"),
     [
         ({"path": "/"}, "SitemapPlugin path must name a file."),
+        ({"path": "./"}, "SitemapPlugin path must name a file."),
+        ({"index_path": "/"}, "SitemapPlugin index_path must name a file."),
+        (
+            {"path": "../sitemap.xml"},
+            "SitemapPlugin path must stay in the public directory, got '../sitemap.xml'.",
+        ),
+        (
+            {"index_path": "sitemaps/../../index.xml"},
+            (
+                "SitemapPlugin index_path must stay in the public directory, "
+                "got 'sitemaps/../../index.xml'."
+            ),
+        ),
         (
             {"index_path": "/sitemap.xml"},
+            (
+                "SitemapPlugin index_path must name a file other than the sitemap "
+                "'sitemap.xml', got 'sitemap.xml'."
+            ),
+        ),
+        (
+            {"path": "./sitemap.xml", "index_path": "sitemap.xml"},
             (
                 "SitemapPlugin index_path must name a file other than the sitemap "
                 "'sitemap.xml', got 'sitemap.xml'."
@@ -877,7 +908,7 @@ def test_sitemap_plugin_defaults_to_sitemap_xml():
     ],
 )
 def test_sitemap_plugin_rejects_paths(kwargs, message):
-    """An empty path, or an index in the sitemap's place, is a configuration error."""
+    """An empty path, one leaving public, or an index in the sitemap's place is an error."""
     with pytest.raises(ValueError) as err:
         SitemapPlugin(**kwargs)
     assert str(err.value) == message

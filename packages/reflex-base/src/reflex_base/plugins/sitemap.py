@@ -4,7 +4,7 @@ import datetime
 import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Literal, NotRequired, TypedDict
 from xml.etree.ElementTree import Element, SubElement, indent, tostring
@@ -282,6 +282,29 @@ def sitemap_index_task(
     )
 
 
+def _public_file_path(option: str, path: str) -> str:
+    """Normalize a path below the frontend's root URL that names a file in public.
+
+    Args:
+        option: The SitemapPlugin option the path comes from, for the error.
+        path: The configured path.
+
+    Returns:
+        The path without leading, trailing or repeated slashes and dot segments.
+
+    Raises:
+        ValueError: If the path names no file or leaves the public directory.
+    """
+    normalized = PurePosixPath(path.strip("/"))
+    if ".." in normalized.parts:
+        msg = f"SitemapPlugin {option} must stay in the public directory, got {path!r}."
+        raise ValueError(msg)
+    if not normalized.name:
+        msg = f"SitemapPlugin {option} must name a file."
+        raise ValueError(msg)
+    return str(normalized)
+
+
 @dataclass(kw_only=True, frozen=True)
 class SitemapPlugin(PluginBase):
     """Sitemap plugin for Reflex.
@@ -305,16 +328,15 @@ class SitemapPlugin(PluginBase):
         """Normalize the paths, which must name different files.
 
         Raises:
-            ValueError: If a path is empty or both paths name the same file.
+            ValueError: If both paths name the same file.
         """
-        object.__setattr__(self, "path", self.path.strip("/"))
-        if not self.path:
-            msg = "SitemapPlugin path must name a file."
-            raise ValueError(msg)
+        object.__setattr__(self, "path", _public_file_path("path", self.path))
         if self.index_path is None:
             return
-        object.__setattr__(self, "index_path", self.index_path.strip("/"))
-        if self.index_path in ("", self.path):
+        object.__setattr__(
+            self, "index_path", _public_file_path("index_path", self.index_path)
+        )
+        if self.index_path == self.path:
             msg = (
                 "SitemapPlugin index_path must name a file other than the sitemap "
                 f"{self.path!r}, got {self.index_path!r}."
