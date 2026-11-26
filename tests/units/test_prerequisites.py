@@ -2679,9 +2679,13 @@ app.add_page(index)
     )
 
 
-_RENAME_CONFIG = """from pathlib import Path
+_RENAME_CONFIG = """import pathlib
+from pathlib import Path
 
 import reflex as rx
+
+# Keep assets_dir="foo/assets" out of the other app.
+OTHER_APP = dict(assets_dir="foo/assets")
 
 config = rx.Config(
     app_name="{app_name}",
@@ -2700,6 +2704,12 @@ config = rx.Config(
             "assets_dir=Path('bar/assets'), lockfile_dir=\"bar/reflex.lock\"",
             "",
             id="literals-inside-the-app",
+        ),
+        pytest.param(
+            'assets_dir=Path (r"foo/assets"), lockfile_dir=pathlib.Path("foo/reflex.lock")',
+            'assets_dir=Path (r"bar/assets"), lockfile_dir=pathlib.Path("bar/reflex.lock")',
+            "",
+            id="raw-string-and-spacing",
         ),
         pytest.param(
             'assets_dir="foo/assets", frontend_path="foo/assets"',

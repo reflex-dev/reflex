@@ -1,9 +1,11 @@
 """This module provides utilities for renaming directories and files in a Reflex app."""
 
+import ast
 import logging
 import re
 import sys
 import tokenize
+from collections.abc import Collection
 from pathlib import Path
 
 from reflex_base import constants
@@ -183,7 +185,8 @@ def _config_dirs_moved_by_rename(
 def _update_moved_config_dirs(moved_dirs: dict[str, tuple[Path, Path]]):
     """Point configured directories that moved with the app at their new location.
 
-    Only a string literal passed as the setting in rxconfig.py is rewritten, any other source is left to the user.
+    Only a string literal passed as the setting to ``Config()`` in rxconfig.py, bare or
+    in ``Path()``, is rewritten; any other source is left to the user.
 
     Args:
         moved_dirs: The old and new path of each moved directory by config field.
@@ -192,39 +195,90 @@ def _update_moved_config_dirs(moved_dirs: dict[str, tuple[Path, Path]]):
         return
     config_file = constants.Config.FILE
     content, encoding = _read_source(config_file)
+    # ast positions count lines like this and columns in UTF-8 bytes.
+    lines = re.findall(r".*?(?:\r\n|\r|\n)|.+\Z", content, flags=re.DOTALL)
+    updated = set()
+    for field, value, literal in sorted(
+        _config_dir_literals(content, moved_dirs),
+        key=lambda item: (item[2].lineno, item[2].col_offset),
+        reverse=True,
+    ):
+        old, new = moved_dirs[field]
+        if Path(value) != old or literal.end_lineno != literal.lineno:
+            continue
+        line = lines[literal.lineno - 1].encode()
+        segment = line[literal.col_offset : literal.end_col_offset].decode()
+        if value not in segment:
+            continue
+        segment = segment.replace(value, new.as_posix(), 1)
+        lines[literal.lineno - 1] = (
+            line[: literal.col_offset]
+            + segment.encode()
+            + line[literal.end_col_offset :]
+        ).decode()
+        updated.add(field)
     for field, (old, new) in moved_dirs.items():
-        content, count = _replace_config_dir_literal(content, field, old, new)
-        if not count:
+        if field not in updated:
             logger.warning(
                 f"{field} {old.as_posix()} moved to {new.as_posix()} with the app "
                 "directory. Update it in your config."
             )
-    config_file.write_text(content, encoding=encoding, newline="")
+    config_file.write_text("".join(lines), encoding=encoding, newline="")
 
 
-def _replace_config_dir_literal(
-    content: str, field: str, old: Path, new: Path
-) -> tuple[str, int]:
-    """Replace the string literal passed as a directory setting, bare or in ``Path()``.
+def _config_dir_literals(
+    source: str, fields: Collection[str]
+) -> list[tuple[str, str, ast.Constant]]:
+    """Find the string literals passed to ``Config()`` as the given settings, bare or in ``Path()``.
 
     Args:
-        content: The config source.
-        field: The name of the setting.
-        old: The path to replace.
-        new: The replacement path.
+        source: The config source.
+        fields: The names of the settings.
 
     Returns:
-        The updated source and the number of replacements.
+        The setting, its value and its literal, for each one found.
     """
-    pattern = re.compile(
-        rf"(\b{field}\s*=\s*(?:(?:pathlib\.)?Path\(\s*)?)([\"']){re.escape(old.as_posix())}\2"
-    )
-    return pattern.subn(
-        lambda match: (
-            f"{match.group(1)}{match.group(2)}{new.as_posix()}{match.group(2)}"
-        ),
-        content,
-    )
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return []
+    literals: list[tuple[str, str, ast.Constant]] = []
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Call) and _called_name(node) == "Config"):
+            continue
+        for keyword in node.keywords:
+            value = keyword.value
+            if (
+                isinstance(value, ast.Call)
+                and _called_name(value) == "Path"
+                and len(value.args) == 1
+                and not value.keywords
+            ):
+                value = value.args[0]
+            if (
+                keyword.arg is not None
+                and keyword.arg in fields
+                and isinstance(value, ast.Constant)
+                and isinstance(value.value, str)
+            ):
+                literals.append((keyword.arg, value.value, value))
+    return literals
+
+
+def _called_name(call: ast.Call) -> str | None:
+    """Get the name a call is made through, ``Config`` for both ``Config()`` and ``rx.Config()``.
+
+    Args:
+        call: The call.
+
+    Returns:
+        The name, or None if the callee is not a plain name or attribute.
+    """
+    if isinstance(call.func, ast.Name):
+        return call.func.id
+    if isinstance(call.func, ast.Attribute):
+        return call.func.attr
+    return None
 
 
 def _read_source(file_path: Path) -> tuple[str, str]:
