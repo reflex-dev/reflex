@@ -1,5 +1,6 @@
 """Test shared state imports from a reusable module."""
 
+import sys
 from collections.abc import Generator
 from uuid import uuid4
 
@@ -67,8 +68,6 @@ def test_shared_module_state_is_available_to_a_second_app(
         monkeypatch: Pytest fixture for import-path and registration isolation.
         page: Playwright page used to verify both app runs.
     """
-    import sys
-
     package_name = f"harness_shared_{uuid4().hex}"
     package_path = tmp_path / package_name
     package_path.mkdir()
@@ -91,6 +90,11 @@ from {package_name}.state import SharedState
 
 def index():
     return rx.vstack(
+        rx.input(
+            value=SharedState.router.session.client_token,
+            read_only=True,
+            id="session-token",
+        ),
         rx.text(SharedState.count, id="shared-count"),
         rx.button("Increment", on_click=SharedState.increment, id="increment"),
     )
@@ -98,7 +102,9 @@ def index():
 app = rx.App()
 app.add_page(index)
 """
-    base_context = RegistrationContext()
+    base_context = (
+        AppHarness._base_registration_context or RegistrationContext.ensure_context()
+    ).fork()
     monkeypatch.setattr(AppHarness, "_base_registration_context", base_context)
     shared_module_name = f"{package_name}.state"
 
@@ -115,8 +121,8 @@ app.add_page(index)
                 expect(count).to_have_text("0")
                 page.locator("#increment").click()
                 expect(count).to_have_text("1")
-                token = page.evaluate("() => sessionStorage.getItem('token')")
-                assert token is not None
+                token = page.locator("#session-token").input_value()
+                assert token
                 token_manager = harness.token_manager()
                 page.goto("about:blank")
                 assert harness._poll_for(
