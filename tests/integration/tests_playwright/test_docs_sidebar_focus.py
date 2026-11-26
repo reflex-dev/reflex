@@ -1,0 +1,74 @@
+from collections.abc import Generator
+
+import pytest
+from playwright.sync_api import Page, expect
+
+from reflex.testing import AppHarness
+
+
+def DocsSidebarFocusApp():
+    """Render the active sidebar link and highlight for focus geometry checks."""
+    import reflex as rx
+
+    app = rx.App()
+
+    @app.add_page
+    def index():
+        return rx.box(
+            rx.el.li(
+                rx.link(
+                    rx.flex(
+                        rx.el.div(
+                            class_name="absolute left-0 top-1/2 h-8 w-full -translate-y-1/2 rounded-lg bg-accent"
+                        ),
+                        rx.text("Introduction"),
+                        class_name="relative flex h-8 w-full items-center",
+                    ),
+                    href="/docs/introduction/",
+                    class_name="relative block w-auto max-w-[14rem] ml-[2.5rem] rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                ),
+                class_name="relative m-0 w-full list-none p-0 !overflow-visible",
+            ),
+            style={"width": "80vw", "maxWidth": "19.5rem"},
+        )
+
+
+@pytest.fixture
+def docs_sidebar_focus_app(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> Generator[AppHarness, None, None]:
+    """Start the sidebar fixture app.
+
+    Args:
+        tmp_path_factory: Pytest's temporary directory factory.
+
+    Yields:
+        A running Reflex app harness.
+    """
+    with AppHarness.create(
+        root=tmp_path_factory.mktemp("docs_sidebar_focus"),
+        app_source=DocsSidebarFocusApp,
+    ) as harness:
+        yield harness
+
+
+def test_docs_sidebar_focus_outline_matches_active_pill(
+    docs_sidebar_focus_app: AppHarness, page: Page
+) -> None:
+    """Keep the focused active link and its highlight the same size."""
+    page.goto(docs_sidebar_focus_app.frontend_url)
+    link = page.get_by_role("link", name="Introduction", exact=True)
+    pill = link.locator("div.bg-accent")
+    expect(link).to_be_visible()
+    expect(pill).to_be_visible()
+    link.focus()
+    expect(link).to_have_css("outline-style", "solid")
+
+    for width in (320, 390, 1440):
+        page.set_viewport_size({"width": width, "height": 800})
+        link_box = link.bounding_box()
+        pill_box = pill.bounding_box()
+        assert link_box is not None
+        assert pill_box is not None
+        assert abs(link_box["x"] - pill_box["x"]) < 1
+        assert abs(link_box["width"] - pill_box["width"]) < 1

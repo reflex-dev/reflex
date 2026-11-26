@@ -92,7 +92,7 @@ def test_sidebar_active_focus_ring_matches_indented_pill() -> None:
     assert parents is not None, "active highlight pill not found"
     flex = next(n for n in reversed(parents) if n.get("name") == "RadixThemesFlex")
     assert (flex.get("props") or []) == [
-        'className:(isTrue(activeRxMemo) ? "relative flex h-8 max-w-[14rem] items-center" : "relative flex h-8 items-center pl-4")'
+        'className:(isTrue(activeRxMemo) ? "relative flex h-8 w-full items-center" : "relative flex h-8 items-center pl-4")'
     ]
 
     link = next(n for n in parents if n.get("name") == "RadixThemesLink")
@@ -101,7 +101,7 @@ def test_sidebar_active_focus_ring_matches_indented_pill() -> None:
     )
     assert link_class == (
         "className:(isTrue(activeRxMemo) ? "
-        '("relative block w-auto "+guideMarginClassRxMemo+" rounded-lg '
+        '("relative block w-auto max-w-[14rem] "+guideMarginClassRxMemo+" rounded-lg '
         "focus-visible:outline-2 focus-visible:outline-offset-2 "
         'focus-visible:outline-ring") : '
         '("block w-full "+guideMarginClassRxMemo+" rounded-lg '
