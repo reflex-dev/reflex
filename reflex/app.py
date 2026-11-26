@@ -972,7 +972,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     html_custom_attrs: dict[str, str] | None = None
 
-    scroll_restoration: bool = True
+    scroll_restoration: bool = dataclasses.field(default=True, kw_only=True)
 
     # A map from a route to an unevaluated page.
     _unevaluated_pages: dict[str, UnevaluatedPage] = dataclasses.field(
