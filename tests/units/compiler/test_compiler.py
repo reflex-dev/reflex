@@ -389,7 +389,21 @@ def test_page_stylesheets(tmp_path: Path, mocker: MockerFixture):
         "\n"
         "export default Component;\n"
     )
-    assert "export const links" not in (compiled["plain"].output_code or "")
+    assert compiled["plain"].output_code == (
+        'import {Fragment,useEffect} from "react"\n'
+        'import {jsx} from "@emotion/react"\n'
+        "\n\n\n\n\n"
+        "function Component() {\n"
+        "\n\n"
+        "  return (\n"
+        '    jsx(Fragment,{},jsx("div",{},"plain"),jsx("title",{},"Plain"),'
+        'jsx("meta",{content:"favicon.ico",property:"og:image"},))\n'
+        "  )\n"
+        "}\n"
+        'Component.displayName = "Component(plain)";\n'
+        "\n"
+        "export default Component;\n"
+    )
     assert (web_dir / "styles" / "shared.css").read_text() == ".shared { color: blue; }"
     assert (web_dir / "styles" / "pages" / "pricing.css").read_text() == (
         ".pricing { color: red; }"
@@ -583,6 +597,51 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
     assert (
         project / constants.Dirs.WEB / "styles" / "preprocess" / "styles_b.css"
     ).read_text() == expected_result
+
+
+def test_compile_stylesheets_sharing_a_name(tmp_path: Path, mocker: MockerFixture):
+    """A sass stylesheet named like another one keeps its suffix in the styles directory.
+
+    Otherwise both would compile to the same file, and whichever compiled last
+    would supply the CSS for every page and the app.
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+    """
+    if importlib.util.find_spec("sass") is None:
+        pytest.skip(
+            'The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`.'
+        )
+    assets_dir = tmp_path / "assets"
+    assets_dir.mkdir()
+    (assets_dir / "theme.css").write_text(".theme { color: red; }")
+    (assets_dir / "theme.scss").write_text(".theme { color: blue; }")
+    (assets_dir / "theme.sass").write_text(".theme\n\tcolor: green")
+    styles = tmp_path / constants.Dirs.WEB / "styles"
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=tmp_path)
+    mocker.patch("reflex.compiler.compiler.get_web_dir", return_value=tmp_path / ".web")
+
+    _, code = compiler.compile_root_stylesheet(["/theme.css"], reset_style=False)
+    links = compiler.compile_page_stylesheets(["/theme.scss", "/theme.sass"])
+
+    assert code == "@layer __reflex_base;\n@import url('./theme.css');"
+    assert links is not None
+    var_data = links._get_all_var_data()
+    assert var_data is not None
+    assert var_data.imports == (
+        (
+            "$/styles/theme.scss.css?url",
+            (ImportVar(tag="reflexPageStylesheet0", is_default=True),),
+        ),
+        (
+            "$/styles/theme.sass.css?url",
+            (ImportVar(tag="reflexPageStylesheet1", is_default=True),),
+        ),
+    )
+    assert (styles / "theme.css").read_text() == ".theme { color: red; }"
+    assert (styles / "theme.scss.css").read_text() == ".theme{color:blue}\n"
+    assert (styles / "theme.sass.css").read_text() == ".theme{color:green}\n"
 
 
 def test_compile_stylesheets_nested_import_uses_posix_separators(

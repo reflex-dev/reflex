@@ -1,0 +1,1 @@
+A sass stylesheet named like another stylesheet next to it, such as `theme.scss` beside `theme.css`, no longer compiles to the same file in `.web/styles`, where whichever compiled last replaced the other: it keeps its suffix there, as `theme.scss.css`.
