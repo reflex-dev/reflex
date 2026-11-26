@@ -2,6 +2,7 @@
 
 import json
 
+import pytest
 from reflex_base.style import Style
 from reflex_components_sonner.toast import Toaster, ToastProps
 
@@ -25,3 +26,12 @@ def test_toast_button_styles_use_sonner_prop_names():
     assert serialized["cancelButtonStyle"]["color"] == "white"
     assert "actionButtonStyles" not in serialized
     assert "cancelButtonStyles" not in serialized
+
+
+@pytest.mark.parametrize("toast_id", ["toast's-id", 'toast"-id', "toast\nid"])
+def test_toast_dismiss_serializes_string_id(toast_id: str):
+    """Serialize string IDs as valid JavaScript string literals."""
+    event = Toaster.toast_dismiss(toast_id)
+    function = next(value for key, value in event.args if str(key) == "function")
+
+    assert f".dismiss({json.dumps(toast_id)})" in str(function)

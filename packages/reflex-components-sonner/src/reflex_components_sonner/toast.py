@@ -382,7 +382,7 @@ class Toaster(Component):
             dismiss = f"{toast_ref}.dismiss({id!s})"
             dismiss_var_data = id._get_all_var_data()
         elif isinstance(id, str):
-            dismiss = f"{toast_ref}.dismiss('{id}')"
+            dismiss = f"{toast_ref}.dismiss({LiteralVar.create(id)!s})"
         else:
             dismiss = f"{toast_ref}.dismiss()"
         dismiss_action = Var(
