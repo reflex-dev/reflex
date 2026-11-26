@@ -232,7 +232,7 @@ def docs_sidebar_leaf(
                 ),
                 class_name=rx.cond(
                     active,
-                    f"relative {guide_margin_class} flex h-8 max-w-[14rem] items-center",
+                    "relative flex h-8 max-w-[14rem] items-center",
                     "relative flex h-8 items-center pl-4",
                 ),
             ),
@@ -241,7 +241,7 @@ def docs_sidebar_leaf(
             aria_current=rx.cond(active, "page", "false"),
             class_name=rx.cond(
                 active,
-                "relative block w-full rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                f"relative block w-auto {guide_margin_class} rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                 f"block w-full {guide_margin_class} rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
             ),
         ),

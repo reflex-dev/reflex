@@ -45,8 +45,8 @@ def test_sidebar_active_marker_aligns_with_section_guide() -> None:
     assert "-bottom-1 -top-1 left-0" in rendered
 
 
-def test_sidebar_active_pill_stays_inside_indented_row() -> None:
-    """The active highlight aligns with the indented label (#7956).
+def test_sidebar_active_focus_ring_matches_indented_pill() -> None:
+    """Keep the active highlight and focus ring aligned with the label (#7999).
 
     The pill must not carry classes matched by the Reference/Changelog
     guide-hiding selector.
@@ -92,8 +92,22 @@ def test_sidebar_active_pill_stays_inside_indented_row() -> None:
     assert parents is not None, "active highlight pill not found"
     flex = next(n for n in reversed(parents) if n.get("name") == "RadixThemesFlex")
     assert (flex.get("props") or []) == [
-        'className:(isTrue(activeRxMemo) ? ("relative "+guideMarginClassRxMemo+" flex h-8 max-w-[14rem] items-center") : "relative flex h-8 items-center pl-4")'
+        'className:(isTrue(activeRxMemo) ? "relative flex h-8 max-w-[14rem] items-center" : "relative flex h-8 items-center pl-4")'
     ]
+
+    link = next(n for n in parents if n.get("name") == "RadixThemesLink")
+    link_class = next(
+        prop for prop in link.get("props", []) if prop.startswith("className:")
+    )
+    assert link_class == (
+        "className:(isTrue(activeRxMemo) ? "
+        '("relative block w-auto "+guideMarginClassRxMemo+" rounded-lg '
+        "focus-visible:outline-2 focus-visible:outline-offset-2 "
+        'focus-visible:outline-ring") : '
+        '("block w-full "+guideMarginClassRxMemo+" rounded-lg '
+        "focus-visible:outline-2 focus-visible:outline-offset-2 "
+        'focus-visible:outline-ring"))'
+    )
 
     label = next(
         n for n in flex.get("children", []) if n.get("name") == "RadixThemesText"
