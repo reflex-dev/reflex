@@ -3,6 +3,7 @@
 // utils/state.js, which also re-exports the backend connection of
 // utils/transport.js.
 import { mergician } from "mergician";
+import Cookies from "universal-cookie";
 import { useCallback, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
 import { eventLoop } from "$/utils/context-registry";
@@ -132,38 +133,60 @@ const applyResultCallback = async (event, eval_result, runScript) => {
   callback(final_result);
 };
 
-// The events the browser applies itself; any other goes to the backend.
-const FRONTEND_EVENTS = new Set([
-  "_redirect",
-  "_download",
-  "_set_focus",
-  "_blur_focus",
-  "_set_value",
-  "_client_state_set",
-  "_client_state_get",
-  "_call_function",
-  "_call_script",
-]);
-
 /**
- * Check whether the browser applies an event itself.
- * @param event The event to check.
- * @returns True for an event applyFrontendEvent applies, false for one that
- *   goes to the backend.
+ * Run an event's code, then its result callback, logging what either throws.
+ * @param event The event, whose name labels the log.
+ * @param run Runs the event's code and returns its result.
+ * @param runScript Runs a script with the given ``addEvents`` in scope.
  */
-export const isFrontendEvent = (event) => FRONTEND_EVENTS.has(event.name);
+const applyCodeEvent = async (event, run, runScript) => {
+  try {
+    await applyResultCallback(event, run(), runScript);
+  } catch (e) {
+    console.log(event.name, e);
+    if (window?.onerror) {
+      window.onerror(e.message, null, null, null, e);
+    }
+  }
+};
 
 /**
- * Apply an event the browser handles without the backend.
- * @param event An event isFrontendEvent accepts.
+ * Run the script of a ``_call_script`` event, or of a ``_call_function`` event
+ * whose function arrived as a string.
+ * @param event The event.
  * @param navigate The navigate function from useNavigate.
  * @param runScript Runs a script with the given ``addEvents`` in scope.
  */
-export const applyFrontendEvent = async (event, navigate, runScript) => {
+const applyScriptEvent = async (event, navigate, runScript) => {
   // User code dispatches through addEvents like compiled event triggers do;
   // late-bound so a remounted EventLoopProvider is picked up.
   const addEvents = (...args) => eventLoop.addEvents(...args);
-  if (event.name === "_redirect") {
+  await applyCodeEvent(
+    event,
+    () =>
+      event.name === "_call_script"
+        ? runScript(event.payload.javascript_code, addEvents)
+        : runScript(event.payload.function, addEvents)(),
+    runScript,
+  );
+};
+
+/**
+ * Look up the ref a focus or value event names.
+ * @param event The event.
+ * @returns The registered ref, or the payload's ref itself.
+ */
+const eventRef = (event) =>
+  event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
+
+/**
+ * The events the browser applies itself, by name; any other goes to the
+ * backend. A handler returns true when it changed browser storage, which the
+ * browser storage vars of an app with state mirror.
+ * @type {Record<string, (event: any, navigate: any, runScript: any) => any>}
+ */
+const frontendEvents = {
+  _redirect: (event, navigate) => {
     if ((event.payload.path ?? undefined) === undefined) {
       return;
     }
@@ -191,23 +214,19 @@ export const applyFrontendEvent = async (event, navigate, runScript) => {
     } else {
       navigate(pathname);
     }
-    return;
-  }
+  },
 
-  if (event.name === "_download") {
+  _download: (event) => {
     const a = document.createElement("a");
     a.hidden = true;
     a.href = event.payload.url;
     a.download = event.payload.filename;
     a.click();
     a.remove();
-    return;
-  }
+  },
 
-  if (event.name === "_set_focus") {
-    const ref =
-      event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
-    const current = ref?.current;
+  _set_focus: (event) => {
+    const current = eventRef(event)?.current;
     if (current === undefined || current?.focus === undefined) {
       console.error(
         `No element found for ref ${event.payload.ref} in _set_focus`,
@@ -215,13 +234,10 @@ export const applyFrontendEvent = async (event, navigate, runScript) => {
     } else {
       current.focus();
     }
-    return;
-  }
+  },
 
-  if (event.name === "_blur_focus") {
-    const ref =
-      event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
-    const current = ref?.current;
+  _blur_focus: (event) => {
+    const current = eventRef(event)?.current;
     if (current === undefined || current?.blur === undefined) {
       console.error(
         `No element found for ref ${event.payload.ref} in _blur_focus`,
@@ -229,73 +245,79 @@ export const applyFrontendEvent = async (event, navigate, runScript) => {
     } else {
       current.blur();
     }
-    return;
-  }
+  },
 
-  if (event.name === "_set_value") {
-    const ref =
-      event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
+  _set_value: (event) => {
+    const ref = eventRef(event);
     if (ref.current) {
       ref.current.value = event.payload.value;
     }
-    return;
-  }
+  },
 
   // Backend reads and writes go to the shared store directly, so a var that no
   // component renders is still reachable.
-  if (event.name === "_client_state_set") {
+  _client_state_set: (event) => {
     setClientState(event.payload.var_name, event.payload.value);
-    return;
-  }
+  },
 
-  if (event.name === "_client_state_get") {
-    try {
-      await applyResultCallback(
-        event,
-        getClientState(event.payload.var_name),
-        runScript,
-      );
-    } catch (e) {
-      console.log("_client_state_get", e);
-      if (window?.onerror) {
-        window.onerror(e.message, null, null, null, e);
-      }
-    }
-    return;
-  }
+  _client_state_get: (event, navigate, runScript) =>
+    applyCodeEvent(
+      event,
+      () => getClientState(event.payload.var_name),
+      runScript,
+    ),
 
-  if (
-    event.name === "_call_function" &&
-    typeof event.payload.function !== "string"
-  ) {
-    try {
-      await applyResultCallback(event, event.payload.function(), runScript);
-    } catch (e) {
-      console.log("_call_function", e);
-      if (window?.onerror) {
-        window.onerror(e.message, null, null, null, e);
-      }
-    }
-    return;
-  }
+  _call_function: (event, navigate, runScript) =>
+    typeof event.payload.function === "string"
+      ? applyScriptEvent(event, navigate, runScript)
+      : applyCodeEvent(event, () => event.payload.function(), runScript),
 
-  if (event.name === "_call_script" || event.name === "_call_function") {
-    try {
-      const eval_result =
-        event.name === "_call_script"
-          ? runScript(event.payload.javascript_code, addEvents)
-          : runScript(event.payload.function, addEvents)();
+  _call_script: applyScriptEvent,
 
-      await applyResultCallback(event, eval_result, runScript);
-    } catch (e) {
-      console.log("_call_script", e);
-      if (window?.onerror) {
-        window.onerror(e.message, null, null, null, e);
-      }
-    }
-    return;
-  }
+  _remove_cookie: (event) => {
+    new Cookies().remove(event.payload.key, { ...event.payload.options });
+    return true;
+  },
+
+  _clear_local_storage: () => {
+    localStorage.clear();
+    return true;
+  },
+
+  _remove_local_storage: (event) => {
+    localStorage.removeItem(event.payload.key);
+    return true;
+  },
+
+  _clear_session_storage: () => {
+    sessionStorage.clear();
+    return true;
+  },
+
+  _remove_session_storage: (event) => {
+    sessionStorage.removeItem(event.payload.key);
+    return true;
+  },
 };
+
+/**
+ * Check whether the browser applies an event itself.
+ * @param event The event to check.
+ * @returns True for an event applyFrontendEvent applies, false for one that
+ *   goes to the backend.
+ */
+export const isFrontendEvent = (event) =>
+  Object.hasOwn(frontendEvents, event.name);
+
+/**
+ * Apply an event the browser handles without the backend.
+ * @param event An event isFrontendEvent accepts.
+ * @param navigate The navigate function from useNavigate.
+ * @param runScript Runs a script with the given ``addEvents`` in scope.
+ * @returns Whether the event changed browser storage.
+ */
+export const applyFrontendEvent = async (event, navigate, runScript) =>
+  (await frontendEvents[event.name](event, navigate, runScript)) === true;
 
 /**
  * Run a script in an app without state.
@@ -336,7 +358,8 @@ const NO_CONNECT_ERRORS = Object.freeze([]);
  * Establish the event loop of an app compiled without state.
  *
  * The app has no backend, so nothing connects: events the browser handles
- * itself are applied in order, and any other event is reported as an error.
+ * itself are applied in dispatch order, and any other event is reported as an
+ * error.
  * @returns [addEvents, connectErrors], like useEventLoop in utils/transport.js.
  */
 export const useLocalEventLoop = () => {
@@ -356,6 +379,11 @@ export const useLocalEventLoop = () => {
     }
   }, [paramsR]);
 
+  // Events wait here in dispatch order, and each drain takes the next one: an
+  // event dispatched while an earlier one awaits still runs after the events
+  // queued before it, as in the transport's queue.
+  const queue = useRef([]);
+
   const addEvents = useCallback((events, args, event_actions) => {
     const _events = normalizeEvents(events);
     event_actions = Object.assign(
@@ -365,17 +393,28 @@ export const useLocalEventLoop = () => {
     );
     const runScript = (code, addEvents) =>
       runLocalScript(code, addEvents, navigate, params);
-    return applyEventActions(
-      async () => {
-        for (const event of _events) {
-          if (isFrontendEvent(event)) {
-            await applyFrontendEvent(event, navigate, runScript);
-          } else {
-            console.error(
-              `The event "${event.name}" needs the backend, but this app is compiled without state (rx.App(enable_state=False)).`,
-            );
-          }
+    const drain = async () => {
+      const event = queue.current.shift();
+      if (event === undefined) {
+        return;
+      }
+      try {
+        if (isFrontendEvent(event)) {
+          await applyFrontendEvent(event, navigate, runScript);
+        } else {
+          console.error(
+            `The event "${event.name}" needs the backend, but this app is compiled without state (rx.App(enable_state=False)).`,
+          );
         }
+      } finally {
+        // Continue draining queued events even if this one fails.
+        await drain();
+      }
+    };
+    return applyEventActions(
+      () => {
+        queue.current.push(..._events);
+        return drain();
       },
       event_actions,
       args,

@@ -520,8 +520,9 @@ if (typeof window !== "undefined") {
     # utils/transport.js and the build leaves it out.
     if state_name:
         runtime_imports_str = (
-            'import { ReflexEvent, refs } from "$/utils/state"\n'
-            'import { applyDelta, hydrateClientStorage, useEventLoop, warmUpTransport } from "$/utils/transport"'
+            f'import {{ ReflexEvent, refs }} from "$/{constants.Dirs.STATE_PATH}"\n'
+            "import { applyDelta, hydrateClientStorage, useEventLoop, warmUpTransport } "
+            f'from "$/{constants.Dirs.TRANSPORT_PATH}"'
         )
         event_loop_str = """  const dispatch = useContext(DispatchContext)
   const [addEventsLocal, connectErrors] = useEventLoop(
@@ -536,7 +537,9 @@ warmUpTransport();
         state_provider_str = """export const StateProvider =
   typeof document === "undefined" ? ServerStateProvider : ClientStateProvider;"""
     else:
-        runtime_imports_str = 'import { refs, useLocalEventLoop } from "$/utils/state"'
+        runtime_imports_str = (
+            f'import {{ refs, useLocalEventLoop }} from "$/{constants.Dirs.STATE_PATH}"'
+        )
         event_loop_str = (
             """  const [addEventsLocal, connectErrors] = useLocalEventLoop()"""
         )
