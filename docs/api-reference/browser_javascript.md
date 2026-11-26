@@ -152,8 +152,8 @@ whose members stay the same across Reflex versions:
 | `reflex.addEvents(events)` | Dispatch events, as an event trigger does. |
 | `reflex.event(name, payload)` | Build an event for `reflex.addEvents`: `name` is the event handler's full name, `payload` its arguments by name. |
 
-An event handler's full name encodes the module and class of its state, and how
-it does may change between Reflex versions, so never write one out by hand.
+An event handler's full name encodes the module and class of its state, and its
+format may change between Reflex versions, so never write one out by hand.
 Build it in Python, as `f"{State.get_full_name()}.handler_name"`, and pass it
 into the JavaScript.
 
