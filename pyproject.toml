@@ -124,7 +124,7 @@ dev = [
   "reflex-docgen",
   "reflex-otel",
   "reflex-release",
-  "reflex-build-sdk[aiohttp,httpx,httpx2]",
+  "reflex-build-sdk[aiohttp,httpx,httpx2,triggers]",
   "reflex-site-shared",
   "reflex-workflow",
   "ruff",
