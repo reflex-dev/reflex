@@ -4,7 +4,9 @@ from typing import Literal, get_args
 
 import pytest
 import reflex as rx
+from reflex_components_core.core.clipboard import Clipboard
 from reflex_components_core.el.elements.tables import Td, Tr
+from reflex_components_dataeditor.dataeditor import DataEditor
 from reflex_components_radix.themes.typography.code import Code
 from reflex_components_radix.themes.typography.heading import Heading
 from reflex_docgen import generate_documentation
@@ -270,8 +272,67 @@ def test_button_props_list_its_own_props_before_global_html_attributes():
     disclosure = rendered.children[3]
     assert disclosure.tag == "details"
     summary, table = disclosure.children
-    assert str(summary.children[0].contents) == '"Inherited HTML attributes (16)"'
+    assert str(summary.children[0].contents) == '"Global HTML attributes (16)"'
     assert _prop_names(table) == GLOBAL_HTML_ATTRIBUTES
+
+
+DATA_EDITOR_OWN_PROPS = [
+    "rows",
+    "columns",
+    "data",
+    "get_cell_content",
+    "get_cells_for_selection",
+    "on_paste",
+    "draw_focus_ring",
+    "fixed_shadow_x",
+    "fixed_shadow_y",
+    "fill_handle",
+    "freeze_columns",
+    "group_header_height",
+    "header_height",
+    "max_column_auto_width",
+    "max_column_width",
+    "min_column_width",
+    "row_height",
+    "row_markers",
+    "row_marker_start_index",
+    "row_marker_width",
+    "smooth_scroll_x",
+    "smooth_scroll_y",
+    "vertical_border",
+    "column_select",
+    "range_select",
+    "row_select",
+    "prevent_diagonal_scrolling",
+    "overscroll_x",
+    "overscroll_y",
+    "scroll_offset_x",
+    "scroll_offset_y",
+    "range_selection_blending",
+    "column_selection_blending",
+    "row_selection_blending",
+    "row_selection_mode",
+    "span_range_behavior",
+    "theme",
+    "grid_selection",
+    "show_search",
+    "custom_renderers",
+]
+
+
+@pytest.mark.parametrize(
+    ("component", "name", "expected"),
+    [
+        (DataEditor, "rx.data_editor", DATA_EDITOR_OWN_PROPS),
+        (Clipboard, "rx.clipboard", ["targets", "on_paste_event_actions"]),
+    ],
+)
+def test_props_table_lists_props_named_like_event_triggers(
+    component: type[rx.Component], name: str, expected: list[str]
+):
+    """Props whose names start with ``on_`` are real props and get a table row."""
+    rendered = component_docs((component, name), {})
+    assert _prop_names(rendered.children[2].children[-1]) == expected
 
 
 def test_component_reference_headings_nest_under_api_reference():

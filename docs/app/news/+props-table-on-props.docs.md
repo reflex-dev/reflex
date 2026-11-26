@@ -1,0 +1,1 @@
+Component props tables now list props whose names start with `on_` but are not event triggers, such as `rx.data_editor`'s `on_paste` and `rx.clipboard`'s `on_paste_event_actions`, and the collapsed group of global HTML attributes is labelled "Global HTML attributes".

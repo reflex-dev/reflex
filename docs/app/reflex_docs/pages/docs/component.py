@@ -496,7 +496,7 @@ def props_table(
     """Render the reference table for a component's props.
 
     Args:
-        props: The props to list, in display order. Event triggers are skipped.
+        props: The props to list, in display order.
         component: The component the props belong to.
 
     Returns:
@@ -504,8 +504,6 @@ def props_table(
     """
     rows: list[rx.Component] = []
     for prop in props:
-        if prop.name.startswith("on_"):  # ignore event trigger props
-            continue
         cells, is_long_row, expanded_name, expanded = prop_docs(prop, component)
         row_props = {
             "class_name": ui.cn(
@@ -947,25 +945,22 @@ def split_props(
         for name in vars(cls).get("_own_fields", ()):
             owners.setdefault(name, index)
 
-    def rank(prop: PropDocumentation) -> tuple[bool, int]:
-        """Rank a prop by the class that declares it.
-
-        Args:
-            prop: The prop to rank.
-
-        Returns:
-            Whether an HTML ancestor of the component declares it, then that
-            class's MRO index, so the nearest non-HTML declarations sort first.
-        """
-        owner = owners[prop.name]
-        return mro[owner] is not component and issubclass(mro[owner], BaseHTML), owner
-
-    own = sorted(
-        (prop for prop in props if mro[owners[prop.name]] is not BaseHTML), key=rank
-    )
-    return tuple(own), tuple(
-        prop for prop in props if mro[owners[prop.name]] is BaseHTML
-    )
+    ranked: list[tuple[bool, int, PropDocumentation]] = []
+    global_props: list[PropDocumentation] = []
+    for prop in props:
+        index = owners[prop.name]
+        owner = mro[index]
+        if owner is BaseHTML:
+            global_props.append(prop)
+        else:
+            # HTML ancestors' attributes follow the nearest non-HTML declarations.
+            ranked.append((
+                owner is not component and issubclass(owner, BaseHTML),
+                index,
+                prop,
+            ))
+    ranked.sort(key=lambda entry: entry[:2])
+    return tuple(prop for _, _, prop in ranked), tuple(global_props)
 
 
 def html_attributes_disclosure(
@@ -1035,7 +1030,7 @@ def component_docs(
         h3_comp(text=comp_display_name),
         rx.box(render_markdown(doc.description or ""), class_name="pb-2"),
         props,
-        html_attributes_disclosure("Inherited HTML attributes", inherited_props),
+        html_attributes_disclosure("Global HTML attributes", inherited_props),
         rx.el.p(
             "Also accepts the ",
             rx.el.a(
