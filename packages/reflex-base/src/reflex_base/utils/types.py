@@ -1273,6 +1273,24 @@ _NO_EXTRA_ITEMS_SENTINELS = tuple(
 )
 
 
+@lru_cache
+def _runtime_typed_dict_field_types(cls: GenericType) -> dict[str, Any]:
+    """Resolve the field types for repeated runtime TypedDict checks.
+
+    Args:
+        cls: The TypedDict class or specialization being checked.
+
+    Returns:
+        The field types used for runtime validation.
+    """
+    if sys.version_info[:2] == (3, 11) and is_typeddict(cls):
+        if "__orig_bases__" not in vars(cls):
+            # Python 3.11 can discard specialized bases of stdlib TypedDicts.
+            # Keep checking the available field hints when they cannot be recovered.
+            return get_type_hints(cls)
+    return get_typed_dict_field_types(cls)
+
+
 def does_obj_satisfy_typed_dict(
     obj: Any,
     cls: GenericType,
@@ -1297,12 +1315,7 @@ def does_obj_satisfy_typed_dict(
         return False
 
     origin = get_origin_og(cls) or cls
-    if origin is cls:
-        key_names_to_values = get_type_hints(cls)
-    else:
-        # A specialization (``P[str]``) has no hints of its own; resolve the
-        # generic's fields with the type arguments substituted.
-        key_names_to_values = get_typed_dict_field_types(cls)
+    key_names_to_values = _runtime_typed_dict_field_types(cls)
     required_keys: frozenset[str] = getattr(origin, "__required_keys__", frozenset())
     is_closed = getattr(origin, "__closed__", False)
     extra_items_type = getattr(origin, "__extra_items__", Any)
@@ -1454,18 +1467,6 @@ def _isinstance(
     origin = origin_attr if origin_attr is not None else _get_origin_cached(cls)
 
     if origin is None:
-        # cls is a typed dict
-        if is_typeddict(cls):
-            if nested:
-                return does_obj_satisfy_typed_dict(
-                    obj,
-                    cls,
-                    nested=nested - 1,
-                    treat_var_as_type=treat_var_as_type,
-                    treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
-                )
-            return isinstance(obj, dict)
-
         # cls is a float
         if cls is float:
             return isinstance(obj, (float, int))
@@ -1474,6 +1475,17 @@ def _isinstance(
         try:
             return isinstance(obj, cls)
         except TypeError:
+            if typing_extensions.is_typeddict(cls):
+                if nested:
+                    return does_obj_satisfy_typed_dict(
+                        obj,
+                        cls,
+                        nested=nested - 1,
+                        treat_var_as_type=treat_var_as_type,
+                        treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+                    )
+                return isinstance(obj, dict)
+
             # A bare PEP 695 type alias is opaque to ``isinstance``; unwrap it
             # and re-dispatch. Alias members of a union resolve in the
             # per-member recursion of the union branch above.
@@ -1554,7 +1566,7 @@ def _isinstance(
                     return False
             return True
         if safe_issubclass(origin, Mapping):
-            if typing_extensions.is_typeddict(origin):
+            if origin is not dict and typing_extensions.is_typeddict(origin):
                 # A specialized generic TypedDict (``P[str]``) carries the
                 # generic's type arguments, not a Mapping's key and value types.
                 return does_obj_satisfy_typed_dict(

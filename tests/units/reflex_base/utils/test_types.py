@@ -657,6 +657,16 @@ def test_get_typed_dict_field_types_through_generic_bases():
         ({"value": "a", "maybe": None}, _GenericBase[int] | None, False),
         ({"value": ["a"], "maybe": None, "flag": True}, _GenericMiddle[str], True),
         ({"value": "a", "maybe": None, "flag": True}, _GenericMiddle[str], False),
+        (
+            {"value": ["a"], "maybe": None, "flag": True, "name": "x"},
+            _Concrete,
+            True,
+        ),
+        (
+            {"value": "a", "maybe": None, "flag": True, "name": "x"},
+            _Concrete,
+            False,
+        ),
         ({"value": 1}, _GenericBase[int], False),
         ([1], _GenericBase[int], False),
     ],
@@ -715,6 +725,7 @@ def test_get_typed_dict_field_types_through_stdlib_plain_subclass():
     class Plain(Concrete):
         pass
 
+    assert _isinstance({"value": ["a"]}, Plain, nested=2, treat_var_as_type=False)
     if sys.version_info >= (3, 12):
         assert get_typed_dict_field_types(Plain) == {"value": list[str]}
     else:
