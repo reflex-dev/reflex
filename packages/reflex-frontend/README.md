@@ -18,9 +18,17 @@ In a checkout of the repository there is no embedded copy: reflex-base reads
 
 Everything in `src/` ships to every app, including the build tooling an app
 runs (`compress-static.js`, `script-modules.js`, which the compiler runs to read
-the JavaScript modules an app imports from Python, the PostCSS config, the Vite
-plugins). Tests,
-fixtures and this package's own lint and type-check setup stay outside it.
+the JavaScript modules an app imports from Python, `script-signatures.js`, which
+reads their types for their Python stubs in development, the PostCSS config,
+the Vite plugins). Tests, fixtures and this package's own lint and type-check
+setup stay outside it.
+
+`script-signatures.js` prints the `Signatures` shape that
+`reflex_base/js/stubs.py` declares and reads; that shape is the contract
+between them. `tests/fixtures/signatures/signatures.json` is a sample: what the
+script prints for the fixture modules beside it. Vitest checks that the script
+prints exactly that, and the Python tests read it as `Signatures` and render
+stubs from it, so a change to the shape on one side fails the other's tests.
 
 A change under `src/` is a change to reflex-base: its news fragment goes in
 `packages/reflex-base/news/`.
@@ -101,11 +109,15 @@ and `@react-router/fs-routes`, which every app installs as dev dependencies.
 `script-modules.js` imports rolldown's parser through `vite`, another of them;
 here vitest brings both.
 
-What `script-modules.js` prints is a contract with the compiler, which reads
-it with `_read_script_modules` in `reflex/compiler/utils.py` and rejects output
-of any other `format` or shape. Change its `format` with its shape, and the
-TypedDicts there with both; `test_read_script_modules_contract` runs the real
-script through that parser.
+What `script-modules.js` and `script-signatures.js` print is a contract with
+the compiler, which reads it with `_read_script_modules` and
+`_read_script_signatures` in `reflex/compiler/utils.py` and rejects output of
+any other `format` or shape. Change a script's `format` with its shape, and the
+TypedDicts there (`Signatures` in `reflex_base/js/stubs.py`) with both;
+`test_read_script_modules_contract` runs the real `script-modules.js` through
+that parser, and `test_parse_json_reads_the_signatures_the_real_script_prints`
+parses `tests/fixtures/signatures/signatures.json`, which the vitest checks
+`script-signatures.js` prints.
 
 ## Before this can be published
 

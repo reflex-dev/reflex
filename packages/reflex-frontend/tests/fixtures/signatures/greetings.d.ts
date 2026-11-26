@@ -1,0 +1,1 @@
+type Greeting = "hi" | "hey";

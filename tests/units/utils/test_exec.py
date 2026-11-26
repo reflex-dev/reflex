@@ -5,6 +5,7 @@ import gc
 import logging
 import multiprocessing
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -1614,3 +1615,15 @@ def test_get_package_json_and_hash_reads_utf8(tmp_path: Path):
     )
     content, _ = exec_utils.get_package_json_and_hash(package_json_path)
     assert content == {"description": "\u0101", "dependencies": {}}
+
+
+def test_hot_reload_ignores_type_stubs():
+    """Writing a type stub next to a JavaScript module does not reload the backend."""
+    ignored = [
+        name
+        for name in ("party.pyi", "party.py")
+        if any(
+            re.match(pattern, name) for pattern in exec_utils.HOTRELOAD_IGNORE_PATTERNS
+        )
+    ]
+    assert ignored == ["party.pyi"]

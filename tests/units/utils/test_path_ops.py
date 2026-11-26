@@ -6,6 +6,7 @@ import errno
 import json
 import multiprocessing
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -934,6 +935,63 @@ def test_write_file_updates_changed_file(tmp_path: Path) -> None:
     write_file(path, "before")
     write_file(path, "after")
     assert path.read_text(encoding="utf-8") == "after"
+
+
+@pytest.mark.parametrize("atomic", [False, True])
+def test_write_file_replaces_a_file_that_is_not_utf8(tmp_path: Path, atomic: bool):
+    """A file UTF-8 cannot decode differs from any content, which replaces it.
+
+    Args:
+        tmp_path: The directory for the test file.
+        atomic: Whether the file is replaced whole.
+    """
+    path = tmp_path / "party.pyi"
+    path.write_bytes(b"\xff\n")
+    write_file(path, "café\n", atomic=atomic)
+    assert path.read_bytes() == "café\n".encode()
+
+
+def test_write_file_atomic_replaces_the_file_whole(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An atomic write fills a temporary file beside the target, then replaces it.
+
+    The temporary file ends as the target does, so a watcher that ignores the
+    target's type ignores it too.
+
+    Args:
+        tmp_path: The directory for the test file.
+        monkeypatch: Fixture for recording file replacements.
+    """
+    path = tmp_path / "party.pyi"
+    write_file(path, "before")
+    replaced: list[str] = []
+    replace = Path.replace
+
+    def record(self: Path, target: Path) -> Path:
+        """Record the temporary file a write replaces its target with.
+
+        Args:
+            self: The temporary file.
+            target: The target.
+
+        Returns:
+            The target.
+        """
+        replaced.append(re.sub(r"\.[0-9a-f]{16}\.", ".<hex>.", self.name))
+        return replace(self, target)
+
+    monkeypatch.setattr(Path, "replace", record)
+    write_file(path, "after", atomic=True)
+    assert (
+        path.read_text(encoding="utf-8"),
+        [child.name for child in tmp_path.iterdir()],
+        replaced,
+    ) == (
+        "after",
+        ["party.pyi"],
+        [".party.pyi.<hex>.tmp.pyi"],
+    )
 
 
 def test_update_directory_tree_reports_only_copied_files(tmp_path: Path) -> None:

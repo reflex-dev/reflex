@@ -1,0 +1,522 @@
+{
+  "format": 1,
+  "modules": {
+    "jsdoc.js": {
+      "celebrate": [
+        {
+          "parameters": [
+            {
+              "name": "count",
+              "type": "float",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "elementId",
+              "type": "str",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "loud",
+              "type": "bool",
+              "optional": true,
+              "rest": false
+            }
+          ]
+        }
+      ],
+      "many": [
+        {
+          "parameters": [
+            {
+              "name": "names",
+              "type": "str",
+              "optional": false,
+              "rest": true
+            }
+          ]
+        }
+      ],
+      "default": [
+        {
+          "parameters": []
+        }
+      ],
+      "draw": [
+        {
+          "parameters": [
+            {
+              "name": "shape",
+              "type": {
+                "kind": "union",
+                "members": [
+                  {
+                    "kind": "literal",
+                    "value": "circle"
+                  },
+                  {
+                    "kind": "literal",
+                    "value": "square"
+                  }
+                ]
+              },
+              "optional": false,
+              "rest": false
+            }
+          ]
+        }
+      ],
+      "untyped": [
+        {
+          "parameters": [
+            {
+              "name": "a",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "b",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            }
+          ]
+        }
+      ],
+      "notAFunction": [],
+      "anything": []
+    },
+    "typed.ts": {
+      "pick": [
+        {
+          "parameters": [
+            {
+              "name": "mode",
+              "type": {
+                "kind": "union",
+                "members": [
+                  {
+                    "kind": "literal",
+                    "value": "a"
+                  },
+                  {
+                    "kind": "literal",
+                    "value": "b"
+                  }
+                ]
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "maybe",
+              "type": {
+                "kind": "union",
+                "members": ["None", "str"]
+              },
+              "optional": false,
+              "rest": false
+            }
+          ]
+        }
+      ],
+      "overloaded": [
+        {
+          "parameters": [
+            {
+              "name": "n",
+              "type": "float",
+              "optional": false,
+              "rest": false
+            }
+          ]
+        },
+        {
+          "parameters": []
+        }
+      ],
+      "tupleRest": [
+        {
+          "parameters": [
+            {
+              "name": "args",
+              "type": "any",
+              "optional": false,
+              "rest": true
+            }
+          ]
+        }
+      ],
+      "defaultFirst": [
+        {
+          "parameters": [
+            {
+              "name": "prefix",
+              "type": "str",
+              "optional": true,
+              "rest": false
+            },
+            {
+              "name": "count",
+              "type": "float",
+              "optional": false,
+              "rest": false
+            }
+          ]
+        }
+      ],
+      "optionalItems": [
+        {
+          "parameters": [
+            {
+              "name": "pair",
+              "type": {
+                "kind": "list",
+                "item": {
+                  "kind": "union",
+                  "members": ["None", "str"]
+                }
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "picks",
+              "type": {
+                "kind": "list",
+                "item": {
+                  "kind": "union",
+                  "members": [
+                    "None",
+                    {
+                      "kind": "literal",
+                      "value": "a"
+                    },
+                    {
+                      "kind": "literal",
+                      "value": "b"
+                    },
+                    {
+                      "kind": "literal",
+                      "value": "c"
+                    }
+                  ]
+                }
+              },
+              "optional": false,
+              "rest": false
+            }
+          ]
+        }
+      ]
+    },
+    "types.ts": {
+      "literals": [
+        {
+          "parameters": [
+            {
+              "name": "color",
+              "type": {
+                "kind": "union",
+                "members": [
+                  {
+                    "kind": "literal",
+                    "value": "green"
+                  },
+                  {
+                    "kind": "literal",
+                    "value": "red"
+                  }
+                ]
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "level",
+              "type": {
+                "kind": "union",
+                "members": [
+                  {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  {
+                    "kind": "literal",
+                    "value": 1
+                  }
+                ]
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "mode",
+              "type": {
+                "kind": "union",
+                "members": [
+                  {
+                    "kind": "literal",
+                    "value": "a"
+                  },
+                  {
+                    "kind": "literal",
+                    "value": "b"
+                  },
+                  {
+                    "kind": "literal",
+                    "value": 2
+                  },
+                  {
+                    "kind": "literal",
+                    "value": true
+                  }
+                ]
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "ratio",
+              "type": "float",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "flag",
+              "type": {
+                "kind": "literal",
+                "value": true
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "shape",
+              "type": {
+                "kind": "union",
+                "members": [
+                  {
+                    "kind": "literal",
+                    "value": "circle"
+                  },
+                  {
+                    "kind": "literal",
+                    "value": "square"
+                  }
+                ]
+              },
+              "optional": false,
+              "rest": false
+            }
+          ]
+        }
+      ],
+      "containers": [
+        {
+          "parameters": [
+            {
+              "name": "names",
+              "type": {
+                "kind": "list",
+                "item": "str"
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "pair",
+              "type": {
+                "kind": "list",
+                "item": {
+                  "kind": "union",
+                  "members": ["float", "str"]
+                }
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "empty",
+              "type": {
+                "kind": "list",
+                "item": "any"
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "counts",
+              "type": {
+                "kind": "mapping",
+                "value": "float"
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "options",
+              "type": {
+                "kind": "mapping",
+                "value": "any"
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "inline",
+              "type": {
+                "kind": "mapping",
+                "value": "any"
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "partial",
+              "type": {
+                "kind": "mapping",
+                "value": "any"
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "keyed",
+              "type": {
+                "kind": "mapping",
+                "value": "any"
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "nested",
+              "type": {
+                "kind": "list",
+                "item": {
+                  "kind": "union",
+                  "members": ["None", "str"]
+                }
+              },
+              "optional": false,
+              "rest": false
+            }
+          ]
+        }
+      ],
+      "noJsonForm": [
+        {
+          "parameters": [
+            {
+              "name": "tags",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "lookup",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "big",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "later",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "make",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "element",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "widget",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "anything",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "both",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "either",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            }
+          ]
+        }
+      ],
+      "maybe": [
+        {
+          "parameters": [
+            {
+              "name": "value",
+              "type": {
+                "kind": "union",
+                "members": ["None", "str"]
+              },
+              "optional": true,
+              "rest": false
+            },
+            {
+              "name": "rest",
+              "type": "any",
+              "optional": false,
+              "rest": true
+            }
+          ]
+        }
+      ],
+      "Color": [],
+      "Level": [],
+      "Options": [],
+      "Count": [],
+      "Widget": [],
+      "aliased": [
+        {
+          "parameters": []
+        }
+      ],
+      "Shape": [],
+      "fromReexported": [
+        {
+          "parameters": []
+        }
+      ]
+    },
+    "script.js": {}
+  },
+  "files": {
+    "jsdoc.js": ["jsdoc.js", "shapes.d.ts"],
+    "typed.ts": ["typed.ts"],
+    "types.ts": ["types.ts", "shapes.d.ts", "reexported.js"],
+    "script.js": ["script.js"]
+  }
+}

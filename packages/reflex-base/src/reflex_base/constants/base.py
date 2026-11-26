@@ -47,6 +47,10 @@ class Dirs(SimpleNamespace):
     # The directory holding a link to the app's package, through which the
     # bundler reads those modules where they are.
     SCRIPT_MODULES_PATH = UTILS + "/script_modules"
+    # What the type stub of each of those modules was made from in development,
+    # so the next compile reads a module's types again only when that changed,
+    # and knows which stubs belong to modules the app no longer imports.
+    SCRIPT_STUBS = "script_stubs.json"
     # The name of the output directory.
     BUILD_DIR = "build"
     # The name of the static files directory.

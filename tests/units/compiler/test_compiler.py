@@ -2406,32 +2406,43 @@ def test_custom_code_may_declare_refs(auto_memoize: bool):
 
 
 @pytest.mark.parametrize(
-    ("imports_modules", "vite_installed", "first_install"),
+    ("imports_modules", "vite_installed", "first_install", "prod"),
     [
         # An app without modules installs once, as before.
-        (False, False, False),
+        (False, False, False, False),
         # The first compile installs the parser before reading the modules.
-        (True, False, True),
+        (True, False, True, False),
         # Later compiles have it.
-        (True, True, False),
+        (True, True, False, False),
+        # A production build writes no stub.
+        (True, True, False, True),
     ],
 )
 def test_install_frontend_packages_reads_modules_after_the_parser_is_installed(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
     mocker: MockerFixture,
     imports_modules: bool,
     vite_installed: bool,
     first_install: bool,
+    prod: bool,
 ):
     """The modules are read once vite is installed, then their packages install.
 
+    After the install, which brings typescript in development, their type stubs
+    are written; a production build leaves the source tree alone.
+
     Args:
         tmp_path: The web directory.
-        mocker: Fixture for recording the install and the read.
+        monkeypatch: Fixture for selecting the mode.
+        mocker: Fixture for recording the install, the read and the stubs.
         imports_modules: Whether the app imports a JavaScript module.
         vite_installed: Whether the web directory has vite.
         first_install: Whether the packages install before the read.
+        prod: Whether to compile in production mode.
     """
+    if prod:
+        monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.PROD.value)
     mocker.patch("reflex.compiler.compiler.get_web_dir", return_value=tmp_path)
     if vite_installed:
         (tmp_path / "node_modules" / "vite").mkdir(parents=True)
@@ -2444,6 +2455,7 @@ def test_install_frontend_packages_reads_modules_after_the_parser_is_installed(
     mocker.patch.object(app, "_get_frontend_packages", side_effect=calls.append)
     outputs = [("utils/scripts.js", "export default {};\n")]
     script_imports = {"canvas-confetti": [ImportVar(tag=None, render=False)]}
+    read = {tmp_path / "party.js": {"files": [str(tmp_path / "party.js")]}}
 
     def compile_script_modules(script_modules: dict[str, _ScriptModule]):
         """Record the modules read, and return fixed outputs.
@@ -2452,14 +2464,23 @@ def test_install_frontend_packages_reads_modules_after_the_parser_is_installed(
             script_modules: The modules.
 
         Returns:
-            The outputs and the imports.
+            The outputs, the imports and what was read of the modules.
         """
         calls.append(("read", script_modules))
-        return outputs, script_imports
+        return outputs, script_imports, read
+
+    def write_script_stubs(read):
+        """Record that the stubs were written.
+
+        Args:
+            read: What was read of the modules.
+        """
+        calls.append(("stubs", read))
 
     mocker.patch.object(
         utils, "compile_script_modules", side_effect=compile_script_modules
     )
+    mocker.patch.object(utils, "write_script_stubs", side_effect=write_script_stubs)
     imports = {"react": [ImportVar(tag="useState")]}
 
     assert compiler._install_frontend_packages(app, imports) == outputs
@@ -2467,4 +2488,5 @@ def test_install_frontend_packages_reads_modules_after_the_parser_is_installed(
         *([imports] if first_install else []),
         ("read", modules),
         {**imports, **script_imports},
+        *([] if prod else [("stubs", read)]),
     ]

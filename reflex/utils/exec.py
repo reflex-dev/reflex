@@ -784,6 +784,8 @@ HOTRELOAD_IGNORE_EXTENSIONS = (
     "bash",
     "log",
     "db",
+    # The type stubs Reflex writes next to JavaScript modules.
+    "pyi",
 )
 
 HOTRELOAD_IGNORE_PATTERNS = (

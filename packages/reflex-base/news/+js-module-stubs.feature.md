@@ -1,0 +1,1 @@
+In development, the type stub Reflex writes next to a JavaScript module imported from Python types each function's arguments from its TypeScript annotations or JSDoc, so type checkers flag a wrong argument such as `celebrate("lots")` for `@param {number} count`. Production builds write no stubs, and a function whose types Reflex cannot read accepts any arguments.

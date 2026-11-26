@@ -1295,21 +1295,26 @@ def _install_frontend_packages(
     The modules are read with the bundler's parser, which the install provides,
     so the first compile of an app that imports one installs before reading
     them, and again with their packages. Later compiles find the parser and
-    install once, which is skipped when the packages have not changed.
+    install once, which is skipped when the packages have not changed. In
+    development, the modules' type stubs are then written.
 
     Args:
         app: The app.
         imports: The imports of the compiled components.
 
     Returns:
-        The outputs of the modules: ``utils/scripts.js`` and their type stubs.
+        The outputs of the modules: ``utils/scripts.js``.
     """
     script_modules = _app_modules()
     vite = get_web_dir() / Javascript.NODE_MODULES / "vite"
     if script_modules and not vite.is_dir():
         app._get_frontend_packages(imports)
-    outputs, script_imports = utils.compile_script_modules(script_modules)
+    outputs, script_imports, modules = utils.compile_script_modules(script_modules)
     app._get_frontend_packages(utils.merge_imports(imports, script_imports))
+    # Stubs are for type checkers during development: a production build leaves
+    # the source tree alone. After the install: reading types needs typescript.
+    if not is_prod_mode():
+        utils.write_script_stubs(modules)
     return outputs
 
 
