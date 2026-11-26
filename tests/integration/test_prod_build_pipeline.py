@@ -5,6 +5,7 @@ Tests precompressed assets against a real prod build served via AppHarnessProd.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Generator
 from pathlib import Path
 
@@ -25,17 +26,42 @@ ENCODING_IDS = [case[0] for case in ENCODING_CASES]
 
 
 def ProdBuildPipelineApp():
-    """A minimal app for build pipeline testing."""
+    """A small app for build pipeline testing.
+
+    Its pages share a stateful navbar and have a stateful part of their own.
+    ``/`` and ``/b`` are registered from one module, ``/c`` as if from another.
+    """
     import reflex as rx
 
-    app = rx.App()
+    menu = rx.client_state(False)
 
-    @app.add_page
-    def index():
+    def page(marker: str) -> rx.Component:
+        clicks = rx.client_state(0)
         return rx.el.main(
             rx.heading("Build Pipeline Test"),
-            rx.text("Hello"),
+            rx.el.nav(
+                rx.el.button(
+                    "Menu", on_click=menu.set(~menu.value), aria_label="shared-marker"
+                ),
+            ),
+            rx.el.button(marker, on_click=clicks.set(1), aria_label=marker),
         )
+
+    def index() -> rx.Component:
+        return page("only-on-index")
+
+    def b() -> rx.Component:
+        return page("only-on-b")
+
+    def c() -> rx.Component:
+        return page("only-on-c")
+
+    c.__module__ = "prod_build_pipeline_pages.c"
+
+    app = rx.App()
+    app.add_page(index, route="/")
+    app.add_page(b, route="/b")
+    app.add_page(c, route="/c")
 
 
 @pytest.fixture(scope="module")
@@ -177,3 +203,53 @@ def test_bundles_exclude_embedded_core_js(prod_app: AppHarness):
     ]
 
     assert not offenders, f"bundles embed a core-js runtime: {offenders}"
+
+
+def _route_code(harness: AppHarness, route_id: str) -> str:
+    """Read the JS a route loads: its module and every chunk it imports.
+
+    Args:
+        harness: The running prod harness.
+        route_id: The route's id in the react-router manifest.
+
+    Returns:
+        The code of those files.
+    """
+    static_dir = harness.app_path / prerequisites.get_web_dir() / constants.Dirs.STATIC
+    (manifest_file,) = _find_build_files(harness, "assets/manifest-*.js")
+    manifest = json.loads(
+        manifest_file
+        .read_text()
+        .removeprefix("window.__reactRouterManifest=")
+        .removesuffix(";")
+    )
+    route = manifest["routes"][route_id]
+    return "\n".join(
+        (static_dir / path.lstrip("/")).read_text()
+        for path in {route["module"], *route["imports"]}
+    )
+
+
+def test_pages_load_only_their_own_auto_memos(prod_app: AppHarness):
+    """A page's chunks hold its own memos and the shared ones, not another page's."""
+    markers = {
+        "_index": "only-on-index",
+        "[b]._index": "only-on-b",
+        "[c]._index": "only-on-c",
+    }
+    for stem, marker in markers.items():
+        code = _route_code(prod_app, f"routes/{stem}")
+        assert marker in code
+        assert "shared-marker" in code
+        for other in set(markers.values()) - {marker}:
+            assert other not in code, (stem, other)
+
+
+def test_shared_auto_memos_are_emitted_once(prod_app: AppHarness):
+    """A memo several pages use is in one chunk, not copied into each page's."""
+    chunks = [
+        path.name
+        for path in _find_build_files(prod_app, "assets/*.js")
+        if "shared-marker" in path.read_text()
+    ]
+    assert len(chunks) == 1, chunks

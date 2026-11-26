@@ -1,0 +1,1 @@
+`create_passthrough_component_memo` no longer takes a `source_module`: an auto-memo wrapper imports from `memo_paths.AUTO_MEMO_LIBRARY` until the compiler places it, and `memo_components_template` takes the names a memo module re-exports.

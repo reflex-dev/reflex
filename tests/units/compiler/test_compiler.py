@@ -5,20 +5,23 @@ import os
 import re
 import shutil
 import sys
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from pathlib import Path, PureWindowsPath
+from typing import Any
 
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
 from reflex_base.components.component import BaseComponent, Component
 from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
-from reflex_base.components.memo import MEMOS
+from reflex_base.components.memo import MEMOS, MemoComponentDefinition, MemoDefinition
 from reflex_base.constants.base import LiteralColorMode
 from reflex_base.constants.compiler import PageNames
 from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.plugins.sitemap import SitemapPlugin
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils import memo_paths
 from reflex_base.utils.console import PoorProgress
 from reflex_base.utils.exceptions import (
     DynamicRouteArgShadowsStateVarError,
@@ -26,16 +29,19 @@ from reflex_base.utils.exceptions import (
     RouteValueError,
 )
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
-from reflex_base.vars.base import Var
+from reflex_base.vars import VarData
+from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_core.base import Description, document
 from reflex_components_core.base.document import Links, Scripts
+from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.el.elements.metadata import Head, Link, Meta
 from reflex_components_core.el.elements.other import Html
 
 import reflex as rx
 from reflex.compiler import compiler, utils
 from reflex.compiler.plugins import default_page_plugins
+from reflex.compiler.plugins.memoize import scope_memo_body_hooks
 from reflex.state import BaseState
 from reflex.utils import prerequisites
 
@@ -2402,3 +2408,389 @@ def test_custom_code_may_declare_refs(auto_memoize: bool):
     assert any("const refs = {};" in code for _, code in memo_files)
     for code in modules:
         assert not _IMPORTS_REFS.search(code), code
+
+
+class _PlacementState(BaseState):
+    """State the loops of the auto-memo placement tests iterate."""
+
+    items: list[str] = ["a"]
+    others: list[str] = ["b"]
+    flag: bool = False
+
+
+@dataclasses.dataclass(slots=True)
+class _FakePage:
+    """A page definition the compile context accepts."""
+
+    route: str
+    component: Callable[[], Component]
+    title: Any = None
+    description: Any = None
+    image: str = ""
+    meta: tuple[dict[str, Any], ...] = ()
+    _source_module: str | None = None
+
+
+def _stateful(name: str) -> Component:
+    """A component the compiler wraps in an auto memo of its own.
+
+    Args:
+        name: What distinguishes its memo from the others.
+
+    Returns:
+        The component.
+    """
+    value = LiteralVar.create(name)._replace(
+        merge_var_data=VarData(hooks={f"useTest_{name}": None}, state="TestState")
+    )
+    return rx.el.p(title=value)
+
+
+def _chrome() -> Component:
+    return Fragment.create(_stateful("nav"), _stateful("footer"))
+
+
+_MEMO_EXPORT = re.compile(r"^export const (\w+) = ", re.MULTILINE)
+_MEMO_REEXPORT = re.compile(r'^export \{([^}]*)\} from "([^"]+)";$', re.MULTILINE)
+_MEMO_MODULE_IMPORT = re.compile(
+    r'^import \{([^}]*)\} from "(\$/(?:utils/components|app_components)/[^"]+)"$',
+    re.MULTILINE,
+)
+
+
+def _memo_names(names: str) -> tuple[str, ...]:
+    return tuple(name.strip() for name in names.split(","))
+
+
+@dataclasses.dataclass(frozen=True)
+class _MemoModule:
+    """What a memo module defines, re-exports and imports from other memo modules."""
+
+    defines: tuple[str, ...] = ()
+    reexports: tuple[tuple[str, tuple[str, ...]], ...] = ()
+    imports: tuple[tuple[str, tuple[str, ...]], ...] = ()
+
+    @classmethod
+    def parse(cls, code: str) -> "_MemoModule":
+        """Read a compiled memo module.
+
+        Args:
+            code: The module code.
+
+        Returns:
+            Its memo definitions, re-exports and memo imports.
+        """
+        return cls(
+            tuple(_MEMO_EXPORT.findall(code)),
+            tuple(
+                (m.group(2), _memo_names(m.group(1)))
+                for m in _MEMO_REEXPORT.finditer(code)
+            ),
+            tuple(
+                (m.group(2), _memo_names(m.group(1)))
+                for m in _MEMO_MODULE_IMPORT.finditer(code)
+            ),
+        )
+
+
+@dataclasses.dataclass
+class _MemoBuild:
+    """A compile and the layout of the memo modules it emits."""
+
+    ctx: CompileContext
+    modules: dict[str, _MemoModule]
+
+    def tags(self, route: str) -> set[str]:
+        """The auto memos a page imports.
+
+        Args:
+            route: The page's route.
+
+        Returns:
+            Their tags.
+        """
+        imports = self.ctx.compiled_pages[route].frontend_imports
+        return {var.tag for var in imports[memo_paths.AUTO_MEMO_LIBRARY] if var.tag}
+
+    def page_imports(self, route: str) -> tuple[tuple[str, tuple[str, ...]], ...]:
+        """The memo modules a compiled page imports from.
+
+        Args:
+            route: The page's route.
+
+        Returns:
+            The imported names by module.
+        """
+        return _MemoModule.parse(
+            self.ctx.compiled_pages[route].output_code or ""
+        ).imports
+
+
+def _compile_memo_layout(
+    pages: Mapping[str, Callable[[], Component]],
+    *,
+    source_module: str | None = None,
+    memos: Sequence[MemoDefinition] = (),
+    app_root: str | None = None,
+) -> _MemoBuild:
+    """Compile pages and lay out their memo modules.
+
+    Args:
+        pages: The page functions, by route.
+        source_module: The module every page reports it was defined in.
+        memos: ``@rx.memo`` definitions to compile with the auto memos.
+        app_root: A route whose imports stand in for the app root's.
+
+    Returns:
+        The build.
+    """
+    ctx = CompileContext(
+        pages=[
+            _FakePage(route=route, component=page, _source_module=source_module)
+            for route, page in pages.items()
+        ],
+        hooks=CompilerHooks(plugins=default_page_plugins()),
+    )
+    with ctx:
+        ctx.compile()
+    scoped = [
+        scope_memo_body_hooks(memo, ctx)
+        if isinstance(memo, MemoComponentDefinition)
+        else memo
+        for memo in memos
+    ]
+    files, _ = compiler.compile_memo_components(
+        (*scoped, *ctx.auto_memo_components.values()),
+        page_imports={
+            route: page.frontend_imports for route, page in ctx.compiled_pages.items()
+        },
+        app_root_imports=(
+            ctx.compiled_pages[app_root].frontend_imports if app_root else None
+        ),
+    )
+    web_dir = prerequisites.get_web_dir()
+    return _MemoBuild(
+        ctx,
+        {
+            "$/" + Path(path).relative_to(web_dir).as_posix().removesuffix(".jsx"): (
+                _MemoModule.parse(code)
+            )
+            for path, code in files
+        },
+    )
+
+
+def _route_module(route: str | None) -> str:
+    return utils.get_route_memo_specifier(route)
+
+
+def _shared_module(tags: Iterable[str]) -> str:
+    return memo_paths.generated_library_specifier(memo_paths.shared_memo_segments(tags))
+
+
+def test_auto_memo_one_route_uses_is_defined_in_its_route_module():
+    """A page imports its memos from its own route module, which defines them."""
+    build = _compile_memo_layout({"index": lambda: _stateful("only")})
+
+    (tag,) = build.tags("index")
+    assert build.page_imports("index") == ((_route_module("index"), (tag,)),)
+    assert build.modules == {_route_module("index"): _MemoModule(defines=(tag,))}
+
+
+def test_auto_memos_shared_by_routes_are_defined_once():
+    """The memos of several routes live in one module, re-exported by each route."""
+    build = _compile_memo_layout({
+        "index": lambda: Fragment.create(_chrome(), _stateful("index")),
+        "b": lambda: Fragment.create(_chrome(), _stateful("b")),
+    })
+
+    shared = tuple(sorted(build.tags("index") & build.tags("b")))
+    (only_index,) = build.tags("index") - set(shared)
+    (only_b,) = build.tags("b") - set(shared)
+    assert len(shared) == 2
+    assert build.page_imports("b") == (
+        (_route_module("b"), tuple(sorted(build.tags("b")))),
+    )
+    assert build.modules == {
+        _route_module("b"): _MemoModule(
+            defines=(only_b,), reexports=((_shared_module(shared), shared),)
+        ),
+        _route_module("index"): _MemoModule(
+            defines=(only_index,), reexports=((_shared_module(shared), shared),)
+        ),
+        _shared_module(shared): _MemoModule(defines=shared),
+    }
+
+
+def test_auto_memo_placement_is_deterministic_and_stable_when_pages_are_added():
+    """Two compiles emit the same modules, and a new page leaves the others alone."""
+    pages = {
+        "index": lambda: Fragment.create(_chrome(), _stateful("index")),
+        "b": lambda: Fragment.create(_chrome(), _stateful("b")),
+    }
+    first = _compile_memo_layout(pages)
+    assert _compile_memo_layout(pages).modules == first.modules
+
+    third = _compile_memo_layout({**pages, "c": lambda: _stateful("c")})
+    (only_c,) = third.tags("c")
+    assert third.modules == {
+        **first.modules,
+        _route_module("c"): _MemoModule(defines=(only_c,)),
+    }
+
+
+def _loop_item(value: Var) -> Component:
+    return rx.text(value, on_mount=rx.console_log(value))
+
+
+def test_auto_memo_nested_in_memos_follows_their_routes():
+    """A memo used only inside other memos is placed by the routes loading them."""
+    build = _compile_memo_layout({
+        "index": lambda: rx.box(rx.foreach(_PlacementState.items, _loop_item)),
+        "b": lambda: rx.box(rx.foreach(_PlacementState.items, _loop_item)),
+        "c": lambda: rx.box(rx.foreach(_PlacementState.others, _loop_item)),
+    })
+
+    (loop,) = build.tags("index")
+    (other_loop,) = build.tags("c")
+    (item,) = set(build.ctx.memoize_wrappers) - {loop, other_loop}
+    assert build.tags("b") == {loop}
+    item_import = ((_shared_module([item]), (item,)),)
+    assert build.modules == {
+        _route_module("b"): _MemoModule(reexports=((_shared_module([loop]), (loop,)),)),
+        _route_module("c"): _MemoModule(defines=(other_loop,), imports=item_import),
+        _route_module("index"): _MemoModule(
+            reexports=((_shared_module([loop]), (loop,)),)
+        ),
+        _shared_module([item]): _MemoModule(defines=(item,)),
+        _shared_module([loop]): _MemoModule(defines=(loop,), imports=item_import),
+    }
+
+
+def test_auto_memos_of_pages_registered_through_one_helper_stay_apart():
+    """Pages whose functions share a module still load only their own memos."""
+    build = _compile_memo_layout(
+        {
+            "index": lambda: Fragment.create(_chrome(), _stateful("index")),
+            "b": lambda: Fragment.create(_chrome(), _stateful("b")),
+        },
+        source_module="site",
+    )
+
+    shared = tuple(sorted(build.tags("index") & build.tags("b")))
+    (only_index,) = build.tags("index") - set(shared)
+    (only_b,) = build.tags("b") - set(shared)
+    assert build.modules == {
+        _route_module("b"): _MemoModule(
+            defines=(only_b,), reexports=((_shared_module(shared), shared),)
+        ),
+        _route_module("index"): _MemoModule(
+            defines=(only_index,), reexports=((_shared_module(shared), shared),)
+        ),
+        _shared_module(shared): _MemoModule(defines=shared),
+    }
+
+
+def _localized(
+    page: Callable[[str], Component], locale: str
+) -> Callable[[], Component]:
+    """Render a page in one locale, as an i18n plugin registers its routes.
+
+    Args:
+        page: The page function, taking the locale.
+        locale: The locale.
+
+    Returns:
+        The page function of the locale's route.
+    """
+
+    def render() -> Component:
+        return Fragment.create(page(locale))
+
+    render.__module__ = f"site.{locale}"
+    return render
+
+
+def test_auto_memos_rendered_alike_in_every_locale_are_defined_once():
+    """A page wrapped per locale shares the memos it renders the same way."""
+
+    def page(locale: str) -> Component:
+        return Fragment.create(_chrome(), _stateful(f"greeting-{locale}"))
+
+    build = _compile_memo_layout({
+        "index": _localized(page, "de"),
+        "en": _localized(page, "en"),
+    })
+
+    shared = tuple(sorted(build.tags("index") & build.tags("en")))
+    (only_de,) = build.tags("index") - set(shared)
+    (only_en,) = build.tags("en") - set(shared)
+    assert len(shared) == 2
+    assert build.modules == {
+        _route_module("en"): _MemoModule(
+            defines=(only_en,), reexports=((_shared_module(shared), shared),)
+        ),
+        _route_module("index"): _MemoModule(
+            defines=(only_de,), reexports=((_shared_module(shared), shared),)
+        ),
+        _shared_module(shared): _MemoModule(defines=shared),
+    }
+
+
+@pytest.mark.usefixtures("preserve_memo_registries")
+def test_explicit_memo_keeps_its_source_module_and_places_its_auto_memos():
+    """``@rx.memo`` mirrors its module; auto memos in its body follow its routes."""
+
+    @rx.memo
+    def toggle_card(label: rx.Var[str]) -> Component:
+        return rx.box(
+            rx.cond(
+                _PlacementState.flag,
+                rx.text(label, on_mount=rx.console_log(label)),
+            )
+        )
+
+    build = _compile_memo_layout(
+        {
+            "index": lambda: Fragment.create(toggle_card(label="a")),
+            "b": lambda: Fragment.create(toggle_card(label="a"), _stateful("b")),
+        },
+        memos=[toggle_card._definition],
+    )
+
+    explicit = memo_paths.library_for(__name__, "")
+    symbol = memo_paths.mirrored_symbol(toggle_card._definition.export_name, __name__)
+    (only_b,) = build.tags("b")
+    (scoped,) = set(build.ctx.memoize_wrappers) - {only_b}
+    assert build.page_imports("index") == ((explicit, (symbol,)),)
+    assert build.modules == {
+        explicit: _MemoModule(
+            defines=(symbol,), imports=((_shared_module([scoped]), (scoped,)),)
+        ),
+        _route_module("b"): _MemoModule(defines=(only_b,)),
+        _shared_module([scoped]): _MemoModule(defines=(scoped,)),
+    }
+
+
+def test_auto_memos_the_app_root_uses_live_in_its_module():
+    """A memo the app root loads is defined in its module, which every page loads."""
+    build = _compile_memo_layout(
+        {
+            "index": lambda: Fragment.create(_chrome(), _stateful("index")),
+            "b": lambda: Fragment.create(_chrome(), _stateful("b")),
+        },
+        app_root="index",
+    )
+
+    root_tags = tuple(sorted(build.tags("index")))
+    shared = tuple(sorted(build.tags("index") & build.tags("b")))
+    (only_b,) = build.tags("b") - set(shared)
+    assert build.modules == {
+        _route_module(None): _MemoModule(defines=root_tags),
+        _route_module("b"): _MemoModule(
+            defines=(only_b,), reexports=((_route_module(None), shared),)
+        ),
+        _route_module("index"): _MemoModule(
+            reexports=((_route_module(None), root_tags),)
+        ),
+    }

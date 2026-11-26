@@ -61,7 +61,7 @@ def test_auto_memo_shared_across_pages(auto_memo_app: AppHarness, page: Page):
     web_sources = "\n".join(
         path.read_text() for path in (auto_memo_app.app_path / ".web").rglob("*.jsx")
     )
-    assert "$/app_components" in web_sources
+    assert '"$/utils/components/routes/' in web_sources
     assert "$/utils/stateful_components" not in web_sources
 
     assert auto_memo_app.frontend_url is not None

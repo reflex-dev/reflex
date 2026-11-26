@@ -6,7 +6,7 @@ import collections
 import dataclasses
 import json
 import logging
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from inspect import getattr_static, getmodule
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
@@ -189,7 +189,9 @@ def _compile_app(
             library for library in window_libraries if library[1] in core_libraries
         ]
 
-    app_root_imports = app_root._get_all_imports()
+    app_root_imports = _import_auto_memos_from_route_module(
+        app_root._get_all_imports(), None
+    )
     _apply_common_imports(app_root_imports)
 
     return templates.app_root_template(
@@ -202,6 +204,31 @@ def _compile_app(
         dynamic_imports=app_root._get_all_dynamic_imports(),
         hydrate_fallback_export=hydrate_fallback_export,
     )
+
+
+def _import_auto_memos_from_route_module(
+    imports: ParsedImportDict, route: str | None
+) -> dict[str, list[ImportVar]]:
+    """Import a page's auto memos from its own route module.
+
+    The route module defines or re-exports them wherever the compiler places
+    them, so the page's code doesn't depend on the other pages.
+
+    Args:
+        imports: The page's imports.
+        route: The route of the page, or None for the app root.
+
+    Returns:
+        A copy of the imports, the placeholder library replaced.
+    """
+    return {
+        (
+            utils.get_route_memo_specifier(route)
+            if library == memo_paths.AUTO_MEMO_LIBRARY
+            else library
+        ): list(fields)
+        for library, fields in imports.items()
+    }
 
 
 def _compile_theme(theme: str) -> str:
@@ -492,13 +519,15 @@ def _compile_component(component: Component) -> str:
 
 @dataclasses.dataclass
 class _MemoGroup:
-    """Accumulator for memos that share a mirrored output path."""
+    """Accumulator for memos compiled into one module."""
 
     components: list[dict] = dataclasses.field(default_factory=list)
     functions: list[dict] = dataclasses.field(default_factory=list)
     imports: dict[str, list[ImportVar]] = dataclasses.field(default_factory=dict)
     dynamic_imports: list[str] = dataclasses.field(default_factory=list)
     custom_code: list[str] = dataclasses.field(default_factory=list)
+    # Memos the module exports from the modules holding them, by library.
+    reexports: dict[str, set[str]] = dataclasses.field(default_factory=dict)
 
     def add_component(
         self, render: dict, memo_imports: dict[str, list[ImportVar]]
@@ -525,68 +554,288 @@ _MEMO_BASE_IMPORTS: dict[str, list[ImportVar]] = {
 }
 
 
+def _auto_memo_tags(imports: ParsedImportDict) -> set[str]:
+    """Return the auto memos a module imports.
+
+    Args:
+        imports: The module's imports.
+
+    Returns:
+        The tags imported from :data:`memo_paths.AUTO_MEMO_LIBRARY`.
+    """
+    return {var.tag for var in imports.get(memo_paths.AUTO_MEMO_LIBRARY, ()) if var.tag}
+
+
+def _reachable_auto_memos(
+    imports: ParsedImportDict,
+    auto_memo_imports: dict[str, dict[str, list[ImportVar]]],
+    module_imports: dict[str, dict[str, list[ImportVar]]],
+) -> set[str]:
+    """Return the auto memos a module loads, directly or through other memos.
+
+    Args:
+        imports: The module's imports.
+        auto_memo_imports: The imports of each auto memo, by tag.
+        module_imports: The imports of each ``@rx.memo`` module, by library.
+
+    Returns:
+        The tags of the auto memos reachable from the module.
+    """
+    tags: set[str] = set()
+    modules: set[str] = set()
+    pending = [imports]
+    while pending:
+        current = pending.pop()
+        for tag in _auto_memo_tags(current) - tags:
+            tags.add(tag)
+            if (nested := auto_memo_imports.get(tag)) is not None:
+                pending.append(nested)
+        for library in (current.keys() & module_imports.keys()) - modules:
+            modules.add(library)
+            pending.append(module_imports[library])
+    return tags
+
+
+def _place_auto_memos(
+    auto_memo_imports: dict[str, dict[str, list[ImportVar]]],
+    module_imports: dict[str, dict[str, list[ImportVar]]],
+    route_imports: dict[tuple[str, ...], ParsedImportDict],
+) -> dict[str, tuple[str, ...]]:
+    """Choose the module each auto memo is defined in.
+
+    A memo that one route loads is defined in that route's module, a memo that
+    the app root loads in the app root's module, and the memos loaded by the
+    same set of routes share a module, so a page loads no memo it doesn't use.
+
+    Args:
+        auto_memo_imports: The imports of each auto memo, by tag.
+        module_imports: The imports of each ``@rx.memo`` module, by library.
+        route_imports: The imports of each page, and of the app root, by the
+            segments of their route module.
+
+    Returns:
+        The path segments of the module holding each memo, by tag.
+    """
+    users: dict[str, set[tuple[str, ...]]] = {tag: set() for tag in auto_memo_imports}
+    for route_segments, imports in route_imports.items():
+        for tag in _reachable_auto_memos(imports, auto_memo_imports, module_imports):
+            if tag in users:
+                users[tag].add(route_segments)
+    app_root = utils.get_route_memo_segments(None)
+    by_users: collections.defaultdict[frozenset[tuple[str, ...]], list[str]] = (
+        collections.defaultdict(list)
+    )
+    for tag, routes in users.items():
+        # The app root loads on every page.
+        by_users[frozenset({app_root} if app_root in routes else routes)].append(tag)
+    holders: dict[str, tuple[str, ...]] = {}
+    for routes, tags in by_users.items():
+        segments = (
+            next(iter(routes))
+            if len(routes) == 1
+            else memo_paths.shared_memo_segments(tags)
+        )
+        holders.update(dict.fromkeys(tags, segments))
+    return holders
+
+
+def _auto_memo_holder(holders: dict[str, tuple[str, ...]], tag: str) -> tuple[str, ...]:
+    """Return the path segments of the module holding an auto memo.
+
+    Args:
+        holders: The path segments of the module holding each auto memo.
+        tag: The memo's tag.
+
+    Returns:
+        The segments.
+
+    Raises:
+        ReflexError: If the memo was not compiled.
+    """
+    if (segments := holders.get(tag)) is None:
+        msg = f"The auto-memoized component {tag!r} is imported but was not compiled."
+        raise ReflexError(msg)
+    return segments
+
+
+def _resolve_auto_memo_imports(
+    imports: dict[str, list[ImportVar]],
+    holders: dict[str, tuple[str, ...]],
+    own_segments: tuple[str, ...] | None = None,
+) -> dict[str, list[ImportVar]]:
+    """Import each auto memo from the module holding it.
+
+    Args:
+        imports: A memo module's imports.
+        holders: The path segments of the module holding each auto memo.
+        own_segments: The segments of the module itself, whose own memos it
+            doesn't import.
+
+    Returns:
+        The imports without the placeholder library.
+    """
+    fields = imports.get(memo_paths.AUTO_MEMO_LIBRARY)
+    if not fields:
+        return imports
+    resolved = {
+        library: library_fields
+        for library, library_fields in imports.items()
+        if library != memo_paths.AUTO_MEMO_LIBRARY
+    }
+    for field in fields:
+        segments = _auto_memo_holder(holders, field.tag or "")
+        if segments != own_segments:
+            resolved.setdefault(
+                memo_paths.generated_library_specifier(segments), []
+            ).append(field)
+    return resolved
+
+
+def _compile_memo_group(group: _MemoGroup) -> str:
+    """Render a memo module.
+
+    Args:
+        group: The memos and re-exports of the module, its imports resolved.
+
+    Returns:
+        The module code.
+    """
+    if group.components or group.functions:
+        imports = utils.merge_imports(_MEMO_BASE_IMPORTS, group.imports)
+        _apply_common_imports(imports)
+    else:
+        imports = {}
+    return templates.memo_components_template(
+        imports=utils.compile_imports(imports),
+        components=group.components,
+        functions=group.functions,
+        dynamic_imports=sorted(set(group.dynamic_imports)),
+        custom_codes=list(dict.fromkeys(group.custom_code)),
+        reexports={
+            library: sorted(names) for library, names in sorted(group.reexports.items())
+        },
+    )
+
+
 def _compile_memo_components(
     memos: Iterable[MemoDefinition] = (),
+    page_imports: Mapping[str, ParsedImportDict] | None = None,
+    app_root_imports: ParsedImportDict | None = None,
 ) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
-    """Compile memos grouped by their source module's mirrored output path.
+    """Compile memos into modules.
 
-    Memos that captured a source module land in a single combined file at
-    ``.web/app_components/<segments>.jsx`` so the page-side import surface
-    matches the source layout. Memos that can't be mirrored (``__main__``,
-    unsafe module names) fall back to one file per memo at
+    ``@rx.memo`` definitions that captured a source module land in a single
+    combined file at ``.web/app_components/<segments>.jsx`` so the page-side
+    import surface matches the source layout. Memos that can't be mirrored
+    (``__main__``, unsafe module names) fall back to one file per memo at
     ``.web/utils/components/<name>.jsx`` that page-side code imports directly.
+
+    Auto memos are placed by the routes that load them (see
+    :func:`_place_auto_memos`). Each page imports its auto memos from its own
+    route module at ``.web/utils/components/routes/<page>.jsx``, which defines
+    the memos only that page uses and re-exports the others from modules at
+    ``.web/utils/components/shared/<hash>.jsx``, one per set of routes.
 
     Args:
         memos: The memos to compile.
+        page_imports: The imports of each page, by route.
+        app_root_imports: The imports of the app root.
 
     Returns:
         A list of ``(path, code)`` pairs to write and the aggregated imports
         across all memo modules.
     """
-    output_files: list[tuple[str, str]] = []
     aggregate_imports: dict[str, list[ImportVar]] = {}
-    unmirrored_files: list[tuple[str, str]] = []
-    unmirrored_base_dir = utils.get_memo_components_dir()
+    unmirrored: list[
+        tuple[
+            Callable[[dict, dict], tuple[str, dict[str, list[ImportVar]]]],
+            dict,
+            dict[str, list[ImportVar]],
+        ]
+    ] = []
     groups: collections.defaultdict[tuple[str, ...], _MemoGroup] = (
         collections.defaultdict(_MemoGroup)
     )
-
-    def _emit_unmirrored(
-        compile_fn: Callable[[dict, dict], tuple[str, dict[str, list[ImportVar]]]],
-        render: dict,
-        render_imports: dict,
-    ) -> None:
-        code, file_imports = compile_fn(render, render_imports)
-        unmirrored_files.append((
-            _memo_component_file_path(unmirrored_base_dir, render["name"]),
-            code,
-        ))
-        _extend_imports_in_place(aggregate_imports, file_imports)
+    auto_memos: dict[str, tuple[dict, dict[str, list[ImportVar]]]] = {}
 
     for memo in memos:
         if isinstance(memo, MemoComponentDefinition):
+            if memo.auto_memo_wrapper and memo.export_name in auto_memos:
+                continue
             memo_render, memo_imports = utils.compile_experimental_component_memo(memo)
+            if memo.auto_memo_wrapper:
+                auto_memos[memo.export_name] = (memo_render, memo_imports)
+                continue
             segments = memo_paths.module_to_mirrored_segments(memo.source_module)
             if segments is None:
-                _emit_unmirrored(
-                    _compile_single_memo_component, memo_render, memo_imports
-                )
+                unmirrored.append((
+                    _compile_single_memo_component,
+                    memo_render,
+                    memo_imports,
+                ))
             else:
                 groups[segments].add_component(memo_render, memo_imports)
         elif isinstance(memo, MemoFunctionDefinition):
             memo_render, memo_imports = utils.compile_experimental_function_memo(memo)
             segments = memo_paths.module_to_mirrored_segments(memo.source_module)
             if segments is None:
-                _emit_unmirrored(
-                    _compile_single_memo_function, memo_render, memo_imports
-                )
+                unmirrored.append((
+                    _compile_single_memo_function,
+                    memo_render,
+                    memo_imports,
+                ))
             else:
                 groups[segments].add_function(memo_render, memo_imports)
 
-    if groups:
+    route_imports: dict[tuple[str, ...], ParsedImportDict] = {
+        utils.get_route_memo_segments(route): imports
+        for route, imports in (page_imports or {}).items()
+    }
+    if app_root_imports is not None:
+        route_imports[utils.get_route_memo_segments(None)] = app_root_imports
+    module_imports = {
+        memo_paths.mirrored_library_specifier(segments): group.imports
+        for segments, group in groups.items()
+    }
+    module_imports.update(
+        (memo_paths.unmirrored_library_specifier(render["name"]), render_imports)
+        for _, render, render_imports in unmirrored
+    )
+    holders = _place_auto_memos(
+        {tag: memo_imports for tag, (_, memo_imports) in auto_memos.items()},
+        module_imports,
+        route_imports,
+    )
+
+    generated: collections.defaultdict[tuple[str, ...], _MemoGroup] = (
+        collections.defaultdict(_MemoGroup)
+    )
+    for tag in sorted(auto_memos):
+        generated[holders[tag]].add_component(*auto_memos[tag])
+    for route_segments, imports in route_imports.items():
+        for tag in _auto_memo_tags(imports):
+            if (segments := _auto_memo_holder(holders, tag)) != route_segments:
+                generated[route_segments].reexports.setdefault(
+                    memo_paths.generated_library_specifier(segments), set()
+                ).add(tag)
+
+    unmirrored_files: list[tuple[str, str]] = []
+    unmirrored_base_dir = utils.get_memo_components_dir()
+    for compile_fn, render, render_imports in unmirrored:
+        code, file_imports = compile_fn(
+            render, _resolve_auto_memo_imports(render_imports, holders)
+        )
+        unmirrored_files.append((
+            _memo_component_file_path(unmirrored_base_dir, render["name"]),
+            code,
+        ))
+        _extend_imports_in_place(aggregate_imports, file_imports)
+
+    if groups or auto_memos:
         _extend_imports_in_place(aggregate_imports, _MEMO_BASE_IMPORTS)
         _apply_common_imports(aggregate_imports)
 
+    output_files: list[tuple[str, str]] = []
     # Maps a case-folded output path to the module that claimed it, so two
     # modules differing only by case (which collide on case-insensitive
     # filesystems) are caught instead of one silently overwriting the other.
@@ -607,18 +856,17 @@ def _compile_memo_components(
         # Strip self-imports — when memos in this group reference each other,
         # their compiled imports point at this group's own mirrored specifier.
         # Importing from the same file would shadow the module's own exports.
-        self_specifier = memo_paths.mirrored_library_specifier(segments)
-        group.imports.pop(self_specifier, None)
-        merged_imports = utils.merge_imports(_MEMO_BASE_IMPORTS, group.imports)
-        _apply_common_imports(merged_imports)
-        code = templates.memo_components_template(
-            imports=utils.compile_imports(merged_imports),
-            components=group.components,
-            functions=group.functions,
-            dynamic_imports=sorted(set(group.dynamic_imports)),
-            custom_codes=list(dict.fromkeys(group.custom_code)),
-        )
-        output_files.append((module_path, code))
+        group.imports.pop(memo_paths.mirrored_library_specifier(segments), None)
+        group.imports = _resolve_auto_memo_imports(group.imports, holders)
+        output_files.append((module_path, _compile_memo_group(group)))
+        _extend_imports_in_place(aggregate_imports, group.imports)
+
+    for segments, group in sorted(generated.items()):
+        group.imports = _resolve_auto_memo_imports(group.imports, holders, segments)
+        output_files.append((
+            utils.get_generated_memo_module_path(segments),
+            _compile_memo_group(group),
+        ))
         _extend_imports_in_place(aggregate_imports, group.imports)
 
     return [*unmirrored_files, *output_files], aggregate_imports
@@ -813,12 +1061,10 @@ def compile_page_from_context(page_ctx: PageContext) -> tuple[str, str]:
         The path and code of the compiled page.
     """
     output_path = utils.get_page_path(page_ctx.route)
-    imports = {
-        lib: list(fields)
-        for lib, fields in (
-            page_ctx.frontend_imports or page_ctx.merged_imports(collapse=True)
-        ).items()
-    }
+    imports = _import_auto_memos_from_route_module(
+        page_ctx.frontend_imports or page_ctx.merged_imports(collapse=True),
+        page_ctx.route,
+    )
     _apply_common_imports(imports)
 
     code = templates.page_template(
@@ -835,17 +1081,22 @@ def compile_page_from_context(page_ctx: PageContext) -> tuple[str, str]:
 
 def compile_memo_components(
     memos: Iterable[MemoDefinition] = (),
+    page_imports: Mapping[str, ParsedImportDict] | None = None,
+    app_root_imports: ParsedImportDict | None = None,
 ) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
-    """Compile the memos into one module per memo.
+    """Compile the memos into modules.
 
     Args:
         memos: The memos to compile.
+        page_imports: The imports of each page, by route, which place the
+            auto memos and give each page its route module.
+        app_root_imports: The imports of the app root.
 
     Returns:
         A list of ``(path, code)`` pairs (one per memo module) alongside the
         aggregated imports across all memo modules.
     """
-    return _compile_memo_components(memos)
+    return _compile_memo_components(memos, page_imports, app_root_imports)
 
 
 def purge_web_pages_dir():
@@ -1473,7 +1724,8 @@ def compile_app(
 
     app_wrappers = _resolve_app_wrap_components(app, compile_ctx.app_wrap_components)
     app_root = _memoize_stateful_app_wraps(app._app_root(app_wrappers), compile_ctx)
-    all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
+    app_root_imports = app_root._get_all_imports()
+    all_imports = utils.merge_imports(all_imports, app_root_imports)
 
     hydrate_fallback = app._resolve_hydrate_fallback()
     hydrate_fallback_export = None
@@ -1501,6 +1753,11 @@ def compile_app(
             *memos,
             *compile_ctx.auto_memo_components.values(),
         ),
+        page_imports={
+            route: page_ctx.frontend_imports
+            for route, page_ctx in compile_ctx.compiled_pages.items()
+        },
+        app_root_imports=app_root_imports,
     )
     compile_results.extend(memo_component_files)
     all_imports = utils.merge_imports(all_imports, memo_components_imports)

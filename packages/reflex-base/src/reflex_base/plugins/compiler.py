@@ -682,9 +682,9 @@ class CompileContext(BaseContext):
     # ``MemoizeStatefulPlugin``).
     memoize_wrappers: dict[str, None] = dataclasses.field(default_factory=dict)
     # Compiler-generated memo definitions for auto-memoized stateful wrappers.
-    # Keyed by ``(tag, source_module)`` so identical-rendering subtrees from
-    # different user modules each get their own entry and emit into the right
-    # mirrored memo file. Stored as ``Any`` to avoid an import cycle with
+    # Keyed like ``MEMOS`` by ``(tag, source_module)``; an auto memo carries no
+    # source module, as its tag names it by content and the compiler places it
+    # by the pages using it. Stored as ``Any`` to avoid an import cycle with
     # ``reflex_base.components.memo``.
     auto_memo_components: dict[tuple[str, str | None], Any] = dataclasses.field(
         default_factory=dict
