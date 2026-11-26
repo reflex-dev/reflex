@@ -709,6 +709,8 @@ def get_reload_paths() -> Sequence[Path]:
         if path.exists()
     )
 
+    lockfile_dir = Path.cwd() / config.lockfile_dir
+
     def is_excluded_by_default(path: Path) -> bool:
         if path.is_dir():
             if path.name.startswith("."):
@@ -717,10 +719,8 @@ def get_reload_paths() -> Sequence[Path]:
             if path.name.startswith("__"):
                 # ignore things like __pycache__
                 return True
-        return path.name in (
-            ".gitignore",
-            "uploaded_files",
-            get_config().lockfile_dir.name,
+        return path.name in (".gitignore", "uploaded_files") or (
+            path.absolute() == lockfile_dir
         )
 
     reload_paths = (
@@ -771,6 +771,8 @@ def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
 
 
 HOTRELOAD_IGNORE_EXTENSIONS = (
+    # Watched lockfile dirs: nested ones and those of other apps sharing the root.
+    "lock",
     "txt",
     "toml",
     "sqlite",

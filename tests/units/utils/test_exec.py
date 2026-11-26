@@ -1507,6 +1507,88 @@ def test_get_reload_paths_ignores_missing_exclude_path(
     assert sorted(exec_utils.get_reload_paths()) == [cwd / "pkg", cwd / "rxconfig.py"]
 
 
+@pytest.mark.parametrize(
+    ("lockfile_dir", "expected"),
+    [
+        ("reflex.lock", ["other.lock", "site", "site.lock"]),
+        ("site.lock", ["other.lock", "reflex.lock", "site"]),
+        ("site/reflex.lock", ["other.lock", "reflex.lock", "site", "site.lock"]),
+    ],
+)
+def test_get_reload_paths_skips_the_configured_lockfile_dir(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    lockfile_dir: str,
+    expected: list[str],
+):
+    """Only the app's own lockfile directory is skipped, matched by its path.
+
+    Args:
+        tmp_path: Temporary app root.
+        monkeypatch: Pytest monkeypatch fixture.
+        mocker: Pytest mocker fixture.
+        lockfile_dir: The configured lockfile directory.
+        expected: The top-level entries expected to be watched.
+    """
+    from reflex_base.config import Config
+
+    for name in ("reflex.lock", "site.lock", "other.lock", "site/reflex.lock"):
+        (tmp_path / name).mkdir(parents=True)
+    monkeypatch.chdir(tmp_path)
+    mocker.patch.object(exec_utils, "get_module_path", return_value=None)
+    mocker.patch.object(
+        exec_utils,
+        "get_config",
+        return_value=Config(app_name="site", lockfile_dir=Path(lockfile_dir)),
+    )
+    for var in (
+        environment.REFLEX_HOT_RELOAD_OVERRIDE_PATHS,
+        environment.REFLEX_HOT_RELOAD_INCLUDE_PATHS,
+        environment.REFLEX_HOT_RELOAD_EXCLUDE_PATHS,
+    ):
+        monkeypatch.delenv(var.name, raising=False)
+
+    assert sorted(exec_utils.get_reload_paths()) == [
+        Path.cwd() / name for name in expected
+    ]
+
+
+@pytest.mark.parametrize(
+    ("relative_path", "reloads"),
+    [
+        ("site/reflex.lock/bun.lock", False),
+        ("site/reflex.lock/package.json", False),
+        ("site/reflex.lock/package-lock.json", False),
+        ("other/reflex.lock", False),
+        ("site/site.py", True),
+    ],
+)
+def test_lockfile_writes_do_not_trigger_hot_reload(
+    tmp_path: Path, relative_path: str, reloads: bool
+):
+    """Lockfile writes anywhere in the watched tree never restart the backend.
+
+    A lockfile directory deeper than the reload root's direct children, or
+    another app's sharing the root, is still watched.
+
+    Args:
+        tmp_path: Temporary app root.
+        relative_path: The changed path.
+        reloads: Whether the change should trigger a reload.
+    """
+    from watchfiles import Change, DefaultFilter
+
+    watch_filter = DefaultFilter(
+        ignore_entity_patterns=(
+            *DefaultFilter.ignore_entity_patterns,
+            *exec_utils.HOTRELOAD_IGNORE_PATTERNS,
+        )
+    )
+
+    assert watch_filter(Change.modified, str(tmp_path / relative_path)) is reloads
+
+
 @pytest.mark.usefixtures("windows_text_io")
 def test_get_package_json_and_hash_reads_utf8(tmp_path: Path):
     """package.json is read as UTF-8 whatever the locale encoding.
