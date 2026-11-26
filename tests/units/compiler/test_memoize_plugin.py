@@ -1232,14 +1232,10 @@ def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> No
 
     def fake_create_passthrough_component_memo(
         component: Component,
-        source_module: str | None = None,
+        *,
         scope_vars: tuple[str, ...] = (),
     ):
-        definition = SimpleNamespace(
-            export_name=tag,
-            component=component,
-            source_module=source_module,
-        )
+        definition = SimpleNamespace(export_name=tag, component=component)
         return (lambda definition=definition, **_props: definition), definition
 
     monkeypatch.setattr(

@@ -2136,6 +2136,7 @@ _PASSTHROUGH_PARAMS = (
 
 def create_passthrough_component_memo(
     component: Component,
+    *,
     scope_vars: Sequence[str] = (),
 ) -> tuple[
     Callable[..., MemoComponent],
