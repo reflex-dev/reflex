@@ -24,7 +24,7 @@ from hashlib import md5
 from pathlib import Path
 from textwrap import dedent
 from types import FunctionType, MethodType, ModuleType
-from typing import Any, ClassVar, ForwardRef, Literal, TypeVar, cast
+from typing import Any, ClassVar, ForwardRef, Generic, Literal, TypedDict, TypeVar, cast
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -8510,3 +8510,43 @@ async def test_shared_storage_name_conflicting_writes_pick_by_name(
     (await root.get_state(AWriter)).value = "a"
     await root._get_resolved_delta()
     assert (await root.get_state(MSibling)).value == "a"
+
+
+_ValueT = TypeVar("_ValueT")
+
+
+class _GenericValue(TypedDict, Generic[_ValueT]):
+    value: _ValueT
+
+
+async def test_assign_specialized_generic_typed_dict_var(
+    caplog: pytest.LogCaptureFixture,
+    clean_registration_context: RegistrationContext,
+):
+    """Assigning to a specialized generic TypedDict var is type checked field by field.
+
+    Args:
+        caplog: Captured log records.
+        clean_registration_context: An isolated state registry.
+    """
+
+    class GenericTypedDictState(State):
+        text: _GenericValue[str] = {"value": "a"}
+        number: _GenericValue[int] = {"value": 1}
+
+    state = await State().get_state(GenericTypedDictState)
+
+    with caplog.at_level(logging.ERROR):
+        state.text = {"value": "b"}
+        state.number = {"value": 2}
+        assert state.text == {"value": "b"}
+        assert state.number == {"value": 2}
+        assert {"text", "number"} <= state.dirty_vars
+        assert not caplog.records
+
+        state.number = ["c"]  # pyright: ignore[reportAttributeAccessIssue]
+        expected = (
+            f"Expected field '{GenericTypedDictState.__name__}.number' to receive type"
+            f" '{_GenericValue[int]}', but got ['c'] of type '{list}'."
+        )
+        assert [r.getMessage() for r in caplog.records] == [expected]

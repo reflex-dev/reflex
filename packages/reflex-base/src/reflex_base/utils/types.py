@@ -1296,10 +1296,16 @@ def does_obj_satisfy_typed_dict(
     if not isinstance(obj, Mapping):
         return False
 
-    key_names_to_values = get_type_hints(cls)
-    required_keys: frozenset[str] = getattr(cls, "__required_keys__", frozenset())
-    is_closed = getattr(cls, "__closed__", False)
-    extra_items_type = getattr(cls, "__extra_items__", Any)
+    origin = get_origin_og(cls) or cls
+    if origin is cls:
+        key_names_to_values = get_type_hints(cls)
+    else:
+        # A specialization (``P[str]``) has no hints of its own; resolve the
+        # generic's fields with the type arguments substituted.
+        key_names_to_values = get_typed_dict_field_types(cls)
+    required_keys: frozenset[str] = getattr(origin, "__required_keys__", frozenset())
+    is_closed = getattr(origin, "__closed__", False)
+    extra_items_type = getattr(origin, "__extra_items__", Any)
     if any(extra_items_type is sentinel for sentinel in _NO_EXTRA_ITEMS_SENTINELS):
         # Extra keys of a non-closed TypedDict are unconstrained; a closed
         # one already rejected them above.
@@ -1548,6 +1554,16 @@ def _isinstance(
                     return False
             return True
         if safe_issubclass(origin, Mapping):
+            if typing_extensions.is_typeddict(origin):
+                # A specialized generic TypedDict (``P[str]``) carries the
+                # generic's type arguments, not a Mapping's key and value types.
+                return does_obj_satisfy_typed_dict(
+                    obj,
+                    cls,
+                    nested=nested - 1,
+                    treat_var_as_type=treat_var_as_type,
+                    treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+                )
             expected_class = (
                 dict
                 if origin is dict and not treat_mutable_obj_as_immutable
@@ -1589,6 +1605,9 @@ def _isinstance(
         if typing_extensions.is_protocol(origin):
             # A subscripted protocol without @runtime_checkable cannot be checked.
             return True
+        if typing_extensions.is_typeddict(origin):
+            # A specialized generic TypedDict rejects isinstance checks.
+            return isinstance(obj, dict)
         raise
 
 
