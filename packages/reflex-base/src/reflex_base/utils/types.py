@@ -468,6 +468,23 @@ def get_required_typed_dict_keys(typed_dict: Any) -> frozenset[str]:
     }
 
 
+def _field_type_params(hint: Any) -> tuple[Any, ...]:
+    """Get the type parameters a field type leaves free.
+
+    A bare generic class (``inner: Inner``) is not counted: its parameters are
+    its own, not ones the enclosing TypedDict has to declare.
+
+    Args:
+        hint: The field type.
+
+    Returns:
+        The type parameters of the field type.
+    """
+    if isinstance(hint, type):
+        return ()
+    return getattr(hint, "__parameters__", ())
+
+
 def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
     """Resolve the field types of a TypedDict.
 
@@ -522,14 +539,10 @@ def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
     for name, hint in field_types.items():
         if isinstance(hint, TypeVar) and hint in substitution:
             hint = substitution[hint]
-        elif substitution and (params := getattr(hint, "__parameters__", ())):
+        elif substitution and (params := _field_type_params(hint)):
             hint = _apply_type_params(hint, params, substitution)
         hint = resolve_type_alias(hint)
-        params = (
-            (hint,)
-            if isinstance(hint, TypeVar)
-            else getattr(hint, "__parameters__", ())
-        )
+        params = (hint,) if isinstance(hint, TypeVar) else _field_type_params(hint)
         if undeclared := [param for param in params if param not in declared]:
             msg = (
                 f"Field {name!r} of TypedDict {origin.__qualname__} has type {hint}, "
@@ -1112,7 +1125,8 @@ def _get_column_access_type(cls: type, name: str) -> GenericType | None:
     # A parametrized python type, e.g. `List[int]` of an ARRAY column, is kept.
     # Type parameters and TypedDict keys refine a bare one; a subclass such as
     # `bool` over `int` does not, as the database returns `type_` itself. A
-    # parametrized generic TypedDict does not either: its keys are not resolved.
+    # parametrized generic TypedDict (`P[int]`) does not either, as it is an
+    # alias rather than a TypedDict class.
     elif (
         isinstance(type_, type)
         and (declared := _get_mapped_annotation(cls, name)) is not None
@@ -1231,7 +1245,14 @@ def get_attribute_access_type(
             if declares_annotation(cls, name):
                 hints = get_type_hints(cls)  # pyright: ignore [reportArgumentType]
                 if name in hints:
-                    return hints[name]
+                    hint = hints[name]
+                    # A field inherited from a specialized generic TypedDict
+                    # (`class R(P[str])`) still names the base's type parameters.
+                    if typing_extensions.is_typeddict(cls) and (
+                        isinstance(hint, TypeVar) or _field_type_params(hint)
+                    ):
+                        return get_typed_dict_field_types(cls).get(name)
+                    return hint
         except NameError as e:
             logger.warning(f"Failed to resolve ForwardRefs for {cls}.{name} due to {e}")
     return None  # Attribute is not accessible.
