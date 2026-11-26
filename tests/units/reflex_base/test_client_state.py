@@ -1,17 +1,21 @@
 """Tests for reflex_base.client_state."""
 
 import re
+from collections.abc import Callable
 from typing import Any, cast
 
 import pytest
 from reflex_base.client_state import ClientStateVar, client_state
 from reflex_base.components.client_state_context import CLIENT_STATE_APP_WRAP_PRIORITY
+from reflex_base.components.component import Component
 from reflex_base.components.memo import MEMOS
+from reflex_base.components.memoize_helpers import get_memoized_event_triggers
 from reflex_base.constants import Dirs
 from reflex_base.event import Event
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import ClientStateConflictError, VarTypeError
 from reflex_base.utils.imports import ImportVar
-from reflex_base.vars.base import Var, VarData
+from reflex_base.vars.base import LiteralVar, Var, VarData
 from reflex_base.vars.function import FunctionVar
 
 import reflex as rx
@@ -28,6 +32,20 @@ def _hook(cs: ClientStateVar) -> str:
         The hook source line.
     """
     hooks = list(cs._var_data.hooks)  # pyright: ignore [reportOptionalMemberAccess]
+    assert len(hooks) == 1, f"expected exactly one hook, got {hooks}"
+    return hooks[0]
+
+
+def _setter_hook(cs: ClientStateVar) -> str:
+    """Get the single hook a client state var's setter contributes.
+
+    Args:
+        cs: The client state var.
+
+    Returns:
+        The hook source line.
+    """
+    hooks = list(cs.set._var_data.hooks)  # pyright: ignore [reportOptionalMemberAccess]
     assert len(hooks) == 1, f"expected exactly one hook, got {hooks}"
     return hooks[0]
 
@@ -67,15 +85,14 @@ def _app_wraps(var_data: VarData | None) -> list[tuple[int, str]]:
 
 
 def test_single_hook_no_useState() -> None:
-    """A global var emits one useClientState hook and no raw useState/useId."""
+    """A global var's value and setter emit one hook each, no raw useState/useId."""
     cs = client_state(0, name="counter")
-    hook = _hook(cs)
-    assert hook == (
-        'const [counterRxClientState, counterRxClientStateSet] = useClientState(0, "counter", true)'
+    assert (
+        _hook(cs) == 'const [counterRxClientState] = useClientState(0, "counter", true)'
     )
-    assert "useState(" not in hook
-    assert "useId" not in hook
-    assert "refs[" not in hook
+    assert _setter_hook(cs) == (
+        'const counterRxClientStateSet = useClientStateSetter(0, "counter", true)'
+    )
 
 
 def test_omitted_default_emits_valid_javascript() -> None:
@@ -86,11 +103,12 @@ def test_omitted_default_emits_valid_javascript() -> None:
     which is a syntax error that breaks the whole page build.
     """
     cs = client_state(name="counter")
-    hook = _hook(cs)
-    assert "(," not in hook
-    assert hook == (
-        "const [counterRxClientState, counterRxClientStateSet] = "
-        'useClientState(undefined, "counter", true)'
+    assert _hook(cs) == (
+        'const [counterRxClientState] = useClientState(undefined, "counter", true)'
+    )
+    assert _setter_hook(cs) == (
+        "const counterRxClientStateSet = "
+        'useClientStateSetter(undefined, "counter", true)'
     )
 
 
@@ -109,11 +127,13 @@ def test_named_var_is_global() -> None:
 
 
 def test_hook_imports_use_client_state() -> None:
-    """The hook carries the useClientState import."""
-    imports = dict(cs_imports := client_state(0, name="x")._var_data.imports)  # pyright: ignore [reportOptionalMemberAccess]
-    assert cs_imports is not None
-    tags = {i.tag for i in imports[f"$/{Dirs.CLIENT_STATE_PATH}"]}
-    assert tags == {"useClientState"}
+    """Each hook carries the import of the function it calls."""
+    cs = client_state(0, name="x")
+    for var, tag in ((cs.value, "useClientState"), (cs.set, "useClientStateSetter")):
+        var_data = var._get_all_var_data()
+        assert var_data is not None
+        imports = dict(var_data.imports)
+        assert [i.tag for i in imports[f"$/{Dirs.CLIENT_STATE_PATH}"]] == [tag]
 
 
 @pytest.mark.parametrize("name", ["x", None])
@@ -180,6 +200,67 @@ def test_set_carries_hook_import_and_app_wrap(name: str | None) -> None:
         assert _app_wraps(var_data) == [
             (CLIENT_STATE_APP_WRAP_PRIORITY, "ClientStateProvider")
         ]
+
+
+@pytest.mark.parametrize("name", ["counter", None])
+@pytest.mark.parametrize(
+    ("make_component", "reads"),
+    [
+        (lambda cs: rx.el.input(on_change=cs.set), ("set",)),
+        (lambda cs: rx.el.button(on_click=cs.set(1)), ("set",)),
+        (lambda cs: rx.el.button(on_click=cs.set(lambda v: v + 1)), ("set",)),
+        (lambda cs: rx.el.button(on_click=cs.set_value(1)), ("set",)),
+        (lambda cs: rx.el.button(on_click=cs.set(cs.value + 1)), ("set", "value")),
+        (
+            lambda cs: rx.el.button(on_click=rx.cond(cs.value, cs.set(0), cs.set(1))),
+            ("value", "set"),
+        ),
+    ],
+    ids=["bare", "bound", "updater", "set_value", "read_and_set", "cond"],
+)
+def test_trigger_subscribes_to_the_value_only_when_it_reads_it(
+    make_component: Callable[[ClientStateVar], Component],
+    reads: tuple[str, ...],
+    name: str | None,
+) -> None:
+    """A trigger that only writes a var neither subscribes to it nor depends on it.
+
+    ``useClientState`` re-renders its component on every change, so a writer
+    that brought it along re-rendered on every write it made.
+
+    Args:
+        make_component: Builds a component whose trigger uses the var.
+        reads: The accessors the trigger uses, in the order it declares them.
+        name: A name makes the var global; ``None`` scopes it.
+    """
+    cs = client_state(0, name=name)
+    component = make_component(cs)
+    trigger = next(iter(component.event_triggers))
+    with RegistrationContext.ensure_context().fork():
+        wrapper = get_memoized_event_triggers(component)[trigger]
+    var_data = wrapper._get_all_var_data()
+    assert var_data is not None
+
+    args = f'0, "{cs._state_name}"' + (", true" if name else "")
+    declarations = {
+        "value": (
+            f"const [{cs._getter_name}] = useClientState({args})",
+            cs._getter_name,
+        ),
+        "set": (
+            f"const {cs._setter_name} = useClientStateSetter({args})",
+            cs._setter_name,
+        ),
+    }
+    deps = ", ".join(declarations[read][1] for read in reads)
+    callback = (
+        f"const {wrapper!s} = useCallback("
+        f"{LiteralVar.create(component.event_triggers[trigger])!s}, [{deps}])"
+    )
+    assert list(var_data.hooks) == [
+        *(declarations[read][0] for read in reads),
+        callback,
+    ]
 
 
 @pytest.mark.parametrize(
@@ -336,10 +417,14 @@ def test_underscore_named_var_is_not_mistaken_for_event_arg() -> None:
 def test_reserved_words_are_safe(reserved: str) -> None:
     """A JS reserved word is a legal name; the marker keeps the codegen valid."""
     cs = client_state(1, name=reserved)
-    hook = _hook(cs)
-    assert hook.startswith(f"const [{reserved}RxClientState, ")
     # The store key stays the bare word so the backend can still address it.
-    assert f'"{reserved}"' in hook
+    assert _hook(cs) == (
+        f'const [{reserved}RxClientState] = useClientState(1, "{reserved}", true)'
+    )
+    assert _setter_hook(cs) == (
+        f"const {reserved}RxClientStateSet = "
+        f'useClientStateSetter(1, "{reserved}", true)'
+    )
     assert cs._state_name == reserved
 
 
@@ -459,6 +544,7 @@ def test_acceptance_throttle_controlled_input_compiles() -> None:
     in one component, `.set` attached bare to a trigger and called with a memo
     prop Var, and both forms mixed in one event-chain list.
     """
+    created: list[ClientStateVar] = []
 
     @rx.memo
     def debounce_controlled_input(
@@ -469,6 +555,7 @@ def test_acceptance_throttle_controlled_input_compiles() -> None:
     ) -> rx.Component:
         lc_var = rx.client_state()
         lc_last_var = rx.client_state()
+        created.extend((lc_var, lc_last_var))
         return rx.el.input(
             rest,
             rx.cond(
@@ -492,17 +579,22 @@ def test_acceptance_throttle_controlled_input_compiles() -> None:
     files, _ = compiler.compile_memo_components((definition,))
     code = "\n".join(c for _, c in files)
 
-    hook_lines = [
-        line.strip() for line in code.splitlines() if "useClientState" in line
+    lc, lc_last = created
+    declarations = [
+        line
+        for line in map(str.strip, code.splitlines())
+        if line.startswith("const ") and "useClientState" in line
     ]
-    declarations = [line for line in hook_lines if line.startswith("const [")]
-    assert len(declarations) == 2, (
-        f"expected one hook per local var, got {declarations}"
-    )
-    # Distinct bindings, and neither escapes to the root scope (a named var
-    # would pass a trailing `true`).
-    assert len(set(declarations)) == 2
-    assert all(not line.rstrip(";").endswith("true)") for line in declarations)
+    # Only the read var subscribes, and neither escapes to the root scope (a
+    # named var would pass a trailing `true`).
+    assert sorted(declarations) == sorted([
+        f'const [{lc._getter_name}] = useClientState(undefined, "{lc._state_name}")',
+        f'const {lc._setter_name} = useClientStateSetter(undefined, "{lc._state_name}")',
+        (
+            f"const {lc_last._setter_name} = "
+            f'useClientStateSetter(undefined, "{lc_last._state_name}")'
+        ),
+    ])
     assert 'from "$/utils/client_state"' in code
 
 
@@ -573,7 +665,7 @@ def test_derived_var_default_brings_its_hook_and_import() -> None:
     # The declaration comes first; ``useClientState`` reading it comes last.
     assert _hooks_ending_with_client_state(cs) == [
         "const seed = useSeed()",
-        'const [seededRxClientState, seededRxClientStateSet] = useClientState(seed, "seeded", true)',
+        'const [seededRxClientState] = useClientState(seed, "seeded", true)',
     ]
     var_data = cs._get_all_var_data()
     assert var_data is not None
@@ -691,21 +783,21 @@ def test_each_construction_gets_its_own_name() -> None:
 
 
 def test_all_consumers_of_one_var_share_the_name() -> None:
-    """Every consumer emits the same hook, so an auto-memo split still shares.
+    """Every consumer names the same slot, so an auto-memo split still shares.
 
     This is the property the redesign exists for: reading and writing a var
     compile to separate memo modules, and they must resolve the same slot.
     """
     cs = client_state(0)
     hooks = {
-        _hook(cs),
-        *(
-            hook
-            for accessor in (cs.value, cs.set, cs.set(1))
-            for hook in (accessor._get_all_var_data() or VarData()).hooks
-        ),
+        hook
+        for accessor in (cs, cs.value, cs.set, cs.set(1))
+        for hook in (accessor._get_all_var_data() or VarData()).hooks
     }
-    assert len(hooks) == 1, f"expected one shared hook, got {hooks}"
+    assert hooks == {
+        f'const [{cs._getter_name}] = useClientState(0, "{cs._state_name}")',
+        f'const {cs._setter_name} = useClientStateSetter(0, "{cs._state_name}")',
+    }
 
 
 def test_prefix_customizes_the_generated_name() -> None:
@@ -737,8 +829,12 @@ def test_generated_name_separates_prefix_from_counter() -> None:
     assert re.fullmatch(r"row\$\d+", client_state(0, prefix="row")._state_name)
     # The identifiers derived from it stay valid javascript.
     cs = client_state(0, prefix="row")
-    assert _hook(cs).startswith(
-        f"const [{cs._state_name}RxClientState, {cs._state_name}RxClientStateSet]"
+    assert _hook(cs) == (
+        f'const [{cs._state_name}RxClientState] = useClientState(0, "{cs._state_name}")'
+    )
+    assert _setter_hook(cs) == (
+        f"const {cs._state_name}RxClientStateSet = "
+        f'useClientStateSetter(0, "{cs._state_name}")'
     )
     with pytest.raises(ValueError, match=r"must not contain '\$'"):
         client_state(0, prefix="row$1")
@@ -818,7 +914,7 @@ def test_non_identifier_string_default_gets_no_name_hint() -> None:
 
 
 def _declared_identifiers(code: str) -> list[str]:
-    """Get every identifier a ``const [a, b] = ...`` line declares.
+    """Get every identifier a client state hook line declares.
 
     Args:
         code: Compiled javascript.
@@ -826,11 +922,7 @@ def _declared_identifiers(code: str) -> list[str]:
     Returns:
         The identifiers, in order, duplicates kept.
     """
-    return [
-        ident
-        for pair in re.findall(r"const \[([\w$]+), ([\w$]+)\]", code)
-        for ident in pair
-    ]
+    return re.findall(r"const \[?([\w$]+)\]? = useClientState", code)
 
 
 def test_case_only_names_get_distinct_identifiers() -> None:
@@ -926,18 +1018,26 @@ def test_name_type_error_names_the_bad_value() -> None:
 
 
 @pytest.mark.usefixtures("preserve_memo_registries")
-def test_same_body_conflicting_defaults_fail_at_compile() -> None:
+@pytest.mark.parametrize("second_writes", [False, True])
+def test_same_body_conflicting_defaults_fail_at_compile(second_writes: bool) -> None:
     """One name declared twice with two defaults in one body is a clear error.
 
     Regression: with ``auto_memoize=False`` this emitted two ``const``
     declarations of the same binding and every route failed to load.
-    Creating the vars must not raise; only compiling them does.
+    Creating the vars must not raise; only compiling them does. Reading one
+    and writing the other conflicts as well: the slot's default would depend
+    on which component mounts first.
+
+    Args:
+        second_writes: Whether the second var is written instead of read.
     """
     first = client_state(False, name="open_cc")
     second = client_state(True, name="open_cc")
 
     @rx.memo
     def conflicting() -> rx.Component:
+        if second_writes:
+            return rx.el.button(first.value, on_click=second.set(False))
         return rx.el.div(first.value, second.value)
 
     with pytest.raises(ClientStateConflictError, match="'open_cc'") as err:
@@ -950,18 +1050,28 @@ def test_same_body_conflicting_defaults_fail_at_compile() -> None:
 
 
 @pytest.mark.usefixtures("preserve_memo_registries")
-def test_same_body_identical_declarations_compile() -> None:
-    """Declaring one name twice with the same default stays allowed."""
+@pytest.mark.parametrize("second_writes", [False, True])
+def test_same_body_identical_declarations_compile(second_writes: bool) -> None:
+    """Declaring one name twice with the same default stays allowed.
+
+    Args:
+        second_writes: Whether the second var is written instead of read.
+    """
     first = client_state(False, name="same_cc")
     second = client_state(False, name="same_cc")
 
     @rx.memo
     def identical() -> rx.Component:
+        if second_writes:
+            return rx.el.button(first.value, on_click=second.set(True))
         return rx.el.div(first.value, second.value)
 
     files, _ = compiler.compile_memo_components((MEMOS["Identical", __name__],))
     identifiers = _declared_identifiers("\n".join(c for _, c in files))
-    assert identifiers.count(first._getter_name) == 1
+    expected = [first._getter_name]
+    if second_writes:
+        expected.append(second._setter_name)
+    assert sorted(identifiers) == sorted(expected)
 
 
 @pytest.mark.usefixtures("preserve_memo_registries")
