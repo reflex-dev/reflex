@@ -311,7 +311,15 @@ assert.deepEqual(
 
 def test_state_js_keeps_ref_value_exports_for_older_form_components() -> None:
     """Published reflex-components-core forms import these helpers from state.js."""
-    assert 'export * from "$/utils/runtime";' in STATE_JS_TEMPLATE.read_text()
+    exports = [
+        line
+        for line in STATE_JS_TEMPLATE.read_text().splitlines()
+        if line.startswith("export ")
+    ]
+    assert exports == [
+        'export * from "$/utils/runtime";',
+        'export * from "$/utils/transport";',
+    ]
     content = RUNTIME_JS_TEMPLATE.read_text()
     assert "export const getRefValue =" in content
     assert "export const getRefValues =" in content
