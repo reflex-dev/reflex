@@ -5,7 +5,14 @@ from urllib.parse import urlsplit
 
 import httpx2
 import pytest
-from playwright.sync_api import ConsoleMessage, Page, Response, WebSocket, expect
+from playwright.sync_api import (
+    ConsoleMessage,
+    Page,
+    Request,
+    Response,
+    WebSocket,
+    expect,
+)
 from reflex_base.config import get_config
 from reflex_base.constants import Endpoint
 
@@ -109,17 +116,24 @@ def test_frontend_events_run_without_a_connection(
     # The dev server's own hot reload socket is not the backend's.
     backend = urlsplit(get_config().api_url).port
     websockets: list[str] = []
+    backend_requests: list[str] = []
     errors: list[str] = []
 
     def on_websocket(websocket: WebSocket):
         if urlsplit(websocket.url).port == backend:
             websockets.append(websocket.url)
 
+    # The polling transport connects over HTTP.
+    def on_request(request: Request):
+        if urlsplit(request.url).port == backend:
+            backend_requests.append(request.url)
+
     def on_console(message: ConsoleMessage):
         if message.type == "error":
             errors.append(message.text)
 
     page.on("websocket", on_websocket)
+    page.on("request", on_request)
     page.on("console", on_console)
 
     page.goto(stateless_app.frontend_url)
@@ -144,6 +158,7 @@ def test_frontend_events_run_without_a_connection(
     expect(page.locator("#next-heading")).to_have_text("Next page")
 
     assert websockets == []
+    assert backend_requests == []
     assert errors == []
 
 
