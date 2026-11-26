@@ -1270,6 +1270,27 @@ def _write_stand_in(web_dir: Path, output: str) -> None:
     (web_dir / "script-modules.js").write_text(f"process.stdout.write({output});\n")
 
 
+def test_read_script_modules_without_a_runtime(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Without Node.js or Bun to run the script, the error names both.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
+    monkeypatch.setattr(utils.path_ops, "get_node_path", lambda: None)
+    monkeypatch.setattr(utils.path_ops, "get_bun_path", lambda: None)
+    with pytest.raises(FileNotFoundError) as error:
+        utils._read_script_modules([Path("/app/a.js")])
+    assert str(error.value) == (
+        "Node.js or Bun not found: Reflex runs one to read the JavaScript modules "
+        "the app imports from Python. You might need to rerun `reflex init` or "
+        "install either."
+    )
+
+
 def test_read_script_modules(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     """The script runs in .web on the modules, and its failure says how to recover.
 

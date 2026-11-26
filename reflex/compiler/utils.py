@@ -362,11 +362,19 @@ def _read_script_modules(paths: Sequence[Path]) -> _ScriptModulesReport:
         file that reaches itself again through a directory link.
 
     Raises:
+        FileNotFoundError: If neither Node.js nor Bun is installed to run it.
         ReflexRuntimeError: If the script fails, or prints output of another
             shape, as one that another Reflex version left in ``.web`` can.
     """
     web_dir = get_web_dir()
     runtime = path_ops.get_node_path() or path_ops.get_bun_path()
+    if runtime is None:
+        msg = (
+            "Node.js or Bun not found: Reflex runs one to read the JavaScript "
+            "modules the app imports from Python. You might need to rerun "
+            "`reflex init` or install either."
+        )
+        raise FileNotFoundError(msg)
     process = subprocess.run(
         [str(runtime), _SCRIPT_MODULES_SCRIPT, *map(str, paths)],
         cwd=web_dir,
