@@ -218,7 +218,9 @@ Each error below gives its exact message, with the values of an example call, an
     Reflex: rebuild the frontend (restart `reflex run`, or export the app again) and reload the page.``
 - `TimeoutError`: ``The browser did not return a result for `_call_script` within 30.0 seconds. If the script needs
   longer, pass a longer `timeout=` to the call (or `timeout=None` to wait without a limit) or raise
-  `browser_call_timeout` in rxconfig.py; if it returns a promise, make sure the promise settles.``
+  `browser_call_timeout` in rxconfig.py; if it returns a promise, make sure the promise settles. A frontend built by an
+  older version of Reflex never returns a result: rebuild the frontend (restart `reflex run`, or export the app again)
+  and reload the page.``
 - `BrowserDisconnectedError`, a `ConnectionError`: the tab cannot return the result.
   - When the call is made: `` `_call_script` cannot run in the browser tab: the tab is not connected to this backend
     worker, because it was closed, is reconnecting, or reconnected to another worker. Catch BrowserDisconnectedError
@@ -228,9 +230,13 @@ Each error below gives its exact message, with the values of an example call, an
     longer, or reconnected to another backend worker, which cannot pass the result on. Catch BrowserDisconnectedError
     where the user may close the tab, raise `browser_call_grace_period` in rxconfig.py if connections drop for longer,
     and with several backend workers route each tab to one worker (sticky sessions).``
-  - As soon as a reloaded page connects: ``The browser tab reloaded or left the page before the script returned a
-    result, so the script stopped. Catch BrowserDisconnectedError where the user may reload or leave the page while
-    the script runs.``
+  - When a reloaded page connects, if the backend already saw the old page's connection close: ``The browser tab
+    reloaded or left the page before the script returned a result, so the script stopped. Catch
+    BrowserDisconnectedError where the user may reload or leave the page while the script runs.`` If the old connection
+    still looks open, for example because the network dropped it without closing it, the backend cannot tell the
+    reloaded page from a duplicated tab: the call raises `TimeoutError` when its timeout ends, or, with a longer timeout,
+    the grace period message once the old connection times out (`REFLEX_SOCKET_INTERVAL` plus `REFLEX_SOCKET_TIMEOUT`,
+    145 seconds by default) and the grace period ends.
   - Without a frontend, for example in a test: `` `_call_script` cannot run in a browser: the app is running without a
     frontend connection (for example in a test, or a process that runs only the backend), so no tab can return a
     result. Await browser scripts in handlers triggered from a page of the running app, and catch
@@ -246,7 +252,9 @@ Each error below gives its exact message, with the values of an example call, an
 The browser sends the result to the backend worker its tab is connected to. With several workers sharing state through
 Redis, a background task awaits results only from tabs connected to its own worker. Calls to other tabs raise
 `BrowserDisconnectedError`. A tab that reconnects, or reloads, onto another worker while a call waits fails the call
-when the grace period ends, and its result is lost.
+when the grace period ends, and its result is lost. A tab that reconnects to the same worker before the backend saw
+its old connection close is given a new client token: the call still returns the result, but the handler's later
+`async with self` changes go to the state of the old token and never reach the page.
 ```
 
 ## Using React Hooks

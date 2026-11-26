@@ -112,7 +112,10 @@ class BrowserCalls:
                     "a longer `timeout=` to the call (or `timeout=None` to wait "
                     "without a limit) or raise `browser_call_timeout` in "
                     "rxconfig.py; if it returns a promise, make sure the "
-                    "promise settles."
+                    "promise settles. A frontend built by an older version of "
+                    "Reflex never returns a result: rebuild the frontend "
+                    "(restart `reflex run`, or export the app again) and "
+                    "reload the page."
                 )
                 raise TimeoutError(msg) from None
         finally:
