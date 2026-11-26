@@ -272,3 +272,46 @@ def test_export_releases_frontend_lock_before_failure_telemetry(
         export.export()
 
     assert context.__exit__.call_args.args[:2] == (RuntimeError, error)
+
+
+def test_export_restores_log_level_on_success(patched_export):
+    """Console log level is restored after successful export."""
+    from reflex_base.utils import console, log as _log
+    
+    initial_level = constants.LogLevel.INFO
+    console.set_log_level(initial_level)
+    assert _log.get_log_level() == initial_level
+    
+    export.export(loglevel=constants.LogLevel.DEBUG, zipping=False, frontend=False, backend=False)
+    
+    assert _log.get_log_level() == initial_level
+
+
+def test_export_restores_log_level_on_failure(patched_export):
+    """Console log level is restored even when export fails."""
+    from reflex_base.utils import console, log as _log
+    
+    initial_level = constants.LogLevel.INFO
+    console.set_log_level(initial_level)
+    
+    patched_export["get_compiled_app"].side_effect = RuntimeError("Test error")
+    
+    assert _log.get_log_level() == initial_level
+    
+    with pytest.raises(RuntimeError, match="Test error"):
+        export.export(loglevel=constants.LogLevel.DEBUG, zipping=False, frontend=False, backend=False)
+    
+    assert _log.get_log_level() == initial_level
+
+
+def test_export_preserves_log_level_when_none_specified(patched_export):
+    """Console log level remains unchanged when loglevel=None."""
+    from reflex_base.utils import console, log as _log
+    
+    initial_level = constants.LogLevel.WARNING
+    console.set_log_level(initial_level)
+    assert _log.get_log_level() == initial_level
+    
+    export.export(loglevel=None, zipping=False, frontend=False, backend=False)
+    
+    assert _log.get_log_level() == initial_level

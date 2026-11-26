@@ -10,6 +10,7 @@ from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.environment import environment
 from reflex_base.utils import console
+from reflex_base.utils import log as _log
 
 from reflex.utils import build, exec, path_ops, prerequisites, telemetry
 
@@ -46,7 +47,9 @@ def export(
     """
     config = get_config()
 
-    # Set the log level.
+    # Set the log level for the export, restoring the previous level afterward
+    # so that callers (e.g. `reflex deploy`) keep logging at their own level.
+    prev_log_level = _log.get_log_level()
     console.set_log_level(loglevel)
 
     start = time.monotonic()
@@ -105,6 +108,7 @@ def export(
         detail = type(exc).__name__
         raise
     finally:
+        console.set_log_level(prev_log_level)
         telemetry.send(
             "export",
             status=status,
