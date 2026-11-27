@@ -1,0 +1,1 @@
+Add `reflex_components_ui.style`: `StyleProps`, a typed dict of the CSS properties and conditions a style can hold, generated from StyleX's own types so that a type checker catches a misspelt property or keyword; `ComponentStyles`, the typed style table of a component; and `lower` and `merge`, which turn them into the style objects the compiler emits.
