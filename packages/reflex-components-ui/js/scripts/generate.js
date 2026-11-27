@@ -5,6 +5,8 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { render as renderCssProps } from "./css-props.js";
+
 /**
  * A committed file that a generator owns.
  *
@@ -20,7 +22,12 @@ import { fileURLToPath } from "node:url";
  *
  * @type {Generated[]}
  */
-export const GENERATED = [];
+export const GENERATED = [
+  {
+    path: "src/reflex_components_ui/style/_css_props.py",
+    render: renderCssProps,
+  },
+];
 
 const PACKAGE_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 

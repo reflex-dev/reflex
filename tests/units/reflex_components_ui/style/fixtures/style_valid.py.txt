@@ -1,0 +1,115 @@
+"""Styles that type-check: what Reflex users write today and what rx.ui adds."""
+
+import reflex as rx
+from reflex_components_ui.style import ComponentStyles, CompoundStyle, StyleProps
+
+
+class State(rx.State):
+    """State whose fields are bound to styles."""
+
+    width: rx.Field[int] = rx.field(320)
+    color: rx.Field[str] = rx.field("tomato")
+    hidden: rx.Field[bool] = rx.field(False)
+
+
+literals: StyleProps = {
+    "display": "flex",
+    "flex_direction": "column",
+    "align_items": "center",
+    "justify_content": "space-between",
+    "position": "relative",
+    "overflow": "hidden",
+    "padding": "1em",
+    "margin": "0 auto",
+    "width": "100%",
+    "max_width": 960,
+    "line_height": 1.5,
+    "opacity": "0.8",
+    "z_index": "10",
+    "font_weight": "bold",
+    "border": "1px solid #eaeaea",
+    "border_radius": "0.5em",
+    "box_shadow": "rgba(0, 0, 0, 0.1) 0px 4px 12px",
+    "background_image": "linear-gradient(271.68deg, #EE756A 0.75%, #756AEE 88.52%)",
+    "transition": "all 0.2s ease-in-out",
+    "cursor": "pointer",
+}
+
+reflex_keys: StyleProps = {
+    "bg": "white",
+    "bg_color": rx.color("gray", 2),
+    "padding_x": "1em",
+    "padding_y": ["0.5em", "1em"],
+    "margin_x": "auto",
+    "margin_y": 4,
+}
+
+colors: StyleProps = {
+    "color": rx.color("accent", 11),
+    "background_color": rx.color("ruby", 3, alpha=True),
+    "border_color": rx.color(State.color, 6),
+    "outline_color": "var(--accent-8)",
+}
+
+state: StyleProps = {
+    "width": State.width,
+    "height": f"{State.width}px",
+    "color": State.color,
+    "display": rx.cond(State.hidden, "none", "block"),
+    "opacity": rx.cond(State.hidden, 0, 1),
+}
+
+responsive: StyleProps = {
+    "font_size": ["1em", "1.25em", "1.5em"],
+    "display": ["none", "none", "flex"],
+    "flex_direction": rx.breakpoints(initial="column", md="row"),
+    "padding": rx.breakpoints(initial="1em", sm="2em", lg="4em"),
+    "width": {"initial": "100%", "md": "50%"},
+}
+
+conditions: StyleProps = {
+    "color": {"default": "black", ":hover": "blue", "[data-disabled]": "gray"},
+    "display": {"default": "block", "@media print": "none"},
+    "_hover": {"background_color": rx.color("accent", 4), "cursor": "pointer"},
+    "_focus_visible": {"outline": "2px solid", "outline_offset": "2px"},
+    "_before": {"content": '""', "position": "absolute"},
+    "_placeholder": {"color": rx.color("gray", 9)},
+    ":active": {"transform": "scale(0.98)"},
+    "::selection": {"background_color": "highlight"},
+    "::-webkit-scrollbar": {"display": "none"},
+    "_disabled": {"_hover": {"cursor": "not-allowed"}},
+}
+
+BUTTON: ComponentStyles = {
+    "base": {"display": "inline-flex", "align_items": "center", "font_weight": "500"},
+    "variants": {
+        "variant": {
+            "solid": {
+                "background_color": {
+                    "default": "var(--accent-9)",
+                    ":hover": "var(--accent-10)",
+                },
+                "color": "var(--accent-contrast)",
+            },
+            "soft": {
+                "background_color": rx.color("accent", 3, alpha=True),
+                "color": rx.color("accent", 11, alpha=True),
+            },
+        },
+        "size": {
+            "1": {"height": "var(--space-5)"},
+            "2": {"height": "var(--space-6)"},
+        },
+    },
+    "compound": [
+        {"props": {"variant": "solid", "size": "2"}, "style": {"font_weight": "700"}},
+    ],
+    "parts": {
+        "icon": {
+            "base": {"flex_shrink": 0},
+            "variants": {"size": {"2": {"width": "1.25em"}}},
+        },
+    },
+}
+
+compound: CompoundStyle = {"props": {"size": "1"}, "style": {"padding": 0}}
