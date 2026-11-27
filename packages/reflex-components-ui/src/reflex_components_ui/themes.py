@@ -309,7 +309,7 @@ class _Builder:
         )
 
 
-def _literal(value: Any) -> Any:
+def literal_option(value: Any) -> Any:
     """Read a Var that holds a constant as the constant.
 
     Args:
@@ -342,12 +342,13 @@ def theme_styles(
     imports every theme it could name and chooses among them where the page
     runs.
 
-    The cascade does not tell an element what it inherits, so two things are
-    resolved against the theme of the app, which is what a theme inherits
-    unless another one stands between them:
+    An accent color without a gray color keeps the gray around the element,
+    as in Radix Themes. The cascade does not tell an element what it inherits,
+    so two things are resolved against the theme of the app, which is what a
+    theme inherits unless another one stands between them:
 
-    - An accent color without a gray color takes the gray that matches it when
-      the gray of the app is ``"auto"``, as ``gray_color="auto"`` does.
+    - ``gray_color="auto"`` without an accent color is the gray that matches
+      the accent of the app.
     - A gray color without an accent color names the gray accent again when
       the accent of the app is gray: that accent is the gray of the element
       it was declared on.
@@ -372,19 +373,16 @@ def theme_styles(
     """
     tokens = _radix_tokens
     builder = _Builder(name)
-    accent_color = _literal(accent_color)
-    gray_color = _literal(gray_color)
-    appearance = _literal(appearance)
-    has_background = _literal(has_background)
+    accent_color = literal_option(accent_color)
+    gray_color = literal_option(gray_color)
+    appearance = literal_option(appearance)
+    has_background = literal_option(has_background)
 
     for scope in tokens.SCOPE_THEMES:
         builder.refs.append(builder.add(scope))
     builder.refs.append(builder.add(tokens.FOCUS_THEME))
 
-    if gray_color is None:
-        if accent_color is not None and app_theme and app_theme.gray_color == "auto":
-            gray_color = "auto"
-    elif not isinstance(gray_color, Var):
+    if gray_color is not None and not isinstance(gray_color, Var):
         _check(name, "gray_color", gray_color)
     if accent_color is None:
         if gray_color is not None and app_theme and app_theme.accent_color == "gray":
@@ -430,40 +428,32 @@ def theme_styles(
     module, export, _ = tokens.THEME_STYLES
     styles = builder.add((module, export), _THEME_STYLES)
     builder.refs.append(f"{styles}.root")
-    class_name = THEME_CLASS
-    explicit = False
-    bound_appearance = None
+    background = f"{styles}.background"
     if isinstance(appearance, Var):
-        bound_appearance = builder.bound(appearance)
-    elif appearance is not None:
-        _check(name, "appearance", appearance)
-        if appearance != "inherit":
-            # Radix Themes and Tailwind select on the class: a component of
-            # either inside this element follows the appearance too.
-            class_name = f"{THEME_CLASS} {appearance}"
-            explicit = True
+        bound = builder.bound(appearance)
+        own_appearance = f'({bound}) !== "inherit"'
+        appearance_ref = f"{styles}[{bound}]"
+    else:
+        if appearance is not None:
+            _check(name, "appearance", appearance)
+        own_appearance = appearance is not None and appearance != "inherit"
+        appearance_ref = f"{styles}.{appearance}" if own_appearance else None
     if isinstance(has_background, Var):
-        builder.refs.append(f"({builder.bound(has_background)}) && {styles}.background")
+        builder.refs.append(f"({builder.bound(has_background)}) && {background}")
     elif has_background is None:
-        if bound_appearance is not None:
-            builder.refs.append(
-                f'({bound_appearance}) !== "inherit" && {styles}.background'
-            )
-        elif explicit:
-            builder.refs.append(f"{styles}.background")
+        # As in Radix Themes, a theme with an appearance of its own paints its
+        # background unless it is told not to.
+        if own_appearance.__class__ is str:
+            builder.refs.append(f"{own_appearance} && {background}")
+        elif own_appearance:
+            builder.refs.append(background)
     else:
         _check_flag(name, "has_background", has_background)
         if has_background:
-            builder.refs.append(f"{styles}.background")
-    if bound_appearance is not None:
-        builder.refs.extend((
-            f"{styles}[{bound_appearance}]",
-            f'({bound_appearance}) !== "inherit" && '
-            f"{{ $$css: true, appearance: {bound_appearance} }}",
-        ))
-    elif explicit:
-        builder.refs.append(f"{styles}.{appearance}")
-    return builder.finish(class_name)
+            builder.refs.append(background)
+    if appearance_ref is not None:
+        builder.refs.append(appearance_ref)
+    return builder.finish(THEME_CLASS)
 
 
 def app_theme_styles(theme: Theme) -> ThemeStyles:
@@ -496,7 +486,7 @@ def color_scheme_styles(name: str, color_scheme: Any) -> ThemeStyles:
     """
     tokens = _radix_tokens
     builder = _Builder(name)
-    color_scheme = _literal(color_scheme)
+    color_scheme = literal_option(color_scheme)
     if isinstance(color_scheme, Var):
         builder.refs.append(
             builder.lookup(_ACCENT_MAP, tokens.ACCENT_THEMES, color_scheme)

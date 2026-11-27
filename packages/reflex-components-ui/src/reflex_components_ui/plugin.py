@@ -26,6 +26,10 @@ BASE_STYLESHEET_IMPORT = f"@import url('../{WEB_DIR}/base.css');"
 # a page with components of both follows this one.
 APP_THEME_WRAP = (15, "ReflexUITheme")
 
+# The element around it that carries the class of the appearance of the theme,
+# when it has one of its own.
+APP_APPEARANCE_WRAP = (16, "ReflexUIAppearance")
+
 # The cascade layer the styles of the components are compiled into.
 CSS_LAYER = "reflex-ui"
 
@@ -129,13 +133,18 @@ class UIPlugin(Plugin):
         )
 
     def compile_page(self, page_ctx: PageContext, /, **kwargs: Any) -> None:
-        """Wrap the app in the element that carries its theme.
+        """Wrap the app in the elements that carry its theme.
 
         Args:
             page_ctx: The page being compiled.
             **kwargs: The context for the plugin.
         """
         # The component imports this module for the plugin it needs.
-        from reflex_components_ui.layout.theme import AppTheme
+        from reflex_components_ui.layout.theme import Appearance, AppTheme
 
-        page_ctx.app_wrap_components[APP_THEME_WRAP] = AppTheme.create()
+        wraps = page_ctx.app_wrap_components
+        wraps[APP_THEME_WRAP] = AppTheme.create()
+        if self.theme.appearance != "inherit":
+            wraps[APP_APPEARANCE_WRAP] = Appearance.create(
+                class_name=self.theme.appearance
+            )

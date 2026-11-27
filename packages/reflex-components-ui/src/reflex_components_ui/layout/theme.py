@@ -21,7 +21,7 @@ from reflex_components_ui.base import (
 )
 from reflex_components_ui.plugin import UIPlugin
 from reflex_components_ui.style.emit import props_call
-from reflex_components_ui.styles.theme import APP_THEME
+from reflex_components_ui.styles.theme import APP_THEME, APPEARANCE
 from reflex_components_ui.themes import (
     OPTIONS,
     LiteralAccentColor,
@@ -33,8 +33,34 @@ from reflex_components_ui.themes import (
     ThemeError,
     ThemeStyles,
     app_theme_styles,
+    literal_option,
     theme_styles,
 )
+
+
+class Appearance(UIComponent):
+    """What carries the class of an appearance around a theme element.
+
+    Radix Themes and Tailwind select on the classes ``light`` and ``dark``, so
+    their components inside a theme follow its appearance through them. The
+    class cannot be on the theme element: the stylesheet of Radix Themes sets
+    its plain gray scale on an element with either class, over the gray of the
+    theme. This element has no box, so the theme element is laid out as a
+    child of what is around both.
+    """
+
+    tag = "div"
+
+    styles: ClassVar[ComponentStyles] = APPEARANCE
+
+    @classmethod
+    def _display_name(cls) -> str:
+        """Get the name an app refers to the component by.
+
+        Returns:
+            ``rx.ui.theme``, which is what an app wrote.
+        """
+        return "rx.ui.theme"
 
 
 # The fields of the element that are options of its theme.
@@ -92,6 +118,28 @@ class ThemeElement(UIComponent):
         is_javascript_property=False,
         doc="Whether the element paints the background of the theme. Defaults to True when it sets an appearance.",
     )
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a theme around the children.
+
+        Args:
+            *children: The children of the theme.
+            **props: The options of the theme and the props of its element.
+
+        Returns:
+            The theme element, inside the element that carries the class of
+            its appearance when it has one of its own.
+        """
+        element = super().create(*children, **props)
+        appearance = literal_option(element.appearance)
+        if appearance is None or (
+            appearance.__class__ is str and appearance == "inherit"
+        ):
+            return element
+        # Bound to state, the class is `inherit` when the appearance is: no
+        # stylesheet selects on it.
+        return Appearance.create(element, class_name=appearance)
 
     @classmethod
     def _display_name(cls) -> str:

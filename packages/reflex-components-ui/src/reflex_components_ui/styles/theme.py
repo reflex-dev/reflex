@@ -1,4 +1,4 @@
-"""The look of the element that carries the theme of an app."""
+"""The look of the elements of a theme, beside what the theme itself sets."""
 
 from reflex_components_ui.base import ComponentStyles
 
@@ -12,5 +12,12 @@ APP_THEME: ComponentStyles = {
             "default": "100vh",
             "@supports (min-height: 100dvh)": "100dvh",
         },
+    },
+}
+
+# The element that carries the class of an appearance has no box of its own.
+APPEARANCE: ComponentStyles = {
+    "base": {
+        "display": "contents",
     },
 }
