@@ -8,47 +8,6 @@ from reflex_components_ui.style import Keyframes
 
 import reflex as rx
 
-# What each leaf of a spinner declares.
-LEAF: dict[str, Any] = {
-    "animationName": Keyframes(
-        (
-            '{"from": {"backgroundColor": "var(--gray-a3)"}, "to": {"backgroundColor": "var(--gray-a4)"}}',
-        ),
-        ("$/reflex-ui/tokens/gray.stylex.js",),
-    ),
-    "animationDuration": "1000ms !important",
-    "animationTimingFunction": "ease !important",
-    "animationDelay": "0s !important",
-    "animationIterationCount": "infinite !important",
-    "animationDirection": "alternate-reverse !important",
-    "animationFillMode": "none !important",
-    "animationPlayState": "running !important",
-    "backgroundImage": "none !important",
-    "backgroundClip": "border-box !important",
-    "borderStyle": "none !important",
-    "borderWidth": "medium !important",
-    "borderColor": "currentcolor !important",
-    "boxShadow": "none !important",
-    "boxDecorationBreak": "clone !important",
-    "color": "transparent !important",
-    "outlineStyle": "none !important",
-    "outlineWidth": "medium !important",
-    "outlineColor": "currentcolor !important",
-    "pointerEvents": "none !important",
-    "userSelect": "none !important",
-    "cursor": "default !important",
-    "visibility": {"::before": "hidden !important", "::after": "hidden !important"},
-    "display": {":empty": "block"},
-    "height": {":empty": "var(--space-3)"},
-    "borderTopLeftRadius": "var(--radius-1)",
-    "borderTopRightRadius": "var(--radius-1)",
-    "borderBottomRightRadius": "var(--radius-1)",
-    "borderBottomLeftRadius": "var(--radius-1)",
-    "lineHeight": 0,
-    "fontFamily": "Arial, sans-serif !important",
-    "width": {"default": "60px", "@media (min-width: 1024px)": "160px"},
-}
-
 
 class SkeletonState(rx.State):
     """What a skeleton is bound to."""
@@ -75,7 +34,50 @@ def test_skeleton_around_text(
         ],
         "children": [{"contents": '"1,204 euros"'}],
     }
-    assert declared_styles(component) == [LEAF]
+    assert declared_styles(component) == [
+        {
+            "animationName": Keyframes(
+                (
+                    '{"from": {"backgroundColor": "var(--gray-a3)"}, "to": {"backgroundColor": "var(--gray-a4)"}}',
+                ),
+                ("$/reflex-ui/tokens/gray.stylex.js",),
+            ),
+            "animationDuration": "1000ms !important",
+            "animationTimingFunction": "ease !important",
+            "animationDelay": "0s !important",
+            "animationIterationCount": "infinite !important",
+            "animationDirection": "alternate-reverse !important",
+            "animationFillMode": "none !important",
+            "animationPlayState": "running !important",
+            "backgroundImage": "none !important",
+            "backgroundClip": "border-box !important",
+            "borderStyle": "none !important",
+            "borderWidth": "medium !important",
+            "borderColor": "currentcolor !important",
+            "boxShadow": "none !important",
+            "boxDecorationBreak": "clone !important",
+            "color": "transparent !important",
+            "outlineStyle": "none !important",
+            "outlineWidth": "medium !important",
+            "outlineColor": "currentcolor !important",
+            "pointerEvents": "none !important",
+            "userSelect": "none !important",
+            "cursor": "default !important",
+            "visibility": {
+                "::before": "hidden !important",
+                "::after": "hidden !important",
+            },
+            "display": {":empty": "block"},
+            "height": {":empty": "var(--space-3)"},
+            "borderTopLeftRadius": "var(--radius-1)",
+            "borderTopRightRadius": "var(--radius-1)",
+            "borderBottomRightRadius": "var(--radius-1)",
+            "borderBottomLeftRadius": "var(--radius-1)",
+            "lineHeight": 0,
+            "fontFamily": "Arial, sans-serif !important",
+            "width": {"default": "60px", "@media (min-width: 1024px)": "160px"},
+        }
+    ]
 
 
 def test_skeleton_alone(
@@ -95,7 +97,49 @@ def test_skeleton_alone(
         ],
         "children": [],
     }
-    assert declared_styles(component) == [LEAF]
+    assert declared_styles(component) == [
+        {
+            "animationName": Keyframes(
+                (
+                    '{"from": {"backgroundColor": "var(--gray-a3)"}, "to": {"backgroundColor": "var(--gray-a4)"}}',
+                ),
+                ("$/reflex-ui/tokens/gray.stylex.js",),
+            ),
+            "animationDuration": "1000ms !important",
+            "animationTimingFunction": "ease !important",
+            "animationDelay": "0s !important",
+            "animationIterationCount": "infinite !important",
+            "animationDirection": "alternate-reverse !important",
+            "animationFillMode": "none !important",
+            "animationPlayState": "running !important",
+            "backgroundImage": "none !important",
+            "backgroundClip": "border-box !important",
+            "borderStyle": "none !important",
+            "borderWidth": "medium !important",
+            "borderColor": "currentcolor !important",
+            "boxShadow": "none !important",
+            "boxDecorationBreak": "clone !important",
+            "color": "transparent !important",
+            "outlineStyle": "none !important",
+            "outlineWidth": "medium !important",
+            "outlineColor": "currentcolor !important",
+            "pointerEvents": "none !important",
+            "userSelect": "none !important",
+            "cursor": "default !important",
+            "visibility": {
+                "::before": "hidden !important",
+                "::after": "hidden !important",
+            },
+            "display": {":empty": "block"},
+            "height": "40px",
+            "borderTopLeftRadius": "var(--radius-1)",
+            "borderTopRightRadius": "var(--radius-1)",
+            "borderBottomRightRadius": "var(--radius-1)",
+            "borderBottomLeftRadius": "var(--radius-1)",
+            "lineHeight": 0,
+            "fontFamily": "Arial, sans-serif !important",
+        }
+    ]
 
 
 def test_skeleton_as_its_child(
@@ -118,7 +162,42 @@ def test_skeleton_as_its_child(
         "children": [{"contents": '"Save"'}],
     }
     assert declared_styles(component) == [
-        LEAF,
+        {
+            "animationName": Keyframes(
+                (
+                    '{"from": {"backgroundColor": "var(--gray-a3)"}, "to": {"backgroundColor": "var(--gray-a4)"}}',
+                ),
+                ("$/reflex-ui/tokens/gray.stylex.js",),
+            ),
+            "animationDuration": "1000ms !important",
+            "animationTimingFunction": "ease !important",
+            "animationDelay": "0s !important",
+            "animationIterationCount": "infinite !important",
+            "animationDirection": "alternate-reverse !important",
+            "animationFillMode": "none !important",
+            "animationPlayState": "running !important",
+            "backgroundImage": "none !important",
+            "backgroundClip": "border-box !important",
+            "borderStyle": "none !important",
+            "borderWidth": "medium !important",
+            "borderColor": "currentcolor !important",
+            "boxShadow": "none !important",
+            "boxDecorationBreak": "clone !important",
+            "color": "transparent !important",
+            "outlineStyle": "none !important",
+            "outlineWidth": "medium !important",
+            "outlineColor": "currentcolor !important",
+            "pointerEvents": "none !important",
+            "userSelect": "none !important",
+            "cursor": "default !important",
+            "visibility": {
+                "::before": "hidden !important",
+                "::after": "hidden !important",
+            },
+            "display": {":empty": "block"},
+            "height": {":empty": "var(--space-3)"},
+            "width": "120px !important",
+        },
         {
             "marginTop": "0",
             "marginRight": "0",
