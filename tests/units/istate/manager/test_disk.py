@@ -476,8 +476,11 @@ async def test_load_state_logs_warning_for_corrupted_file(
 
     warning_logs = disk_warning_logs(caplog)
     assert len(warning_logs) == 1
-    assert token_path.name in warning_logs[0].message
-    assert "falling back to a default state" in warning_logs[0].message
+    detail = """Stored state could not be unpickled: UnpicklingError("invalid load key, 'n'.")"""
+    assert warning_logs[0].message == (
+        f"Failed to load state file {token_path.name}, falling back to a default state: "
+        f"StateUnreadableError({detail!r})"
+    )
 
     await state_manager.close()
 
@@ -510,7 +513,10 @@ async def test_load_state_logs_warning_for_corrupted_non_base_token(
 
     warning_logs = disk_warning_logs(caplog)
     assert len(warning_logs) == 1
-    assert token_path.name in warning_logs[0].message
+    assert warning_logs[0].message == (
+        f"Failed to load state file {token_path.name}, falling back to a default state: "
+        "UnpicklingError(\"invalid load key, 'n'.\")"
+    )
 
     await state_manager.close()
 
