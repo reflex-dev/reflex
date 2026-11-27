@@ -38,6 +38,7 @@ from reflex.compiler import compiler, utils
 from reflex.compiler.plugins import default_page_plugins
 from reflex.state import BaseState
 from reflex.utils import prerequisites
+from reflex.utils.misc import preload_color_theme
 
 
 @pytest.mark.parametrize("with_plugin", [False, True])
@@ -891,6 +892,40 @@ def test_compile_document_root_bakes_default_color_mode(mocker: MockerFixture):
     )
 
     assert "|| 'dark'" in code
+
+
+def test_compile_document_root_prod(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """A production document preloads its stylesheet and no script of its own.
+
+    Its scripts are the Reflex wrapper of react-router's, which starts them
+    after the first paint on a prerendered page.
+    """
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.PROD.value)
+    mocker.patch(
+        "reflex.compiler.compiler.get_web_dir",
+        return_value=Path("/tmp/does_not_matter"),
+    )
+
+    path, code = compiler.compile_document_root([], default_color_mode="system")
+
+    theme_script = preload_color_theme("system").render()["children"][0]["contents"]
+    assert path == str(Path("/tmp/does_not_matter/app/_document.js"))
+    assert (
+        code
+        == f"""import {{Links,Meta,ScrollRestoration}} from "react-router"
+import reflexGlobalStyles from "$/styles/__reflex_global_styles.css?url"
+import {{Scripts}} from "$/utils/scripts"
+import {{jsx}} from "@emotion/react"
+import {{Fragment,useEffect}} from "react"
+
+export function Layout({{children}}) {{
+  return (
+    jsx("html",{{lang:"en"}},jsx("head",{{}},jsx("script",{{}},{theme_script}),jsx("meta",{{charSet:"utf-8"}},),jsx("meta",{{content:"width=device-width, initial-scale=1",name:"viewport"}},),jsx(Meta,{{}},),jsx("link",{{as:"style",href:reflexGlobalStyles,rel:"preload"}},),jsx("link",{{href:reflexGlobalStyles,rel:"stylesheet",type:"text/css"}},),jsx(Links,{{}},)),jsx("body",{{}},children,jsx(ScrollRestoration,{{}},),jsx(Scripts,{{}},)))
+  )
+}}"""
+    )
 
 
 def test_compile_nonexistent_stylesheet(tmp_path, mocker: MockerFixture):

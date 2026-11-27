@@ -41,6 +41,11 @@ interface Window {
   /** Loads bundled libraries a dynamic component names, before it is evaluated. */
   __reflex_load?: (libraries: string[]) => Promise<void>;
   __reflex_otel?: ReflexOtelHooks;
+  /**
+   * The last click on a prerendered page before its scripts loaded, and the
+   * listener recording it. Set by the inline script of `utils/scripts.js`.
+   */
+  __reflex_early?: { click: MouseEvent | null; record: (event: Event) => void };
   /** Dynamic components are evaluated outside any module and expect a global React. */
   React?: any;
 }
