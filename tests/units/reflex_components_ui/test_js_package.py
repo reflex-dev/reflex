@@ -3,6 +3,9 @@
 import json
 from pathlib import Path
 
+from reflex_base import constants
+from reflex_components_radix.plugin import RADIX_THEMES_PACKAGE
+
 JS_PACKAGE = Path(__file__).parents[3] / "packages/reflex-components-ui/js"
 
 # StyleX is 0.x and has broken its output between patch releases, so every
@@ -41,3 +44,27 @@ def test_lockfile_installs_stylex_at_the_pinned_version():
         "@stylexjs/stylex": STYLEX_VERSION,
         "@stylexjs/unplugin": STYLEX_VERSION,
     }
+
+
+def test_radix_themes_is_the_version_reflex_installs():
+    """The tokens are generated from the Radix Themes an app gets.
+
+    A page that mixes Radix components with these ones shows one palette only
+    while both define the same values, so the generator reads the stylesheet of
+    the version the Radix components install, and no other.
+    """
+    name, _, version = RADIX_THEMES_PACKAGE.rpartition("@")
+    manifest = json.loads((JS_PACKAGE / "package.json").read_text())
+    lock = json.loads((JS_PACKAGE / "package-lock.json").read_text())
+    assert name == "@radix-ui/themes"
+    assert manifest["devDependencies"][name] == version
+    assert lock["packages"][f"node_modules/{name}"]["version"] == version
+
+
+def test_vite_is_the_version_reflex_installs():
+    """The live tests build their pages with the Vite an app is built with."""
+    version = constants.PackageJson.DEV_DEPENDENCIES["vite"]
+    manifest = json.loads((JS_PACKAGE / "package.json").read_text())
+    lock = json.loads((JS_PACKAGE / "package-lock.json").read_text())
+    assert manifest["devDependencies"]["vite"] == version
+    assert lock["packages"]["node_modules/vite"]["version"] == version

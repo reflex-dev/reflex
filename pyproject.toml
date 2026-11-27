@@ -318,6 +318,7 @@ preview = true
 "packages/reflex-build-sdk/scripts/*.py" = ["INP001", "T201"]
 "packages/reflex-base/hatch_build.py" = ["INP001"]
 "packages/reflex-components-ui/hatch_build.py" = ["INP001"]
+"packages/reflex-components-ui/js/tests/fixtures/*" = ["INP001"]
 "scripts/changed_paths.py" = ["T201"]
 "scripts/check_min_deps.py" = ["T201"]
 "scripts/check_outdated_deps.py" = ["T201"]
@@ -336,7 +337,7 @@ markers = [
 
 [tool.codespell]
 skip = "*.html, examples, *.pyi, */nba.csv, */olympic-winners.json, packages/reflex-build-sdk/openapi.json, uv.lock, */bun.lock, */package-lock.json, node_modules"
-ignore-words-list = "te, TreeE, selectin"
+ignore-words-list = "te, TreeE, selectin, afterAll"
 
 
 [tool.coverage.run]

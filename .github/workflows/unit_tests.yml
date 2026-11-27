@@ -215,6 +215,8 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run generate:check
+      # The tests of the tokens and themes read computed styles in a browser.
+      - run: npx playwright install --with-deps --only-shell chromium
       - run: npm test
 
   unit-tests-macos:
