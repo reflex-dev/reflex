@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
-import dataclasses
 from datetime import timedelta
 
 from reflex_base import constants
 from reflex_base.components.component import Component
 from reflex_base.constants import Dirs, Hooks, Imports
-from reflex_base.constants.compiler import CompileVars
+from reflex_base.constants.compiler import (
+    CompileVars,
+    MemoizationDisposition,
+    MemoizationMode,
+)
 from reflex_base.environment import environment
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
@@ -290,32 +293,37 @@ class ConnectionModal(Component):
             _var_data=modal_dismissed_var_data,
         ).to(BooleanVar)
         show_modal = has_modal_error & ~modal_dismissed
-        modal = cond(
-            show_modal,
-            el.dialog(
-                el.h2("Connection Error"),
-                comp,
-                el.div(
-                    el.button(
-                        "Close",
-                        type="button",
-                        custom_attrs={
-                            "on_click": Var(
-                                _js_expr="() => setModalDismissed(true)",
-                                _var_data=modal_dismissed_var_data,
-                            ),
-                        },
-                    ),
-                    margin_top="0.75rem",
+        close_button = el.button(
+            "Close",
+            type="button",
+            custom_attrs={
+                "on_click": Var(
+                    _js_expr="() => setModalDismissed(true)",
+                    _var_data=modal_dismissed_var_data,
                 ),
-                open=show_modal,
-                z_index=9999,
-            ),
+            },
         )
-        # Keep cond, dialog, and Close button inside one memo scope so they share `modalDismissed`.
-        modal._memoization_mode = dataclasses.replace(
-            modal._memoization_mode, recursive=False
+        close_row = el.div(close_button, margin_top="0.75rem")
+        dialog = el.dialog(
+            el.h2("Connection Error"),
+            comp,
+            close_row,
+            open=show_modal,
+            z_index=9999,
         )
+        modal = cond(show_modal, dialog)
+        # Keep the modal chrome in one component scope without suppressing auto-memoization
+        # of caller-supplied `comp`, so custom `on_mount`/`on_unmount` stay scoped to `comp`.
+        modal_cond = modal.children[0]
+        true_branch = (
+            modal_cond.children[0]
+            if isinstance(modal_cond, Component) and modal_cond.children
+            else None
+        )
+        unmemoized = MemoizationMode(disposition=MemoizationDisposition.NEVER)
+        for chrome in (modal, modal_cond, true_branch, dialog, close_row, close_button):
+            if isinstance(chrome, Component):
+                chrome._memoization_mode = unmemoized
         return modal
 
 
