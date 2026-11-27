@@ -5,6 +5,7 @@ from typing import Any, ClassVar, Literal
 
 import pytest
 from reflex_base.components.component import Component
+from reflex_base.components.dynamic import _RENDERING_DYNAMIC_COMPONENT
 from reflex_base.components.memo import MEMOS
 from reflex_base.config import get_config
 from reflex_base.plugins import CompileContext
@@ -737,3 +738,20 @@ def test_dynamic_component_cannot_have_a_style_that_needs_the_compiler(
     with pytest.raises(StyleError) as raised:
         serialize(create())
     assert str(raised.value) == message
+
+
+def test_element_never_asks_for_emotion(mocker):
+    """An rx.ui element has no ``css`` prop, and is not rendered to find out.
+
+    Its imports are also read where it cannot be rendered: for a component
+    held in state, before it is serialized as a dynamic component.
+    """
+    component = Button.create("hello", kind="soft", style={"padding": "4px"})
+    render = mocker.spy(Button, "_render")
+    token = _RENDERING_DYNAMIC_COMPONENT.set(True)
+    try:
+        imports = component._get_all_imports()
+    finally:
+        _RENDERING_DYNAMIC_COMPONENT.reset(token)
+    assert imports == {}
+    assert render.call_count == 0

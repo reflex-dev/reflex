@@ -21,7 +21,10 @@ from typing_extensions import dataclass_transform
 
 from reflex_base import constants
 from reflex_base.breakpoints import Breakpoints
-from reflex_base.components.dynamic import load_dynamic_serializer
+from reflex_base.components.dynamic import (
+    is_rendering_dynamic_component,
+    load_dynamic_serializer,
+)
 from reflex_base.components.field import BaseField, FieldBasedMeta
 from reflex_base.components.tags import CommonTag, Tag
 from reflex_base.constants import Dirs, EventTriggers, Imports, MemoizationMode
@@ -1493,14 +1496,19 @@ class Component(BaseComponent, ABC):
     def _get_tag(self) -> CommonTag:
         """Get the tag the component renders, built once per compile.
 
+        A component may render differently as a dynamic component, and one
+        held in state has its imports collected before it is serialized as
+        one: the tag is kept for the kind of code it was built for.
+
         Returns:
             The tag ``_render`` returns.
         """
-        try:
-            return self._cached_tag
-        except AttributeError:
-            pass
-        tag = self._cached_tag = self._render()
+        dynamic = is_rendering_dynamic_component()
+        cached = self.__dict__.get("_cached_tag")
+        if cached is not None and cached[0] is dynamic:
+            return cached[1]
+        tag = self._render()
+        self._cached_tag = (dynamic, tag)
         return tag
 
     def _renders_css_prop(self) -> bool:
