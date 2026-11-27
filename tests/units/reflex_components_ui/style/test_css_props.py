@@ -1,66 +1,21 @@
 """Tests for what a type checker makes of the generated style types."""
 
-import json
-import shutil
-import subprocess
-import sys
-from pathlib import Path
+from collections.abc import Callable
 
-FIXTURES = Path(__file__).parent / "fixtures"
+Diagnostics = list[tuple[int, str, str]]
 
 
-def _pyright(tmp_path: Path, fixture: str) -> list[tuple[int, str, str]]:
-    """Run pyright over a fixture, outside the configuration of the repository.
-
-    The fixtures are kept as text so that no other tool checks them.
-
-    Args:
-        tmp_path: A directory to copy the fixture to.
-        fixture: The name of the fixture, without its extension.
-
-    Returns:
-        The line, rule and whole message of every diagnostic.
-    """
-    target = tmp_path / f"{fixture}.py"
-    shutil.copy(FIXTURES / f"{fixture}.py.txt", target)
-    result = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "pyright",
-            "--outputjson",
-            "--pythonpath",
-            sys.executable,
-            str(target),
-        ],
-        capture_output=True,
-        text=True,
-        cwd=tmp_path,
-        check=False,
-    )
-    diagnostics = json.loads(result.stdout)["generalDiagnostics"]
-    assert {diagnostic["file"] for diagnostic in diagnostics} <= {str(target)}
-    return [
-        (
-            diagnostic["range"]["start"]["line"] + 1,
-            diagnostic["rule"],
-            diagnostic["message"],
-        )
-        for diagnostic in diagnostics
-    ]
-
-
-def test_valid_styles_type_check(tmp_path: Path):
+def test_valid_styles_type_check(pyright: Callable[[str], Diagnostics]):
     """What Reflex users write today, and a style table, raise nothing."""
-    assert _pyright(tmp_path, "style_valid") == []
+    assert pyright("style_valid") == []
 
 
-def test_invalid_styles_are_type_errors(tmp_path: Path):
+def test_invalid_styles_are_type_errors(pyright: Callable[[str], Diagnostics]):
     """A misspelt property, keyword or table key is caught before compiling."""
-    assert _pyright(tmp_path, "style_errors") == EXPECTED_ERRORS
+    assert pyright("style_errors") == EXPECTED_ERRORS
 
 
-EXPECTED_ERRORS: list[tuple[int, str, str]] = [
+EXPECTED_ERRORS: Diagnostics = [
     (
         6,
         "reportAssignmentType",

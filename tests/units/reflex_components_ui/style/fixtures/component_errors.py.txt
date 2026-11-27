@@ -1,0 +1,13 @@
+"""Styles of a component that must not type-check: every call below is an error."""
+
+from reflex_components_ui.layout.box import box
+
+box(style={"paddng": "1em"})
+
+box(style={"display": "flx"})
+
+box(style={"_hover": {"colr": "red"}})
+
+box(style=[{"padding": "1em"}, {"display": "flx"}])
+
+box(style="padding: 1em")

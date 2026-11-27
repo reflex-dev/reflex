@@ -1,10 +1,10 @@
 """The look of the box."""
 
-from reflex_components_ui.base import ComponentStyles
+from reflex_components_ui.style import ComponentStyles
 
 BOX: ComponentStyles = {
     "base": {
-        "boxSizing": "border-box",
+        "box_sizing": "border-box",
         "display": "block",
     },
 }

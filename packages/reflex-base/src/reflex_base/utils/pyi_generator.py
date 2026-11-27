@@ -502,19 +502,27 @@ def _get_class_event_triggers(target_class: type) -> frozenset[str]:
 
 def _generate_imports(
     typing_imports: Iterable[str],
+    extra_imports: Mapping[str, Iterable[str]] | None = None,
 ) -> list[ast.ImportFrom | ast.Import]:
     """Generate the import statements for the stub file.
 
     Args:
         typing_imports: The typing imports to include.
+        extra_imports: The names the classes of the module ask for, by module,
+            for the types they overwrite.
 
     Returns:
         The list of import statements.
     """
     return [
         *[
-            ast.ImportFrom(module=name, names=[ast.alias(name=val) for val in values])  # pyright: ignore [reportCallIssue]
-            for name, values in DEFAULT_IMPORTS.items()
+            ast.ImportFrom(
+                module=name, names=[ast.alias(name=val) for val in sorted(values)]
+            )  # pyright: ignore [reportCallIssue]
+            for name, values in (
+                *DEFAULT_IMPORTS.items(),
+                *sorted((extra_imports or {}).items()),
+            )
         ],
         ast.Import([ast.alias("reflex")]),
     ]
@@ -598,6 +606,22 @@ def _extract_func_kwargs_as_ast_nodes(
     return kwargs
 
 
+def _class_overwrite_types(clz: type) -> dict[str, str]:
+    """Get the annotations a class gives its props in place of the declared ones.
+
+    A component class sets ``_pyi_overwrite_types`` to a dict from the name of
+    a prop to its annotation in the stub, and ``_pyi_imports`` to the names
+    those annotations need, by module. Both are inherited.
+
+    Args:
+        clz: The class a ``create`` stub is generated for.
+
+    Returns:
+        The annotation of each overwritten prop.
+    """
+    return getattr(clz, "_pyi_overwrite_types", {})
+
+
 def _extract_class_props_as_ast_nodes(
     func: Callable,
     clzs: list[type],
@@ -618,6 +642,8 @@ def _extract_class_props_as_ast_nodes(
     """
     spec = _get_full_argspec(func)
     func_kwonlyargs = set(spec.kwonlyargs)
+    # The class the stub is for may type a prop more narrowly than its parents.
+    overwrite_types = {**OVERWRITE_TYPES, **_class_overwrite_types(clzs[0])}
     all_props: set[str] = set()
     kwargs = deque()
     for target_class in reversed(clzs):
@@ -657,7 +683,7 @@ def _extract_class_props_as_ast_nodes(
                 ast.arg(
                     arg=name,
                     annotation=ast.Name(
-                        id=OVERWRITE_TYPES.get(
+                        id=overwrite_types.get(
                             name,
                             _get_type_hint(
                                 value,
@@ -1214,7 +1240,11 @@ class StubGenerator(ast.NodeTransformer):
             ]
         if not self.inserted_imports:
             self.inserted_imports = True
-            default_imports = _generate_imports(self.typing_imports)
+            extra_imports: dict[str, set[str]] = {}
+            for clz in self.classes.values():
+                for module, names in getattr(clz, "_pyi_imports", {}).items():
+                    extra_imports.setdefault(module, set()).update(names)
+            default_imports = _generate_imports(self.typing_imports, extra_imports)
             return [*default_imports, *([node] if node.names else ())]
         if not node.names:
             return []
