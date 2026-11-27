@@ -772,6 +772,100 @@ def test_compile_app_root_can_defer_optional_window_libraries(mocker):
     assert "window.__reflex_load" in code
 
 
+def test_get_window_libraries_can_leave_out_implicit_libraries():
+    """Keep only the default and app-registered libraries when asked to."""
+    with RegistrationContext():
+        compiler._bundle_plugin_frontend_dependencies([rx.plugins.RadixThemesPlugin()])
+        bundle_library("d3-format@3.1.0")
+
+        assert compiler._get_window_libraries() == [
+            ("React", "react"),
+            ("emotion_react", "@emotion/react"),
+            ("utils_context", "$/utils/context"),
+            ("utils_context_registry", "$/utils/context-registry"),
+            ("utils_state", "$/utils/state"),
+            ("radix_ui_themes", "@radix-ui/themes"),
+            ("d3_format", "d3-format"),
+        ]
+        assert compiler._get_window_libraries(implicit=False) == [
+            ("React", "react"),
+            ("emotion_react", "@emotion/react"),
+            ("utils_context", "$/utils/context"),
+            ("utils_context_registry", "$/utils/context-registry"),
+            ("utils_state", "$/utils/state"),
+            ("d3_format", "d3-format"),
+        ]
+
+
+@pytest.mark.parametrize("lazy", [False, True])
+@pytest.mark.parametrize("dynamic", [False, True])
+def test_compile_app_bundles_implicit_libraries_only_for_dynamic_components(
+    lazy: bool, dynamic: bool, tmp_path: Path, monkeypatch, mocker: MockerFixture
+):
+    """Expose Radix on window.__reflex only when a page evaluates a component.
+
+    Args:
+        lazy: Whether optional bundled libraries load lazily.
+        dynamic: Whether the page renders a component held in state.
+        tmp_path: Directory for the compiled app.
+        monkeypatch: Fixture for changing the application directory.
+        mocker: Fixture for configuring the app and observing the app root.
+    """
+    monkeypatch.chdir(tmp_path)
+    with RegistrationContext():
+
+        class ComponentState(rx.State):
+            """A state holding a component the frontend evaluates."""
+
+            component: rx.Component = rx.el.span("dynamic")
+
+        mocker.patch(
+            "reflex_base.config._get_config",
+            return_value=rx.Config(
+                app_name="implicit_libraries",
+                plugins=[rx.plugins.RadixThemesPlugin()],
+                frontend_lazy_bundled_libraries=lazy,
+            ),
+        )
+        bundle_library("d3-format@3.1.0")
+        app = rx.App()
+        app.add_page(
+            lambda: rx.el.div(
+                rx.text("static"), ComponentState.component if dynamic else None
+            ),
+            route="index",
+        )
+        compile_app_root = mocker.spy(compiler, "compile_app_root")
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+
+    _, code = compile_app_root.spy_return
+    optional = ["d3-format", *(["@radix-ui/themes"] if dynamic else [])]
+    namespace_imports = [
+        'import * as React from "react";',
+        'import * as emotion_react from "@emotion/react";',
+        'import * as utils_context from "$/utils/context";',
+        'import * as utils_context_registry from "$/utils/context-registry";',
+        'import * as utils_state from "$/utils/state";',
+    ]
+    if not lazy:
+        namespace_imports += [
+            'import * as d3_format from "d3-format";',
+            *(
+                ['import * as radix_ui_themes from "@radix-ui/themes";']
+                if dynamic
+                else []
+            ),
+        ]
+    assert [
+        line for line in code.splitlines() if line.startswith("import * as ")
+    ] == namespace_imports
+    assert [line.strip() for line in code.splitlines() if "() => import(" in line] == (
+        [f'"{library}": () => import("{library}"),' for library in optional]
+        if lazy
+        else []
+    )
+
+
 def _mock_config_color_mode(mocker: MockerFixture, mode: LiteralColorMode) -> None:
     """Point the compiler's get_config at a fresh config with the given mode.
 
