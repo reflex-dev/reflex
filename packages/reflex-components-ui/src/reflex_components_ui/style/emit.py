@@ -377,7 +377,7 @@ def _emit(merged: Merged) -> Emitted:
         tables.insert(0, f"const {_NAME}_c = {_classes(_KEY)};")
     declaration = classes = None
     if styles:
-        animations: dict[Keyframes, str] = {}
+        played: dict[Keyframes, str] = {}
 
         def reference(value: Any) -> str:
             """Stand in for the keyframes of a style until they have a name.
@@ -388,21 +388,31 @@ def _emit(merged: Merged) -> Emitted:
             Returns:
                 A marker that no style can hold, as JSON escapes it.
             """
-            return animations.setdefault(value, f"\1{len(animations)}\1")
+            return played.setdefault(value, f"\1{len(played)}\1")
 
         entries = ", ".join([
             f"{key}: {json.dumps(style, ensure_ascii=False, default=reference)}"
             for key, style in styles.items()
         ])
-        for position in range(len(animations)):
-            # StyleX compiles a reference to keyframes of the same module.
+        # One declaration for each animation, whichever styles play it.
+        animations: dict[str, str] = {}
+        for position, frames in enumerate(played):
+            names = [
+                animations.setdefault(source, f"{_NAME}_k{len(animations)}")
+                for source in frames.sources
+            ]
+            # StyleX compiles a reference to keyframes of the same module, and
+            # a template that holds nothing else to the list of their names.
             entries = entries.replace(
-                f'"\\u0001{position}\\u0001"', f"{_NAME}_k{position}"
+                f'"\\u0001{position}\\u0001"',
+                names[0]
+                if len(names) == 1
+                else f"`{', '.join([f'${{{name}}}' for name in names])}`",
             )
         template = "\n".join([
             *[
-                f"const {_NAME}_k{position} = stylex.keyframes({frames.source});"
-                for position, frames in enumerate(animations)
+                f"const {name} = stylex.keyframes({source});"
+                for source, name in animations.items()
             ],
             f"const {_NAME} = stylex.create({{ {entries} }});",
             *tables,

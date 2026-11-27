@@ -18,7 +18,9 @@ LEAF: dict[str, Any] = {
     "left": "calc(50% - 12.5% / 2)",
     "width": {"default": "12.5%", "::before": "100%"},
     "height": {"default": "100%", "::before": "30%"},
-    "animationName": Keyframes('{"from": {"opacity": 1}, "to": {"opacity": 0.25}}', ()),
+    "animationName": Keyframes(
+        ('{"from": {"opacity": 1}, "to": {"opacity": 0.25}}',), ()
+    ),
     "animationDuration": "var(--spinner-animation-duration, 800ms)",
     "animationTimingFunction": "linear",
     "animationIterationCount": "infinite",

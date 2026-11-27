@@ -13,6 +13,7 @@ _SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = {
     "components.data_list": ["data_list"],
     "components.icon_button": ["icon_button"],
     "components.inset": ["inset"],
+    "components.progress": ["progress"],
     "components.separator": ["divider", "separator"],
     "components.spinner": ["spinner"],
     "layout.box": ["box"],
