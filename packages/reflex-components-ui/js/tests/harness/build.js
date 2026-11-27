@@ -11,7 +11,7 @@ const ROOT = fileURLToPath(new URL("./", import.meta.url));
 
 // The options Reflex gives StyleX in an app.
 export const STYLEX_OPTIONS = {
-  useCSSLayers: true,
+  useCSSLayers: { prefix: "reflex-ui" },
   styleResolution: /** @type {const} */ ("application-order"),
   lightningcssOptions: { minify: true, exclude: Features.LightDark },
 };
