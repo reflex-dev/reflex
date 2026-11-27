@@ -62,6 +62,7 @@ def UIComponentsApp(radix: bool = False):
     """
     import json
     from pathlib import Path
+    from typing import Any
 
     from reflex_components_ui import _radix_tokens
 
@@ -150,7 +151,9 @@ def UIComponentsApp(radix: bool = False):
     variations += [
         {"panel_background": panel} for panel in _radix_tokens.PANEL_BACKGROUND_THEMES
     ]
-    configs = [{**defaults, **variation} for variation in variations]
+    configs: list[dict[str, Any]] = [
+        {**defaults, **variation} for variation in variations
+    ]
 
     def sweep():
         themes = []
@@ -161,7 +164,9 @@ def UIComponentsApp(radix: bool = False):
                 # Reflex keeps the appearance of an `rx.theme` for the color
                 # mode of the app. Radix Themes selects on the class, and gives
                 # a theme with an appearance its background.
-                options = {k: v for k, v in config.items() if k != "appearance"}
+                options: dict[str, Any] = {
+                    k: v for k, v in config.items() if k != "appearance"
+                }
                 if "appearance" in config:
                     options.update(class_name=config["appearance"], has_background=True)
                 themes.append(

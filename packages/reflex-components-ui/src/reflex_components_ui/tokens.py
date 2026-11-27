@@ -113,8 +113,7 @@ class _Tokens:
             )
         else:
             msg = (
-                f"{self._path} has no steps. Its tokens are "
-                f"{', '.join(self._names())}."
+                f"{self._path} has no steps. Its tokens are {', '.join(self._names())}."
             )
         raise TokenError(msg)
 

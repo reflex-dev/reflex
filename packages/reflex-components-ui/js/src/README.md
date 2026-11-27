@@ -6,7 +6,10 @@ copies this directory into an app's `.web/reflex-ui/` from the
 is overwritten.
 
 - `base.css` is imported first by the app's stylesheet: it orders the cascade
-  layers and switches the color scheme.
+  layers, switches the color scheme, and holds the selection color of a theme
+  and the font faces the typography tokens name.
+- `colors/`, `tokens/` and `themes/` are the design tokens and the themes, as
+  StyleX modules: a module adds its CSS when a page imports it.
 - `vite-plugin-stylex.js` is the plugin `vite.config.js` loads to compile the
   styles.
 

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import operator
 from collections.abc import Mapping
 from typing import Any, Literal, get_args
 
@@ -302,7 +303,7 @@ class _Builder:
         """
         return ThemeStyles(
             refs=tuple(self.refs),
-            imports=tuple(sorted(self.imports, key=lambda item: item[:2])),
+            imports=tuple(sorted(self.imports, key=operator.itemgetter(0, 1))),
             declarations=tuple(self.declarations),
             class_name=class_name,
             var_data=VarData.merge(*self.var_data),

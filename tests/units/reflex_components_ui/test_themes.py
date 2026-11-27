@@ -57,13 +57,13 @@ GRAY_IMPORTS = tuple(
 class ThemeState(rx.State):
     """State whose fields are bound to theme options."""
 
-    accent: str = "red"
-    gray: str = "sand"
-    radius: str = "full"
-    scaling: str = "90%"
-    panel: str = "solid"
-    appearance: str = "dark"
-    background: bool = True
+    accent: rx.Field[str] = rx.field("red")
+    gray: rx.Field[str] = rx.field("sand")
+    radius: rx.Field[str] = rx.field("full")
+    scaling: rx.Field[str] = rx.field("90%")
+    panel: rx.Field[str] = rx.field("solid")
+    appearance: rx.Field[str] = rx.field("dark")
+    background: rx.Field[bool] = rx.field(True)
 
 
 def test_literal_types_are_the_generated_themes():
@@ -89,14 +89,14 @@ def test_literal_types_are_the_generated_themes():
         "background",
         *(set(get_args(themes.LiteralAppearance)) - {"inherit"}),
     ])
-    assert themes.OPTIONS == {
+    assert {
         "accent_color": get_args(themes.LiteralAccentColor),
         "gray_color": get_args(themes.LiteralGrayColor),
         "radius": get_args(themes.LiteralRadius),
         "scaling": get_args(themes.LiteralScaling),
         "appearance": ("inherit", "light", "dark"),
         "panel_background": get_args(themes.LiteralPanelBackground),
-    }
+    } == themes.OPTIONS
 
 
 def test_theme_defaults_are_the_ones_of_radix_but_for_the_accent():
@@ -123,8 +123,10 @@ def test_theme_is_a_frozen_value():
     [
         (
             {"accent_color": "indgo"},
-            'rx.ui.Theme: unknown accent_color "indgo". Did you mean "indigo"? '
-            f"The values are {ACCENT_VALUES}.",
+            (
+                'rx.ui.Theme: unknown accent_color "indgo". Did you mean "indigo"? '
+                f"The values are {ACCENT_VALUES}."
+            ),
         ),
         (
             {"accent_color": "mauve"},
@@ -132,33 +134,45 @@ def test_theme_is_a_frozen_value():
         ),
         (
             {"gray_color": "slat"},
-            'rx.ui.Theme: unknown gray_color "slat". Did you mean "slate"? The '
-            'values are "auto", "gray", "mauve", "slate", "sage", "olive", "sand".',
+            (
+                'rx.ui.Theme: unknown gray_color "slat". Did you mean "slate"? The '
+                'values are "auto", "gray", "mauve", "slate", "sage", "olive", "sand".'
+            ),
         ),
         (
             {"radius": "big"},
-            'rx.ui.Theme: unknown radius "big". The values are "none", "small", '
-            '"medium", "large", "full".',
+            (
+                'rx.ui.Theme: unknown radius "big". The values are "none", "small", '
+                '"medium", "large", "full".'
+            ),
         ),
         (
             {"scaling": 100},
-            "rx.ui.Theme: unknown scaling 100. The values are "
-            '"90%", "95%", "100%", "105%", "110%".',
+            (
+                "rx.ui.Theme: unknown scaling 100. The values are "
+                '"90%", "95%", "100%", "105%", "110%".'
+            ),
         ),
         (
             {"scaling": "100"},
-            'rx.ui.Theme: unknown scaling "100". Did you mean "100%"? The values '
-            'are "90%", "95%", "100%", "105%", "110%".',
+            (
+                'rx.ui.Theme: unknown scaling "100". Did you mean "100%"? The values '
+                'are "90%", "95%", "100%", "105%", "110%".'
+            ),
         ),
         (
             {"appearance": "system"},
-            'rx.ui.Theme: unknown appearance "system". The values are '
-            '"inherit", "light", "dark".',
+            (
+                'rx.ui.Theme: unknown appearance "system". The values are '
+                '"inherit", "light", "dark".'
+            ),
         ),
         (
             {"panel_background": None},
-            "rx.ui.Theme: unknown panel_background None. The values are "
-            '"solid", "translucent".',
+            (
+                "rx.ui.Theme: unknown panel_background None. The values are "
+                '"solid", "translucent".'
+            ),
         ),
         (
             {"has_background": "yes"},
@@ -166,9 +180,11 @@ def test_theme_is_a_frozen_value():
         ),
         (
             {"accent_color": ThemeState.accent},
-            "rx.ui.Theme: accent_color is bound to state, but the theme of an "
-            "app is compiled ahead of time. Give it one of its values, or bind "
-            "the option of an rx.ui.theme(...) around the page.",
+            (
+                "rx.ui.Theme: accent_color is bound to state, but the theme of an "
+                "app is compiled ahead of time. Give it one of its values, or bind "
+                "the option of an rx.ui.theme(...) around the page."
+            ),
         ),
     ],
 )
@@ -246,7 +262,7 @@ def test_app_theme_sets_every_option():
             *SCOPE_IMPORTS,
             STYLES_IMPORT,
         ),
-        class_name="reflex-ui-theme dark",
+        class_name="reflex-ui-theme",
     )
 
 
@@ -266,16 +282,13 @@ def test_every_accent_has_the_gray_that_matches_it():
 
 
 def _nested(
-    refs: tuple[str, ...],
-    imports: tuple[tuple[str, str, str | None], ...],
-    class_name: str = "reflex-ui-theme",
+    refs: tuple[str, ...], imports: tuple[tuple[str, str, str | None], ...]
 ) -> ThemeStyles:
     """Build what a nested theme is expected to need.
 
     Args:
         refs: The arguments after the scopes, the focus and before the root style.
         imports: The imports beside the ones every theme element has.
-        class_name: The class names of the element.
 
     Returns:
         The expected styles.
@@ -285,7 +298,7 @@ def _nested(
     return ThemeStyles(
         refs=(*SCOPES, "focusScope", *before, "reflexUITheme.root", *after),
         imports=tuple(sorted([*imports, FOCUS_IMPORT, *SCOPE_IMPORTS, STYLES_IMPORT])),
-        class_name=class_name,
+        class_name="reflex-ui-theme",
     )
 
 
@@ -300,17 +313,8 @@ GRAY_ACCENT = ("themes/accent/gray.js", "accentGray", None)
     [
         # Nothing set: the element only declares again what reads the theme.
         ({}, Theme(), _nested((), ())),
-        # Under the automatic gray of the app, the gray follows the accent.
-        (
-            {"accent_color": "red"},
-            Theme(),
-            _nested(("accentRed", "grayMauve"), (RED, MAUVE)),
-        ),
-        (
-            {"accent_color": "red"},
-            Theme(gray_color="sand"),
-            _nested(("accentRed",), (RED,)),
-        ),
+        # An accent keeps the gray around the element, as in Radix Themes.
+        ({"accent_color": "red"}, Theme(), _nested(("accentRed",), (RED,))),
         (
             {"accent_color": "red", "gray_color": "olive"},
             Theme(),
@@ -350,16 +354,12 @@ GRAY_ACCENT = ("themes/accent/gray.js", "accentGray", None)
         (
             {"appearance": "dark"},
             Theme(),
-            _nested(
-                ("reflexUITheme.background", "reflexUITheme.dark"),
-                (),
-                "reflex-ui-theme dark",
-            ),
+            _nested(("reflexUITheme.background", "reflexUITheme.dark"), ()),
         ),
         (
             {"appearance": "light", "has_background": False},
             Theme(),
-            _nested(("reflexUITheme.light",), (), "reflex-ui-theme light"),
+            _nested(("reflexUITheme.light",), ()),
         ),
         ({"appearance": "inherit"}, Theme(), _nested((), ())),
         (
@@ -375,11 +375,7 @@ GRAY_ACCENT = ("themes/accent/gray.js", "accentGray", None)
                 "has_background": LiteralVar.create(False),
             },
             Theme(),
-            _nested(
-                ("accentRed", "grayMauve", "reflexUITheme.dark"),
-                (RED, MAUVE),
-                "reflex-ui-theme dark",
-            ),
+            _nested(("accentRed", "reflexUITheme.dark"), (RED,)),
         ),
     ],
 )
@@ -400,7 +396,10 @@ def test_accent_bound_to_state_imports_every_accent():
     """The page chooses among all of them, and the gray that matches each."""
     accent = str(ThemeState.accent)
     styles = theme_styles(
-        "rx.ui.theme", accent_color=ThemeState.accent, app_theme=Theme()
+        "rx.ui.theme",
+        accent_color=ThemeState.accent,
+        gray_color="auto",
+        app_theme=Theme(),
     )
     assert styles.refs == (
         *SCOPES,
@@ -430,7 +429,17 @@ def test_accent_bound_to_state_imports_every_accent():
     assert styles.class_name == "reflex-ui-theme"
     assert styles.var_data == ThemeState.accent._get_all_var_data()
 
-    # With a gray of its own, only the accents are imported.
+    # With a gray of its own, or the one around it, only the accents are.
+    inherited = theme_styles(
+        "rx.ui.theme", accent_color=ThemeState.accent, app_theme=Theme()
+    )
+    assert inherited.refs == (
+        *SCOPES,
+        "focusScope",
+        f"reflexUIAccents[{accent}]",
+        "reflexUITheme.root",
+    )
+    assert inherited.declarations == (ACCENT_MAP,)
     styles = theme_styles(
         "rx.ui.theme",
         accent_color=ThemeState.accent,
@@ -479,18 +488,25 @@ def test_every_option_can_be_bound_to_state():
         "reflexUITheme.root",
         f"({state.background!s}) && reflexUITheme.background",
         f"reflexUITheme[{appearance}]",
-        f'({appearance}) !== "inherit" && {{ $$css: true, appearance: {appearance} }}',
     )
     assert styles.declarations == (
-        'const reflexUIGrays = { "gray": grayGray, "mauve": grayMauve, '
-        '"olive": grayOlive, "sage": graySage, "sand": graySand, '
-        '"slate": graySlate };',
-        'const reflexUIRadii = { "full": radiusFull, "large": radiusLarge, '
-        '"medium": radiusMedium, "none": radiusNone, "small": radiusSmall };',
-        'const reflexUIScalings = { "100%": scaling100, "105%": scaling105, '
-        '"110%": scaling110, "90%": scaling90, "95%": scaling95 };',
-        'const reflexUIPanels = { "solid": panelSolid, '
-        '"translucent": panelTranslucent };',
+        (
+            'const reflexUIGrays = { "gray": grayGray, "mauve": grayMauve, '
+            '"olive": grayOlive, "sage": graySage, "sand": graySand, '
+            '"slate": graySlate };'
+        ),
+        (
+            'const reflexUIRadii = { "full": radiusFull, "large": radiusLarge, '
+            '"medium": radiusMedium, "none": radiusNone, "small": radiusSmall };'
+        ),
+        (
+            'const reflexUIScalings = { "100%": scaling100, "105%": scaling105, '
+            '"110%": scaling110, "90%": scaling90, "95%": scaling95 };'
+        ),
+        (
+            'const reflexUIPanels = { "solid": panelSolid, '
+            '"translucent": panelTranslucent };'
+        ),
     )
     assert styles.imports == tuple(
         sorted([
@@ -529,7 +545,6 @@ def test_every_option_can_be_bound_to_state():
         "reflexUITheme.root",
         f'({appearance}) !== "inherit" && reflexUITheme.background',
         f"reflexUITheme[{appearance}]",
-        f'({appearance}) !== "inherit" && {{ $$css: true, appearance: {appearance} }}',
     )
 
 
@@ -539,26 +554,34 @@ def test_every_option_can_be_bound_to_state():
         (
             {"accent_color": "rubby"},
             Theme(),
-            'rx.ui.theme: unknown accent_color "rubby". Did you mean "ruby"? '
-            f"The values are {ACCENT_VALUES}.",
+            (
+                'rx.ui.theme: unknown accent_color "rubby". Did you mean "ruby"? '
+                f"The values are {ACCENT_VALUES}."
+            ),
         ),
         (
             {"gray_color": "blue"},
             Theme(),
-            'rx.ui.theme: unknown gray_color "blue". The values are "auto", '
-            '"gray", "mauve", "slate", "sage", "olive", "sand".',
+            (
+                'rx.ui.theme: unknown gray_color "blue". The values are "auto", '
+                '"gray", "mauve", "slate", "sage", "olive", "sand".'
+            ),
         ),
         (
             {"radius": "round"},
             Theme(),
-            'rx.ui.theme: unknown radius "round". The values are "none", '
-            '"small", "medium", "large", "full".',
+            (
+                'rx.ui.theme: unknown radius "round". The values are "none", '
+                '"small", "medium", "large", "full".'
+            ),
         ),
         (
             {"appearance": "night"},
             Theme(),
-            'rx.ui.theme: unknown appearance "night". Did you mean "light"? The values are '
-            '"inherit", "light", "dark".',
+            (
+                'rx.ui.theme: unknown appearance "night". Did you mean "light"? The values are '
+                '"inherit", "light", "dark".'
+            ),
         ),
         (
             {"has_background": 1},
@@ -568,8 +591,10 @@ def test_every_option_can_be_bound_to_state():
         (
             {"gray_color": "auto"},
             None,
-            'rx.ui.theme: gray_color "auto" is the gray that matches an accent '
-            "color. Give accent_color too, or name the gray.",
+            (
+                'rx.ui.theme: gray_color "auto" is the gray that matches an accent '
+                "color. Give accent_color too, or name the gray."
+            ),
         ),
     ],
 )

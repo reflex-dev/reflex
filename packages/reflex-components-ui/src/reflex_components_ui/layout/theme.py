@@ -14,11 +14,7 @@ from reflex_base.utils.imports import ImportDict
 from reflex_base.vars.base import Var
 from reflex_base.vars.sequence import LiteralStringVar
 
-from reflex_components_ui.base import (
-    MISSING_PLUGIN_ERROR,
-    ComponentStyles,
-    UIComponent,
-)
+from reflex_components_ui.base import MISSING_PLUGIN_ERROR, ComponentStyles, UIComponent
 from reflex_components_ui.plugin import UIPlugin
 from reflex_components_ui.style.emit import props_call
 from reflex_components_ui.styles.theme import APP_THEME, APPEARANCE
@@ -75,45 +71,43 @@ class ThemeElement(UIComponent):
 
     tag = "div"
 
-    accent_color: LiteralAccentColor | Var[LiteralAccentColor] | None = field(
+    accent_color: Var[LiteralAccentColor] | None = field(
         default=None,
         is_javascript_property=False,
         doc="The color of the components that stand out.",
     )
 
-    gray_color: LiteralGrayColor | Var[LiteralGrayColor] | None = field(
+    gray_color: Var[LiteralGrayColor] | None = field(
         default=None,
         is_javascript_property=False,
         doc='The gray of text, borders and surfaces. "auto" is the gray that matches the accent color.',
     )
 
-    radius: LiteralRadius | Var[LiteralRadius] | None = field(
+    radius: Var[LiteralRadius] | None = field(
         default=None,
         is_javascript_property=False,
         doc='How round corners are: "none" | "small" | "medium" | "large" | "full".',
     )
 
-    scaling: LiteralScaling | Var[LiteralScaling] | None = field(
+    scaling: Var[LiteralScaling] | None = field(
         default=None,
         is_javascript_property=False,
         doc='The size of everything: "90%" | "95%" | "100%" | "105%" | "110%".',
     )
 
-    appearance: LiteralAppearance | Var[LiteralAppearance] | None = field(
+    appearance: Var[LiteralAppearance] | None = field(
         default=None,
         is_javascript_property=False,
         doc='"light" or "dark" to keep one whatever the color mode, "inherit" to follow it.',
     )
 
-    panel_background: (
-        LiteralPanelBackground | Var[LiteralPanelBackground] | None
-    ) = field(
+    panel_background: Var[LiteralPanelBackground] | None = field(
         default=None,
         is_javascript_property=False,
         doc='Whether panels such as cards are see-through: "solid" | "translucent".',
     )
 
-    has_background: bool | Var[bool] | None = field(
+    has_background: Var[bool] | None = field(
         default=None,
         is_javascript_property=False,
         doc="Whether the element paints the background of the theme. Defaults to True when it sets an appearance.",

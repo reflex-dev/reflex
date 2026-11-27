@@ -6,9 +6,9 @@ import pytest
 from reflex_base.breakpoints import breakpoints_values, set_breakpoints
 from reflex_base.constants.colors import Color
 from reflex_base.vars.base import LiteralVar, Var
-from reflex_components_ui.style import _css_props
 from reflex_components_ui import tokens
 from reflex_components_ui._radix_tokens import VAR_GROUPS
+from reflex_components_ui.style import _css_props
 from reflex_components_ui.style.lower import (
     _BORDERS,
     _EXPANSIONS,

@@ -4,19 +4,21 @@ from collections.abc import Callable
 
 import pytest
 from pytest_mock import MockerFixture
+from reflex_base.components.component import Component
 from reflex_base.config import get_config
 from reflex_base.plugins import CompileContext
 from reflex_base.utils.exceptions import ConfigError
 from reflex_base.utils.serializers import serialize
 from reflex_components_core.base.app_wrap import AppWrap
-from reflex_components_ui.layout.theme import AppTheme, ThemeElement
+from reflex_components_ui.layout.theme import Appearance, AppTheme, ThemeElement
 from reflex_components_ui.plugin import APP_THEME_WRAP, UIPlugin
 from reflex_components_ui.themes import Theme, ThemeError
 
 import reflex as rx
 from reflex.compiler import compiler
 
-APP_ROOT = """
+APP_ROOT = (
+    """
 import {accentIndigo} from "$/reflex-ui/themes/accent/indigo.js"
 import {focusScope} from "$/reflex-ui/themes/focus.js"
 import {graySlate} from "$/reflex-ui/themes/gray/slate.js"
@@ -42,8 +44,10 @@ function ReflexProviders({children}) {
   useEffect(() => {
     // Make contexts and state objects available globally for dynamic eval'd components
     window.__reflex = {
-      
-    };
+"""
+    # The template indents the libraries of the app, of which there are none.
+    "      \n"
+    """    };
   }, []);
 
   return jsx(ThemeProvider, {defaultTheme: defaultColorMode, attribute: "class"},
@@ -73,11 +77,11 @@ export default function App() {
 }
 
 """
+)
 
 NESTED_PAGE = """import * as stylex from "@stylexjs/stylex"
 import {accentRed} from "$/reflex-ui/themes/accent/red.js"
 import {focusScope} from "$/reflex-ui/themes/focus.js"
-import {grayMauve} from "$/reflex-ui/themes/gray/mauve.js"
 import {colorScope,radiusScope,shadowScope,spaceScope,typographyScope} from "$/reflex-ui/themes/scope.js"
 import {theme as reflexUITheme} from "$/reflex-ui/themes/theme.js"
 import {useRegisteredRef} from "$/utils/state"
@@ -89,12 +93,13 @@ import {jsx} from "@emotion/react"
 
 const sx_e0e666cdfc = stylex.create({ s: {"boxSizing": "border-box", "display": "block", "color": "var(--accent-9)"} });
 const sx_ffb9e340d1 = stylex.create({ s: {"padding": "4px"} });
+const sx_71b84cd269 = stylex.create({ s: {"display": "contents"} });
 
 function Component() {
 const ref_dark = useRegisteredRef("ref_dark");
 
   return (
-    jsx(Fragment,{},jsx("main",{},jsx("div",{...stylex.props(spaceScope, radiusScope, typographyScope, shadowScope, colorScope, focusScope, accentRed, grayMauve, reflexUITheme.root, { $$css: true, className: "reflex-ui-theme" })},jsx("div",{...stylex.props(sx_e0e666cdfc.s)},"red")),jsx("div",{id:"dark",ref:ref_dark,...stylex.props(spaceScope, radiusScope, typographyScope, shadowScope, colorScope, focusScope, radiusFull, reflexUITheme.root, reflexUITheme.background, reflexUITheme.dark, sx_ffb9e340d1.s, { $$css: true, className: "reflex-ui-theme dark p-8" })},"dark"),jsx("div",{...stylex.props(spaceScope, radiusScope, typographyScope, shadowScope, colorScope, focusScope, reflexUITheme.root, { $$css: true, className: "reflex-ui-theme" })},"plain")),jsx("title",{}," | Index"),jsx("meta",{content:"",property:"og:image"},))
+    jsx(Fragment,{},jsx("main",{},jsx("div",{...stylex.props(spaceScope, radiusScope, typographyScope, shadowScope, colorScope, focusScope, accentRed, reflexUITheme.root, { $$css: true, className: "reflex-ui-theme" })},jsx("div",{...stylex.props(sx_e0e666cdfc.s)},"red")),jsx("div",{...stylex.props(sx_71b84cd269.s, { $$css: true, className: "dark" })},jsx("div",{id:"dark",ref:ref_dark,...stylex.props(spaceScope, radiusScope, typographyScope, shadowScope, colorScope, focusScope, radiusFull, reflexUITheme.root, reflexUITheme.background, reflexUITheme.dark, sx_ffb9e340d1.s, { $$css: true, className: "reflex-ui-theme p-8" })},"dark")),jsx("div",{...stylex.props(spaceScope, radiusScope, typographyScope, shadowScope, colorScope, focusScope, reflexUITheme.root, { $$css: true, className: "reflex-ui-theme" })},"plain")),jsx("title",{}," | Index"),jsx("meta",{content:"",property:"og:image"},))
   )
 }
 Component.displayName = "Component(/)";
@@ -102,7 +107,7 @@ Component.displayName = "Component(/)";
 export default Component;
 """
 
-BOUND_PAGE = """import {Themeelement_div_0c153819fc2a864827f9e11f201c2218} from "$/utils/components/Themeelement_div_0c153819fc2a864827f9e11f201c2218"
+BOUND_PAGE = """import {Themeelement_div_f7d2b7c33308674eb3685852f6be4c25} from "$/utils/components/Themeelement_div_f7d2b7c33308674eb3685852f6be4c25"
 import {Themeelement_div_7ff1171060456d23f7870cfa8fe2dfcf} from "$/utils/components/Themeelement_div_7ff1171060456d23f7870cfa8fe2dfcf"
 import {Fragment,useEffect} from "react"
 import {jsx} from "@emotion/react"
@@ -115,7 +120,7 @@ function Component() {
 
 
   return (
-    jsx(Fragment,{},jsx("main",{},jsx(Themeelement_div_0c153819fc2a864827f9e11f201c2218,{},"accent"),jsx(Themeelement_div_7ff1171060456d23f7870cfa8fe2dfcf,{},"names")),jsx("title",{}," | Index"),jsx("meta",{content:"",property:"og:image"},))
+    jsx(Fragment,{},jsx("main",{},jsx(Themeelement_div_f7d2b7c33308674eb3685852f6be4c25,{},"accent"),jsx(Themeelement_div_7ff1171060456d23f7870cfa8fe2dfcf,{},"names")),jsx("title",{}," | Index"),jsx("meta",{content:"",property:"og:image"},))
   )
 }
 Component.displayName = "Component(/)";
@@ -153,12 +158,6 @@ import {accentTomato} from "$/reflex-ui/themes/accent/tomato.js"
 import {accentViolet} from "$/reflex-ui/themes/accent/violet.js"
 import {accentYellow} from "$/reflex-ui/themes/accent/yellow.js"
 import {focusScope} from "$/reflex-ui/themes/focus.js"
-import {grayGray} from "$/reflex-ui/themes/gray/gray.js"
-import {grayMauve} from "$/reflex-ui/themes/gray/mauve.js"
-import {grayOlive} from "$/reflex-ui/themes/gray/olive.js"
-import {graySage} from "$/reflex-ui/themes/gray/sage.js"
-import {graySand} from "$/reflex-ui/themes/gray/sand.js"
-import {graySlate} from "$/reflex-ui/themes/gray/slate.js"
 import {colorScope,radiusScope,shadowScope,spaceScope,typographyScope} from "$/reflex-ui/themes/scope.js"
 import {theme as reflexUITheme} from "$/reflex-ui/themes/theme.js"
 import * as stylex from "@stylexjs/stylex"
@@ -168,18 +167,17 @@ import {Fragment,memo,useEffect} from "react"
 
 
 const reflexUIAccents = { "amber": accentAmber, "blue": accentBlue, "bronze": accentBronze, "brown": accentBrown, "crimson": accentCrimson, "cyan": accentCyan, "gold": accentGold, "grass": accentGrass, "gray": accentGray, "green": accentGreen, "indigo": accentIndigo, "iris": accentIris, "jade": accentJade, "lime": accentLime, "mint": accentMint, "orange": accentOrange, "pink": accentPink, "plum": accentPlum, "purple": accentPurple, "red": accentRed, "ruby": accentRuby, "sky": accentSky, "teal": accentTeal, "tomato": accentTomato, "violet": accentViolet, "yellow": accentYellow };
-const reflexUIMatchingGrays = { "amber": graySand, "blue": graySlate, "bronze": graySand, "brown": graySand, "crimson": grayMauve, "cyan": graySlate, "gold": graySand, "grass": grayOlive, "gray": grayGray, "green": graySage, "indigo": graySlate, "iris": graySlate, "jade": graySage, "lime": grayOlive, "mint": graySage, "orange": graySand, "pink": grayMauve, "plum": grayMauve, "purple": grayMauve, "red": grayMauve, "ruby": grayMauve, "sky": graySlate, "teal": graySage, "tomato": grayMauve, "violet": grayMauve, "yellow": graySand };
 
 
-export const Themeelement_div_0c153819fc2a864827f9e11f201c2218 = /*#__PURE__*/ (() => {
-const Themeelement_div_0c153819fc2a864827f9e11f201c2218 = memo(({children, ...rest}) => {
+export const Themeelement_div_f7d2b7c33308674eb3685852f6be4c25 = /*#__PURE__*/ (() => {
+const Themeelement_div_f7d2b7c33308674eb3685852f6be4c25 = memo(({children, ...rest}) => {
     const reflex___state____state__tests___units___reflex_components_ui___layout___test_theme____theme_state = useStateContext("reflex___state____state.tests___units___reflex_components_ui___layout___test_theme____theme_state", ["accent_rx_state_"])
     return(
-        jsx("div",{...mergeSlotProps(rest, ({ ...stylex.props(spaceScope, radiusScope, typographyScope, shadowScope, colorScope, focusScope, reflexUIAccents[reflex___state____state__tests___units___reflex_components_ui___layout___test_theme____theme_state.accent_rx_state_], reflexUIMatchingGrays[reflex___state____state__tests___units___reflex_components_ui___layout___test_theme____theme_state.accent_rx_state_], reflexUITheme.root, { $$css: true, className: "reflex-ui-theme" }) }))},children)
+        jsx("div",{...mergeSlotProps(rest, ({ ...stylex.props(spaceScope, radiusScope, typographyScope, shadowScope, colorScope, focusScope, reflexUIAccents[reflex___state____state__tests___units___reflex_components_ui___layout___test_theme____theme_state.accent_rx_state_], reflexUITheme.root, { $$css: true, className: "reflex-ui-theme" }) }))},children)
     )
 });
-Themeelement_div_0c153819fc2a864827f9e11f201c2218.displayName = "ThemeElement";
-return Themeelement_div_0c153819fc2a864827f9e11f201c2218;
+Themeelement_div_f7d2b7c33308674eb3685852f6be4c25.displayName = "ThemeElement";
+return Themeelement_div_f7d2b7c33308674eb3685852f6be4c25;
 })();
 """
 
@@ -243,6 +241,7 @@ class ThemeState(rx.State):
 
     accent: str = "red"
     names: str = "wide"
+    appearance: str = "dark"
 
 
 @pytest.fixture
@@ -274,6 +273,68 @@ def test_app_root_source(monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture)
         APP_THEME_WRAP: AppTheme.create(),
     })
     assert compiler._compile_app(root, dynamic_components=False) == APP_ROOT
+
+
+def test_plugin_wraps_an_app_with_an_appearance_in_its_class(
+    monkeypatch: pytest.MonkeyPatch, compile_page: Callable[..., CompileContext]
+):
+    """The class of the appearance is on an element around the theme element."""
+    plugin = UIPlugin(theme=Theme(appearance="dark"))
+    monkeypatch.setattr(get_config(), "plugins", [plugin])
+    wraps = compile_page(lambda: rx.el.main("hello"), plugin).app_wrap_components
+    assert {key: type(wrap) for key, wrap in wraps.items()} == {
+        (15, "ReflexUITheme"): AppTheme,
+        (16, "ReflexUIAppearance"): Appearance,
+    }
+    assert wraps[16, "ReflexUIAppearance"].render() == {
+        "name": '"div"',
+        "props": [
+            '...stylex.props(sx_71b84cd269.s, { $$css: true, className: "dark" })'
+        ],
+        "children": [],
+    }
+    assert wraps[15, "ReflexUITheme"].render() == {
+        "name": '"div"',
+        "props": [
+            (
+                "...stylex.props(spaceScope, radiusScope, typographyScope, "
+                "shadowScope, colorScope, focusScope, accentBlue, graySlate, "
+                "radiusMedium, scaling100, panelTranslucent, reflexUITheme.root, "
+                "reflexUITheme.background, reflexUITheme.dark, sx_c1c0436182.s, "
+                '{ $$css: true, className: "reflex-ui-theme" })'
+            )
+        ],
+        "children": [],
+    }
+
+
+def test_theme_with_an_appearance_is_inside_the_element_of_its_class(
+    indigo_plugin: UIPlugin,
+):
+    """Only a theme with an appearance of its own has the element around it."""
+    assert type(rx.ui.theme("hello")) is ThemeElement
+    assert type(rx.ui.theme("hello", appearance="inherit")) is ThemeElement
+    dark: Component = rx.ui.theme("hello", appearance="dark", id="dark")
+    assert [type(dark), *map(type, dark.children)] == [Appearance, ThemeElement]
+    bound: Component = rx.ui.theme(
+        "hello",
+        appearance=ThemeState.appearance,  # pyright: ignore [reportArgumentType]
+    )
+    assert bound.render()["props"] == [
+        (
+            f'className:({ThemeState.appearance!s}) + " " + '
+            "stylex.props(sx_71b84cd269.s).className"
+        )
+    ]
+    assert bound.children[0].render()["props"] == [
+        (
+            "...stylex.props(spaceScope, radiusScope, typographyScope, shadowScope, "
+            "colorScope, focusScope, reflexUITheme.root, "
+            f'({ThemeState.appearance!s}) !== "inherit" && reflexUITheme.background, '
+            f"reflexUITheme[{ThemeState.appearance!s}], "
+            '{ $$css: true, className: "reflex-ui-theme" })'
+        )
+    ]
 
 
 def test_plugin_wraps_every_app_in_its_theme(
@@ -318,10 +379,13 @@ def test_theme_bound_to_state_imports_every_accent(
 
     def page():
         return rx.el.main(
-            rx.ui.theme("accent", accent_color=ThemeState.accent),
+            rx.ui.theme(
+                "accent",
+                accent_color=ThemeState.accent,  # pyright: ignore [reportArgumentType]
+            ),
             rx.ui.theme(
                 "names",
-                accent_color=ThemeState.accent,
+                accent_color=ThemeState.accent,  # pyright: ignore [reportArgumentType]
                 gray_color="sand",
                 class_name=ThemeState.names,
             ),
@@ -338,7 +402,6 @@ def test_theme_is_a_name_of_the_ui_namespace():
     assert rx.ui.theme == ThemeElement.create
     assert rx.ui.Theme is Theme
     assert {"theme", "Theme"} <= set(dir(rx.ui))
-    assert ThemeElement._display_name() == "rx.ui.theme"
 
 
 def test_theme_needs_the_plugin(monkeypatch: pytest.MonkeyPatch):

@@ -24,11 +24,13 @@ rx.plugins.UIPlugin() in rxconfig.py plugins.`
 
 ```
 src/reflex_components_ui/   the python package: the rx.ui namespace
-  plugin.py                 UIPlugin: the build wiring of an app
+  plugin.py                 UIPlugin: the build wiring of an app, and its theme
   base.py                   UIComponent: a plain element and its StyleX source
+  themes.py                 Theme: the options of a theme and the StyleX themes they apply
+  tokens.py                 rx.ui.tokens: the design tokens as style values
   style/emit.py             a lowered style to a stylex.create declaration
   styles/                   the look of each component, one table per module
-  layout/                   the components
+  layout/                   the components, rx.ui.theme among them
   _radix_tokens.py          generated: the modules below and what they define
 js/                         the javascript package, with its own tooling
   src/                      what ships: copied into an app at .web/reflex-ui/
@@ -82,6 +84,14 @@ declared in the same module as the element, with literal arguments, so:
 `theme` and `base`), then `reflex-ui` (a component's styles merged with the
 element's `style`), then Tailwind's `components` and `utilities`. Unlayered
 CSS, such as an app's stylesheet, Emotion and Radix Themes, beats all of them.
+
+It also holds what Radix Themes styles through a selector that a class on an
+element cannot express: the selection color inside a theme, in the layer
+`reflex-ui.base` so that a component's own style beats it, and the
+`@font-face` rules of the system fonts whose metrics Radix adjusts, which
+`js/tests/base-css.test.js` keeps equal to the ones of `@radix-ui/themes`.
+`-webkit-text-size-adjust` is not there: the build adds the prefixed property
+beside the one `themes/theme.js` sets.
 
 Until the style package lands (`style/lower.py`, `style/merge.py`), a `style`
 takes flat properties with literal values, and `_lower_literal_styles` in
@@ -137,6 +147,140 @@ styles, layout props, then the user's style. A style that sets a property only
 under a condition, as a `_hover` block does, keeps the earlier value everywhere
 else; one that sets it outright replaces the earlier conditions too.
 
+## Themes and tokens
+
+The plugin takes the theme of the app. Every option has the values and, the
+accent aside, the default of the `Theme` of Radix Themes:
+
+```python
+# rxconfig.py
+config = rx.Config(
+    app_name="shop",
+    plugins=[
+        rx.plugins.UIPlugin(theme=rx.ui.Theme(accent_color="indigo", radius="large"))
+    ],
+)
+```
+
+| Option | Values | Default |
+| --- | --- | --- |
+| `accent_color` | the 26 accents, `"gray"` among them | `"blue"`, as `rx.theme` has in Reflex (Radix Themes has `"indigo"`) |
+| `gray_color` | `"auto"`, `"gray"`, `"mauve"`, `"slate"`, `"sage"`, `"olive"`, `"sand"` | `"auto"`: the gray that matches the accent |
+| `radius` | `"none"`, `"small"`, `"medium"`, `"large"`, `"full"` | `"medium"` |
+| `scaling` | `"90%"`, `"95%"`, `"100%"`, `"105%"`, `"110%"` | `"100%"` |
+| `appearance` | `"inherit"`, `"light"`, `"dark"` | `"inherit"`: the color mode of the app |
+| `panel_background` | `"solid"`, `"translucent"` | `"translucent"` |
+| `has_background` | `True`, `False` | `True` |
+
+A value an option does not take stops the app where `rxconfig.py` is loaded:
+`rx.ui.Theme: unknown accent_color "indgo". Did you mean "indigo"? The values
+are "tomato", "red", ...`. The types are `Literal`s, so a type checker says the
+same.
+
+The plugin wraps every page in one element that carries the theme, inside the
+`Theme` of Radix Themes when the app has both, so a page with components of
+both follows this one. It is a `div` with the class of a StyleX theme for each
+option, and the only thing imported for an accent is the module of that accent:
+
+```js
+import {accentIndigo} from "$/reflex-ui/themes/accent/indigo.js"
+import {focusScope} from "$/reflex-ui/themes/focus.js"
+import {graySlate} from "$/reflex-ui/themes/gray/slate.js"
+...
+jsx("div",{...stylex.props(spaceScope, radiusScope, typographyScope, shadowScope, colorScope, focusScope, accentIndigo, graySlate, radiusLarge, scaling100, panelTranslucent, reflexUITheme.root, reflexUITheme.background, sx_c1c0436182.s, { $$css: true, className: "reflex-ui-theme" })}, ...)
+```
+
+A theme imported from another module is not folded into a string: the call
+stays, and with it the 1.2 kB of the StyleX runtime, in the chunk every page
+already loads.
+
+`rx.ui.theme(...)` is the same element around part of a page. It takes the
+same options, each one optional: what it leaves out is inherited.
+
+```python
+rx.ui.theme(card(), accent_color="red", radius="full")
+rx.ui.theme(sidebar(), appearance="dark")
+rx.ui.theme(preview(), accent_color=Settings.accent)
+```
+
+- An accent keeps the gray around it. `gray_color="auto"` with an accent is
+  the gray that matches it.
+- The cascade does not tell an element what it inherits, so where that matters
+  a nested theme takes the theme of the app to be what is around it:
+  `gray_color="auto"` without an accent matches the accent of the app, and a
+  gray without an accent names the gray accent again when the app has it.
+  Inside another nested theme, give both options.
+- A theme with an appearance paints its background, unless
+  `has_background=False`. The classes `light` and `dark`, which Tailwind and
+  Radix Themes select on, go on an element around it that has no box
+  (`display: contents`), so their components inside follow the appearance.
+  Beside Radix Themes, give such a theme its `gray_color` too: the Radix
+  stylesheet sets its plain gray wherever one of the two classes is.
+- An option bound to state imports every theme it could name and chooses among
+  them in the browser. For the accent that is all 26 scales: about 21 kB of
+  gzipped CSS and 0.5 kB of gzipped javascript more than a literal accent,
+  where the theme of the app, one accent and one gray, is 4.6 kB of gzipped
+  CSS. The theme of the app is compiled ahead of time and takes literals only.
+- The appearance of the theme of the app pins the page to it. It does not
+  change the color mode the app starts in, which `default_color_mode` sets.
+- A theme held in state is a compile error: its code never reaches StyleX.
+
+`rx.ui.tokens` names every design token. A token is the `var()` of a custom
+property, as a plain `str`, so it goes wherever a CSS value does, in the
+`style` of any component and in a style table:
+
+```python
+tokens = rx.ui.tokens
+
+tokens.space[4]  # "var(--space-4)", steps 1 to 9
+tokens.radius[3]  # steps 1 to 6, and .full, .thumb, .factor
+tokens.shadow[3]  # steps 1 to 6
+tokens.font_size[2]  # steps 1 to 9, as line_height and letter_spacing
+tokens.font_weight.bold  # light, regular, medium, bold
+tokens.accent[9]  # steps 1 to 12 of the accent of the theme
+tokens.accent.a[3]  # its translucent steps
+tokens.accent.contrast  # and .surface, .indicator, .track
+tokens.gray[11]  # the gray of the theme, like the accent
+tokens.focus[8]  # the focus ring, and tokens.focus.a
+tokens.color.panel  # background, overlay, surface, panel_solid, ...
+tokens.cursor.button  # checkbox, disabled, link, menu_item, radio, ...
+tokens.scale("ruby")[9]  # a scale by name, whatever the theme
+tokens.black.a[6]  # and tokens.white.a
+tokens.default.font_family  # and heading, code, strong, em, quote, tab
+tokens.scaling  # "var(--scaling)"
+```
+
+A step or a name that does not exist is an error to a type checker, and a
+`TokenError` that says what exists: `rx.ui.tokens.space has no step 10. Its
+steps are 1 to 9.`
+
+`lower` reads a token like any other string. It names the module that defines
+the custom property in `Lowered.imports` (`VAR_MODULES`, which is built from
+the generated list), and a shorthand gives a token that holds one value to its
+longhands, as it does with `rx.color(...)`: `{"padding": f"{tokens.space[2]}
+{tokens.space[4]}"}` becomes four paddings. A shadow and a font family are
+lists, and keep the shorthand whole.
+
+For a component:
+
+- Write the style table with tokens, never with the color of a named scale:
+  `"background_color": tokens.accent[9]`, `"color": tokens.accent.contrast`,
+  `"border_radius": tokens.radius[2]`, `"height": tokens.space[6]`.
+- `color_scheme` is an accent on the element itself.
+  `themes.color_scheme_styles(name, value)` returns what the element needs:
+  the arguments to add to its `stylex.props` call (`accentRed` and
+  `focusScope`; `accentGray` alone for gray), the imports
+  (`import_dict()`), and for a value bound to state the map of all 26 accents
+  to declare in the module. The tokens of the table then resolve against the
+  accent of the element.
+- The space, radius, typography, shadow and `--color-*` tokens, the accent, the
+  gray and the focus colors are defined wherever a theme is, which in an app is
+  everywhere. A cursor, a black or a white, and a scale named with
+  `tokens.scale` or `rx.color` are defined by the module `Lowered.imports`
+  names, once the element that uses them imports it.
+- A color is one `light-dark()` value: `getPropertyValue("--accent-9")` in the
+  browser returns the pair, and a computed `color` the one in use.
+
 ## Working on it
 
 From the repository root:
@@ -176,7 +320,7 @@ their own.
   generator produces.
 - A lint rule in `js/src` cannot be switched off with a comment.
 
-## Tokens and themes
+## The modules behind the tokens and themes
 
 Every design token is a CSS custom property with the name and the value
 [Radix Themes](https://www.radix-ui.com/themes) gives it, so that a page can
@@ -203,8 +347,8 @@ adds its CSS to an app only when something imports it.
 - `themes/theme.js` holds the styles of a theme element itself: `root`,
   `background`, and `light` and `dark`, which set `color-scheme`.
 
-An appearance is the `color-scheme` of an element. The stylesheet every page
-loads has to set it for `html.light` and `html.dark`, as
+An appearance is the `color-scheme` of an element. `base.css` sets it for
+`html.light` and `html.dark`, the classes of the color mode of an app, as
 `js/tests/harness/base.css` does for the tests; a nested appearance is
 `theme.light` or `theme.dark` on its element. Nothing else changes between the
 two, and nothing here depends on being at the root: a popover or a dialog in

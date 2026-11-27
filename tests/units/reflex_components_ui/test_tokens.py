@@ -135,7 +135,7 @@ def test_every_token_lowers_to_itself_and_imports_its_module():
             "rx.ui.tokens.space has no step '4'. Its steps are 1 to 9.",
         ),
         (
-            lambda: tokens.space[True],
+            lambda: tokens.space[True],  # pyright: ignore [reportArgumentType]
             "rx.ui.tokens.space has no step True. Its steps are 1 to 9.",
         ),
         (
@@ -152,8 +152,10 @@ def test_every_token_lowers_to_itself_and_imports_its_module():
         ),
         (
             lambda: tokens.font_weight[1],
-            "rx.ui.tokens.font_weight has no steps. Its tokens are bold, light, "
-            "medium, regular.",
+            (
+                "rx.ui.tokens.font_weight has no steps. Its tokens are bold, light, "
+                "medium, regular."
+            ),
         ),
         (
             lambda: tokens.black[3],
@@ -161,34 +163,46 @@ def test_every_token_lowers_to_itself_and_imports_its_module():
         ),
         (
             lambda: tokens.accent.contrst,  # pyright: ignore [reportAttributeAccessIssue]
-            'rx.ui.tokens.accent has no token "contrst". Did you mean '
-            '"contrast"? Its tokens are a, contrast, indicator, surface, track, '
-            "and the steps [1] to [12].",
+            (
+                'rx.ui.tokens.accent has no token "contrst". Did you mean '
+                '"contrast"? Its tokens are a, contrast, indicator, surface, track, '
+                "and the steps [1] to [12]."
+            ),
         ),
         (
             lambda: tokens.space.four,  # pyright: ignore [reportAttributeAccessIssue]
-            'rx.ui.tokens.space has no token "four". Its tokens are the steps '
-            "[1] to [9].",
+            (
+                'rx.ui.tokens.space has no token "four". Its tokens are the steps '
+                "[1] to [9]."
+            ),
         ),
         (
             lambda: tokens.font_weight.semibold,  # pyright: ignore [reportAttributeAccessIssue]
-            'rx.ui.tokens.font_weight has no token "semibold". Did you mean "bold"? Its tokens are '
-            "bold, light, medium, regular.",
+            (
+                'rx.ui.tokens.font_weight has no token "semibold". Did you mean "bold"? Its tokens are '
+                "bold, light, medium, regular."
+            ),
         ),
         (
             lambda: tokens.focus.contrast,  # pyright: ignore [reportAttributeAccessIssue]
-            'rx.ui.tokens.focus has no token "contrast". Its tokens are a, and '
-            "the steps [1] to [12].",
+            (
+                'rx.ui.tokens.focus has no token "contrast". Its tokens are a, and '
+                "the steps [1] to [12]."
+            ),
         ),
         (
             lambda: tokens.scale("rubby"),  # pyright: ignore [reportArgumentType]
-            'rx.ui.tokens.scale: unknown color scale "rubby". Did you mean '
-            f'"ruby"? The scales are {SCALE_NAMES}.',
+            (
+                'rx.ui.tokens.scale: unknown color scale "rubby". Did you mean '
+                f'"ruby"? The scales are {SCALE_NAMES}.'
+            ),
         ),
         (
             lambda: tokens.scale("gray"),  # pyright: ignore [reportArgumentType]
-            'rx.ui.tokens.scale: "gray" is not a color scale of its own, but '
-            "the gray of the theme: use rx.ui.tokens.gray.",
+            (
+                'rx.ui.tokens.scale: "gray" is not a color scale of its own, but '
+                "the gray of the theme: use rx.ui.tokens.gray."
+            ),
         ),
         (
             lambda: tokens.scale(9),  # pyright: ignore [reportArgumentType]
