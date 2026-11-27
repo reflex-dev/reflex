@@ -122,7 +122,7 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         SystemExit: If any download, file operations fail or unexpected zip file format.
 
     """
-    import httpx
+    import httpx2
 
     # Create a temp directory for the zip download.
     try:
@@ -131,14 +131,13 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         logger.error(f"Failed to create temp directory for download: {ose}")
         raise SystemExit(1) from None
 
-    # Use httpx GET with redirects to download the zip file.
     zip_file_path: Path = Path(temp_dir) / "template.zip"
     try:
         # Note: following redirects can be risky. We only allow this for reflex built templates at the moment.
         response = net.get(template_url, follow_redirects=True)
         logger.debug(f"Server responded download request: {response}")
         response.raise_for_status()
-    except httpx.HTTPError as he:
+    except httpx2.HTTPError as he:
         logger.error(f"Failed to download the template: {he}")
         raise SystemExit(1) from None
     try:

@@ -32,6 +32,7 @@ _CLI_STARTUP_DENIED_MODULES = frozenset({
     "fastapi",
     "granian",
     "httpx",
+    "httpx2",
     "numpy",
     "pandas",
     "plotly",
