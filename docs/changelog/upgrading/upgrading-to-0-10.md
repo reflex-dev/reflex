@@ -52,18 +52,18 @@ On 0.9, `State.count = 10` replaced the class attribute, but new instances still
 from typing import ClassVar
 from unittest import mock
 
-import httpx
+import httpx2
 
 import reflex as rx
 
 
 class State(rx.State):
     count: int = 0
-    _client: ClassVar[httpx.AsyncClient | None] = None
+    _client: ClassVar[httpx2.AsyncClient | None] = None
 
 
 State.__fields__["count"].set_default(10)
-State._client = httpx.AsyncClient()  # a ClassVar stays an ordinary class attribute
+State._client = httpx2.AsyncClient()  # a ClassVar stays an ordinary class attribute
 
 with mock.patch.object(State.__fields__["count"], "default", 99):
     ...

@@ -1682,15 +1682,15 @@ wheels = [
 
 [[package]]
 name = "httpcore2"
-version = "2.13.1"
+version = "2.16.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "h11" },
-    { name = "truststore" },
+    { name = "h11", marker = "sys_platform != 'emscripten'" },
+    { name = "truststore", marker = "sys_platform != 'emscripten'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cb/f3/1db7aa2bc2524062192bb0e0323969492d1883152a232fe36eea65f4e35c/httpcore2-2.13.1.tar.gz", hash = "sha256:e0aa977abe17e69a3b820a24542a6fa88702676d83880b8d194dcd18408e5103", size = 68071, upload-time = "2026-09-23T07:47:22.372Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c0/61/afa9d6b7452f9eca73f73d45324eb0bb52f098fd5e6049bf6b8263be9b4e/httpcore2-2.16.0.tar.gz", hash = "sha256:c72cd0413563b17e1cd8354677dff887466f8ec2551679759e93126534428643", size = 69886, upload-time = "2026-10-21T07:09:45.31Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/09/ba/a4568248771ce81957bfb7cc600264a40fbcda092391ee1c415c50be4bea/httpcore2-2.13.1-py3-none-any.whl", hash = "sha256:e1e05d4f25f7d7d496bfb96748f6f4b67657b03da069b3a68c36069f3db73d0a", size = 83423, upload-time = "2026-09-23T07:47:19.365Z" },
+    { url = "https://files.pythonhosted.org/packages/af/c2/ce417c397afa5181f0e3c6ff01a4d01639414e1adef08730d97571297151/httpcore2-2.16.0-py3-none-any.whl", hash = "sha256:5c4358319f2602d984ad93182c9fee5160f22e9da7babdda870a5e7c4e2dc34f", size = 85070, upload-time = "2026-10-21T07:09:42.802Z" },
 ]
 
 [[package]]
@@ -1710,7 +1710,7 @@ wheels = [
 
 [[package]]
 name = "httpx2"
-version = "2.13.1"
+version = "2.16.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio", marker = "sys_platform != 'emscripten'" },
@@ -1720,9 +1720,9 @@ dependencies = [
     { name = "truststore", marker = "sys_platform != 'emscripten'" },
     { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d5/44/474bef2a0e9d90f1715d32cb98b0738695ca17ba324095fb2497ed7fbd59/httpx2-2.13.1.tar.gz", hash = "sha256:e48744a19e3af5ee48313d0ce5fe941d5422fae5705ea922a4aabf94d7800dfa", size = 100405, upload-time = "2026-09-23T07:47:23.052Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/43/73/5ca2cedf5e4e50423d1c258877865a6b62793633b561c58499f8aeb33b7e/httpx2-2.16.0.tar.gz", hash = "sha256:0d54c98128e8f2ff7fbbde0fca8c359e5f032edeaaaac443cdb7f31f685bcd7f", size = 103116, upload-time = "2026-10-21T07:09:46.348Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d8/9c/6fe8931fd9f381042a9e4c7d5a7b4cbf7016b252bec0c99a49fce42c3326/httpx2-2.13.1-py3-none-any.whl", hash = "sha256:6dff50fabc270ee5fd25d845d0b078ed20564579744d6d962850975996d2f9a4", size = 95597, upload-time = "2026-09-23T07:47:20.995Z" },
+    { url = "https://files.pythonhosted.org/packages/7b/3d/2e4bc4fd1ef9770871669adb348d612a6e4786b303a23f9935b81c48dd60/httpx2-2.16.0-py3-none-any.whl", hash = "sha256:fd2c5d7909e8d86fe92d53020c310ca0e4e431b838c207c5754b9bbf0308d49a", size = 97880, upload-time = "2026-10-21T07:09:44.01Z" },
 ]
 
 [[package]]
@@ -4043,7 +4043,7 @@ source = { editable = "." }
 dependencies = [
     { name = "click" },
     { name = "granian", extra = ["reload"] },
-    { name = "httpx" },
+    { name = "httpx2" },
     { name = "packaging" },
     { name = "psutil", marker = "sys_platform == 'win32'" },
     { name = "python-engineio" },
@@ -4127,7 +4127,7 @@ dev = [
     { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "reflex-bench" },
-    { name = "reflex-build-sdk", extra = ["aiohttp", "httpx", "httpx2"] },
+    { name = "reflex-build-sdk", extra = ["aiohttp", "httpx", "httpx2", "triggers"] },
     { name = "reflex-docgen" },
     { name = "reflex-otel" },
     { name = "reflex-release" },
@@ -4151,7 +4151,7 @@ requires-dist = [
     { name = "click", specifier = ">=8.2" },
     { name = "granian", extras = ["reload"], specifier = ">=2.7.4" },
     { name = "greenlet", marker = "extra == 'db'", specifier = ">=3.3" },
-    { name = "httpx", specifier = ">=0.26,<1.0" },
+    { name = "httpx2", specifier = ">=2.15.1,<3.0" },
     { name = "packaging", specifier = ">=24.2,<27" },
     { name = "psutil", marker = "sys_platform == 'win32'", specifier = ">=7.0.0,<8.0" },
     { name = "psutil", marker = "extra == 'testing'", specifier = ">=7.0.0,<8.0" },
@@ -4224,7 +4224,7 @@ dev = [
     { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "reflex-bench", editable = "packages/reflex-bench" },
-    { name = "reflex-build-sdk", extras = ["aiohttp", "httpx", "httpx2"], editable = "packages/reflex-build-sdk" },
+    { name = "reflex-build-sdk", extras = ["aiohttp", "httpx", "httpx2", "triggers"], editable = "packages/reflex-build-sdk" },
     { name = "reflex-docgen", editable = "packages/reflex-docgen" },
     { name = "reflex-otel", editable = "packages/reflex-otel" },
     { name = "reflex-release", editable = "packages/reflex-release" },
@@ -4304,14 +4304,18 @@ httpx = [
 httpx2 = [
     { name = "httpx2" },
 ]
+triggers = [
+    { name = "cryptography" },
+]
 
 [package.metadata]
 requires-dist = [
     { name = "aiohttp", marker = "extra == 'aiohttp'", specifier = ">=3.10.0,<4.0" },
+    { name = "cryptography", marker = "extra == 'triggers'", specifier = ">=43.0" },
     { name = "httpx", marker = "extra == 'httpx'", specifier = ">=0.25.1,<1.0" },
     { name = "httpx2", marker = "extra == 'httpx2'", specifier = ">=2.0.0,<3.0" },
 ]
-provides-extras = ["aiohttp", "httpx", "httpx2"]
+provides-extras = ["aiohttp", "httpx", "httpx2", "triggers"]
 
 [[package]]
 name = "reflex-components-code"
@@ -4620,20 +4624,20 @@ name = "reflex-hosting-cli"
 source = { editable = "packages/reflex-hosting-cli" }
 dependencies = [
     { name = "click" },
-    { name = "httpx" },
+    { name = "httpx2" },
     { name = "packaging" },
     { name = "platformdirs" },
-    { name = "reflex-build-sdk", extra = ["httpx"] },
+    { name = "reflex-build-sdk", extra = ["httpx2"] },
     { name = "rich" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = ">=8.2" },
-    { name = "httpx", specifier = ">=0.25.1,<1.0" },
+    { name = "httpx2", specifier = ">=2.15.1,<3.0" },
     { name = "packaging", specifier = ">=24.2" },
     { name = "platformdirs", specifier = ">=3.10.0,<5.0" },
-    { name = "reflex-build-sdk", extras = ["httpx"], editable = "packages/reflex-build-sdk" },
+    { name = "reflex-build-sdk", extras = ["httpx2"], editable = "packages/reflex-build-sdk" },
     { name = "rich", specifier = ">=13,<16" },
 ]
 
@@ -4692,7 +4696,7 @@ name = "reflex-site-shared"
 source = { editable = "packages/reflex-site-shared" }
 dependencies = [
     { name = "email-validator" },
-    { name = "httpx" },
+    { name = "httpx2" },
     { name = "pyyaml" },
     { name = "reflex" },
     { name = "reflex-components-internal" },
@@ -4704,7 +4708,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "email-validator" },
-    { name = "httpx" },
+    { name = "httpx2", specifier = ">=2.15.1,<3.0" },
     { name = "pyyaml" },
     { name = "reflex", editable = "." },
     { name = "reflex-components-internal", editable = "packages/reflex-components-internal" },

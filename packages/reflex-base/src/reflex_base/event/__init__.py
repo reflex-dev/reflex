@@ -847,11 +847,10 @@ class EventHandler(EventActionsMixin):
             return self.fn(*args, **kwargs)
 
         # Get the function args.
-        if self.state is not None:
-            # Skip the `self` arg for state-bound event handlers.
-            fn_args = list(self._parameters)[1:]
-        else:
-            fn_args = list(self._parameters)
+        # Skip the `self` arg for state-bound event handlers.
+        fn_args = _named_parameters(
+            self._parameters, 1 if self.state is not None else 0
+        )
 
         if not isinstance(
             repeated_arg := next(
@@ -1073,7 +1072,9 @@ class EventSpec(EventActionsMixin):
         n_self_args = 1 if self.handler.state is not None else 0
 
         # Get the remaining unfilled function args.
-        fn_args = list(self.handler._parameters)[n_self_args + len(self.args) :]
+        fn_args = _named_parameters(self.handler._parameters, n_self_args)[
+            len(self.args) :
+        ]
         fn_args = (Var(_js_expr=arg) for arg in fn_args)
 
         # Construct the payload.
@@ -2440,18 +2441,14 @@ def call_event_handler(
             event_callback.handler.fn.__qualname__,
         )
 
-        event_callback_spec_args = list(parameters)
+        event_callback_spec_args = _named_parameters(parameters, n_self_args)
 
         type_hints_of_provided_callback = event_callback.handler._get_type_hints()
 
         argument_names = [str(arg) for arg, value in event_callback.args]
 
         _check_event_args_subclass_of_callback(
-            [
-                arg
-                for arg in event_callback_spec_args[n_self_args:]
-                if arg not in argument_names
-            ],
+            [arg for arg in event_callback_spec_args if arg not in argument_names],
             event_spec_return_types,
             type_hints_of_provided_callback,
             event_callback.handler.fn.__qualname__,
@@ -2475,12 +2472,12 @@ def call_event_handler(
     )
 
     if event_spec_return_types:
-        event_callback_spec_args = list(parameters)
+        event_callback_spec_args = _named_parameters(parameters, n_self_args)
 
         type_hints_of_provided_callback = event_callback._get_type_hints()
 
         _check_event_args_subclass_of_callback(
-            event_callback_spec_args[n_self_args:],
+            event_callback_spec_args,
             event_spec_return_types,
             type_hints_of_provided_callback,
             event_callback.fn.__qualname__,
@@ -2667,6 +2664,87 @@ def args_specs_from_fields(
     }
 
 
+# The parameter kinds that take any number of arguments, none included.
+_VARIADIC_PARAMETER_KINDS = (
+    inspect.Parameter.VAR_POSITIONAL,
+    inspect.Parameter.VAR_KEYWORD,
+)
+
+
+def _named_parameters(
+    parameters: Mapping[str, inspect.Parameter], n_self_args: int = 0
+) -> list[str]:
+    """Get the names an event handler's arguments are sent by.
+
+    ``*args`` and ``**kwargs`` take no argument by their own name.
+
+    Args:
+        parameters: The parameters of the event handler's function.
+        n_self_args: How many leading parameters take the state, which is
+            not sent.
+
+    Returns:
+        The names of its other parameters, in order.
+    """
+    return [
+        parameter.name
+        for parameter in list(parameters.values())[n_self_args:]
+        if parameter.kind not in _VARIADIC_PARAMETER_KINDS
+    ]
+
+
+def _max_positional_args(parameters: Mapping[str, inspect.Parameter]) -> int | None:
+    """Get how many of a trigger's arguments a function takes by position.
+
+    Args:
+        parameters: The parameters of the function.
+
+    Returns:
+        The number of its positional parameters, or None when it takes ``*args``.
+    """
+    count = 0
+    for parameter in parameters.values():
+        if parameter.kind is inspect.Parameter.VAR_POSITIONAL:
+            return None
+        if parameter.kind in (
+            inspect.Parameter.POSITIONAL_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        ):
+            count += 1
+    return count
+
+
+def _check_no_required_keyword_only(
+    fn: Callable, parameters: Mapping[str, inspect.Parameter], key: str | None
+) -> None:
+    """Reject a callable with a keyword-only parameter that has no default.
+
+    A callable gets the trigger's arguments by position, so it never gets one.
+
+    Args:
+        fn: The callable given to the event trigger.
+        parameters: Its parameters.
+        key: The name of the event trigger.
+
+    Raises:
+        EventFnArgMismatchError: If it has a required keyword-only parameter.
+    """
+    for parameter in parameters.values():
+        if (
+            parameter.kind is inspect.Parameter.KEYWORD_ONLY
+            and parameter.default is inspect.Parameter.empty
+        ):
+            msg = (
+                f"Event {key} cannot pass the keyword-only argument "
+                f"{parameter.name!r} of {fn}: a function given to an event "
+                "trigger gets the trigger's arguments by position only. Give "
+                f"{parameter.name!r} a default value, or move it before the `*` "
+                "so it takes one of the trigger's arguments.\n"
+                "See https://reflex.dev/docs/events/event-arguments/"
+            )
+            raise EventFnArgMismatchError(msg)
+
+
 def check_fn_match_arg_spec(
     user_func: Callable,
     user_func_parameters: Mapping[str, inspect.Parameter],
@@ -2689,15 +2767,19 @@ def check_fn_match_arg_spec(
     Raises:
         EventFnArgMismatchError: Raised if the number of mandatory arguments do not match
     """
-    user_args = list(user_func_parameters)
+    # `*args` and `**kwargs` take no argument of their own; a keyword-only
+    # parameter without a default is as required as a positional one.
+    user_args = [
+        p
+        for p in user_func_parameters.values()
+        if p.kind not in _VARIADIC_PARAMETER_KINDS
+    ]
     # Drop the first argument if it's a bound method
     if inspect.ismethod(user_func) and user_func.__self__ is not None:
         user_args = user_args[1:]
 
     user_default_args = [
-        p.default
-        for p in user_func_parameters.values()
-        if p.default is not inspect.Parameter.empty
+        p.default for p in user_args if p.default is not inspect.Parameter.empty
     ]
     number_of_user_args = len(user_args) - number_of_bound_args
     number_of_user_default_args = len(user_default_args) if user_default_args else 0
@@ -2789,12 +2871,11 @@ def call_event_fn(
     parameters = inspect.signature(fn).parameters
 
     # Check that fn signature matches arg_spec
+    _check_no_required_keyword_only(fn, parameters, key)
     check_fn_match_arg_spec(fn, parameters, parsed_args, key=key)
 
-    number_of_fn_args = len(parameters)
-
-    # Call the function with the parsed args.
-    out = fn(*[*parsed_args][:number_of_fn_args])
+    # Call the function with as many of the parsed args as it takes.
+    out = fn(*parsed_args[: _max_positional_args(parameters)])
 
     def _dispatch_mixed_event_var(event_like_var: Var) -> FunctionVar:
         """Wrap a mixed event-like Var into a callable frontend dispatcher.

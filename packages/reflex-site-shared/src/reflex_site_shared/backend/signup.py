@@ -4,7 +4,7 @@ import contextlib
 import os
 from typing import Any
 
-import httpx
+import httpx2
 from email_validator import EmailNotValidError, ValidatedEmail, validate_email
 from reflex_components_internal.blocks.telemetry.posthog import (
     track_newsletter_posthog_submission,
@@ -32,8 +32,8 @@ class IndexState(rx.State):
         email: str | None,
     ) -> None:
         """Send contact to webhook."""
-        with contextlib.suppress(httpx.HTTPError):
-            async with httpx.AsyncClient() as client:
+        with contextlib.suppress(httpx2.HTTPError):
+            async with httpx2.AsyncClient() as client:
                 response = await client.post(
                     REFLEX_DEV_WEB_NEWSLETTER_FORM_WEBHOOK_URL,
                     json={
@@ -58,7 +58,7 @@ class IndexState(rx.State):
             "Authorization": f"Bearer {loops_api_key}",
         }
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx2.AsyncClient() as client:
                 response = await client.post(
                     url,
                     headers=headers,
@@ -68,7 +68,7 @@ class IndexState(rx.State):
                 )
                 response.raise_for_status()  # Raise an exception for HTTP errors (4xx and 5xx)
 
-        except httpx.HTTPError:
+        except httpx2.HTTPError:
             pass
 
     @rx.event
