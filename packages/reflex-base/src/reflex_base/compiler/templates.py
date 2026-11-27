@@ -15,6 +15,7 @@ from reflex_base.vars.base import VarData
 if TYPE_CHECKING:
     from reflex.compiler.utils import _ImportDict
     from reflex_base.components.component import Component
+    from reflex_base.plugins.base import VitePluginEntry
 
 
 _STATE_HOOK = re.compile(
@@ -772,6 +773,7 @@ def vite_config_template(
     prod_react: bool = False,
     warmup_routes: bool = False,
     react_compiler: bool = False,
+    vite_plugins: Sequence[VitePluginEntry] = (),
 ):
     """Template for vite.config.js.
 
@@ -788,6 +790,9 @@ def vite_config_template(
         warmup_routes: Pre-transform every route module when the dev server
             starts, so the first visit to a page does not wait on Vite.
         react_compiler: Enable React Compiler for generated components.
+        vite_plugins: Vite plugins contributed by Reflex plugins, placed ahead
+            of ``reactRouter()`` in the order given. An import statement that
+            several entries share is written once.
 
     Returns:
         Rendered vite.config.js content as string.
@@ -890,11 +895,22 @@ function prodReactPrebundle() {
         else ""
     )
     react_compiler_plugin = "    reactCompiler(),\n" if react_compiler else ""
+    vite_plugin_imports = "".join(
+        f"{statement};\n"
+        for statement in dict.fromkeys(
+            statement.strip().rstrip(";").rstrip()
+            for entry in vite_plugins
+            for statement in entry.imports
+        )
+    )
+    vite_plugin_calls = "".join(
+        f"    {entry.call.strip()},\n" for entry in vite_plugins
+    )
     return rf"""import {{ fileURLToPath, URL }} from "url";
 import {{ reactRouter }} from "@react-router/dev/vite";
 import {{ defineConfig }} from "vite";
 import safariCacheBustPlugin from "./vite-plugin-safari-cachebust.js";
-{react_compiler_import}
+{react_compiler_import}{vite_plugin_imports}
 // Ensure that bun always uses the react-dom/server.node functions.
 function alwaysUseReactDomServerNode() {{
   return {{
@@ -961,7 +977,7 @@ export default defineConfig((config) => ({{
   base: "{base}",
   plugins: [
     alwaysUseReactDomServerNode(),
-{react_compiler_plugin}    reactRouter(),
+{react_compiler_plugin}{vite_plugin_calls}    reactRouter(),
     patchReactRouterHmrRuntime(),
     safariCacheBustPlugin(),
   ].concat({"[fullReload()]" if force_full_reload else "[]"}),

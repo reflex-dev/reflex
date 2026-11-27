@@ -2,14 +2,18 @@
 
 import json
 import logging
+import re
 import uuid
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Literal
 
 from reflex_base import constants
 from reflex_base.config import Config, get_config
 from reflex_base.environment import environment
+from reflex_base.plugins.base import Plugin, VitePluginEntry
 from reflex_base.plugins.embed import get_embed_plugin
+from reflex_base.utils.exceptions import InvalidVitePluginError
 
 from reflex.compiler import templates
 from reflex.utils import net, path_ops
@@ -629,6 +633,67 @@ def initialize_package_json():
     _write_package_json(output_path, _compile_package_json())
 
 
+# A static import statement; ``import(...)`` and ``import.meta`` are expressions.
+_VITE_IMPORT_STATEMENT = re.compile(r"""\s*import[\s"'{*]""")
+
+
+def _vite_plugin_entry_problem(entry: object) -> str | None:
+    """Find what is wrong with an entry a plugin returned from ``get_vite_plugins``.
+
+    Args:
+        entry: The entry to check.
+
+    Returns:
+        The problem, or ``None`` when the entry can be rendered.
+    """
+    if not isinstance(entry, VitePluginEntry):
+        return f"is a {type(entry).__name__}, not a VitePluginEntry"
+    call = entry.call
+    if not isinstance(call, str) or not (call := call.strip()):
+        return f"has call={entry.call!r}, which is not a JavaScript expression"
+    if call[-1] in ";,":
+        return (
+            f"has call={entry.call!r}, which must be an expression without a "
+            f"trailing {call[-1]!r}"
+        )
+    if isinstance(entry.imports, str):
+        return (
+            f"has imports={entry.imports!r}, which must be a sequence of import "
+            "statements, not a single string"
+        )
+    for statement in entry.imports:
+        if not isinstance(statement, str) or not _VITE_IMPORT_STATEMENT.match(
+            statement
+        ):
+            return f"has {statement!r} in imports, which is not an import statement"
+    return None
+
+
+def _get_vite_plugins(plugins: Sequence[Plugin]) -> list[VitePluginEntry]:
+    """Collect the Vite plugins that the configured Reflex plugins contribute.
+
+    Args:
+        plugins: The configured plugins, in ``rxconfig.py`` order.
+
+    Returns:
+        The entries in plugin order, then in the order each plugin returned them.
+
+    Raises:
+        InvalidVitePluginError: When a plugin returns a malformed entry.
+    """
+    entries: list[VitePluginEntry] = []
+    for plugin in plugins:
+        for index, entry in enumerate(plugin.get_vite_plugins()):
+            if problem := _vite_plugin_entry_problem(entry):
+                msg = (
+                    f"{type(plugin).__name__}.get_vite_plugins() returned an "
+                    f"invalid entry: entry {index} {problem}."
+                )
+                raise InvalidVitePluginError(msg)
+            entries.append(entry)
+    return entries
+
+
 def _compile_vite_config(config: Config):
     base = config.prepend_frontend_path("/")
     embed_plugin = get_embed_plugin()
@@ -648,6 +713,7 @@ def _compile_vite_config(config: Config):
         sourcemap=environment.VITE_SOURCEMAP.get(),
         minify=environment.VITE_MINIFY.get(),
         allowed_hosts=config.vite_allowed_hosts,
+        vite_plugins=_get_vite_plugins(config.plugins),
     )
 
 

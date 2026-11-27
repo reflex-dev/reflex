@@ -203,6 +203,10 @@ class Plugin:
         """Get paths to stylesheets required by the plugin."""
         return []
 
+    def get_vite_plugins(self, **context) -> Sequence[VitePluginEntry]:
+        """Get Vite plugins to add to the generated vite.config.js."""
+        return []
+
     def register_route(self, **context) -> None:
         """Contribute pages before the app's first compilation."""
         pass
@@ -294,6 +298,70 @@ during collection, while the framework owns the final batch commit. The public
 `add_page` and protected `_commit_page` overrides remain the direct-registration
 API but are intentionally not dispatched during a staged plugin batch, so an
 override cannot make the batch commit partially.
+
+### Adding Vite Plugins
+
+Reflex generates the app's `vite.config.js` and rewrites it on every compile. A
+plugin adds a Vite plugin to it by overriding `get_vite_plugins`, which returns
+`VitePluginEntry` objects. Each entry carries JavaScript source: the import
+statements it needs, and the expression to place in the `plugins` array.
+
+```python
+from reflex.plugins import Plugin, VitePluginEntry
+
+
+class InspectPlugin(Plugin):
+    def get_frontend_development_dependencies(self, **context):
+        return ["vite-plugin-inspect"]
+
+    def get_vite_plugins(self, **context):
+        return [
+            VitePluginEntry(
+                imports=['import inspect from "vite-plugin-inspect"'],
+                call="inspect({ build: true })",
+            )
+        ]
+```
+
+This renders as:
+
+```javascript
+import inspect from "vite-plugin-inspect";
+
+export default defineConfig((config) => ({
+  plugins: [
+    alwaysUseReactDomServerNode(),
+    inspect({ build: true }),
+    reactRouter(),
+    // ...
+  ],
+}));
+```
+
+- `imports` is a sequence of import statements, one per string, with or without
+  the closing semicolon. An entry may need several. A statement that several
+  entries share is written once, so two plugins can import the same name from
+  the same package; importing one name from two different modules is a syntax
+  error in the generated file.
+- `call` is any JavaScript expression: usually a call, possibly spanning
+  several lines. It may evaluate to one Vite plugin or to an array of them.
+- Module specifiers resolve from `.web`. Import an npm package by name, and a
+  file the plugin writes with `get_static_assets` by its relative path, such as
+  `"./my-vite-plugin.js"`.
+- Entries are placed ahead of `reactRouter()` (and after React Compiler, when
+  `react_compiler` is enabled), in the order of the plugins in `rxconfig.py`
+  and then in the order each plugin returns them. Vite's own `enforce: "pre"`
+  and `enforce: "post"` still apply within that order.
+- A Vite plugin only runs at build time, so declare its npm packages in
+  `get_frontend_development_dependencies`. Packages returned from
+  `get_frontend_dependencies` are also bundled into the app.
+
+A malformed entry stops the compile with an `InvalidVitePluginError` that names
+the plugin and the entry, for example:
+
+```text
+InspectPlugin.get_vite_plugins() returned an invalid entry: entry 0 has 'vite-plugin-inspect' in imports, which is not an import statement.
+```
 
 ### Looking Up Configured Plugins
 
