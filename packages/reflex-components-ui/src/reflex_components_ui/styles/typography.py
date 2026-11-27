@@ -23,6 +23,8 @@ ACCENT_LINK_LINE_COLOR = "--rx-accent-link-line-color"
 LINK_CODE_SOLID = "--rx-link-code-solid"
 LINK_CODE_SOFT = "--rx-link-code-soft"
 LINK_CODE_OUTLINE = "--rx-link-code-outline"
+# And what solid code is filtered by there when it is high contrast.
+LINK_CODE_FILTER = "--rx-link-code-filter"
 
 
 def underline_color(step: Step12) -> str:

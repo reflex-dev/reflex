@@ -6,8 +6,10 @@ from reflex_components_ui.style._css_props import StyleProps
 from reflex_components_ui.style.lower import (
     LAYOUT_PROPS,
     VAR_MODULES,
+    Keyframes,
     Lowered,
     StyleError,
+    keyframes,
     lower,
 )
 from reflex_components_ui.style.merge import (
@@ -26,10 +28,12 @@ __all__ = [
     "Alternatives",
     "ComponentStyles",
     "CompoundStyle",
+    "Keyframes",
     "Lowered",
     "Merged",
     "StyleError",
     "StyleProps",
+    "keyframes",
     "lower",
     "merge",
     "over",

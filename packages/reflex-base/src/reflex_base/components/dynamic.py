@@ -1,8 +1,10 @@
 """Components that are dynamically generated on the backend."""
 
+import contextlib
 import contextvars
 import dataclasses
 import json
+from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any, Union
 
 from reflex_base import constants
@@ -39,6 +41,23 @@ def is_rendering_dynamic_component() -> bool:
         True while a dynamic component is being serialized.
     """
     return _RENDERING_DYNAMIC_COMPONENT.get()
+
+
+@contextlib.contextmanager
+def rendering_dynamic_component() -> Iterator[None]:
+    """Generate code that is evaluated in the browser at runtime.
+
+    For what is read from a component on behalf of the code it is serialized
+    to, such as the libraries that code imports.
+
+    Yields:
+        Nothing: ``is_rendering_dynamic_component`` is True inside the block.
+    """
+    token = _RENDERING_DYNAMIC_COMPONENT.set(True)
+    try:
+        yield
+    finally:
+        _RENDERING_DYNAMIC_COMPONENT.reset(token)
 
 
 def __getattr__(name: str) -> Any:
@@ -195,11 +214,8 @@ def load_dynamic_serializer():
         Returns:
             The generated code
         """
-        token = _RENDERING_DYNAMIC_COMPONENT.set(True)
-        try:
+        with rendering_dynamic_component():
             return generate_component_code(component)
-        finally:
-            _RENDERING_DYNAMIC_COMPONENT.reset(token)
 
     def generate_component_code(component: Component) -> str:
         """Generate the module a dynamic component is evaluated from.

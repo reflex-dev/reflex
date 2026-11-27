@@ -19,9 +19,11 @@ from reflex_base.plugins import get_plugin
 from reflex_base.style import media_query
 from reflex_base.utils import format
 from reflex_base.utils.exceptions import ConfigError
-from reflex_base.utils.imports import ImportDict, ImportVar
+from reflex_base.utils.imports import ImportDict, ImportVar, ParsedImportDict
 from reflex_base.vars.base import LiteralVar, Var, VarData
 from reflex_base.vars.sequence import LiteralStringVar
+from reflex_components_core.base.fragment import Fragment
+from reflex_components_core.core.cond import Cond
 
 from reflex_components_ui.plugin import UIPlugin
 from reflex_components_ui.style import (
@@ -34,7 +36,7 @@ from reflex_components_ui.style import (
 from reflex_components_ui.style.emit import Emitted, emit, inline
 from reflex_components_ui.style.lower import EMPTY, suggest
 from reflex_components_ui.style.merge import over
-from reflex_components_ui.themes import color_scheme_styles
+from reflex_components_ui.themes import ThemeStyles, color_scheme_styles, radius_styles
 
 MISSING_PLUGIN_ERROR = (
     "rx.ui components need rx.plugins.UIPlugin() in rxconfig.py plugins."
@@ -205,6 +207,10 @@ class UIComponent(Component):
     # component, as Radix Themes falls back to its default.
     _as_tags: ClassVar[frozenset[str]] = frozenset()
 
+    # Whether a `radius` field is the radius of the element itself, applied
+    # as a theme. A theme element has the option for what is inside it.
+    _own_radius: ClassVar[bool] = True
+
     # How the stubs type the style: the properties and keywords of CSS.
     _pyi_overwrite_types: ClassVar[dict[str, str]] = {
         "style": (
@@ -310,7 +316,8 @@ class UIComponent(Component):
                 a Var, or cannot be compiled, if a prop is given a value it
                 does not take, or if ``as_child`` has no single element to
                 render.
-            ThemeError: If the ``color_scheme`` is not an accent color.
+            ThemeError: If the ``color_scheme`` is not an accent color, or the
+                ``radius`` not one a theme takes.
         """
         fields = self.get_fields()
         triggers = self.get_event_triggers()
@@ -361,6 +368,13 @@ class UIComponent(Component):
             None
             if color_scheme is None
             else color_scheme_styles(self._display_name(), color_scheme)
+        )
+        # The same for a radius of its own.
+        radius = (
+            kwargs.get("radius") if self._own_radius and "radius" in fields else None
+        )
+        self._radius = (
+            None if radius is None else radius_styles(self._display_name(), radius)
         )
         # Whether a parent with `as_child` renders as this element, and
         # whether this element renders as its only child.
@@ -526,6 +540,19 @@ class UIComponent(Component):
             merged = over(merged, slot._slot_styles())
         return merged
 
+    @property
+    def _themes(self) -> tuple[ThemeStyles, ...]:
+        """The themes the element carries beside its styles.
+
+        Returns:
+            The themes of its accent color and of its radius, for a
+            component that is given one.
+        """
+        accent, radius = self._accent, self._radius
+        if accent is None:
+            return () if radius is None else (radius,)
+        return (accent,) if radius is None else (accent, radius)
+
     def _get_vars(
         self, include_children: bool = False, ignore_ids: set[int] | None = None
     ) -> Iterator[Var]:
@@ -540,10 +567,27 @@ class UIComponent(Component):
         """
         yield from super()._get_vars(include_children, ignore_ids)
         yield from self._emit().vars
-        if self._accent is not None:
-            yield from self._accent.vars
+        for theme in self._themes:
+            yield from theme.vars
 
-    def add_imports(self) -> ImportDict:
+    def _get_imports(self) -> ParsedImportDict:
+        """Get the imports of the element, for the kind of code it renders in.
+
+        A page imports StyleX and the modules of the tokens, and code that is
+        evaluated in the browser imports neither. A component held in state
+        is asked for both, so what one kind of code imports is not kept for
+        the other.
+
+        Returns:
+            The imports needed by the component.
+        """
+        dynamic = is_rendering_dynamic_component()
+        if self.__dict__.get("_imports_for") is not dynamic:
+            self._imports_cache = None
+            self._imports_for = dynamic
+        return super()._get_imports()
+
+    def add_imports(self) -> ImportDict | list[ImportDict]:
         """Import StyleX, which the build compiles away, and the CSS of tokens.
 
         Returns:
@@ -563,8 +607,9 @@ class UIComponent(Component):
             imports[""] = [
                 ImportVar(tag=module, install=False) for module in emitted.imports
             ]
-        if self._accent is not None:
-            imports.update(self._accent.import_dict())
+        themes = self._themes
+        if themes:
+            return [imports, *[theme.import_dict() for theme in themes]]
         return imports
 
     def add_custom_code(self) -> list[str]:
@@ -583,8 +628,8 @@ class UIComponent(Component):
             raise ConfigError(MISSING_PLUGIN_ERROR)
         declaration = self._emit().declaration
         code = [] if declaration is None else [declaration]
-        if self._accent is not None:
-            code.extend(self._accent.declarations)
+        for theme in self._themes:
+            code.extend(theme.declarations)
         return code
 
     def _get_style(self) -> dict:
@@ -609,11 +654,18 @@ class UIComponent(Component):
 
         Returns:
             The layout props, the props that select a variant, and the accent
-            color of the component: an attribute of that name is nothing to
-            an element.
+            color and the radius of the component: an attribute of that name
+            is nothing to an element.
         """
         layout_props, variants = self._style_props()
-        return [*layout_props, *variants, "color_scheme", "as", "as_child"]
+        return [
+            *layout_props,
+            *variants,
+            "color_scheme",
+            "radius",
+            "as",
+            "as_child",
+        ]
 
     def _render(self, props: dict[str, Any] | None = None) -> CommonTag:
         """Render the element with its style.
@@ -645,11 +697,12 @@ class UIComponent(Component):
                 },
                 special_props=[*tag.special_props, *child.special_props],
             )
-        accent = self._accent
+        themes = self._themes
         if is_rendering_dynamic_component():
-            if accent is not None:
+            if themes:
+                prop = "color_scheme" if self._accent is not None else "radius"
                 msg = (
-                    f"{self._display_name()}: color_scheme cannot be applied to "
+                    f"{self._display_name()}: {prop} cannot be applied to "
                     "a component rendered from state: its code is evaluated in "
                     "the browser and never reaches the StyleX compiler. Render "
                     "the component in a page and show it with rx.cond."
@@ -660,11 +713,13 @@ class UIComponent(Component):
         if get_plugin(UIPlugin) is None:
             raise ConfigError(MISSING_PLUGIN_ERROR)
         emitted = self._emit()
-        if accent is not None:
-            # The themes of an accent only set custom properties, so their
-            # class names stand beside the ones of the styles.
+        if themes:
+            # The themes of an accent and of a radius only set custom
+            # properties, so their class names stand beside the ones of the
+            # styles.
             emitted = dataclasses.replace(
-                emitted, lookups=(*emitted.lookups, accent.classes)
+                emitted,
+                lookups=(*emitted.lookups, *[theme.classes for theme in themes]),
             )
         return add_styles(tag, emitted)
 
@@ -753,6 +808,10 @@ class Part(UIComponent):
         return self._merged
 
 
+# What renders no element of its own, between a component and its parts.
+_NO_ELEMENT = (Fragment, Cond)
+
+
 def _bind_parts(
     children: Sequence[BaseComponent], parts: Mapping[str, Merged], name: str
 ) -> None:
@@ -776,6 +835,9 @@ def _bind_parts(
                 )
                 raise StyleError(msg)
             child._merged = merged
+            _bind_parts(child.children, parts, name)
+        elif type(child) in _NO_ELEMENT:
+            # A part that is only rendered under a condition.
             _bind_parts(child.children, parts, name)
 
 

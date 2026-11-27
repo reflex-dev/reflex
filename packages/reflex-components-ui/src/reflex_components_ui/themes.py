@@ -82,6 +82,7 @@ _RADIUS_MAP = "reflexUIRadii"
 _SCALING_MAP = "reflexUIScalings"
 _PANEL_MAP = "reflexUIPanels"
 _COLOR_SCHEME_MAP = "reflexUIColorSchemes"
+_ELEMENT_RADIUS_MAP = "reflexUIElementRadii"
 
 # What joins the class names of compiled styles, and its local name.
 _CLASS_NAME = ("class-name.js", "className")
@@ -89,6 +90,12 @@ _CLASS_NAME_ALIAS = "reflexUIClassName"
 
 # What the name of a constant holding joined class names starts with.
 _CONSTANT = "reflexUIClasses"
+
+
+# The theme that declares the steps of the radius scale again.
+_RADIUS_SCOPE = next(
+    scope for scope in _radix_tokens.SCOPE_THEMES if scope[1] == "radiusScope"
+)
 
 
 class ThemeError(ReflexError, ValueError):
@@ -550,3 +557,40 @@ def color_scheme_styles(name: str, color_scheme: Any) -> ThemeStyles:
         return builder.finish(f"{_COLOR_SCHEME_MAP}[{builder.bound(color_scheme)}]")
     _check(name, "color_scheme", color_scheme, "accent_color")
     return builder.finish(builder.call(themes(color_scheme)))
+
+
+def radius_styles(name: str, radius: Any) -> ThemeStyles:
+    """Work out the StyleX themes of a component with a radius of its own.
+
+    The radius, and the steps of the radius scale, which read it on the
+    element they are declared on. A radius bound to state imports the five
+    of them: their class names are joined once, in a table the element
+    indexes.
+
+    Args:
+        name: The display name of the component, which starts an error message.
+        radius: The radius of the component, or a Var holding it.
+
+    Returns:
+        What the element needs.
+
+    Raises:
+        ThemeError: If the radius is not one a theme takes.
+    """
+    tokens = _radix_tokens
+    builder = _Builder(name)
+    radius = literal_option(radius)
+    scope = builder.add(_RADIUS_SCOPE)
+    if isinstance(radius, Var):
+        entries = ", ".join([
+            f"{json.dumps(value)}: {builder.call([scope, builder.add(theme)])}"
+            for value, theme in tokens.RADIUS_THEMES.items()
+        ])
+        builder.declarations.append(
+            f"const {_ELEMENT_RADIUS_MAP} = {{ __proto__: null, {entries} }};"
+        )
+        return builder.finish(f"{_ELEMENT_RADIUS_MAP}[{builder.bound(radius)}]")
+    _check(name, "radius", radius)
+    return builder.finish(
+        builder.call([scope, builder.add(tokens.RADIUS_THEMES[radius])])
+    )

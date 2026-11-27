@@ -758,3 +758,42 @@ def test_unchecked_passes_a_style_a_type_checker_cannot_read():
         "--line-height": "1.5",
         "marginTop": "0",
     }
+
+
+def test_later_style_keeps_what_an_earlier_one_gives_a_pseudo_element():
+    """A pseudo-element is another box: a value for the element leaves it alone."""
+    table: ComponentStyles = {
+        "base": {
+            "color": "red",
+            "_hover": {"color": "blue"},
+            "_after": {"color": "green", "_hover": {"color": "teal"}, "top": "0"},
+        },
+        "variants": {
+            "kind": {
+                # Outright: the conditions of the element go, its pseudo-element stays.
+                "plain": {"color": "black"},
+                # For the pseudo-element too: it is replaced as a whole.
+                "both": {"color": "black", "_after": {"color": "white"}},
+                # With conditions of its own, and nothing for the pseudo-element.
+                "states": {"color": {"default": "black", ":active": "gray"}},
+            }
+        },
+    }
+    after = {"default": "green", ":hover": "teal"}
+    assert merge("rx.ui.card", table, {"kind": "plain"}).style.style == {
+        "color": {"default": "black", "::after": after},
+        "top": {"::after": "0"},
+    }
+    assert merge("rx.ui.card", table, {"kind": "both"}).style.style == {
+        "color": {"default": "black", "::after": "white"},
+        "top": {"::after": "0"},
+    }
+    assert merge("rx.ui.card", table, {"kind": "states"}).style.style == {
+        "color": {"default": "black", ":active": "gray", "::after": after},
+        "top": {"::after": "0"},
+    }
+    # The style of the element is merged the same way.
+    assert merge("rx.ui.card", table, None, {"color": "navy"}).style.style == {
+        "color": {"default": "navy", "::after": after},
+        "top": {"::after": "0"},
+    }

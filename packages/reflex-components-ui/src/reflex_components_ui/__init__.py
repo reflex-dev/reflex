@@ -8,8 +8,11 @@ _SUBMODULES: set[str] = {"tokens"}
 
 _SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = {
     "components.aspect_ratio": ["aspect_ratio"],
+    "components.button": ["button"],
+    "components.icon_button": ["icon_button"],
     "components.inset": ["inset"],
     "components.separator": ["divider", "separator"],
+    "components.spinner": ["spinner"],
     "layout.box": ["box"],
     "layout.center": ["center"],
     "layout.container": ["container"],

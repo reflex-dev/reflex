@@ -28,7 +28,7 @@ from typing import Any
 from reflex_base.utils.types import safe_issubclass
 from reflex_base.vars.base import Var
 
-from reflex_components_ui.style.lower import StyleError
+from reflex_components_ui.style.lower import Keyframes, StyleError
 from reflex_components_ui.style.merge import Alternatives, Merged
 
 # The key under which a declaration holds the style every instance has.
@@ -237,7 +237,13 @@ class _Variables:
             The value as StyleX compiles it.
         """
         cls = value.__class__
-        if cls is str or cls is int or cls is float or value is None:
+        if (
+            cls is str
+            or cls is int
+            or cls is float
+            or value is None
+            or cls is Keyframes
+        ):
             return value
         if cls is dict:
             return {
@@ -371,11 +377,33 @@ def _emit(merged: Merged) -> Emitted:
         tables.insert(0, f"const {_NAME}_c = {_classes(_KEY)};")
     declaration = classes = None
     if styles:
+        animations: dict[Keyframes, str] = {}
+
+        def reference(value: Any) -> str:
+            """Stand in for the keyframes of a style until they have a name.
+
+            Args:
+                value: What JSON cannot hold: the keyframes of an animation.
+
+            Returns:
+                A marker that no style can hold, as JSON escapes it.
+            """
+            return animations.setdefault(value, f"\1{len(animations)}\1")
+
         entries = ", ".join([
-            f"{key}: {json.dumps(style, ensure_ascii=False)}"
+            f"{key}: {json.dumps(style, ensure_ascii=False, default=reference)}"
             for key, style in styles.items()
         ])
+        for position in range(len(animations)):
+            # StyleX compiles a reference to keyframes of the same module.
+            entries = entries.replace(
+                f'"\\u0001{position}\\u0001"', f"{_NAME}_k{position}"
+            )
         template = "\n".join([
+            *[
+                f"const {_NAME}_k{position} = stylex.keyframes({frames.source});"
+                for position, frames in enumerate(animations)
+            ],
             f"const {_NAME} = stylex.create({{ {entries} }});",
             *tables,
         ])
@@ -414,6 +442,8 @@ def emit(merged: Merged) -> Emitted:
     style = lowered.style
     if not style:
         return _NOTHING
+    if "animationName" in style:
+        return _emit(merged)
     try:
         source = json.dumps(style, ensure_ascii=False)
     except TypeError:
@@ -471,6 +501,13 @@ def inline(merged: Merged, component: str) -> dict[str, str | int | float]:
             msg = (
                 f'{component}: the style "{prop}" has conditions ({conditions}), '
                 f"{_NOT_RENDERED_IN_PAGE} Use an unconditional value there, or "
+                f"{_RENDER_IN_PAGE}"
+            )
+            raise StyleError(msg)
+        if value.__class__ is Keyframes:
+            msg = (
+                f'{component}: the style "{prop}" plays keyframes, '
+                f"{_NOT_RENDERED_IN_PAGE} Leave the animation out there, or "
                 f"{_RENDER_IN_PAGE}"
             )
             raise StyleError(msg)

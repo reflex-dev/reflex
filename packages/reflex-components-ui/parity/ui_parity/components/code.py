@@ -76,6 +76,15 @@ MATRIX = Matrix(
             "inside": [None, "link"],
             "state": [HOVER],
         },
+        # High-contrast solid code is filtered under the pointer inside a
+        # link, as a high-contrast solid button is.
+        {
+            "variant": ["solid"],
+            "high_contrast": [True],
+            "inside": [None, "link"],
+            "state": [HOVER],
+            "appearance": ["light", DARK],
+        },
         {
             "size": {"responsive": rx.breakpoints(initial="1", sm="6", lg="3")},
             "viewport": [520, 800, 1280],

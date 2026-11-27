@@ -14,6 +14,7 @@ from reflex_components_ui.themes import (
     ThemeStyles,
     app_theme_styles,
     color_scheme_styles,
+    radius_styles,
     theme_styles,
 )
 
@@ -727,3 +728,54 @@ def test_import_dict_names_the_modules_as_an_app_imports_them():
         ],
         "$/reflex-ui/themes/theme.js": [ImportVar(tag="theme", alias="reflexUITheme")],
     }
+
+
+def test_radius_styles_of_a_component():
+    """A radius on one element is its theme, and the steps that read it."""
+    full = ThemeStyles(
+        classes="reflexUIClasses_4c7cd6a7ce",
+        imports=(
+            HELPER_IMPORT,
+            ("themes/radius.js", "radiusFull", None),
+            ("themes/scope.js", "radiusScope", None),
+        ),
+        declarations=(
+            (
+                "const reflexUIClasses_4c7cd6a7ce = "
+                "reflexUIClassName(radiusScope, radiusFull);"
+            ),
+        ),
+    )
+    assert radius_styles("rx.ui.button", "full") == full
+    assert radius_styles("rx.ui.button", LiteralVar.create("full")) == full
+    with pytest.raises(ThemeError) as error:
+        radius_styles("rx.ui.button", "round")
+    assert str(error.value) == (
+        'rx.ui.button: unknown radius "round". The values are "none", "small", '
+        '"medium", "large", "full".'
+    )
+
+
+def test_radius_bound_to_state_indexes_a_table_of_class_names():
+    """Every radius is imported, and joined with the steps when the module loads."""
+    styles = radius_styles("rx.ui.button", ThemeState.radius)
+    assert styles.classes == f"reflexUIElementRadii[{ThemeState.radius!s}]"
+    assert styles.imports == (
+        HELPER_IMPORT,
+        ("themes/radius.js", "radiusFull", None),
+        ("themes/radius.js", "radiusLarge", None),
+        ("themes/radius.js", "radiusMedium", None),
+        ("themes/radius.js", "radiusNone", None),
+        ("themes/radius.js", "radiusSmall", None),
+        ("themes/scope.js", "radiusScope", None),
+    )
+    assert styles.declarations == (
+        _map(
+            "reflexUIElementRadii",
+            {
+                name: f"reflexUIClassName(radiusScope, radius{name.capitalize()})"
+                for name in _radix_tokens.RADIUS_THEMES
+            },
+        ),
+    )
+    assert [var.equals(ThemeState.radius) for var in styles.vars] == [True]

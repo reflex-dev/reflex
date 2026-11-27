@@ -31,6 +31,7 @@ src/reflex_components_ui/   the python package: the rx.ui namespace
   style/lower.py, merge.py  the styles a user writes to the ones StyleX compiles
   style/emit.py             merged styles to the statements of a module
   styles/                   the look of each component, one table per module
+  styles/appearance.py      by_appearance: a value that is no color, light and dark
   layout/                   the layout components, rx.ui.theme among them
   typography/               text, heading, code, blockquote, link
   components/               the other components: separator, inset, aspect_ratio
@@ -92,6 +93,7 @@ runtime**:
 | `variant=State.kind` | One style per value of that prop, folded into a table of class names the element indexes: `sx_…_c + " " + (sx_…_0[state.kind] ?? sx_…_0d)` |
 | `style=State.style_dict` | The inline `style` of the element; conditions are not available |
 | `margin="0 auto"` | Its longhands |
+| `animation_name=keyframes({...})` | A `stylex.keyframes` statement beside the declaration, which StyleX folds into the name of the animation |
 | `"& > div": {...}`, `paddng="1em"` | A `StyleError` where the component is created |
 
 What follows from it:
@@ -125,10 +127,20 @@ element's `style`), then Tailwind's `components` and `utilities`. Unlayered
 CSS, such as an app's stylesheet, Emotion and Radix Themes, beats all of them.
 
 It also holds what Radix Themes styles through a selector that a class on an
-element cannot express: the selection color inside a theme, in the layer
-`reflex-ui.base` so that a component's own style beats it, and the
-`@font-face` rules of the system fonts whose metrics Radix adjusts, which
-`js/tests/base-css.test.js` keeps equal to the ones of `@radix-ui/themes`.
+element cannot express: the selection color inside a theme and the opacity a
+button gives the icons inside it (`--rx-icon-opacity`, read by every `svg` of
+a theme and nothing to one outside a button), in the layer `reflex-ui.base`
+so that a component's own style beats them, and the `@font-face` rules of the
+system fonts whose metrics Radix adjusts, which `js/tests/base-css.test.js`
+keeps equal to the ones of `@radix-ui/themes`.
+
+And it says which appearance an element has to what `light-dark()` cannot
+choose between. `--rx-if-light` and `--rx-if-dark` are set wherever the
+classes `light` and `dark` are (the root, and the element around a theme with
+an appearance): the one of the current appearance is invalid and the other is
+empty, so `var(--rx-if-light, brightness(0.92)) var(--rx-if-dark,
+brightness(1.08))` is the filter of the appearance alone. A table writes it
+`by_appearance(light, dark)`, from `styles/appearance.py`.
 `-webkit-text-size-adjust` is not there: the build adds the prefixed property
 beside the one `themes/theme.js` sets.
 
@@ -222,12 +234,42 @@ class Button(UIComponent, elements.Button):
 - **`color_scheme`** is read by a table as `"true"` when the element has a
   color: `"variants": {"color_scheme": {"true": {...}}}`. The tokens of the
   accent resolve against that color, so a table never needs to know which.
+- **`radius`**, on a component with that field, is the radius of the element
+  itself, as `data-radius` is in Radix Themes: the theme of that radius and
+  the steps of the radius scale, applied like the accent of a `color_scheme`.
+  Declare the field (`Var[LiteralRadius]`) and write the table with
+  `tokens.radius`.
 - **What Radix Themes selects by ancestor**, a class on an element cannot: a
   link inside colored text, high-contrast text inside a colored element, code
   inside a link. The ancestor hands the value down in a custom property and
   the descendant reads it with a fallback, as `styles/typography.py` does.
   Every component with a `color_scheme` spreads `ACCENT_SCOPE` into that
   variant.
+- **What Radix Themes resets on children**: a ghost button or card, and an
+  inset, take their padding back with negative margins, which Radix computes
+  through `--margin-*-override` properties that it has to reset on every
+  child. Here the margins are written on the element itself (`calc(0px -
+  <padding>)`) and nothing is handed down, so there is nothing to reset:
+  no rx.ui element reads an inherited margin.
+- **States**: a rule under `@media (hover: hover)` is placed after the ones
+  for `:active` and `:focus-visible`, and a rule on an attribute
+  (`[data-disabled]`) after every pseudo-class, whatever the order of the
+  table. Where Radix lets a later rule win, make the conditions exclusive
+  instead: `":hover:not(:active)"`, as `styles/button.py` does.
+- **Pseudo-elements** (`_before`, `_after`) are the outermost block, with
+  their states inside: `"_after": {"@media (hover: hover)": {":hover:not(:active)":
+  {...}}}`. A style merged later keeps what the earlier one gives a
+  pseudo-element and replaces everything else of a property it sets, its
+  conditions included, so a variant that changes the rules of several states
+  (high contrast) is the table of its variant merged block by block when the
+  table is built (`_over` in `styles/button.py`), listed as a compound style.
+- **A value that differs between the appearances** and is no color, such as a
+  filter or the layers of a shadow, is `by_appearance(light, dark)`.
+- **Animations**: `"animation_name": keyframes({"from": {...}, "to": {...}})`
+  with the longhands beside it (`animation_duration`...), as StyleX drops the
+  `animation` shorthand. Equal keyframes are declared once per module. Radix
+  Themes does not change the spinner, the skeleton or the progress bar for
+  `prefers-reduced-motion`, so neither do these.
 - **Styles a class adds**: `add_style`, as in any component, applies after the
   layout props and before the styles of the app. `rx.ui.center` centers that
   way, so that `align` and `justify` lose to it as they do in `rx.center`.
@@ -292,6 +334,7 @@ What lowering does to each input:
 | Layout props (`p`, `m`, `gap`, `columns`, `direction`...) | Styles, with steps of the space scale as `var(--space-N)`, and a value per breakpoint on the breakpoints of Radix Themes |
 | A shorthand bound to state, or holding `var(...)` | Kept whole; it removes its longhands from the styles before it |
 | `None` | The property is unset |
+| `keyframes({...})` as `animation_name` | A `Keyframes`: its frames lowered, compared and hashed by content |
 | A nested selector, an unknown property, `animation` | `StyleError` |
 
 Styles merge by property and the last one wins: base, variants, compound
@@ -302,7 +345,8 @@ else; one that sets it outright replaces the earlier conditions too.
 
 StyleX silently drops `border`, `border_top` and its siblings, `background`
 and `animation`, which is why the first two are always split and the third is
-refused. A split needs the value while compiling, so `background=State.color`
+refused: an animation is its longhands, and `keyframes(frames)` as its
+`animation_name`, in a table or in the `style` of an element. A split needs the value while compiling, so `background=State.color`
 is an error that says to bind `background_color`, and a `background` with more
 than a color or an image is one that names its longhands.
 

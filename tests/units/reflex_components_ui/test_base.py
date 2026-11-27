@@ -1,5 +1,6 @@
 """Tests for reflex_components_ui.base."""
 
+import json
 from collections.abc import Callable
 from typing import Any, ClassVar, Literal
 
@@ -9,6 +10,7 @@ from reflex_base.components.dynamic import _RENDERING_DYNAMIC_COMPONENT
 from reflex_base.components.memo import MEMOS
 from reflex_base.config import get_config
 from reflex_base.plugins import CompileContext
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import ConfigError
 from reflex_base.utils.serializers import serialize
 from reflex_base.vars.base import Var
@@ -21,6 +23,7 @@ from reflex_components_ui.themes import LiteralAccentColor, ThemeError
 
 import reflex as rx
 from reflex.compiler import compiler
+from reflex.compiler import utils as compiler_utils
 from reflex.compiler.plugins.builtin import ApplyStylePlugin
 
 # A page whose elements use the tokens of two modules, two of them equally.
@@ -700,6 +703,58 @@ def test_dynamic_component_falls_back_to_an_inline_style():
         "hello", kind="soft", style={"padding": "4px", "z_index": 2}, class_name="p-8"
     )
     assert serialize(component) == DYNAMIC_MODULE
+
+
+def _soft_button() -> UIComponent:
+    """Create the button the dynamic module above renders.
+
+    Returns:
+        The button.
+    """
+    return Button.create(
+        "hello", kind="soft", style={"padding": "4px", "z_index": 2}, class_name="p-8"
+    )
+
+
+def test_dynamic_component_whose_imports_a_page_read_never_imports_stylex():
+    """The imports of a page and of code for the browser are kept apart."""
+    component = _soft_button()
+    assert list(component._get_all_imports()) == ["@stylexjs/stylex"]
+    assert serialize(component) == DYNAMIC_MODULE
+    assert list(component._get_all_imports()) == ["@stylexjs/stylex"]
+
+
+def test_page_imports_stylex_for_a_component_that_was_serialized_first():
+    """Serializing a component for the browser does not empty its page imports."""
+    component = _soft_button()
+    assert serialize(component) == DYNAMIC_MODULE
+    assert list(component._get_all_imports()) == ["@stylexjs/stylex"]
+
+
+def test_initial_state_reads_the_imports_of_a_dynamic_component(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A component in the initial state hands StyleX to neither npm nor the browser.
+
+    Args:
+        monkeypatch: The pytest fixture that undoes the change.
+    """
+    component = _soft_button()
+    monkeypatch.setattr(
+        compiler_utils, "compile_state", lambda state: {"state": {"held": component}}
+    )
+    libraries = RegistrationContext.ensure_context().bundled_libraries
+    before = list(libraries)
+    component_imports: dict[str, Any] = {}
+    try:
+        _, initial_state = compiler_utils._compile_initial_state(
+            rx.State, component_imports=component_imports
+        )
+        assert component_imports == {}
+        assert libraries == before
+    finally:
+        libraries[:] = before
+    assert initial_state == json.dumps({"state": {"held": DYNAMIC_MODULE}})
 
 
 @pytest.mark.parametrize(
