@@ -5636,16 +5636,25 @@ def test_client_error_constants_match_frontend():
     Nothing at runtime keeps the two definitions in sync, so pin them here.
     """
     state_js = (Templates.Dirs.WEB_TEMPLATE / "utils/state.js").read_text()
+    declarations = dict(
+        re.findall(r'^const ([A-Z0-9_]+) = "([^"\n]+)";$', state_js, re.MULTILINE)
+    )
+    assert declarations["CLIENT_ERROR_EVENT"] == constants.SocketEvent.CLIENT_ERROR
     assert (
-        f'const CLIENT_ERROR_EVENT = "{constants.SocketEvent.CLIENT_ERROR}"' in state_js
+        declarations["ERROR_TYPE_DISPATCH_MISSING"]
+        == constants.ClientErrorType.DISPATCH_MISSING
     )
     assert (
-        f'const ERROR_TYPE_DISPATCH_MISSING = "{constants.ClientErrorType.DISPATCH_MISSING}"'
-        in state_js
+        declarations["ERROR_TYPE_STATE_UPDATE"]
+        == constants.ClientErrorType.STATE_UPDATE
     )
     assert (
-        f'const ERROR_TYPE_STATE_UPDATE = "{constants.ClientErrorType.STATE_UPDATE}"'
-        in state_js
+        declarations["ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE"]
+        == constants.ClientErrorType.HYDRATION_PAYLOAD_TOO_LARGE
+    )
+    assert (
+        declarations["ERROR_TYPE_STORAGE_BLOCKED"]
+        == constants.ClientErrorType.STORAGE_BLOCKED
     )
 
 

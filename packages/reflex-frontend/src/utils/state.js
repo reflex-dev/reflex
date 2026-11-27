@@ -52,6 +52,7 @@ const STATE_MISMATCH_WINDOW_EVENT = "reflex:state-mismatch";
 const ERROR_TYPE_DISPATCH_MISSING = "dispatch_function_missing";
 const ERROR_TYPE_STATE_UPDATE = "state_update_processing_error";
 const ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE = "hydration_payload_too_large";
+const ERROR_TYPE_STORAGE_BLOCKED = "storage_blocked";
 
 // These hostnames indicate that the backend and frontend are reachable via the same domain.
 // They are compared with URL.hostname, which gives an IPv6 address in brackets
@@ -146,6 +147,21 @@ export const generateUUID = () => {
 };
 
 /**
+ * Build the connection error reported when the browser blocks site storage.
+ * @param {unknown} cause The underlying storage error thrown by the browser.
+ * @returns {Error & { code?: string }} The tagged error.
+ */
+const storageBlockedError = (cause) => {
+  /** @type {Error & { code?: string }} */
+  const error = new Error(
+    "Site storage is blocked by the browser. Allow cookies and site data for this site and reload.",
+    { cause },
+  );
+  error.code = ERROR_TYPE_STORAGE_BLOCKED;
+  return error;
+};
+
+/**
  * Get the token for the current session.
  * @returns The token.
  */
@@ -154,10 +170,15 @@ export const getToken = () => {
     return token;
   }
   if (typeof window !== "undefined") {
-    token =
-      window.sessionStorage.getItem(clientTokenStorageKey()) ||
-      window.sessionStorage.getItem(LEGACY_TOKEN_STORAGE_KEY) ||
-      "";
+    const key = clientTokenStorageKey();
+    try {
+      token =
+        window.sessionStorage.getItem(key) ||
+        window.sessionStorage.getItem(LEGACY_TOKEN_STORAGE_KEY) ||
+        "";
+    } catch (error) {
+      throw storageBlockedError(error);
+    }
   }
   return token || "";
 };
@@ -208,7 +229,15 @@ const sessionRefreshStorageKey = () => `${sessionStorageKey()}:expires_at`;
 /** Store only the non-secret tab routing token in JavaScript-accessible storage. */
 const setToken = (value) => {
   token = value;
-  window.sessionStorage.setItem(clientTokenStorageKey(), value);
+  const key = clientTokenStorageKey();
+  try {
+    window.sessionStorage.setItem(key, value);
+  } catch (error) {
+    if (error?.name === "SecurityError") {
+      throw storageBlockedError(error);
+    }
+    throw error;
+  }
 };
 
 /** Wait until credentialed HTTP calls can use the initial session cookie. */
@@ -1167,6 +1196,7 @@ const handleStateMismatch = (info) => {
  * @param client_storage The client storage object from context.js
  * @param navigate The navigate function from React Router
  * @param params The params object from React Router
+ * @returns {Promise<(() => void) | undefined>} Cleanup function to stop watching visibility, if registered.
  */
 export const connect = async (
   socket,
@@ -1196,7 +1226,18 @@ export const connect = async (
   // the state schema goes along on every (re)connect, since a reconnect can
   // land on another backend version.
   const bootAuth = (first) => (callback) => {
-    const boot_event = withRouterData(app.initialEvents(first)[0], params);
+    let boot_event;
+    try {
+      boot_event = withRouterData(app.initialEvents(first)[0], params);
+    } catch (error) {
+      // Blocked storage during hydration cannot build the CONNECT auth payload:
+      // report it and abort this pending attempt without scheduling a retry.
+      releaseBootstrap();
+      currentSocket.wait_connect = false;
+      setConnectErrors((errors) => [...errors.slice(-9), error]);
+      currentSocket.disconnect();
+      return;
+    }
     bootRoute = currentRouteKey();
     recordSentStorageValues(boot_event);
     // Instrumentation hook (installed by reflex-otel): may add a traceparent.
@@ -1245,10 +1286,16 @@ export const connect = async (
   };
   // Ask for a new credential once the wait has passed. A browser runs a timer
   // over 2**31 - 1 ms with no delay, so the wait is capped.
-  const scheduleSessionRefresh = (
-    wait = Number(window.localStorage.getItem(sessionRefreshStorageKey())) -
-      Date.now(),
-  ) => {
+  const scheduleSessionRefresh = (wait) => {
+    if (wait === undefined) {
+      try {
+        wait =
+          Number(window.localStorage.getItem(sessionRefreshStorageKey())) -
+          Date.now();
+      } catch {
+        wait = 0;
+      }
+    }
     window.clearTimeout(sessionTimer);
     if (wait > 0) {
       sessionTimer = window.setTimeout(
@@ -1344,13 +1391,15 @@ export const connect = async (
         current.connect();
       };
       const key = sessionStorageKey();
-      if (
-        window.navigator?.locks &&
-        !(
+      let refreshDue = false;
+      try {
+        refreshDue =
           Number(window.localStorage.getItem(sessionRefreshStorageKey())) >
-          Date.now()
-        )
-      ) {
+          Date.now();
+      } catch {
+        // The refresh time is only a hint; fall back to acquiring the lock.
+      }
+      if (window.navigator?.locks && !refreshDue) {
         // Only cold tabs wait. The first socket hydrates while its in-band
         // credential becomes a cookie; the next tab then shares that cookie.
         window.navigator.locks
@@ -1372,12 +1421,6 @@ export const connect = async (
   };
 
   function checkVisibility() {
-    if (!socket.current) {
-      // The socket was released without stopWatchingVisibility being called.
-      // Connecting here would open a socket nothing listens to any more.
-      document.removeEventListener("visibilitychange", checkVisibility);
-      return;
-    }
     if (document.visibilityState === "visible") {
       if (!socket.current.connected) {
         console.log("Socket is disconnected, attempting to reconnect ");
@@ -1578,7 +1621,11 @@ export const connect = async (
     }
   });
   socket.current.on("new_token", async (new_token) => {
-    setToken(new_token);
+    try {
+      setToken(new_token);
+    } catch (error) {
+      setConnectErrors((errors) => [...errors.slice(-9), error]);
+    }
   });
   socket.current.on(SESSION_REFRESH_EVENT, requestSessionRefresh);
   socket.current.on("session_token", async (sessionCredential) => {
@@ -1626,7 +1673,11 @@ export const connect = async (
       }
     } catch (error) {
       if (sessionController !== controller) return;
-      window.localStorage.removeItem(sessionRefreshStorageKey());
+      try {
+        window.localStorage.removeItem(sessionRefreshStorageKey());
+      } catch {
+        // Local storage may be blocked too; keep reporting the error below.
+      }
       if (error.status === 403) {
         // The backend does not trust this page's origin, so a retry gets the
         // same answer. The socket works without the cookie: release HTTP calls.
@@ -1656,12 +1707,15 @@ export const connect = async (
 
   socket.current.on(STATE_MISMATCH_EVENT, handleStateMismatch);
 
-  document.addEventListener("visibilitychange", checkVisibility);
-  // Called by whoever releases the socket: the listener lives on the document,
-  // so it would otherwise outlive the socket and everything it closes over.
-  socket.current.stopWatchingVisibility = () =>
-    document.removeEventListener("visibilitychange", checkVisibility);
   await socket.current.reconnect();
+  if (socket.current !== currentSocket) {
+    return;
+  }
+  document.addEventListener("visibilitychange", checkVisibility);
+  // Returned to whoever owns the socket ref: the listener lives on the
+  // document, so it must be removed before the ref is cleared.
+  return () =>
+    document.removeEventListener("visibilitychange", checkVisibility);
 };
 
 /**
@@ -1757,25 +1811,33 @@ export const hydrateClientStorage = (client_storage) => {
     }
   }
   if (client_storage.local_storage && typeof window !== "undefined") {
-    for (const state_key in client_storage.local_storage) {
-      const options = client_storage.local_storage[state_key];
-      const local_storage_value = localStorage.getItem(
-        options.name || state_key,
-      );
-      if (local_storage_value !== null) {
-        client_storage_values[state_key] = local_storage_value;
+    try {
+      for (const state_key in client_storage.local_storage) {
+        const options = client_storage.local_storage[state_key];
+        const local_storage_value = localStorage.getItem(
+          options.name || state_key,
+        );
+        if (local_storage_value !== null) {
+          client_storage_values[state_key] = local_storage_value;
+        }
       }
+    } catch (error) {
+      throw storageBlockedError(error);
     }
   }
   if (client_storage.session_storage && typeof window !== "undefined") {
-    for (const state_key in client_storage.session_storage) {
-      const session_options = client_storage.session_storage[state_key];
-      const session_storage_value = sessionStorage.getItem(
-        session_options.name || state_key,
-      );
-      if (session_storage_value != null) {
-        client_storage_values[state_key] = session_storage_value;
+    try {
+      for (const state_key in client_storage.session_storage) {
+        const session_options = client_storage.session_storage[state_key];
+        const session_storage_value = sessionStorage.getItem(
+          session_options.name || state_key,
+        );
+        if (session_storage_value != null) {
+          client_storage_values[state_key] = session_storage_value;
+        }
       }
+    } catch (error) {
+      throw storageBlockedError(error);
     }
   }
   if (
@@ -1911,6 +1973,7 @@ export const useEventLoop = (
   client_storage = {},
 ) => {
   const socket = useRef(null);
+  const stopWatchingVisibility = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
   const paramsR = useParams();
@@ -1950,7 +2013,7 @@ export const useEventLoop = (
         !socket.current?.connected
       ) {
         // Initialize the websocket connection.
-        await connect(
+        const connecting = connect(
           socket,
           dispatch,
           [env.TRANSPORT],
@@ -1959,6 +2022,15 @@ export const useEventLoop = (
           navigate,
           params,
         );
+        const currentSocket = socket.current;
+        const stop = await connecting;
+        if (stop) {
+          if (mounted.current && socket.current === currentSocket) {
+            stopWatchingVisibility.current = stop;
+          } else {
+            stop();
+          }
+        }
       }
     } catch (error) {
       // A connection that cannot even be attempted (the browser blocks the
@@ -2048,11 +2120,12 @@ export const useEventLoop = (
     // Cleanup function.
     return () => {
       mounted.current = false;
+      stopWatchingVisibility.current?.();
+      stopWatchingVisibility.current = null;
       if (socket.current) {
         socket.current.releaseSessionBootstrap?.();
         socket.current.disconnect();
         socket.current.off();
-        socket.current.stopWatchingVisibility();
         socket.current = null;
       }
     };

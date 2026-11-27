@@ -114,8 +114,8 @@ beforeEach(async () => {
 afterEach(() => {
   // Release what a mounted loop's cleanup would, so no listener of this test
   // answers an event dispatched by the next.
-  for (const socketRef of looseSockets) {
-    socketRef.current?.stopWatchingVisibility();
+  for (const { socketRef, stopWatchingVisibility } of looseSockets) {
+    stopWatchingVisibility?.();
     socketRef.current = null;
   }
   vi.restoreAllMocks();
@@ -125,7 +125,7 @@ afterEach(() => {
 /** Connect a socket the way the mounted event loop does. */
 const connectSocket = async () => {
   const socketRef = { current: null };
-  await state.connect(
+  const stopWatchingVisibility = await state.connect(
     socketRef,
     {},
     ["websocket"],
@@ -134,7 +134,7 @@ const connectSocket = async () => {
     navigate,
     params,
   );
-  looseSockets.push(socketRef);
+  looseSockets.push({ socketRef, stopWatchingVisibility });
   return socketRef;
 };
 
@@ -280,6 +280,7 @@ test("a mounted event loop reconnects its socket when the page becomes visible",
 
   expect(socket.connect).toHaveBeenCalledTimes(1);
   expect(io).toHaveBeenCalledTimes(1);
+  expect(socket.stopWatchingVisibility).toBeUndefined();
   await loop.unmount();
 });
 
@@ -307,6 +308,59 @@ test("a connection that cannot be attempted is a connection error, not a rejecti
 
   expect(rejections).toEqual([]);
   expect(io).not.toHaveBeenCalled();
-  expect(loop.connectErrors().at(-1)).toBe(denied);
+  const error = loop.connectErrors().at(-1);
+  expect(error.code).toBe("storage_blocked");
+  expect(error.cause).toBe(denied);
+  expect(error.message).toBe(
+    "Site storage is blocked by the browser. Allow cookies and site data for this site and reload.",
+  );
+  await loop.unmount();
+});
+
+test("an unmounted loop during connect does not leave a visibility listener", async () => {
+  const added = vi.spyOn(document, "addEventListener");
+  const dispatch = {};
+  const Probe = () => {
+    state.useEventLoop(dispatch);
+    return null;
+  };
+  const container = document.body.appendChild(document.createElement("div"));
+  const root = createRoot(container);
+  act(() => {
+    root.render(createElement(MemoryRouter, null, createElement(Probe)));
+  });
+  act(() => {
+    root.unmount();
+  });
+  await Promise.resolve();
+
+  expect(
+    added.mock.calls.filter(([type]) => type === "visibilitychange"),
+  ).toEqual([]);
+});
+
+test("blocked sessionStorage during new_token records storage_blocked instead of rejecting", async () => {
+  const loop = await mountEventLoop();
+  const denied = new DOMException("blocked", "SecurityError");
+  vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+    throw denied;
+  });
+
+  const rejections = [];
+  const record = (reason) => rejections.push(reason);
+  process.on("unhandledRejection", record);
+
+  await act(async () => {
+    await loop.socket.trigger("new_token", "next-token");
+  });
+  process.off("unhandledRejection", record);
+
+  expect(rejections).toEqual([]);
+  const error = loop.connectErrors().at(-1);
+  expect(error.code).toBe("storage_blocked");
+  expect(error.cause).toBe(denied);
+  expect(error.message).toBe(
+    "Site storage is blocked by the browser. Allow cookies and site data for this site and reload.",
+  );
   await loop.unmount();
 });

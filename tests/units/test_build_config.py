@@ -463,6 +463,19 @@ def test_reflex_base_refuses_to_build_without_a_frontend(
     )
 
 
+def test_reflex_base_refuses_to_build_with_incomplete_embedded_frontend(
+    reflex_base_checkout: Path, tmp_path: Path
+):
+    """A leftover `.templates/web/.DS_Store` does not count as an sdist's copy."""
+    frontend = reflex_base_checkout.parent / "reflex-frontend"
+    shutil.rmtree(frontend)
+    leftover = reflex_base_checkout / "src" / WEB_TEMPLATE
+    leftover.mkdir(parents=True)
+    (leftover / ".DS_Store").write_text("")
+    with pytest.raises(FileNotFoundError):
+        build_wheel(reflex_base_checkout, tmp_path / "dist")
+
+
 def test_frontend_package_is_where_the_build_hook_looks():
     """The hook and the checkout fallback both assume this location."""
     frontend = REFLEX_BASE.parent / "reflex-frontend"

@@ -7,7 +7,11 @@ from datetime import timedelta
 from reflex_base import constants
 from reflex_base.components.component import Component
 from reflex_base.constants import Dirs, Hooks, Imports
-from reflex_base.constants.compiler import CompileVars
+from reflex_base.constants.compiler import (
+    CompileVars,
+    MemoizationDisposition,
+    MemoizationMode,
+)
 from reflex_base.environment import environment
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
@@ -54,6 +58,14 @@ has_hydration_payload_error = Var(
     _var_data=connect_error_var_data,
 ).to(BooleanVar)
 
+has_storage_blocked_error = Var(
+    _js_expr=(
+        "((connectErrors.length > 0) && "
+        f"(connectErrors[connectErrors.length - 1].code === '{constants.ClientErrorType.STORAGE_BLOCKED}'))"
+    ),
+    _var_data=connect_error_var_data,
+).to(BooleanVar)
+
 
 class WebsocketTargetURL(Var):
     """A component that renders the websocket target URL."""
@@ -84,10 +96,16 @@ def default_connection_error() -> list[str | Var | Component]:
         The default connection error message.
     """
     return [
-        "Cannot connect to server: ",
-        connection_error,
-        ". Check if server is reachable at ",
-        WebsocketTargetURL.create(),
+        cond(
+            has_storage_blocked_error | has_hydration_payload_error,
+            connection_error,
+            Fragment.create(
+                "Cannot connect to server: ",
+                connection_error,
+                ". Check if server is reachable at ",
+                WebsocketTargetURL.create(),
+            ),
+        ),
     ]
 
 
@@ -103,6 +121,7 @@ class ConnectionToaster(Fragment):
         toast_id = "websocket-error"
         # Its own id, so a pending dismiss of the connection toast cannot remove it.
         hydration_toast_id = "hydration-payload-error"
+        storage_blocked_toast_id = "storage-blocked-error"
         target_url = WebsocketTargetURL.create()
         props = ToastProps(
             description=LiteralVar.create(
@@ -168,11 +187,16 @@ setTimeout(() => {{
 () => {{
     if ({has_hydration_payload_error!s}) {{
         toast?.error({connection_error!s}, {{id: "{hydration_toast_id}", closeButton: true, duration: Infinity}});
+    }} else if ({has_storage_blocked_error!s}) {{
+        toast?.dismiss("{toast_id}");
+        toast?.error({connection_error!s}, {{id: "{storage_blocked_toast_id}", closeButton: true, duration: Infinity}});
     }} else if ({has_too_many_connection_errors!s}) {{
+        toast?.dismiss("{storage_blocked_toast_id}");
         if (!userDismissed) {{
             {toast_var!s}
         }}
     }} else {{
+        toast?.dismiss("{storage_blocked_toast_id}");
         toast?.dismiss("{toast_id}");
         setUserDismissed(false);  // after reconnection reset dismissed state
     }}
@@ -248,15 +272,59 @@ class ConnectionModal(Component):
         """
         if not comp:
             comp = el.span(*default_connection_error())
-        return cond(
-            has_too_many_connection_errors,
-            el.dialog(
-                el.h2("Connection Error"),
-                comp,
-                open=has_too_many_connection_errors,
-                z_index=9999,
+        has_modal_error = (
+            has_too_many_connection_errors
+            | has_storage_blocked_error
+            | has_hydration_payload_error
+        )
+        modal_dismissed_var_data = VarData.merge(
+            has_modal_error._get_all_var_data(),
+            VarData(
+                imports={"react": ("useEffect", "useState")},
+                hooks={
+                    "const [modalDismissed, setModalDismissed] = useState(false);": None,
+                    f"useEffect(() => {{ if (!({has_modal_error!s})) {{ setModalDismissed(false); }} }}, [connectErrors]);": None,
+                },
             ),
         )
+        modal_dismissed = Var(
+            "modalDismissed",
+            _var_type=bool,
+            _var_data=modal_dismissed_var_data,
+        ).to(BooleanVar)
+        show_modal = has_modal_error & ~modal_dismissed
+        close_button = el.button(
+            "Close",
+            type="button",
+            custom_attrs={
+                "on_click": Var(
+                    _js_expr="() => setModalDismissed(true)",
+                    _var_data=modal_dismissed_var_data,
+                ),
+            },
+        )
+        close_row = el.div(close_button, margin_top="0.75rem")
+        dialog = el.dialog(
+            el.h2("Connection Error"),
+            comp,
+            close_row,
+            open=show_modal,
+            z_index=9999,
+        )
+        modal = cond(show_modal, dialog)
+        # Keep the modal chrome in one component scope without suppressing auto-memoization
+        # of caller-supplied `comp`, so custom `on_mount`/`on_unmount` stay scoped to `comp`.
+        modal_cond = modal.children[0]
+        true_branch = (
+            modal_cond.children[0]
+            if isinstance(modal_cond, Component) and modal_cond.children
+            else None
+        )
+        unmemoized = MemoizationMode(disposition=MemoizationDisposition.NEVER)
+        for chrome in (modal, modal_cond, true_branch, dialog, close_row, close_button):
+            if isinstance(chrome, Component):
+                chrome._memoization_mode = unmemoized
+        return modal
 
 
 class WifiOffPulse(Icon):

@@ -38,7 +38,7 @@ class FrontendBuildHook(BuildHookInterface):
         if frontend.is_dir():
             prefix = "src/" if self.target_name == "sdist" else ""
             build_data["force_include"][str(frontend)] = prefix + WEB_TEMPLATE
-        elif not (root / "src" / WEB_TEMPLATE).is_dir():
+        elif not (root / "src" / WEB_TEMPLATE / "utils" / "state.js").is_file():
             msg = (
                 f"No frontend to embed: neither {frontend} nor an sdist's copy exists."
             )
