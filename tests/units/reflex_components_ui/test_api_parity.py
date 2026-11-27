@@ -138,6 +138,7 @@ def test_every_wave_is_in_the_namespace():
         "progress",
         "section",
         "separator",
+        "skeleton",
         "spacer",
         "spinner",
         "stack",

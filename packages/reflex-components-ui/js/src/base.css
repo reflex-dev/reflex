@@ -70,6 +70,14 @@ html.dark {
   [data-rx-callout] > * {
     grid-column-start: -1;
   }
+
+  /*
+   * What a skeleton stands in for keeps its place and is not shown, whatever
+   * the elements inside are.
+   */
+  [data-rx-skeleton] > * {
+    visibility: hidden !important;
+  }
 }
 
 /*
