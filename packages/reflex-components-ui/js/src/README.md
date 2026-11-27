@@ -12,6 +12,9 @@ is overwritten.
   cannot fold them into a string: on an element that carries a theme.
 - `colors/`, `tokens/` and `themes/` are the design tokens and the themes, as
   StyleX modules: a module adds its CSS when a page imports it.
+- `behaviors/` holds the little a component needs a script for, each in a
+  module a page imports only with that component: `image-status.js` tells an
+  avatar how the load of its image ended.
 - `vite-plugin-stylex.js` is the plugin `vite.config.js` loads to compile the
   styles.
 

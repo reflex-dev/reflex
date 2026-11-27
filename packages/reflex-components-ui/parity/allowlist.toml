@@ -36,3 +36,21 @@ check = "style"
 cells = "*orientation-responsive*"
 properties = ["flex-direction", "align-items", "grid-template-columns", "grid-column-start", "width"]
 reason = "When the orientation of rx.data_list changes at a breakpoint, Radix Themes keeps what the orientation before it declared and the new one does not: the direction of a column on the grid of a horizontal list, and the columns and the baseline alignment of a grid on the items of a vertical one, whose labels and values are then as wide as their text. rx.ui.data_list gives each breakpoint the styles of its orientation alone, so a list that turns vertical is the vertical list: labels and values are as wide as the list. Nothing is drawn differently."
+
+[[contract]]
+component = "avatar"
+step = "the fallback is in the server render"
+system = "rx"
+reason = "rx.avatar renders its fallback and its image once JavaScript has run: the server sends an empty placeholder. rx.ui.avatar sends both, so the page shows the avatar before it is hydrated."
+
+[[contract]]
+component = "avatar"
+step = "shows a loaded image and the fallback without JavaScript"
+system = "rx"
+reason = "rx.avatar shows neither its image nor its fallback with JavaScript disabled. rx.ui.avatar shows the fallback, and the image over it once it has loaded; only an image that fails needs JavaScript to give way to the fallback."
+
+[[look]]
+component = "avatar"
+check = "pixels"
+cells = "size-responsive-large@800"
+reason = "When the size of rx.avatar grows at a breakpoint from one of the four small sizes to a larger one, Radix Themes keeps the smaller letters the small size has for a fallback of two letters. rx.ui.avatar gives the two letters the size they have in an avatar of the larger size alone."

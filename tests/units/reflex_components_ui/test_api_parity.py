@@ -104,6 +104,7 @@ def differences(component: str) -> list[ApiDifference]:
 def test_every_wave_is_in_the_namespace():
     assert COMPONENTS == [
         "aspect_ratio",
+        "avatar",
         "badge",
         "blockquote",
         "box",
