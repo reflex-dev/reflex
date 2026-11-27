@@ -22,6 +22,7 @@ from reflex_components_ui.style.lower import (
     StyleError,
     apply_layer,
     finish,
+    keyframes,
     lower,
     lower_layer,
 )
@@ -1506,3 +1507,96 @@ def test_layout_props_keep_the_breakpoints_of_radix_whatever_the_app_has():
         "rowGap": {"default": "var(--space-1)", PROP_XS: "var(--space-3)"},
         "width": {"@media screen and (min-width: 20px)": "2px"},
     }
+
+
+FADE = keyframes({
+    "from": {"opacity": 1, "background_color": tokens.accent[9]},
+    "50%": {"margin_x": "2px"},
+    "to": {"opacity": 0.25},
+})
+
+
+def test_keyframes_lower_each_frame_and_compare_by_content():
+    """Frames are lowered like any style, and equal keyframes are one animation."""
+    assert FADE.source == (
+        '{"from": {"opacity": 1, "backgroundColor": "var(--accent-9)"}, '
+        '"50%": {"marginLeft": "2px", "marginRight": "2px"}, '
+        '"to": {"opacity": 0.25}}'
+    )
+    assert FADE.imports == ("$/reflex-ui/tokens/accent.stylex.js",)
+    again = keyframes({
+        "from": {"opacity": 1, "background_color": tokens.accent[9]},
+        "50%": {"margin_x": "2px"},
+        "to": {"opacity": 0.25},
+    })
+    assert again == FADE
+    assert hash(again) == hash(FADE)
+    assert again != keyframes({"from": {"opacity": 1}})
+    assert repr(keyframes({"to": {"top": "0"}})) == (
+        """Keyframes('{"to": {"top": "0"}}', ())"""
+    )
+
+
+def test_keyframes_are_the_value_of_animation_name():
+    """The style that plays keyframes imports what their frames use."""
+    lowered = lower(
+        "rx.ui.spinner",
+        {
+            "animation_name": {
+                "default": FADE,
+                "@media (prefers-reduced-motion: reduce)": "none",
+            },
+            "animation_duration": "800ms",
+        },
+    )
+    assert lowered.style == {
+        "animationName": {
+            "default": FADE,
+            "@media (prefers-reduced-motion: reduce)": "none",
+        },
+        "animationDuration": "800ms",
+    }
+    assert lowered.imports == ("$/reflex-ui/tokens/accent.stylex.js",)
+    assert lowered == lower(
+        "rx.ui.spinner",
+        {
+            "animation_duration": "800ms",
+            "animation_name": {
+                "default": FADE,
+                "@media (prefers-reduced-motion: reduce)": "none",
+            },
+        },
+    )
+
+
+@pytest.mark.parametrize(
+    ("create", "message"),
+    [
+        (
+            lambda: lower("rx.ui.spinner", {"transition_property": FADE}),
+            (
+                'rx.ui.spinner: style "transition_property" is given keyframes, '
+                "which are the value of animation_name."
+            ),
+        ),
+        (
+            lambda: keyframes({"from": "opacity: 1"}),  # pyright: ignore[reportArgumentType]
+            'rx.ui keyframes: the frame "from" must be a dict of styles, not str.',
+        ),
+        (
+            lambda: keyframes({"to": {"opacity": {"default": 1, ":hover": 0}}}),
+            (
+                'rx.ui keyframes: the style "opacity" of the frame "to" must be a '
+                "literal: a frame takes no condition and nothing bound to state."
+            ),
+        ),
+        (
+            lambda: keyframes({"to": {"opacty": 1}}),
+            'rx.ui keyframes: unknown CSS property "opacty". Did you mean "opacity"?',
+        ),
+    ],
+)
+def test_keyframes_errors(create: Any, message: str):
+    with pytest.raises(StyleError) as error:
+        create()
+    assert str(error.value) == message

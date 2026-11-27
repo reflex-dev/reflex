@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 from reflex_base.vars.base import Var
-from reflex_components_ui.style import ComponentStyles, StyleError, merge
+from reflex_components_ui.style import ComponentStyles, StyleError, keyframes, merge
 from reflex_components_ui.style.emit import Emitted, emit, inline
 
 import reflex as rx
@@ -608,3 +608,67 @@ def test_inline_rejects_what_an_inline_style_cannot_hold(
     with pytest.raises(StyleError) as raised:
         inline(merge("rx.ui.box", **arguments), "rx.ui.box")
     assert str(raised.value) == message
+
+
+FADE = keyframes({"from": {"opacity": 1}, "to": {"opacity": 0.25}})
+SLIDE = keyframes({"to": {"top": "0"}})
+
+# A style that plays keyframes, at rest and under a condition, and a variant
+# bound to state that plays others.
+ANIMATED: ComponentStyles = {
+    "base": {
+        "animation_name": {"default": FADE, ":hover": SLIDE},
+        "animation_duration": "800ms",
+    },
+    "variants": {"kind": {"slide": {"animation_name": SLIDE}}},
+}
+
+
+def test_emit_declares_keyframes_before_the_style_that_plays_them():
+    """Keyframes are statements of the declaration, named after it."""
+    assert emit(merge("rx.ui.spinner", ANIMATED)) == Emitted(
+        declaration=(
+            "const sx_88a6398628_k0 = stylex.keyframes("
+            '{"from": {"opacity": 1}, "to": {"opacity": 0.25}});\n'
+            'const sx_88a6398628_k1 = stylex.keyframes({"to": {"top": "0"}});\n'
+            "const sx_88a6398628 = stylex.create({ s: "
+            '{"animationName": {"default": sx_88a6398628_k0, ":hover": '
+            'sx_88a6398628_k1}, "animationDuration": "800ms"} });\n'
+            "const sx_88a6398628_c = stylex.props(sx_88a6398628.s).className;"
+        ),
+        classes="sx_88a6398628_c",
+    )
+
+
+def test_emit_declares_the_keyframes_of_a_state_bound_variant_once():
+    """Each value of the prop plays keyframes the declaration holds once."""
+    emitted = emit(merge("rx.ui.spinner", ANIMATED, {"kind": S.kind}))
+    assert emitted.declaration == (
+        "const sx_5a092954ad_k0 = stylex.keyframes("
+        '{"to": {"top": "0"}});\n'
+        "const sx_5a092954ad_k1 = stylex.keyframes("
+        '{"from": {"opacity": 1}, "to": {"opacity": 0.25}});\n'
+        "const sx_5a092954ad = stylex.create({ s: "
+        '{"animationDuration": "800ms"}, a0_0: {"animationName": '
+        'sx_5a092954ad_k0}, a0: {"animationName": {"default": '
+        'sx_5a092954ad_k1, ":hover": sx_5a092954ad_k0}} });\n'
+        "const sx_5a092954ad_c = stylex.props(sx_5a092954ad.s).className;\n"
+        'const sx_5a092954ad_0 = { __proto__: null, "slide": '
+        "stylex.props(sx_5a092954ad.a0_0).className };\n"
+        "const sx_5a092954ad_0d = stylex.props(sx_5a092954ad.a0).className;"
+    )
+    assert emitted.lookups == (f"(sx_5a092954ad_0[{S.kind!s}] ?? sx_5a092954ad_0d)",)
+
+
+def test_inline_cannot_play_keyframes():
+    """Code evaluated in the browser declares no keyframes."""
+    with pytest.raises(StyleError) as error:
+        inline(
+            merge("rx.ui.spinner", {"base": {"animation_name": FADE}}), "rx.ui.spinner"
+        )
+    assert str(error.value) == (
+        'rx.ui.spinner: the style "animationName" plays keyframes, which a '
+        "component rendered from state cannot apply: its code is evaluated in the "
+        "browser and never reaches the StyleX compiler. Leave the animation out "
+        "there, or render the component in a page and show it with rx.cond."
+    )
