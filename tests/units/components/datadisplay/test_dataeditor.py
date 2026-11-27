@@ -154,6 +154,35 @@ def test_dataeditor_imports_image_overlay_stylesheet():
     ]
 
 
+def test_dataeditor_vertical_border_mapping():
+    """Compile a per-column vertical border mapping to Glide's callback."""
+    editor = _create(vertical_border={0: False, 2: True})
+    callback = _prop(editor, "verticalBorder")
+
+    assert _run_node(
+        f"const callback = {callback}; "
+        "console.log(JSON.stringify([callback(0), callback(1), callback(2)]));"
+    ) == [False, True, True]
+
+
+def test_dataeditor_vertical_border_boolean_remains_unchanged():
+    """Keep the boolean form that toggles borders for every column."""
+    editor = _create(vertical_border=False)
+
+    assert _prop(editor, "verticalBorder") == "false"
+
+
+def test_dataeditor_vertical_border_state_mapping_uses_callback():
+    """Read a state-backed mapping from Glide's per-column callback."""
+    editor = _create(
+        vertical_border=Var(_js_expr="verticalBorders", _var_type=dict[int, bool])
+    )
+
+    assert _prop(editor, "verticalBorder") == (
+        "(col) => (verticalBorders[col] ?? true)"
+    )
+
+
 def test_dataeditor_template_formats_image_cells():
     """Format image values as Glide image cells."""
     test_script = f"""{_helpers_js()}

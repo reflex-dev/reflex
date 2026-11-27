@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import dataclasses
+import json
 import logging
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from enum import Enum
-from typing import Any, Literal, TypedDict
+from typing import Any, Literal, TypedDict, cast
 
 from reflex_base.components.component import Component, NoSSRComponent, field
 from reflex_base.components.literals import LiteralRowMarker
@@ -22,7 +23,7 @@ from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.utils.serializers import serializer
 from reflex_base.vars import get_leaf_vars, get_unique_variable_name
 from reflex_base.vars.base import LiteralVar, Var, VarData
-from reflex_base.vars.function import FunctionStringVar
+from reflex_base.vars.function import FunctionStringVar, ReflexCallable
 from reflex_base.vars.sequence import ArrayVar
 
 logger = logging.getLogger(__name__)
@@ -348,10 +349,8 @@ class DataEditor(NoSSRComponent):
 
     smooth_scroll_y: Var[bool] = field(doc="Enable vertical smooth scrolling.")
 
-    vertical_border: Var[  # TODO: support a mapping (dict[int, bool])
-        bool
-    ] = field(
-        doc="Controls the drawing of the left hand vertical border of a column. If set to a boolean value it controls all borders."
+    vertical_border: Var[bool | Mapping[int, bool] | Callable[[int], bool]] = field(
+        doc="Controls the drawing of the left hand vertical border of a column. A boolean controls all columns; a mapping or callback controls columns individually. Unspecified columns in a mapping default to True."
     )
 
     column_select: Var[Literal["none", "single", "multi"]] = field(
@@ -663,6 +662,26 @@ class DataEditor(NoSSRComponent):
             theme = props.get("theme")
             if isinstance(theme, Mapping):
                 props["theme"] = DataEditorTheme(**theme)
+
+        vertical_border = props.get("vertical_border")
+        if isinstance(vertical_border, Mapping):
+            vertical_border_expr = json.dumps(dict(vertical_border))
+            vertical_border_var_data = None
+        elif isinstance(vertical_border, Var) and types.get_origin(
+            vertical_border._var_type
+        ) in {dict, Mapping}:
+            vertical_border_expr = str(vertical_border)
+            vertical_border_var_data = vertical_border._get_all_var_data()
+        else:
+            vertical_border_expr = None
+            vertical_border_var_data = None
+
+        if vertical_border_expr is not None:
+            props["vertical_border"] = FunctionStringVar.create(
+                f"(col) => ({vertical_border_expr}[col] ?? true)",
+                _var_type=cast(type[ReflexCallable[Any, Any]], Callable),
+                _var_data=vertical_border_var_data,
+            )
 
         # Allow by default to select a region of cells in the grid.
         props.setdefault("get_cells_for_selection", True)
