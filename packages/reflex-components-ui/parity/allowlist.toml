@@ -29,3 +29,10 @@ component = "kbd"
 check = "style"
 properties = ["box-shadow"]
 reason = "The shadow of rx.ui.text.kbd lists the layers of the light and the dark appearance, and the ones of the other appearance are transparent, so one value serves both. It paints the same."
+
+[[look]]
+component = "data_list"
+check = "style"
+cells = "*orientation-responsive*"
+properties = ["flex-direction", "align-items", "grid-template-columns", "grid-column-start", "width"]
+reason = "When the orientation of rx.data_list changes at a breakpoint, Radix Themes keeps what the orientation before it declared and the new one does not: the direction of a column on the grid of a horizontal list, and the columns and the baseline alignment of a grid on the items of a vertical one, whose labels and values are then as wide as their text. rx.ui.data_list gives each breakpoint the styles of its orientation alone, so a list that turns vertical is the vertical list: labels and values are as wide as the list. Nothing is drawn differently."
