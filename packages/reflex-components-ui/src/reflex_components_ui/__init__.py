@@ -21,6 +21,7 @@ _SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = {
     "components.separator": ["divider", "separator"],
     "components.skeleton": ["skeleton"],
     "components.spinner": ["spinner"],
+    "components.table": ["table"],
     "layout.box": ["box"],
     "layout.center": ["center"],
     "layout.container": ["container"],
