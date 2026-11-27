@@ -285,10 +285,10 @@ class UIComponent(Component):
         Raises:
             StyleError: If a prop is given a string it does not take.
         """
-        literals = self._literal_props()
-        for prop in literals.keys() & kwargs.keys():
+        for prop, choices in self._literal_props().items():
+            if prop not in kwargs:
+                continue
             value = _literal(kwargs[prop])
-            choices = literals[prop]
             for item in value.values() if isinstance(value, Mapping) else (value,):
                 if item.__class__ is str and item not in choices:
                     values = ", ".join([f'"{choice}"' for choice in choices])
@@ -366,6 +366,8 @@ class UIComponent(Component):
         # whether this element renders as its only child.
         self._slotted = False
         self._as_child = False
+        # The merged styles the emitted source was made from.
+        self._emitted_for: Merged | None = None
         super()._post_init(*args, **kwargs)
         self._as: Var | None = None
         if "as_" in fields:
@@ -414,6 +416,11 @@ class UIComponent(Component):
             )
             raise StyleError(msg)
         self._as_child = True
+        # The child has to stay the child: a compile would otherwise move
+        # one that is bound to state into a component of its own.
+        self._memoization_mode = dataclasses.replace(
+            self._memoization_mode, recursive=False
+        )
         child = children[0]
         if isinstance(child, UIComponent):
             # This element declares the styles of both, the child's over its
@@ -490,7 +497,7 @@ class UIComponent(Component):
             What the module that renders the element declares for it.
         """
         merged = self._element_styles()
-        if merged is not getattr(self, "_emitted_for", None):
+        if merged is not self._emitted_for:
             self._emitted_for = merged
             self._emitted_styles = emit(merged)
         return self._emitted_styles

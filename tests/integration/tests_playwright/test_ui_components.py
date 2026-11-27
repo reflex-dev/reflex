@@ -105,6 +105,22 @@ STYLED_PAGE_DECLARATIONS = [
     "const sx_e9f4c4c063_c = stylex.props(sx_e9f4c4c063.s).className;",
 ]
 
+# The one declaration of a flex container rendered as its child, a paragraph
+# bound to state: the styles of both, in the module the compiler moves the
+# pair into.
+WAVE_MEMO_DECLARATIONS = [
+    (
+        'const sx_d987dc85ff = stylex.create({ s: {"boxSizing": "border-box", '
+        '"display": "flex", "justifyContent": "flex-start", "flexDirection": '
+        '"column", "marginTop": "0", "marginRight": "0", "marginBottom": "0", '
+        '"marginLeft": "0", "lineHeight": "var(--line-height, var(--default-line-'
+        'height))", "letterSpacing": "var(--letter-spacing, inherit)", "fontSize": '
+        '"var(--font-size-5)", "--line-height": "var(--line-height-5)", "--letter-'
+        'spacing": "var(--letter-spacing-5)"} });'
+    ),
+    "const sx_d987dc85ff_c = stylex.props(sx_d987dc85ff.s).className;",
+]
+
 # The declarations of its elements that read state, which the compiler moves
 # into a module of their own: a custom property for the width, and the class
 # names of each value of the variant.
@@ -386,8 +402,9 @@ def UIComponentsApp(radix: bool = False):
                 color_scheme="ruby",
                 id="colored",
             ),
+            # The child is bound to state, and stays the element all the same.
             rx.ui.flex(
-                rx.ui.text("slot", size="5", id="slot"),
+                rx.ui.text(StyleState.tone, size="5", id="slot"),
                 as_child=True,
                 direction="column",
             ),
@@ -638,9 +655,10 @@ def test_equal_styles_share_one_declaration(ui_app: AppHarness, page: Page):
     (route,) = (web / "app" / "routes").glob("*styled*.jsx")
     assert declarations(route) == STYLED_PAGE_DECLARATIONS
     name = ui_app.app_name
-    assert declarations(web / "app_components" / name / f"{name}.jsx") == (
-        STYLED_MEMO_DECLARATIONS
-    )
+    assert declarations(web / "app_components" / name / f"{name}.jsx") == [
+        *WAVE_MEMO_DECLARATIONS,
+        *STYLED_MEMO_DECLARATIONS,
+    ]
 
     page.goto(_styled_url(ui_app))
     rows = page.locator(".row")
@@ -1244,7 +1262,9 @@ def test_layout_and_typography_components_are_styled_and_navigate(
     page.goto(ui_app.frontend_url.rstrip("/") + "/wave")
     expect(page.locator("#center")).to_have_css("display", "flex")
     assert _computed_styles(page, WAVE) == WAVE
-    assert page.locator("#slot").evaluate("element => element.tagName") == "P"
+    slot = page.locator("#slot")
+    assert slot.evaluate("element => element.tagName") == "P"
+    expect(slot).to_have_text("calm")
 
     # A prop follows the breakpoints of Radix Themes: md is 1024px.
     page.set_viewport_size({"width": 1280, "height": 600})

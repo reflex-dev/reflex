@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, ClassVar
+from typing import ClassVar
 
 from reflex_base.components.component import Component, field
 from reflex_base.vars.base import Var
@@ -55,8 +55,10 @@ class Code(UIComponent, elements.Code, MarkdownComponentMap):
             The code, which tells a link around it which variant it is: a
             link hides its underline under code that has a background.
         """
-        custom_attrs: dict[str, Any] = props.setdefault("custom_attrs", {})
-        custom_attrs.setdefault("data-variant", props.get("variant", "soft"))
+        props["custom_attrs"] = {
+            "data-variant": props.get("variant", "soft"),
+            **props.get("custom_attrs", {}),
+        }
         return super().create(*children, **props)
 
 
