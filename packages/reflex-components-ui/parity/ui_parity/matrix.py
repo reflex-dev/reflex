@@ -195,7 +195,7 @@ class Matrix:
             popup.
         target: The CSS selector, below the frame, of the element whose
             computed style is read: one string, or one per system. The default
-            is the first element of the frame.
+            is the first element of the frame that renders.
         parts: Inner elements whose computed style is compared too, by name.
         properties: The computed properties compared.
         threshold: How far a pixel's color may be off, from 0 to 1, before the

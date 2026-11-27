@@ -25,7 +25,13 @@ from ui_parity import allowlist, report  # noqa: E402
 from ui_parity.app import contract_route, parity_route  # noqa: E402
 from ui_parity.components import CONTRACTS, MATRICES  # noqa: E402
 from ui_parity.contract import HYDRATED, ContractError, Step, run_step  # noqa: E402
-from ui_parity.look import StyleDifference, run_matrix  # noqa: E402
+from ui_parity.hydration import ATTRIBUTE  # noqa: E402
+from ui_parity.look import (  # noqa: E402
+    READ_SCRIPT,
+    READY_SCRIPT,
+    StyleDifference,
+    run_matrix,
+)
 from ui_parity.systems import CANDIDATE, REFERENCE, SYSTEMS  # noqa: E402
 
 # Where the report of a run goes, unless UI_PARITY_REPORT names a directory.
@@ -229,6 +235,57 @@ def test_changed_role_fails_the_matrix(
             "rx.ui '- note: The quick brown fox'"
         )
     ]
+
+
+# A reference frame as React leaves it while it still renders the hydration:
+# the frame has its fiber, and the style tag Emotion prerendered beside the
+# Radix box has not moved to the head yet.
+RENDERING = """
+<html class="light">
+  <body style="margin: 0">
+    <div data-parity-stage="style-padding" data-parity-system="reference">
+      <style data-emotion="css abc">.css-abc { padding: 12px }</style>
+      <div class="css-abc" style="width: 40px; height: 20px">box</div>
+    </div>
+    <script>
+      document.querySelector("[data-parity-stage]").__reactFiber$test = {};
+    </script>
+  </body>
+</html>
+"""
+
+
+def test_page_is_read_only_once_hydration_committed(page: Page):
+    """A fiber on a frame is not hydration, and a style tag is not the component."""
+    page.set_content(RENDERING)
+    assert page.evaluate(READY_SCRIPT, "light") is False
+    # What the read would measure all the same: the box, never the style tag.
+    request = {
+        "properties": ["display", "padding-top"],
+        "targets": {"reference": None, "candidate": None},
+        "parts": {},
+        "only": None,
+        "matches": None,
+        "first": ":scope > :not(style):not(script):not(link):not(template)",
+    }
+    assert page.evaluate(READ_SCRIPT, request) == [
+        {
+            "id": "style-padding",
+            "system": "reference",
+            "stage": [0, 0, 1280, 44],
+            # The content box and its padding of 12 pixels a side.
+            "target": [0, 0, 64, 44],
+            "styles": {"": {"display": "block", "padding-top": "12px"}},
+            "missing": [],
+            "matched": True,
+            "view": [0, 0, 1280, 720],
+        }
+    ]
+    # An effect of the first render runs after the commit, and flags the page.
+    page.evaluate(f'() => document.documentElement.setAttribute("{ATTRIBUTE}", "")')
+    assert page.evaluate(READY_SCRIPT, "light") is True
+    # In the wrong color scheme the page is still not the one to read.
+    assert page.evaluate(READY_SCRIPT, "dark") is False
 
 
 CONTRACT_STEPS = [

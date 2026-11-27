@@ -22,6 +22,7 @@ from playwright.sync_api import Browser, Locator, Page
 
 from ui_parity.allowlist import Allowlist, LookEntry
 from ui_parity.diff import diff_images
+from ui_parity.hydration import IS_HYDRATED, NOT_RENDERED
 from ui_parity.matrix import ACTIVE, FOCUS_VISIBLE, HOVER, REST, Cell, Matrix, Selector
 from ui_parity.systems import CANDIDATE, REFERENCE, SYSTEMS, System
 
@@ -49,22 +50,24 @@ FREEZE_CSS = """
 
 # Resolves once the page is hydrated, in the color scheme asked for, with its
 # fonts loaded.
-_READY_SCRIPT = """async (appearance) => {
-    const stage = document.querySelector("[data-parity-stage]");
+READY_SCRIPT = f"""async (appearance) => {{
     if (
-        stage === null
-        || !Object.keys(stage).some((key) => key.startsWith("__reactFiber"))
+        !{IS_HYDRATED}
         || !document.documentElement.classList.contains(appearance)
-    ) {
+    ) {{
         return false;
-    }
+    }}
     await document.fonts.ready;
     return document.fonts.status === "loaded";
-}"""
+}}"""
+
+# The first element of a frame that renders: not a style tag a library left
+# beside the component.
+_FIRST_RENDERED = ":scope > " + "".join(f":not({tag})" for tag in NOT_RENDERED)
 
 # Reads the geometry and the computed style of the frames: all of them, or the
 # one of a system and props id.
-_READ_SCRIPT = """({properties, targets, parts, only, matches}) => {
+READ_SCRIPT = """({properties, targets, parts, only, matches, first}) => {
     const read = (element) => {
         const style = getComputedStyle(element);
         return Object.fromEntries(
@@ -85,9 +88,7 @@ _READ_SCRIPT = """({properties, targets, parts, only, matches}) => {
         : `[data-parity-stage="${only.id}"][data-parity-system="${only.system}"]`;
     return Array.from(document.querySelectorAll(selector), (stage) => {
         const system = stage.dataset.paritySystem;
-        const target = targets[system] === null
-            ? stage.firstElementChild
-            : stage.querySelector(targets[system]);
+        const target = stage.querySelector(targets[system] ?? first);
         const styles = {};
         const missing = [];
         if (target === null) {
@@ -524,7 +525,7 @@ class _Pass:
     def load(self) -> None:
         """Load the page and wait until it is still."""
         self.page.goto(self.url)
-        self.page.wait_for_function(_READY_SCRIPT, arg=self.appearance)
+        self.page.wait_for_function(READY_SCRIPT, arg=self.appearance)
         self.page.add_style_tag(content=FREEZE_CSS)
         if self.prepare is not None:
             self.prepare(self.page)
@@ -546,7 +547,7 @@ class _Pass:
             CaptureError: If a frame lacks the element the matrix names.
         """
         frames = self.page.evaluate(
-            _READ_SCRIPT,
+            READ_SCRIPT,
             {
                 "properties": self.matrix.properties,
                 "targets": _per_system(self.matrix.target),
@@ -558,6 +559,7 @@ class _Pass:
                 if only is None
                 else {"id": only[0], "system": only[1].role},
                 "matches": matches,
+                "first": _FIRST_RENDERED,
             },
         )
         for frame in frames:
@@ -646,7 +648,7 @@ class _Pass:
             f'[data-parity-stage="{props_id}"][data-parity-system="{system.role}"]'
         )
         selector = _per_system(self.matrix.target)[system.role]
-        return stage.locator("xpath=./*[1]" if selector is None else selector).first
+        return stage.locator(_FIRST_RENDERED if selector is None else selector).first
 
     def close(self) -> None:
         """Close the page."""
