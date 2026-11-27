@@ -53,7 +53,7 @@ class Container(UIComponent, elements.Div):
         """
         if stack_children_full_width:
             msg = (
-                f"{cls._display_name()}: stack_children_full_width styles the "
+                "rx.ui.container: stack_children_full_width styles the "
                 "stacks inside the container through nested selectors, which "
                 'rx.ui styles do not support. Give those stacks width="100%", '
                 "or keep rx.container for this element."

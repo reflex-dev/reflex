@@ -13,6 +13,7 @@ from reflex_components_ui.style.merge import (
     Merged,
     merge,
     over,
+    unchecked,
 )
 
 import reflex as rx
@@ -746,3 +747,14 @@ def test_over_lays_the_styles_of_a_child_on_those_of_its_parent():
     assert merged.style.inline is SIZE
     assert merged.dynamic == ()
     assert merged.parts == {"icon": Merged(Lowered({"width": "1em"}))}
+
+
+def test_unchecked_passes_a_style_a_type_checker_cannot_read():
+    """A style with a custom property is the same style, lowered like any other."""
+    style = {"--line-height": "1.5", "margin_top": "0"}
+    assert unchecked(style) is style
+    table: ComponentStyles = {"base": unchecked(style)}
+    assert merge("rx.ui.card", table).style.style == {
+        "--line-height": "1.5",
+        "marginTop": "0",
+    }

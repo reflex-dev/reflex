@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from reflex_components_ui.style import ComponentStyles
+from reflex_components_ui.style import ComponentStyles, unchecked
 
 # The container, a card for one, says how far its edges are through the
 # `--inset-padding-*`, `--inset-border-width` and `--inset-border-radius`
@@ -11,7 +11,7 @@ _SIDES = ("top", "right", "bottom", "left")
 _RADIUS = "var(--inset-border-radius-calc)"
 
 
-def _side(*sides: str, corners: str = "") -> dict[str, Any]:
+def _side(*sides: str, corners: str = "") -> Any:
     """Make the margins and the corners of an inset that reaches some sides.
 
     Args:
@@ -37,7 +37,7 @@ def _side(*sides: str, corners: str = "") -> dict[str, Any]:
     return style
 
 
-def _clip(border: bool) -> dict[str, Any]:
+def _clip(border: bool) -> Any:
     """Make the edges an inset reaches to: of the border, or inside it.
 
     Args:
@@ -82,10 +82,10 @@ INSET: ComponentStyles = {
         # container, which the inset then has itself.
         **{
             prop: {
-                "0": {f"padding_{side}": "0" for side in sides},
-                "current": {
+                "0": unchecked({f"padding_{side}": "0" for side in sides}),
+                "current": unchecked({
                     f"padding_{side}": f"var(--inset-padding-{side})" for side in sides
-                },
+                }),
             }
             for prop, sides in (
                 ("p", _SIDES),

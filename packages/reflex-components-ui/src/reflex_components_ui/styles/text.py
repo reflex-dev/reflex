@@ -3,7 +3,7 @@
 from typing import Any
 
 from reflex_components_ui import tokens
-from reflex_components_ui.style import ComponentStyles
+from reflex_components_ui.style import ComponentStyles, StyleProps, unchecked
 from reflex_components_ui.styles.typography import (
     ALIGN,
     COLOR,
@@ -14,7 +14,7 @@ from reflex_components_ui.styles.typography import (
 )
 
 # What every element that is text has, a link and a quotation among them.
-TEXT_BASE: dict[str, Any] = {
+TEXT_BASE: StyleProps = {
     "margin": "0",
     "line_height": f"var(--line-height, {tokens.default.line_height})",
     "letter_spacing": "var(--letter-spacing, inherit)",
@@ -29,7 +29,7 @@ TEXT: ComponentStyles = {
         "trim": TRIM,
         **COLOR,
         "as_": {
-            "label": {
+            "label": unchecked({
                 "@media (pointer: coarse)": {
                     "WebkitTapHighlightColor": "transparent",
                     "_active": {
@@ -39,7 +39,7 @@ TEXT: ComponentStyles = {
                         "outline_offset": "-0.6em",
                     },
                 },
-            },
+            }),
         },
     },
     "compound": [COLOR_HIGH_CONTRAST],
@@ -57,7 +57,8 @@ def _inline(element: Any, **style: Any) -> ComponentStyles:
         The style table.
     """
     return {
-        "base": {
+        # The font style is a token, where the property is typed by keywords.
+        "base": unchecked({
             "font_family": element.font_family,
             "font_size": f"calc({element.font_size_adjust} * 1em)",
             "font_style": element.font_style,
@@ -67,7 +68,7 @@ def _inline(element: Any, **style: Any) -> ComponentStyles:
                 f"var(--letter-spacing, {tokens.default.letter_spacing}))"
             ),
             **style,
-        },
+        }),
     }
 
 
@@ -130,10 +131,10 @@ KBD: ComponentStyles = {
     },
     "variants": {
         "size": {
-            str(step): {
+            str(step): unchecked({
                 "font_size": f"calc({tokens.font_size[step]} * 0.8)",
                 "--letter-spacing": tokens.letter_spacing[step],
-            }
+            })
             for step in (1, 2, 3, 4, 5, 6, 7, 8, 9)
         },
     },

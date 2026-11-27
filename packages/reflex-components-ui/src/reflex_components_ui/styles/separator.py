@@ -1,7 +1,7 @@
 """The look of a separator: a line between two things."""
 
 from reflex_components_ui import tokens
-from reflex_components_ui.style import ComponentStyles
+from reflex_components_ui.style import ComponentStyles, unchecked
 
 # The length of the line, which both orientations read.
 _SIZE = "--separator-size"
@@ -18,10 +18,10 @@ SEPARATOR: ComponentStyles = {
             "vertical": {"width": "1px", "height": f"var({_SIZE})"},
         },
         "size": {
-            "1": {_SIZE: tokens.space[4]},
-            "2": {_SIZE: tokens.space[6]},
-            "3": {_SIZE: tokens.space[9]},
-            "4": {_SIZE: "100%"},
+            "1": unchecked({_SIZE: tokens.space[4]}),
+            "2": unchecked({_SIZE: tokens.space[6]}),
+            "3": unchecked({_SIZE: tokens.space[9]}),
+            "4": unchecked({_SIZE: "100%"}),
         },
         "color_scheme": {"true": {"background_color": tokens.accent.a[6]}},
     },

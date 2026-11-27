@@ -51,11 +51,14 @@ class AspectRatio(UIComponent):
         Returns:
             The frame.
         """
-        ratio = LiteralVar.create(props.get("ratio", 1))
+        ratio = props.get("ratio", 1)
+        if isinstance(ratio, Var):
+            ratio = ratio._var_value if isinstance(ratio, LiteralVar) else ratio
+        # Bound to state, the padding is worked out in the browser.
         padding = (
-            f"{100 / ratio._var_value}%"
-            if isinstance(ratio, LiteralVar)
-            else (100 / ratio).to(str) + "%"
+            (100 / ratio.to(float)).to_string() + "%"
+            if isinstance(ratio, Var)
+            else f"{100 / ratio}%"
         )
         return AspectRatioFrame.create(
             super().create(*children, **props),

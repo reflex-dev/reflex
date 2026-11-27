@@ -690,6 +690,24 @@ def _merge(
     return Merged(finish(merged_props, inline), dynamic, parts)
 
 
+def unchecked(style: Mapping[str, Any]) -> Any:
+    """Mark the part of a style table that ``StyleProps`` cannot type.
+
+    A custom property and a condition such as ``@media (pointer: coarse)``
+    are no keys of a ``TypedDict``, and a design token is a plain string where
+    a property is typed by its keywords. A style that holds one is wrapped
+    whole, and is checked when the table is lowered instead:
+    ``unchecked({"--line-height": "1.5", "margin": "0"})``.
+
+    Args:
+        style: The style.
+
+    Returns:
+        The style, as a type checker lets pass.
+    """
+    return style
+
+
 def over(under: Merged, top: Merged) -> Merged:
     """Lay the styles of one element over those of another.
 

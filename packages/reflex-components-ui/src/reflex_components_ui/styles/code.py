@@ -3,7 +3,7 @@
 from typing import Any
 
 from reflex_components_ui import tokens
-from reflex_components_ui.style import ComponentStyles
+from reflex_components_ui.style import ComponentStyles, StyleProps, unchecked
 from reflex_components_ui.styles.typography import (
     ACCENT_SCOPE,
     ACCENT_SCOPE_HIGH_CONTRAST,
@@ -18,12 +18,12 @@ from reflex_components_ui.styles.typography import (
 # little smaller than the text around it.
 _ADJUST = "--code-variant-font-size-adjust"
 
-SIZE: dict[str, Any] = {
-    str(step): {
+SIZE: dict[str, StyleProps] = {
+    str(step): unchecked({
         "font_size": f"calc({tokens.font_size[step]} * var({_ADJUST}))",
         "line_height": tokens.line_height[step],
         "--letter-spacing": tokens.letter_spacing[step],
-    }
+    })
     for step in (1, 2, 3, 4, 5, 6, 7, 8, 9)
 }
 
@@ -52,7 +52,7 @@ _SOFT: Any = {
 }
 
 CODE: ComponentStyles = {
-    "base": {
+    "base": unchecked({
         _ADJUST: f"calc({tokens.code.font_size_adjust} * 0.95)",
         "font_family": tokens.code.font_family,
         "font_size": f"calc(var({_ADJUST}) * 1em)",
@@ -71,12 +71,15 @@ CODE: ComponentStyles = {
         "padding_right": tokens.code.padding_right,
         # Not stretched by a flex or grid container.
         "height": "fit-content",
-    },
+    }),
     "variants": {
         "size": SIZE,
         "weight": WEIGHT,
         "variant": {
-            "ghost": {_ADJUST: tokens.code.font_size_adjust, "padding": "0"},
+            "ghost": unchecked({
+                _ADJUST: tokens.code.font_size_adjust,
+                "padding": "0",
+            }),
             "solid": {
                 "background_color": _hover(LINK_CODE_SOLID, tokens.accent.a[9]),
                 "color": tokens.accent.contrast,
@@ -99,13 +102,13 @@ CODE: ComponentStyles = {
             "classic": _SOFT,
             "surface": _SOFT,
         },
-        "color_scheme": {"true": ACCENT_SCOPE},
+        "color_scheme": {"true": unchecked(ACCENT_SCOPE)},
     },
     "defaults": {"variant": "soft"},
     "compound": [
         {
             "props": {"color_scheme": "true", "high_contrast": "true"},
-            "style": ACCENT_SCOPE_HIGH_CONTRAST,
+            "style": unchecked(ACCENT_SCOPE_HIGH_CONTRAST),
         },
         {
             "props": {"variant": "ghost", "color_scheme": "true"},

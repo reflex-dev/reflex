@@ -3,7 +3,7 @@
 from typing import Any
 
 from reflex_components_ui import tokens
-from reflex_components_ui.style import ComponentStyles
+from reflex_components_ui.style import ComponentStyles, unchecked
 from reflex_components_ui.styles.text import TEXT_BASE
 from reflex_components_ui.styles.typography import (
     ACCENT_LINK,
@@ -54,7 +54,7 @@ def _line(rest: str, hover: str) -> dict[str, Any]:
 
 
 LINK: ComponentStyles = {
-    "base": {
+    "base": unchecked({
         **TEXT_BASE,
         # Without a color of its own, inside an element that has one.
         "color": f"var({ACCENT_LINK}, {tokens.accent.a[11]})",
@@ -86,7 +86,7 @@ LINK: ComponentStyles = {
         LINK_CODE_SOLID: tokens.accent[10],
         LINK_CODE_SOFT: tokens.accent.a[4],
         LINK_CODE_OUTLINE: tokens.accent.a[2],
-    },
+    }),
     "variants": {
         "size": SIZE,
         "weight": WEIGHT,
@@ -104,7 +104,9 @@ LINK: ComponentStyles = {
             "always": {"text_decoration_line": _line("underline", "underline")},
             "none": {"text_decoration_line": "none"},
         },
-        "color_scheme": {"true": {**ACCENT_SCOPE, "color": tokens.accent.a[11]}},
+        "color_scheme": {
+            "true": unchecked({**ACCENT_SCOPE, "color": tokens.accent.a[11]}),
+        },
         "high_contrast": {"true": {"color": tokens.accent[12]}},
     },
     "defaults": {"underline": "auto"},
