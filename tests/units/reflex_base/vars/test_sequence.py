@@ -6,9 +6,10 @@ from datetime import date, datetime
 from typing import Any
 
 import pytest
+from reflex_base.constants.base import Dirs
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import Var
-from reflex_base.vars.sequence import ArrayVar
+from reflex_base.vars.sequence import ArrayVar, LiteralStringVar
 
 
 def _array(var_type: Any, js_expr: str = "state.maybe") -> ArrayVar:
@@ -128,4 +129,17 @@ def test_date_array_ordering_passes_compare_datetime(items: list, expected: str)
     assert dict(var_data.imports) == {
         "$/utils/helpers/array.js": (_COMPARE_ARRAYS,),
         "$/utils/helpers/datetime.js": (_COMPARE_DATETIME,),
+    }
+
+
+def test_title_compiles_to_python_title_semantics():
+    """Python's str.title starts a word after any character that is not cased, not only a space."""
+    title = LiteralStringVar.create("jean-luc picard").title()
+    var_data = title._get_all_var_data()
+
+    assert str(title) == 'pyTitle("jean-luc picard")'
+    assert str(Var(_js_expr="state.name").to(str).title()) == "pyTitle(state.name)"
+    assert var_data is not None
+    assert dict(var_data.imports) == {
+        f"$/{Dirs.STATE_PATH}": (ImportVar(tag="pyTitle"),)
     }

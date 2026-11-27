@@ -52,6 +52,7 @@ const PUBLIC_API = {
     "pyStrSlice",
     "pyStrSplit",
     "pyStrip",
+    "pyTitle",
     "queueEventIfSocketExists",
     "queueEvents",
     "refs",

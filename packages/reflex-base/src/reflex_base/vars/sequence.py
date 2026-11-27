@@ -1187,7 +1187,7 @@ def string_upper_operation(string: StringVar[Any]):
 
 @var_operation
 def string_title_operation(string: StringVar[Any]):
-    """Convert a string to title case.
+    """Convert a string to title case, as Python's str.title does.
 
     Args:
         string: The string to convert.
@@ -1196,8 +1196,9 @@ def string_title_operation(string: StringVar[Any]):
         The title case string.
     """
     return var_operation_return(
-        js_expression=f"{string!s}.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')",
+        js_expression=f"pyTitle({string!s})",
         var_type=str,
+        var_data=VarData(imports=_PY_TITLE_IMPORT),
     )
 
 
@@ -1227,6 +1228,10 @@ _PY_LSTRIP_IMPORT: ImportDict = {
 
 _PY_RSTRIP_IMPORT: ImportDict = {
     f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyRstrip")],
+}
+
+_PY_TITLE_IMPORT: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyTitle")],
 }
 
 _PY_STR_CHARS_IMPORT: ImportDict = {

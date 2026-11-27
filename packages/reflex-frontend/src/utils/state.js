@@ -2272,6 +2272,24 @@ export const pyRstrip = (s, chars) => {
 export const pyStrip = (s, chars) =>
   chars == null ? s.trim() : pyRstrip(pyLstrip(s, chars), chars);
 
+const CASED_RUN_RE = /\p{Cased}+/gu;
+
+/***
+ * Python-semantics str.title(): a cased character is upper-cased after a
+ * character that is not cased and lower-cased after one that is, so a word
+ * starts after a hyphen, an apostrophe, a digit or any whitespace.
+ * Each word is lower-cased as a whole, which keeps the final sigma rule.
+ * @param {string} s The string.
+ * @returns {string} The title-cased string.
+ */
+export const pyTitle = (s) =>
+  s.replace(CASED_RUN_RE, (word) => {
+    const first = String.fromCodePoint(word.codePointAt(0));
+    return (
+      first.toUpperCase() + word.toLowerCase().slice(first.toLowerCase().length)
+    );
+  });
+
 const SURROGATE_RE = /[\uD800-\uDFFF]/;
 
 /***
