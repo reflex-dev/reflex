@@ -1,5 +1,6 @@
 """Base class for all plugins."""
 
+import dataclasses
 from collections.abc import Callable, Mapping, Sequence
 from enum import Enum
 from pathlib import Path
@@ -118,6 +119,37 @@ class PostBuildContext(CommonContext):
     static_dir: Path
 
 
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class VitePluginEntry:
+    """A Vite plugin that a Reflex plugin adds to the generated ``vite.config.js``.
+
+    Both fields are JavaScript source, written to the file as given. A module
+    specifier resolves from ``.web``, where the file lives: an npm package by
+    name, a file the plugin wrote with ``get_static_assets`` by its relative
+    path (``"./my-plugin.js"``).
+
+    Example:
+        >>> VitePluginEntry(
+        ...     imports=[
+        ...         'import myPlugin from "./my-plugin.js"',
+        ...         'import { Features } from "lightningcss"',
+        ...     ],
+        ...     call="myPlugin({ exclude: Features.LightDark })",
+        ... )
+
+    Attributes:
+        call: The expression placed in the ``plugins`` array, usually a call
+            such as ``"myPlugin({ fast: true })"``. It may evaluate to one
+            plugin or to an array of plugins, and may span several lines.
+        imports: The import statements ``call`` needs, one statement per
+            string, with or without the closing semicolon. A statement that
+            several entries share is written once.
+    """
+
+    call: str
+    imports: Sequence[str] = ()
+
+
 class Plugin:
     """Base class for all plugins."""
 
@@ -175,6 +207,28 @@ class Plugin:
 
         Returns:
             A list of paths to the stylesheets required by the plugin.
+        """
+        return []
+
+    def get_vite_plugins(
+        self, **context: Unpack[CommonContext]
+    ) -> Sequence[VitePluginEntry]:
+        """Get the Vite plugins to add to the generated ``vite.config.js``.
+
+        Entries are placed in the ``plugins`` array ahead of ``reactRouter()``,
+        in the order of the plugins in ``rxconfig.py`` and then in the order
+        each plugin returns them. The npm packages they import are build-time
+        only, so declare them in ``get_frontend_development_dependencies``.
+
+        The hook runs each time the file is rendered, on ``reflex init`` and on
+        every compile, so it must return the same entries for the same
+        configuration.
+
+        Args:
+            context: The context for the plugin.
+
+        Returns:
+            The Vite plugins required by the plugin.
         """
         return []
 

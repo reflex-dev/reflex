@@ -1,7 +1,12 @@
 """Tests for reflex_base.compiler.templates."""
 
-from reflex_base.compiler.templates import _merge_state_hooks, _render_hooks
+from reflex_base.compiler.templates import (
+    _merge_state_hooks,
+    _render_hooks,
+    vite_config_template,
+)
 from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.plugins import VitePluginEntry
 from reflex_base.utils.format import format_state_name
 from reflex_base.vars.base import Var, VarData
 from reflex_components_core.el.elements.typography import Div
@@ -78,3 +83,109 @@ def test_render_hooks_declares_a_merged_state_hook_before_its_readers():
         f"const parentRead = {state_var}.a{FIELD_MARKER}",
         f"const childValue = {state_var}.b{FIELD_MARKER}",
     ])
+
+
+_VITE_CONFIG_KWARGS = {
+    "base": "/",
+    "hmr": True,
+    "force_full_reload": False,
+    "experimental_hmr": False,
+    "sourcemap": False,
+}
+_VITE_IMPORTS_ANCHOR = (
+    'import safariCacheBustPlugin from "./vite-plugin-safari-cachebust.js";\n'
+)
+_VITE_PLUGINS_ANCHOR = "    reactRouter(),\n"
+
+
+def _vite_config_with(
+    imports: str, calls: str, *, after_imports: str = _VITE_IMPORTS_ANCHOR, **kwargs
+) -> str:
+    """Build the expected vite.config.js from the one rendered without plugins.
+
+    Args:
+        imports: The import lines the plugins add.
+        calls: The lines the plugins add to the ``plugins`` array.
+        after_imports: The line of the plugin-free file the imports follow.
+        kwargs: Template arguments on top of the defaults.
+
+    Returns:
+        The plugin-free file with ``imports`` and ``calls`` inserted.
+    """
+    baseline = vite_config_template(**_VITE_CONFIG_KWARGS, **kwargs)
+    head, imports_anchor, rest = baseline.partition(after_imports)
+    body, plugins_anchor, tail = rest.partition(_VITE_PLUGINS_ANCHOR)
+    assert imports_anchor
+    assert plugins_anchor
+    assert _VITE_PLUGINS_ANCHOR not in tail
+    return head + imports_anchor + imports + body + calls + plugins_anchor + tail
+
+
+def test_vite_config_template_without_vite_plugins_is_unchanged():
+    """No entries render the same file as omitting the argument."""
+    assert vite_config_template(
+        **_VITE_CONFIG_KWARGS, vite_plugins=[]
+    ) == vite_config_template(**_VITE_CONFIG_KWARGS)
+
+
+def test_vite_config_template_one_vite_plugin():
+    """An entry's imports follow the built-in ones; its call precedes reactRouter()."""
+    rendered = vite_config_template(
+        **_VITE_CONFIG_KWARGS,
+        vite_plugins=[
+            VitePluginEntry(
+                imports=[
+                    'import stylex from "./reflex-ui/vite-plugin-stylex.js"',
+                    'import { Features } from "lightningcss";',
+                ],
+                call="""stylex({
+  useCSSLayers: true,
+  lightningcssOptions: { minify: true, exclude: Features.LightDark },
+})""",
+            )
+        ],
+    )
+    assert rendered == _vite_config_with(
+        'import stylex from "./reflex-ui/vite-plugin-stylex.js";\n'
+        'import { Features } from "lightningcss";\n',
+        """    stylex({
+  useCSSLayers: true,
+  lightningcssOptions: { minify: true, exclude: Features.LightDark },
+}),
+""",
+    )
+
+
+def test_vite_config_template_two_vite_plugins():
+    """Entries keep their order, after React Compiler; a shared import is written once."""
+    rendered = vite_config_template(
+        **_VITE_CONFIG_KWARGS,
+        react_compiler=True,
+        vite_plugins=[
+            VitePluginEntry(
+                imports=[
+                    'import { Features } from "lightningcss"',
+                    'import second from "second-plugin"',
+                ],
+                call="second({ exclude: Features.LightDark })",
+            ),
+            VitePluginEntry(
+                imports=[
+                    'import first from "first-plugin";',
+                    '  import { Features } from "lightningcss" ;\n',
+                ],
+                call="  [first(), first.extra(Features.Nesting)]\n",
+            ),
+            VitePluginEntry(call='{ name: "inline", config: () => ({}) }'),
+        ],
+    )
+    assert rendered == _vite_config_with(
+        'import { Features } from "lightningcss";\n'
+        'import second from "second-plugin";\n'
+        'import first from "first-plugin";\n',
+        "    second({ exclude: Features.LightDark }),\n"
+        "    [first(), first.extra(Features.Nesting)],\n"
+        '    { name: "inline", config: () => ({}) },\n',
+        after_imports='import reactCompiler from "./vite-plugin-react-compiler.js";\n',
+        react_compiler=True,
+    )

@@ -1,0 +1,1 @@
+Plugins can add Vite plugins to the app's `vite.config.js` through the new `Plugin.get_vite_plugins()` hook, which returns `rx.plugins.VitePluginEntry` objects. A malformed entry stops the compile with an error naming the plugin. See [Adding Vite Plugins](https://reflex.dev/docs/api-reference/plugins/#adding-vite-plugins).

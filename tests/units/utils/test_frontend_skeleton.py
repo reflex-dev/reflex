@@ -2,9 +2,14 @@
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 from reflex_base import constants
+from reflex_base.compiler.templates import vite_config_template
+from reflex_base.config import Config
+from reflex_base.plugins import Plugin, VitePluginEntry
+from reflex_base.utils.exceptions import InvalidVitePluginError
 
 from reflex.utils import frontend_skeleton
 
@@ -164,3 +169,164 @@ def test_update_package_json_overrides_matches_bun_format(
 
     assert frontend_skeleton.update_package_json_overrides() is True
     _assert_bun_format(package_json_path)
+
+
+class _VitePlugins(Plugin):
+    """A plugin that contributes the Vite plugin entries it was created with."""
+
+    def __init__(self, *entries: Any):
+        """Store the entries to contribute.
+
+        Args:
+            entries: What ``get_vite_plugins`` returns.
+        """
+        self.entries = entries
+
+    def get_vite_plugins(self, **context) -> Any:
+        """Contribute the stored entries.
+
+        Args:
+            context: The context for the plugin.
+
+        Returns:
+            The stored entries.
+        """
+        return self.entries
+
+
+class _OtherVitePlugins(_VitePlugins):
+    """A second plugin type, to tell plugins apart in an error."""
+
+
+_SHARED_IMPORT = 'import { Features } from "lightningcss"'
+_FIRST = VitePluginEntry(
+    imports=['import first from "first-plugin"', _SHARED_IMPORT],
+    call="first(Features.Nesting)",
+)
+_SECOND = VitePluginEntry(imports=(_SHARED_IMPORT,), call="[second()]")
+_THIRD = VitePluginEntry(call='{ name: "third" }')
+
+
+def test_get_vite_plugins_follows_plugin_then_entry_order():
+    """Entries come in ``rxconfig.py`` plugin order, then each plugin's own order."""
+    plugins = [_VitePlugins(_SECOND, _THIRD), Plugin(), _OtherVitePlugins(_FIRST)]
+
+    assert frontend_skeleton._get_vite_plugins(plugins) == [_SECOND, _THIRD, _FIRST]
+    assert frontend_skeleton._get_vite_plugins([Plugin()]) == []
+
+
+def test_compile_vite_config_renders_plugin_entries():
+    """The compiled file is the template rendered with every plugin's entries."""
+    config = Config(
+        app_name="test", plugins=[_VitePlugins(_FIRST), _OtherVitePlugins(_SECOND)]
+    )
+    template_args = {
+        "base": "/",
+        "hmr": True,
+        "force_full_reload": False,
+        "experimental_hmr": False,
+        "sourcemap": False,
+    }
+    without_plugins = vite_config_template(**template_args)
+    rendered = frontend_skeleton._compile_vite_config(config)
+
+    assert rendered == vite_config_template(
+        **template_args, vite_plugins=[_FIRST, _SECOND]
+    )
+    assert rendered != without_plugins
+    assert (
+        frontend_skeleton._compile_vite_config(Config(app_name="test"))
+        == without_plugins
+    )
+
+
+@pytest.mark.parametrize(
+    ("entry", "problem"),
+    [
+        (
+            ('import a from "a"', "a()"),
+            "is a tuple, not a VitePluginEntry",
+        ),
+        (
+            VitePluginEntry(call="  "),
+            "has call='  ', which is not a JavaScript expression",
+        ),
+        (
+            VitePluginEntry(call=None),  # pyright: ignore[reportArgumentType]
+            "has call=None, which is not a JavaScript expression",
+        ),
+        (
+            VitePluginEntry(call="a();\n"),
+            "has call='a();\\n', which must be an expression without a trailing ';'",
+        ),
+        (
+            VitePluginEntry(call="a(),"),
+            "has call='a(),', which must be an expression without a trailing ','",
+        ),
+        (
+            VitePluginEntry(imports='import a from "a"', call="a()"),
+            (
+                "has imports='import a from \"a\"', which must be a sequence of "
+                "import statements, not a single string"
+            ),
+        ),
+        (
+            VitePluginEntry(imports=['import a from "a"', "a"], call="a()"),
+            "has 'a' in imports, which is not an import statement",
+        ),
+        (
+            VitePluginEntry(imports=['const a = await import("a")'], call="a()"),
+            (
+                "has 'const a = await import(\"a\")' in imports, which is not an "
+                "import statement"
+            ),
+        ),
+        (
+            VitePluginEntry(imports=['import("a")'], call="a()"),
+            "has 'import(\"a\")' in imports, which is not an import statement",
+        ),
+        (
+            VitePluginEntry(imports=[b"import a"], call="a()"),  # pyright: ignore[reportArgumentType]
+            "has b'import a' in imports, which is not an import statement",
+        ),
+    ],
+)
+def test_get_vite_plugins_rejects_malformed_entry(entry: Any, problem: str):
+    """A malformed entry fails the compile, naming the plugin and the entry.
+
+    Args:
+        entry: The malformed entry.
+        problem: What the error says is wrong with it.
+    """
+    plugins = [_VitePlugins(_FIRST), _OtherVitePlugins(_SECOND, entry)]
+
+    with pytest.raises(InvalidVitePluginError) as err:
+        frontend_skeleton._get_vite_plugins(plugins)
+
+    assert str(err.value) == (
+        "_OtherVitePlugins.get_vite_plugins() returned an invalid entry: "
+        f"entry 1 {problem}."
+    )
+
+
+@pytest.mark.parametrize(
+    "statement",
+    [
+        'import a from "a"',
+        "import a, { b } from 'a';",
+        'import{ a } from "a"',
+        'import * as a from "a"',
+        'import "a"',
+        "import'a'",
+        '\n  import a from "a";\n',
+    ],
+)
+def test_get_vite_plugins_accepts_import_statement_forms(statement: str):
+    """Every static import form is accepted.
+
+    Args:
+        statement: The import statement.
+    """
+    entry = VitePluginEntry(imports=[statement], call="a()")
+
+    assert frontend_skeleton._get_vite_plugins([_VitePlugins(entry)]) == [entry]
