@@ -105,13 +105,9 @@ def test_removing_a_prop_from_the_wrapper_is_a_difference():
     assert unexplained(found, Allowlist()) == (found, [])
 
 
-def test_box_differs_only_by_the_props_the_allowlist_gives_a_reason_for():
-    found = differences("box")
-    (entry,) = (item for item in allowlist.load().api if item.component == "box")
-    assert entry.kind == "prop"
-    assert [(item.kind, item.name, item.candidate) for item in found] == [
-        ("prop", name, None) for name in entry.names
-    ]
+def test_box_has_the_props_of_the_radix_box_and_nothing_is_allowlisted():
+    assert differences("box") == []
+    assert allowlist.load().api == ()
 
 
 class Reference(Component):

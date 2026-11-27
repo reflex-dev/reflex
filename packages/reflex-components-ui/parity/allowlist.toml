@@ -23,26 +23,3 @@
 #   cells       a shell pattern over the cell id; every cell when left out
 #   properties  the computed properties that differ, for "style"
 #   engines     as above
-
-[[api]]
-component = "box"
-kind = "prop"
-names = [
-  "access_key",
-  "auto_capitalize",
-  "content_editable",
-  "context_menu",
-  "dir",
-  "draggable",
-  "enter_key_hint",
-  "hidden",
-  "input_mode",
-  "item_prop",
-  "lang",
-  "role",
-  "slot",
-  "spell_check",
-  "tab_index",
-  "title",
-]
-reason = "rx.ui.box does not take the global HTML attributes as props yet. Pass them through custom_attrs until it does."

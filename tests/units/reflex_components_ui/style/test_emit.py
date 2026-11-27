@@ -332,24 +332,24 @@ CASES: dict[str, tuple[dict[str, Any], tuple[Any, ...]]] = {
         },
         emitted(
             declaration=(
-                'const sx_dae5511f98 = stylex.create({ s: {"rowGap": '
+                'const sx_7ed480858f = stylex.create({ s: {"rowGap": '
                 '"var(--space-3)", "columnGap": "var(--space-3)", "paddingTop":'
-                ' {"default": "var(--space-1)", "@media screen and (min-width: '
-                '30em)": "var(--space-2)"}, "paddingRight": {"default": '
-                '"var(--space-1)", "@media screen and (min-width: 30em)": '
+                ' {"default": "var(--space-1)", "@media (min-width: '
+                '520px)": "var(--space-2)"}, "paddingRight": {"default": '
+                '"var(--space-1)", "@media (min-width: 520px)": '
                 '"var(--space-2)"}, "paddingBottom": {"default": '
-                '"var(--space-1)", "@media screen and (min-width: 30em)": '
+                '"var(--space-1)", "@media (min-width: 520px)": '
                 '"var(--space-2)"}, "paddingLeft": {"default": '
-                '"var(--space-1)", "@media screen and (min-width: 30em)": '
+                '"var(--space-1)", "@media (min-width: 520px)": '
                 '"var(--space-2)"}, "marginTop": "calc(-1 * var(--space-2))", '
                 '"marginRight": "calc(-1 * var(--space-2))", "marginBottom": '
                 '"calc(-1 * var(--space-2))", "marginLeft": "calc(-1 * '
                 'var(--space-2))", "gridTemplateColumns": "repeat(3, minmax(0, '
                 '1fr))", "flexDirection": "column"} });\n'
-                "const sx_dae5511f98_c = "
-                "stylex.props(sx_dae5511f98.s).className;"
+                "const sx_7ed480858f_c = "
+                "stylex.props(sx_7ed480858f.s).className;"
             ),
-            classes="sx_dae5511f98_c",
+            classes="sx_7ed480858f_c",
             imports=("$/reflex-ui/tokens/space.stylex.js",),
         ),
     ),

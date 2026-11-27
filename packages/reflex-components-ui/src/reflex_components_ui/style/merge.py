@@ -17,6 +17,7 @@ from reflex_base.breakpoints import breakpoints_values
 from reflex_base.vars.base import LiteralVar, Var
 
 from reflex_components_ui.style.lower import (
+    PROP_BREAKPOINTS,
     Layer,
     Lowered,
     LoweredValue,
@@ -25,6 +26,7 @@ from reflex_components_ui.style.lower import (
     finish,
     freeze,
     lower_layer,
+    prop_breakpoint,
 )
 
 if TYPE_CHECKING:
@@ -355,7 +357,8 @@ def _variant_key(value: Any) -> Any:
         value: The value of the prop, which is neither a string nor None.
 
     Returns:
-        The key, or the Var itself for a prop that is bound to state.
+        The key, the Var itself for a prop that is bound to state, or the
+        mapping of a prop that is given a value per breakpoint.
     """
     if value is True:
         return "true"
@@ -366,7 +369,74 @@ def _variant_key(value: Any) -> Any:
             literal = value._var_value
             return literal if literal.__class__ is str else _variant_key(literal)
         return value
+    if isinstance(value, Mapping):
+        return value
     return str(value)
+
+
+def _responsive_layer(
+    name: str,
+    table: _Table,
+    keys: tuple[str | None, ...],
+    responsive: dict[int, Mapping[str, Any]],
+) -> Layer:
+    """Lower the values a prop is given at the breakpoints after the first.
+
+    The breakpoints are those of Radix Themes and apply mobile first: a value
+    holds from its breakpoint up, until another one replaces it. At each
+    breakpoint the styles of the table are resolved for the values the props
+    then have, compound styles included, and what changes from the breakpoint
+    before goes under its media query.
+
+    Args:
+        name: The display name of the component, for error messages.
+        table: The lowered style table.
+        keys: The value of each consulted prop before the first breakpoint.
+        responsive: The value per breakpoint of each responsive prop, by its
+            position in ``keys``.
+
+    Returns:
+        The properties that change, each under the media queries it changes at.
+
+    Raises:
+        StyleError: If a value is given under a key that is not a breakpoint,
+            or is bound to state.
+    """
+    at: dict[str, list[tuple[int, str]]] = {}
+    for position, values in responsive.items():
+        prop = table.consulted[position]
+        for breakpoint, value in values.items():
+            if value.__class__ is not str:
+                value = _variant_key(value)
+                if value.__class__ is not str:
+                    msg = (
+                        f'{name}: prop "{prop}" is given a value under '
+                        f'"{breakpoint}" that is not known at compile time. '
+                        "Give each breakpoint one of the values of the prop."
+                    )
+                    raise StyleError(msg)
+            query = prop_breakpoint(name, prop, breakpoint)
+            if query != "default":
+                at.setdefault(query, []).append((position, value))
+    out: dict[str, LoweredValue] = {}
+    current = list(keys)
+    before = table.resolve(keys)
+    for query in PROP_BREAKPOINTS.values():
+        changes = at.get(query)
+        if changes is None:
+            continue
+        for position, value in changes:
+            current[position] = value
+        after = table.resolve(tuple(current))
+        for prop, value in after.items():
+            if prop not in before or freeze(before[prop]) != freeze(value):
+                conditions = out.get(prop)
+                if conditions is None:
+                    out[prop] = {query: value}
+                else:
+                    conditions[query] = value
+        before = after
+    return out, ()
 
 
 def _difference(
@@ -524,19 +594,28 @@ def _merge(
     """
     chosen = []
     bound = None
+    responsive = None
     for prop in table.consulted:
         value = props.get(prop)
         if value.__class__ is not str and value is not None:
             value = _variant_key(value)
             if value.__class__ is not str:
-                if bound is None:
-                    bound = {}
-                bound[len(chosen)] = value
-                value = None
+                if isinstance(value, Var):
+                    if bound is None:
+                        bound = {}
+                    bound[len(chosen)] = value
+                    value = None
+                else:
+                    if responsive is None:
+                        responsive = {}
+                    responsive[len(chosen)] = value
+                    value = value.get("initial")
+                    if value.__class__ is not str and value is not None:
+                        value = _variant_key(value)
         chosen.append(value)
     keys = tuple(chosen)
 
-    if bound is None:
+    if bound is None and responsive is None:
         merged = table.merged.get(keys)
         if merged is None:
             merged = table.merged[keys] = Merged(
@@ -555,7 +634,13 @@ def _merge(
             part: _merge(name, inner, props, None, None) for part, inner in table.parts
         }
 
-    layers = [lower_layer(name, None, layout)] if layout else []
+    layers = (
+        []
+        if responsive is None
+        else [_responsive_layer(name, table, keys, responsive)]
+    )
+    if layout:
+        layers.append(lower_layer(name, None, layout))
     inline = None
     if isinstance(style, Var):
         inline = style
@@ -576,6 +661,28 @@ def _merge(
         return Merged(finish(merged_props, inline), (), parts)
     merged_props, dynamic = _merge_dynamic(table, keys, bound, layers)
     return Merged(finish(merged_props, inline), dynamic, parts)
+
+
+def over(under: Merged, top: Merged) -> Merged:
+    """Lay the styles of one element over those of another.
+
+    For two components that render as one element: a parent with
+    ``as_child`` and its child.
+
+    Args:
+        under: The styles that are overridden.
+        top: The styles that win where both set a property.
+
+    Returns:
+        The styles of the one element.
+    """
+    props = dict(under.style.style)
+    apply_layer(props, (top.style.style, ()))
+    return Merged(
+        finish(props, top.style.inline or under.style.inline),
+        (*under.dynamic, *top.dynamic),
+        {**under.parts, **top.parts} if under.parts else top.parts,
+    )
 
 
 def merge(
