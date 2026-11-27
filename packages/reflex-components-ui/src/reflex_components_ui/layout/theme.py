@@ -126,7 +126,7 @@ class ThemeElement(UIComponent):
             its appearance when it has one of its own.
         """
         element = super().create(*children, **props)
-        appearance = literal_option(element.appearance)
+        appearance = literal_option(props.get("appearance"))
         if appearance is None or (
             appearance.__class__ is str and appearance == "inherit"
         ):
@@ -237,7 +237,8 @@ class ThemeElement(UIComponent):
         """
         tag = Component._render(self, props)
         theme = self._theme_styles()
-        style = self._stylex()
+        # The generated stub of the base class leaves its private methods out.
+        style = self._stylex()  # pyright: ignore [reportAttributeAccessIssue]
         refs = theme.refs if style is None else (*theme.refs, style.ref)
         own = tag.props.get("className")
         if own is None or isinstance(own, LiteralStringVar):

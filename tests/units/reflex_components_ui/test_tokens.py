@@ -162,9 +162,9 @@ def test_every_token_lowers_to_itself_and_imports_its_module():
             "rx.ui.tokens.black has no steps. Its tokens are a.",
         ),
         (
-            lambda: tokens.accent.contrst,  # pyright: ignore [reportAttributeAccessIssue]
+            lambda: tokens.accent.contrasst,  # pyright: ignore [reportAttributeAccessIssue]
             (
-                'rx.ui.tokens.accent has no token "contrst". Did you mean '
+                'rx.ui.tokens.accent has no token "contrasst". Did you mean '
                 '"contrast"? Its tokens are a, contrast, indicator, surface, track, '
                 "and the steps [1] to [12]."
             ),
@@ -226,8 +226,8 @@ def test_a_token_that_does_not_exist_says_what_does(
 
 def test_token_error_is_what_python_expects_of_a_missing_name():
     """``hasattr`` and ``getattr`` with a default work, and so does copying."""
-    assert not hasattr(tokens.accent, "contrst")
-    assert getattr(tokens.accent, "contrst", None) is None
+    assert not hasattr(tokens.accent, "contrasst")
+    assert getattr(tokens.accent, "contrasst", None) is None
     assert issubclass(TokenError, (AttributeError, LookupError))
     assert copy.deepcopy(tokens.accent).a[3] == "var(--accent-a3)"
 
