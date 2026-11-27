@@ -32,12 +32,14 @@ from typing import TYPE_CHECKING, Any
 
 from reflex_base.breakpoints import Breakpoints, breakpoint_names, breakpoints_values
 from reflex_base.constants.base import REFLEX_VAR_OPENING_TAG
-from reflex_base.constants.colors import COLORS, Color
+from reflex_base.constants.colors import Color
 from reflex_base.style import media_query
 from reflex_base.utils import format
 from reflex_base.utils.exceptions import ReflexError
 from reflex_base.vars.base import LiteralVar, Var
 
+from reflex_components_ui._radix_tokens import VAR_GROUPS
+from reflex_components_ui.constants import WEB_DIR
 from reflex_components_ui.style._css_props import (
     CSS_PROPS,
     PSEUDO_CLASSES,
@@ -68,14 +70,29 @@ class StyleError(ReflexError, ValueError):
 
 
 # The module whose import emits the CSS of a custom property, by the first word
-# of the property's name: ``var(--ruby-9)`` needs the ruby scale. The accent
-# scale is an alias the theme defines, so it has no module of its own.
+# of the property's name: ``var(--ruby-9)`` needs the ruby scale, and
+# ``var(--font-size-2)`` the typography tokens.
 VAR_MODULES: dict[str, str] = {
-    scale: f"$/reflex-ui/colors/{scale}.stylex.js"
-    for scale in sorted(COLORS - {"accent"})
+    name[2:].partition("-")[0]: f"$/{WEB_DIR}/{module}"
+    for module, names in VAR_GROUPS.values()
+    for name in names
 }
 
-_VAR_NAME = re.compile(r"var\(--([a-z]+)-")
+# The custom properties that hold one value, which a shorthand can give to a
+# longhand. A shadow and a font family are lists, and the panel properties
+# are empty or invalid by design.
+_MULTIPLE_VALUES = re.compile(
+    r"--shadow-|--panel-solid$|--backdrop-filter-panel$|--color-panel-if-solid$"
+    r"|-font-family$"
+)
+_SINGLE_VALUE_VARS: frozenset[str] = frozenset([
+    f"var({name})"
+    for _, names in VAR_GROUPS.values()
+    for name in names
+    if not _MULTIPLE_VALUES.search(name)
+])
+
+_VAR_NAME = re.compile(r"var\(--([a-z]+)[-),]")
 _IDENTIFIER = re.compile(r"-?[A-Za-z_][\w-]*")
 _PARENTHESISED = re.compile(r"\([^()]*\)")
 _COMBINATOR = re.compile(r"[\s>+~,&]")
@@ -413,12 +430,18 @@ def _split(value: str) -> list[str] | None:
 
     Returns:
         The values, or None when the value cannot be split safely: a custom
-        property may hold several values, and a slash or a comma separates
-        groups of them.
+        property may hold several values unless it is a design token known to
+        hold one, and a slash or a comma separates groups of them.
     """
-    if "var(" in value or "/" in value or "," in value or "!" in value:
+    if "/" in value or "," in value or "!" in value:
         return None
-    return _tokens(value)
+    tokens = _tokens(value)
+    if "var(" in value:
+        single = _SINGLE_VALUE_VARS
+        for token in tokens:
+            if "var(" in token and token not in single:
+                return None
+    return tokens
 
 
 def _cannot_split(name: str, key: str, value: Any, instead: str) -> StyleError:

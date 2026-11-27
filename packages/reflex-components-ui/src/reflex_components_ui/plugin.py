@@ -5,9 +5,10 @@ from __future__ import annotations
 import dataclasses
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 from reflex_base.constants import Dirs, Ext, PageNames
-from reflex_base.plugins import Plugin, VitePluginEntry
+from reflex_base.plugins import PageContext, Plugin, VitePluginEntry
 
 from reflex_components_ui.constants import (
     JS_SRC,
@@ -15,9 +16,15 @@ from reflex_components_ui.constants import (
     STYLEX_VERSION,
     WEB_DIR,
 )
+from reflex_components_ui.themes import Theme
 
 # Declares the cascade layers, so it comes before any stylesheet that names one.
 BASE_STYLESHEET_IMPORT = f"@import url('../{WEB_DIR}/base.css');"
+
+# Where the element that carries the theme of the app goes among the elements
+# around every page: inside the theme of Radix Themes, which is at 20, so that
+# a page with components of both follows this one.
+APP_THEME_WRAP = (15, "ReflexUITheme")
 
 # The cascade layer the styles of the components are compiled into.
 CSS_LAYER = "reflex-ui"
@@ -55,11 +62,6 @@ def add_base_stylesheet(content: str) -> str:
     )
     lines.insert(first_import, BASE_STYLESHEET_IMPORT)
     return "\n".join(lines)
-
-
-@dataclasses.dataclass
-class Theme:
-    """The look of the rx.ui components across an app. It has no options yet."""
 
 
 @dataclasses.dataclass
@@ -125,3 +127,15 @@ class UIPlugin(Plugin):
             str(Path(Dirs.STYLES) / (PageNames.STYLESHEET_ROOT + Ext.CSS)),
             add_base_stylesheet,
         )
+
+    def compile_page(self, page_ctx: PageContext, /, **kwargs: Any) -> None:
+        """Wrap the app in the element that carries its theme.
+
+        Args:
+            page_ctx: The page being compiled.
+            **kwargs: The context for the plugin.
+        """
+        # The component imports this module for the plugin it needs.
+        from reflex_components_ui.layout.theme import AppTheme
+
+        page_ctx.app_wrap_components[APP_THEME_WRAP] = AppTheme.create()
