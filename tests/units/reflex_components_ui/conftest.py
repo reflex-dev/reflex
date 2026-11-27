@@ -6,8 +6,10 @@ import subprocess
 import sys
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import pytest
+from reflex_base.components.component import Component
 from reflex_base.config import get_config
 from reflex_components_ui.plugin import UIPlugin
 
