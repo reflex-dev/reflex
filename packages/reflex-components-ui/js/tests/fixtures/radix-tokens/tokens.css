@@ -1,0 +1,196 @@
+/* The shapes the token stylesheet of @radix-ui/themes is made of, with two
+   steps of each scale and a few tokens of each kind. */
+:root, .light, .light-theme {
+  --gray-9: #8d8d8d;
+  --gray-a9: #00000072;
+  --slate-9: #8b8d98;
+  --slate-a9: #00051d74;
+  --red-9: #e5484d;
+  --red-a9: #db0007b7;
+}
+
+@supports (color: color(display-p3 1 1 1)) {
+  @media (color-gamut: p3) {
+    :root, .light, .light-theme {
+      --gray-9: color(display-p3 0.553 0.553 0.553);
+      --slate-9: color(display-p3 0.547 0.553 0.592);
+      --red-9: color(display-p3 0.83 0.329 0.324);
+    }
+  }
+}
+
+.dark, .dark-theme {
+  --gray-9: #6e6e6e;
+  --gray-a9: #ffffff69;
+  --slate-9: #696e77;
+  --slate-a9: #d9edff5d;
+  --red-9: #e5484d;
+  --red-a9: #ff5d61b0;
+}
+
+@supports (color: color(display-p3 1 1 1)) {
+  @media (color-gamut: p3) {
+    .dark, .dark-theme {
+      --gray-9: color(display-p3 0.431 0.431 0.431);
+      --slate-9: color(display-p3 0.415 0.431 0.463);
+    }
+  }
+}
+
+:root {
+  --black-a9: rgba(0, 0, 0, 0.7);
+  --red-contrast: white;
+  --slate-contrast: white;
+  --gray-contrast: white;
+}
+
+:root, .light, .light-theme {
+  --red-track: var(--red-9);
+  --red-surface: #fff7f7cc;
+}
+
+.dark, .dark-theme {
+  --red-track: var(--red-9);
+  --red-surface: #2f151780;
+}
+
+@supports (color: color-mix(in oklab, white, black)) {
+  .dark, .dark-theme {
+    --red-track: color-mix(in oklab, var(--red-a9), var(--red-9) 65%);
+  }
+}
+
+:where(.radix-themes) {
+  --color-background: white;
+  --color-panel-solid: white;
+  --color-panel-translucent: rgba(255, 255, 255, 0.7);
+  --color-transparent: rgb(0 0 0 / 0);
+  --shadow-1:
+    inset 0 0 0 1px var(--gray-a9),
+    inset 0 1.5px 2px 0 var(--black-a9);
+  --shadow-2:
+    0 0 0 1px var(--gray-a9),
+    0 1px 3px 0 var(--black-a9);
+}
+
+:is(.dark, .dark-theme),
+:is(.dark, .dark-theme) :where(.radix-themes:not(.light, .light-theme)) {
+  --color-background: var(--gray-9);
+  --color-panel-solid: var(--gray-9);
+  --color-panel-translucent: var(--gray-a9);
+  --shadow-1:
+    inset 0 -1px 1px 0 var(--gray-a9),
+    inset 0 0 0 1px var(--gray-a9);
+  --shadow-2:
+    0 0 0 1px var(--gray-a9),
+    0 1px 3px 0 var(--black-a9);
+}
+
+@supports (color: color-mix(in oklab, white, black)) {
+  :where(.radix-themes) {
+    --shadow-2:
+      0 0 0 1px color-mix(in oklab, var(--gray-a9), var(--gray-9) 25%),
+      0 1px 3px 0 var(--black-a9);
+  }
+}
+
+@supports (color: color(display-p3 1 1 1)) {
+  @media (color-gamut: p3) {
+    .radix-themes {
+      --color-transparent: color(display-p3 0 0 0 / 0);
+    }
+  }
+}
+
+.radix-themes:where(.light, .light-theme), :root:where(:has(.radix-themes[data-is-root-theme='true']:where(.light, .light-theme))) {
+  color-scheme: light;
+}
+
+.radix-themes:where(.dark, .dark-theme), :root:where(:has(.radix-themes[data-is-root-theme='true']:where(.dark, .dark-theme))) {
+  color-scheme: dark;
+}
+
+.radix-themes,
+[data-accent-color]:where(:not([data-accent-color=''], [data-accent-color='gray'])) {
+  --focus-9: var(--accent-9);
+}
+
+.radix-themes ::selection {
+  background-color: var(--focus-9);
+}
+
+.radix-themes:where([data-has-background='true']) {
+  background-color: var(--color-background);
+}
+
+.radix-themes:where([data-panel-background='solid']) {
+  --color-panel: var(--color-panel-solid);
+  --backdrop-filter-panel: none;
+}
+
+.radix-themes:where([data-panel-background='translucent']) {
+  --color-panel: var(--color-panel-translucent);
+  --backdrop-filter-panel: blur(64px);
+}
+
+[data-accent-color='gray'] {
+  --accent-9: var(--gray-9);
+  --accent-a9: var(--gray-a9);
+  --accent-contrast: var(--gray-contrast);
+}
+
+[data-accent-color='red'] {
+  --accent-9: var(--red-9);
+  --accent-a9: var(--red-a9);
+  --accent-contrast: var(--red-contrast);
+}
+
+.radix-themes:where([data-gray-color='slate']) {
+  --gray-9: var(--slate-9);
+  --gray-a9: var(--slate-a9);
+  --gray-contrast: var(--slate-contrast);
+}
+
+.radix-themes {
+  --cursor-button: default;
+  --space-1: calc(4px * var(--scaling));
+  --font-size-3: calc(16px * var(--scaling));
+  --font-weight-regular: 400;
+  --default-font-family: -apple-system, 'Segoe UI (Custom)', sans-serif;
+  --default-font-size: var(--font-size-3);
+  --code-font-weight: inherit;
+  overflow-wrap: break-word;
+  font-family: var(--default-font-family);
+  font-size: var(--default-font-size);
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+  -webkit-font-smoothing: antialiased;
+  color: var(--gray-9);
+}
+
+.radix-themes:where([data-scaling='90%']) {
+  --scaling: 0.9;
+}
+
+.radix-themes:where([data-scaling='100%']) {
+  --scaling: 1;
+}
+
+[data-radius] {
+  --radius-1: calc(3px * var(--scaling) * var(--radius-factor));
+}
+
+[data-radius='medium'] {
+  --radius-factor: 1;
+  --radius-full: 0px;
+}
+
+[data-radius='full'] {
+  --radius-factor: 1.5;
+  --radius-full: 9999px;
+}
+
+@font-face {
+  font-family: 'Segoe UI (Custom)';
+  src: local('Segoe UI');
+}

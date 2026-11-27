@@ -95,6 +95,12 @@ export default [
     languageOptions: { globals: globals.node },
   },
   {
+    // The pages the live tests build and open in a browser, and the test
+    // whose callbacks run in them.
+    files: ["tests/harness/**", "tests/themes.test.js"],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
+  {
     files: ["tests/behaviors/**"],
     languageOptions: { globals: globals.browser },
     rules: {

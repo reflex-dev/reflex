@@ -1,11 +1,48 @@
 // Writes the generated files of the package, or with `--check` fails when a
 // committed one is not what its generator produces.
 
+import { readFileSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { getMatchingGrayColor } from "@radix-ui/themes/helpers";
+import { themePropDefs } from "@radix-ui/themes/props";
+
 import { render as renderCssProps } from "./css-props.js";
+import { radixTokens } from "./radix-tokens.js";
+
+const require = createRequire(import.meta.url);
+
+/**
+ * The colors, tokens and themes, from the stylesheet of the Radix Themes
+ * this package installs.
+ *
+ * @returns {Generated[]} The StyleX modules and the python module listing them.
+ */
+function radixThemes() {
+  const { version } = require("@radix-ui/themes/package.json");
+  const { radius, scaling, panelBackground, accentColor, grayColor } =
+    themePropDefs;
+  return radixTokens(
+    readFileSync(require.resolve("@radix-ui/themes/tokens.css"), "utf8"),
+    {
+      version,
+      defaults: {
+        radius: radius.default,
+        scaling: scaling.default,
+        panelBackground: panelBackground.default,
+        accentColor: accentColor.default,
+        grayColor: grayColor.default,
+      },
+      matchingGray: (accent) =>
+        getMatchingGrayColor(
+          /** @type {(typeof accentColor.values)[number]} */ (accent),
+        ),
+    },
+  );
+}
 
 /**
  * A committed file that a generator owns.
@@ -27,6 +64,7 @@ export const GENERATED = [
     path: "src/reflex_components_ui/style/_css_props.py",
     render: renderCssProps,
   },
+  ...radixThemes(),
 ];
 
 const PACKAGE_ROOT = fileURLToPath(new URL("../../", import.meta.url));

@@ -3,7 +3,9 @@
   // generators, the tests and this package's own configuration.
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "types": ["node"]
+    // `vite/client` is for the pages the live tests build, which use
+    // `import.meta.glob`.
+    "types": ["node", "vite/client"]
   },
   "include": ["src/*.js", "scripts", "tests", "*.js"],
   "exclude": []

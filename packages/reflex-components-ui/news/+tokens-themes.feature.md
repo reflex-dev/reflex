@@ -1,0 +1,1 @@
+Add the design tokens, color scales and themes `rx.ui` components are styled with, as StyleX modules generated from Radix Themes. Every custom property keeps its Radix name and value (`--space-4`, `--radius-3`, `--accent-9`), so `rx.color("accent", 9)` and existing CSS resolve the same under both, and an app's stylesheet only carries the scales and themes it imports.
