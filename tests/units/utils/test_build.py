@@ -97,6 +97,11 @@ def test_zip_excludes_directory_symlink_aliases(tmp_path: Path):
 
 
 def _make_exportable_app(root: Path):
+    """Create the smallest app directory that zip_app can export.
+
+    Args:
+        root: The app directory to populate.
+    """
     (root / "app.py").write_text("print('app')")
     static_dir = root / constants.Dirs.WEB / constants.Dirs.STATIC
     static_dir.mkdir(parents=True)
@@ -146,6 +151,26 @@ def test_zip_app_leaves_zips_in_app_out_when_exporting_elsewhere(
 
     with zipfile.ZipFile(dest / "backend.zip") as archive:
         assert archive.namelist() == ["app.py"]
+
+
+def test_zip_app_excludes_backend_excluded_files_under_web_backend(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """--exclude-from-backend also applies to files under .web/backend."""
+    monkeypatch.chdir(tmp_path)
+    _make_exportable_app(tmp_path)
+    web_backend = tmp_path / constants.Dirs.WEB / constants.Dirs.BACKEND
+    web_backend.mkdir(parents=True)
+    (web_backend / "keep.txt").write_text("keep")
+    (web_backend / "secret.txt").write_text("secret")
+
+    build.zip_app(
+        frontend=False,
+        backend_excluded_dirs=((web_backend / "secret.txt").resolve(),),
+    )
+
+    with zipfile.ZipFile(tmp_path / "backend.zip") as archive:
+        assert sorted(archive.namelist()) == [".web/backend/keep.txt", "app.py"]
 
 
 def test_zip_app_creates_missing_zip_dest_dir(
