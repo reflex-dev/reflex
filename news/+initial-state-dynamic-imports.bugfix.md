@@ -1,0 +1,1 @@
+The libraries a component in the initial state hands to the browser are the ones its dynamic code imports, not the ones a page that renders it would: a component that relies on a build step no longer has its build-only imports bundled.
