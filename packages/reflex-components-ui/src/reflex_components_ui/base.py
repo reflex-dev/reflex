@@ -22,6 +22,8 @@ from reflex_base.utils.exceptions import ConfigError
 from reflex_base.utils.imports import ImportDict, ImportVar, ParsedImportDict
 from reflex_base.vars.base import LiteralVar, Var, VarData
 from reflex_base.vars.sequence import LiteralStringVar
+from reflex_components_core.base.fragment import Fragment
+from reflex_components_core.core.cond import Cond
 
 from reflex_components_ui.plugin import UIPlugin
 from reflex_components_ui.style import (
@@ -806,6 +808,10 @@ class Part(UIComponent):
         return self._merged
 
 
+# What renders no element of its own, between a component and its parts.
+_NO_ELEMENT = (Fragment, Cond)
+
+
 def _bind_parts(
     children: Sequence[BaseComponent], parts: Mapping[str, Merged], name: str
 ) -> None:
@@ -829,6 +835,9 @@ def _bind_parts(
                 )
                 raise StyleError(msg)
             child._merged = merged
+            _bind_parts(child.children, parts, name)
+        elif type(child) in _NO_ELEMENT:
+            # A part that is only rendered under a condition.
             _bind_parts(child.children, parts, name)
 
 

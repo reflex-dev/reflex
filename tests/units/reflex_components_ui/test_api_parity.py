@@ -99,11 +99,12 @@ def differences(component: str) -> list[ApiDifference]:
     )
 
 
-def test_the_wave_of_layout_and_typography_is_in_the_namespace():
+def test_every_wave_is_in_the_namespace():
     assert COMPONENTS == [
         "aspect_ratio",
         "blockquote",
         "box",
+        "button",
         "center",
         "code",
         "container",
@@ -123,6 +124,7 @@ def test_the_wave_of_layout_and_typography_is_in_the_namespace():
         "section",
         "separator",
         "spacer",
+        "spinner",
         "stack",
         "text",
         "text.em",

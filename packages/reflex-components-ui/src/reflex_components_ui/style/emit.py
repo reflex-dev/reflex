@@ -394,7 +394,7 @@ def _emit(merged: Merged) -> Emitted:
             f"{key}: {json.dumps(style, ensure_ascii=False, default=reference)}"
             for key, style in styles.items()
         ])
-        for position, frames in enumerate(animations):
+        for position in range(len(animations)):
             # StyleX compiles a reference to keyframes of the same module.
             entries = entries.replace(
                 f'"\\u0001{position}\\u0001"', f"{_NAME}_k{position}"

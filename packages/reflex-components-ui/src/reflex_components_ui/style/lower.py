@@ -1260,7 +1260,9 @@ def apply_layer(target: dict[str, LoweredValue], layer: Layer) -> None:
 
     A property the later style sets replaces the earlier value, conditions
     included. A property it only sets under a condition, as a ``_hover`` block
-    does, keeps the earlier value everywhere else.
+    does, keeps the earlier value everywhere else. A pseudo-element is another
+    box: what the earlier style gives it stays, unless the later one sets the
+    property for that pseudo-element too.
 
     Args:
         target: The properties merged so far.
@@ -1270,9 +1272,22 @@ def apply_layer(target: dict[str, LoweredValue], layer: Layer) -> None:
     for prop in replaced:
         target.pop(prop, None)
     for prop, value in props.items():
+        old = target.get(prop)
         if value.__class__ is dict and "default" not in value:
-            old = target.get(prop)
             target[prop] = value if old is None else _overlay(old, value)
+        elif old.__class__ is dict:
+            kept = {
+                condition: item
+                for condition, item in old.items()
+                if condition[:2] == "::"
+                and (value.__class__ is not dict or condition not in value)
+            }
+            if not kept:
+                target[prop] = value
+            elif value.__class__ is dict:
+                target[prop] = {**value, **kept}
+            else:
+                target[prop] = {"default": value, **kept}
         else:
             target[prop] = value
 
