@@ -33,7 +33,13 @@ class Outlet(ReactRouterLib):
     tag = "Outlet"
 
 
-class Scripts(ReactRouterLib):
-    """The document main scripts."""
+class Scripts(Component):
+    """The document main scripts.
+
+    Renders react-router's scripts, started after the first paint on a
+    prerendered page.
+    """
+
+    library = "$/utils/scripts"
 
     tag = "Scripts"
