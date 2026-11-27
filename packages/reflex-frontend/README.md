@@ -53,7 +53,10 @@ without it appearing in its arguments. What there is, and where it is pinned:
   queue or the socket is as it left them.
 - **Work done on import**: `utils/state.js` creates the cookie reader, always;
   publishes the client state store on `refs`, when there is a `document`; and
-  starts a socket transport, when there is a `window`. A production build
+  starts a socket transport, when there is a `window`. `utils/scripts.js`
+  takes over the click a prerendered page recorded before its scripts loaded
+  (`window.__reflex_early`, set by the inline script that module renders), and
+  dispatches it again once the page is hydrated. A production build
   evaluates every module in node to prerender pages, so anything added here has
   to load without either. `tests/public_api.test.js` imports each module in
   node to keep it that way.
