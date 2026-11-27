@@ -231,3 +231,53 @@ def test_connection_banner_and_modal_handle_storage_blocked_errors():
             }
         ],
     }
+
+
+def test_connection_modal_shares_dismiss_state_under_auto_memoize():
+    from reflex_base.plugins import CompileContext, CompilerHooks
+
+    from reflex.app import UnevaluatedPage
+    from reflex.compiler import compiler
+    from reflex.compiler.plugins import default_page_plugins
+
+    ctx = CompileContext(
+        pages=[
+            UnevaluatedPage(route="/page", component=ConnectionModal.create),
+        ],
+        hooks=CompilerHooks(plugins=default_page_plugins(auto_memoize=True)),
+    )
+    with ctx:
+        ctx.compile()
+
+    assert len(ctx.auto_memo_components) == 1
+    tag = next(iter(ctx.auto_memo_components))[0]
+    memo_files, _ = compiler.compile_memo_components(
+        tuple(ctx.auto_memo_components.values())
+    )
+    assert len(memo_files) == 1
+    expected_code = f"""
+import {{getBackendURL,isTrue,pyAnd,pyOr}} from "$/utils/state"
+import {{Fragment,memo,useContext,useEffect,useState}} from "react"
+import {{EventLoopContext}} from "$/utils/context"
+import env from "$/env.json"
+import {{jsx}} from "@emotion/react"
+
+
+
+
+
+
+export const {tag} = /*#__PURE__*/ (() => {{
+const {tag} = memo(({{children}}) => {{
+    const connectErrors = useContext(EventLoopContext)[1];
+const [modalDismissed, setModalDismissed] = useState(false);
+useEffect(() => {{ if (!(pyOr(pyOr((connectErrors.length >= 2), () => (((connectErrors.length > 0) && (connectErrors[connectErrors.length - 1].code === 'storage_blocked')))), () => (connectErrors.some((error) => error.code === 'hydration_payload_too_large'))))) {{ setModalDismissed(false); }} }}, [connectErrors]);
+    return(
+        jsx(Fragment,{{}},(pyAnd(pyOr(pyOr((connectErrors.length >= 2), () => (((connectErrors.length > 0) && (connectErrors[connectErrors.length - 1].code === 'storage_blocked')))), () => (connectErrors.some((error) => error.code === 'hydration_payload_too_large'))), () => (!(modalDismissed)))?(jsx(Fragment,{{}},jsx("dialog",{{css:({{ ["zIndex"] : 9999 }}),open:pyAnd(pyOr(pyOr((connectErrors.length >= 2), () => (((connectErrors.length > 0) && (connectErrors[connectErrors.length - 1].code === 'storage_blocked')))), () => (connectErrors.some((error) => error.code === 'hydration_payload_too_large'))), () => (!(modalDismissed)))}},jsx("h2",{{}},"Connection Error"),jsx("span",{{}},jsx(Fragment,{{}},(pyOr(((connectErrors.length > 0) && (connectErrors[connectErrors.length - 1].code === 'storage_blocked')), () => (connectErrors.some((error) => error.code === 'hydration_payload_too_large')))?(jsx(Fragment,{{}},((connectErrors.length > 0) ? connectErrors[connectErrors.length - 1].message : ''))):(jsx(Fragment,{{}},"Cannot connect to server: ",((connectErrors.length > 0) ? connectErrors[connectErrors.length - 1].message : ''),". Check if server is reachable at ",getBackendURL(env.EVENT).href))))),jsx("div",{{css:({{ ["marginTop"] : "0.75rem" }})}},jsx("button",{{onClick:() => setModalDismissed(true),type:"button"}},"Close"))))):(jsx(Fragment,{{}},))))
+    )
+}});
+{tag}.displayName = "Fragment";
+return {tag};
+}})();
+""".strip()
+    assert memo_files[0][1].strip() == expected_code

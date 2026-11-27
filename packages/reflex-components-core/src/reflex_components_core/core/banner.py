@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 from datetime import timedelta
 
 from reflex_base import constants
@@ -289,7 +290,7 @@ class ConnectionModal(Component):
             _var_data=modal_dismissed_var_data,
         ).to(BooleanVar)
         show_modal = has_modal_error & ~modal_dismissed
-        return cond(
+        modal = cond(
             show_modal,
             el.dialog(
                 el.h2("Connection Error"),
@@ -311,6 +312,11 @@ class ConnectionModal(Component):
                 z_index=9999,
             ),
         )
+        # Keep cond, dialog, and Close button inside one memo scope so they share `modalDismissed`.
+        modal._memoization_mode = dataclasses.replace(
+            modal._memoization_mode, recursive=False
+        )
+        return modal
 
 
 class WifiOffPulse(Icon):
