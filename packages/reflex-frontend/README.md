@@ -53,10 +53,7 @@ without it appearing in its arguments. What there is, and where it is pinned:
   queue or the socket is as it left them.
 - **Work done on import**: `utils/state.js` creates the cookie reader, always;
   publishes the client state store on `refs`, when there is a `document`; and
-  starts a socket transport, when there is a `window`. `utils/scripts.js`
-  takes over the click a prerendered page recorded before its scripts loaded
-  (`window.__reflex_early`, set by the inline script that module renders), and
-  dispatches it again once the page is hydrated. A production build
+  starts a socket transport, when there is a `window`. A production build
   evaluates every module in node to prerender pages, so anything added here has
   to load without either. `tests/public_api.test.js` imports each module in
   node to keep it that way.
@@ -68,6 +65,11 @@ without it appearing in its arguments. What there is, and where it is pinned:
   module local, but it stops the minifier from mangling the chunk that holds
   it. So a script sees those names and the globals, and nothing else. Renaming
   an export changes what compiled callbacks can call.
+- **The click before hydration**: the inline script `utils/scripts.js` renders
+  into a prerendered page records the last click in `window.__reflex_early`.
+  The entry point calls `takeEarlyClick` right before `hydrateRoot`, and the
+  click is dispatched again once the page is hydrated. An entry point that
+  hydrates without calling it loses that click, as before.
 - **Globals the runtime reads**: hooks other code installs on `window`
   (`__reflex_otel`, `__reflex`, `__reflex_load`) and the per-app `$/env.json`.
   Each is declared in `types/globals.d.ts`; reading one that is not fails the

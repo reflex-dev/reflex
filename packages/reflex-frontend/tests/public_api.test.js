@@ -108,6 +108,7 @@ const PUBLIC_API = {
     "FIRST_PAINT_TIMEOUT_MS",
     "START_AFTER_FIRST_PAINT",
     "Scripts",
+    "takeEarlyClick",
   ],
   "$/components/reflex/radix_themes_color_mode_provider": ["default"],
   "$/components/shiki/code": ["Code"],

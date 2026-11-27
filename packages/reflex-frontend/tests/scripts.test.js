@@ -299,15 +299,19 @@ describe("START_AFTER_FIRST_PAINT", () => {
     };
 
     /**
-     * Load the module as the page's scripts do, and mount the scripts
-     * component, which is when a hydrated page runs its effects.
+     * Load the module as the page's scripts do, take the click over as the
+     * entry point does, and mount the scripts component, which is when a
+     * hydrated page runs its effects.
+     * @param {object} [options] How the page is hydrated.
+     * @param {boolean} [options.take] Whether the entry point takes the click over.
      */
-    const hydrate = async () => {
+    const hydrate = async ({ take = true } = {}) => {
       vi.resetModules();
       const { act, createElement } = await import("react");
       const { createRoot } = await import("react-dom/client");
       const { createRoutesStub } = await import("react-router");
-      const { Scripts } = await import("$/utils/scripts");
+      const { Scripts, takeEarlyClick } = await import("$/utils/scripts");
+      if (take) takeEarlyClick();
       const Stub = createRoutesStub([
         { path: "/", Component: () => createElement(Scripts) },
       ]);
@@ -393,16 +397,31 @@ describe("START_AFTER_FIRST_PAINT", () => {
       expect(clicks.length).toBe(1);
     });
 
-    test("a click after the scripts loaded is not recorded", async () => {
+    test("is not recorded once the entry point took it over", async () => {
       const { target, clicks } = addToPage('<button id="target"></button>');
       run();
       const { record } = window.__reflex_early;
+      const removed = vi.spyOn(document, "removeEventListener");
       await hydrate();
+      expect(removed.mock.calls).toEqual([["click", record, true]]);
       click(target);
-      expect(clicks.length).toBe(1);
-      record(clicks[0]);
       await hydrate();
       expect(clicks.length).toBe(1);
+    });
+
+    test("is not dispatched again by an entry point that did not take it over", async () => {
+      const { target, clicks } = addToPage('<button id="target"></button>');
+      run();
+      click(target);
+      await hydrate({ take: false });
+      expect(clicks.length).toBe(1);
+    });
+
+    test("taking it over on a page without the inline script does nothing", async () => {
+      const { clicks } = addToPage('<button id="target"></button>');
+      await hydrate();
+      expect(clicks).toEqual([]);
+      expect(window.__reflex_early).toBe(undefined);
     });
   });
 });

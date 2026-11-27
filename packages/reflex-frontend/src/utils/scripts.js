@@ -69,22 +69,30 @@ observer.observe({type:"paint",buffered:true});
 const ACTS_WITHOUT_SCRIPTS =
   "a[href],area[href],input,select,textarea,label,summary,[contenteditable]";
 
-// From here on React handles a click itself, hydrating first if it has to:
-// what the inline script recorded stops at the import of this module, and the
-// last click it saw is dispatched again once the page is hydrated.
 let earlyClick = null;
-if (typeof window !== "undefined" && window.__reflex_early) {
-  document.removeEventListener("click", window.__reflex_early.record, true);
-  earlyClick = window.__reflex_early.click;
+
+/**
+ * Stop the inline script recording clicks, and keep the last one it saw.
+ *
+ * Called right before the page is hydrated. From then on React handles a
+ * click itself, hydrating first if it has to, so a click recorded any later
+ * would run its handler twice.
+ */
+export const takeEarlyClick = () => {
+  const early = window.__reflex_early;
+  if (!early) return;
+  document.removeEventListener("click", early.record, true);
+  earlyClick = early.click;
   window.__reflex_early = undefined;
-}
+};
 
 /**
  * Dispatch again the click a prerendered page got before it was hydrated.
  *
  * Without this the click is lost: the page is visible, and no handler is
  * attached yet. Only the last click counts, and only where the browser did
- * nothing with the first one.
+ * nothing with the first one. An entry point that never took the click over
+ * gets none dispatched: there is no telling whether React handled it.
  */
 const replayEarlyClick = () => {
   const click = earlyClick;
