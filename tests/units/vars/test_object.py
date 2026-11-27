@@ -1,8 +1,10 @@
 import dataclasses
+import typing
 from collections.abc import Sequence
 from typing import Annotated, Any, Literal, Union, assert_type
 
 import pytest
+import typing_extensions
 from reflex_base.utils import serializers
 from reflex_base.utils.exceptions import VarAttributeError
 from reflex_base.utils.imports import ImportVar
@@ -612,3 +614,32 @@ def test_plain_property_on_typing_union_raises() -> None:
 
     with pytest.raises(VarAttributeError, match="union type"):
         _ = UnionState.item.label
+
+
+class _TypingPoint(typing.TypedDict):
+    """A TypedDict from the typing module."""
+
+    x: int
+    name: str
+
+
+class _ExtensionsPoint(typing_extensions.TypedDict):
+    """A TypedDict from typing_extensions."""
+
+    x: int
+    name: str
+
+
+@pytest.mark.parametrize("point_type", [_TypingPoint, _ExtensionsPoint])
+def test_typed_dict_key_access(point_type: type) -> None:
+    """Keys of a TypedDict var have the field types, whichever TypedDict defines it.
+
+    Args:
+        point_type: The TypedDict class typing the var.
+    """
+    point = Var(_js_expr="point", _var_type=point_type).guess_type()
+    assert isinstance(point, ObjectVar)
+    assert point["x"]._var_type is int
+    assert point["name"]._var_type is str
+    with pytest.raises(VarAttributeError):
+        _ = point["missing"]

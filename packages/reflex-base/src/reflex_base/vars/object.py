@@ -7,15 +7,9 @@ import dataclasses
 import typing
 from collections.abc import Mapping
 from importlib.util import find_spec
-from typing import (
-    Any,
-    NoReturn,
-    TypeVar,
-    get_args,
-    get_type_hints,
-    is_typeddict,
-    overload,
-)
+from typing import Any, NoReturn, TypeVar, get_args, get_type_hints, overload
+
+from typing_extensions import is_typeddict
 
 from reflex_base.utils import types
 from reflex_base.utils.exceptions import VarAttributeError
@@ -61,7 +55,10 @@ def _determine_value_type(var_type: GenericType):
             if arg is not type(None)
         ])
 
-    if is_typeddict(origin_var_type) or dataclasses.is_dataclass(origin_var_type):
+    if is_typeddict(origin_var_type):
+        return unionize(*types.get_typed_dict_field_types(var_type).values())
+
+    if dataclasses.is_dataclass(origin_var_type):
         annotations = get_type_hints(origin_var_type)
         return unionize(*annotations.values())
 
