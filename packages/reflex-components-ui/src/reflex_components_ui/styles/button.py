@@ -410,6 +410,28 @@ _RESET: dict[str, Any] = {
 }
 
 
+def _ghost_box(y: str, x: str) -> dict[str, str]:
+    """Make the padding of a ghost button, and the margins that take it back.
+
+    A ghost button sits where its content would without the padding. Each
+    side is written out: a size whose padding is a calculation would keep
+    the shorthand whole where the other sizes are split, and a size per
+    breakpoint would mix the two.
+
+    Args:
+        y: The padding above and below.
+        x: The padding on each side.
+
+    Returns:
+        The paddings and the margins.
+    """
+    style = {}
+    for side, padding in (("top", y), ("right", x), ("bottom", y), ("left", x)):
+        style[f"padding_{side}"] = padding
+        style[f"margin_{side}"] = f"calc(0px - {padding})"
+    return style
+
+
 def button_styles(icon: bool) -> ComponentStyles:
     """Make the style table of a button.
 
@@ -436,7 +458,7 @@ def button_styles(icon: bool) -> ComponentStyles:
             "4": tokens.space[3],
         }
         ghost = {
-            size: {"padding": padding, "margin": f"calc(0px - {padding})"}
+            size: _ghost_box(padding, padding)
             for size, padding in ghost_padding.items()
         }
         solid_size: dict[str, Any] = {
@@ -458,11 +480,7 @@ def button_styles(icon: bool) -> ComponentStyles:
             "4": (tokens.space[2], tokens.space[4], tokens.space[2]),
         }
         ghost = {
-            size: {
-                "gap": gap,
-                "padding": f"{y} {x}",
-                "margin": f"calc(0px - {y}) calc(0px - {x})",
-            }
+            size: {"gap": gap, **_ghost_box(y, x)}
             for size, (y, x, gap) in ghost_paddings.items()
         }
         solid_size = {

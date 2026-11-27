@@ -113,6 +113,7 @@ def test_every_wave_is_in_the_namespace():
         "grid",
         "heading",
         "hstack",
+        "icon_button",
         "inset",
         "link",
         "list",
