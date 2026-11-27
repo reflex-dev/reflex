@@ -22,8 +22,10 @@ def test_websocket_target_url():
 def test_connection_banner():
     banner = ConnectionBanner.create()
     imports = banner._get_all_imports(collapse=True)
+    # Its elements are styled through ``css`` props, which need Emotion.
     assert sorted(imports) == sorted((
         "react",
+        "@emotion/react",
         "$/utils/context",
         "$/utils/state",
         "$/env.json",
@@ -37,8 +39,10 @@ def test_connection_banner():
 def test_connection_modal():
     modal = ConnectionModal.create()
     imports = modal._get_all_imports(collapse=True)
+    # Its elements are styled through ``css`` props, which need Emotion.
     assert sorted(imports) == sorted((
         "react",
+        "@emotion/react",
         "$/utils/context",
         "$/utils/state",
         "$/env.json",

@@ -67,7 +67,6 @@ export const useStateContext = () => ({});
 export const registerApp = () => {};
 export const eventLoop = {};
 """,
-    "@emotion/react": "export const jsx = () => null;\n",
 }
 
 # Renders ``StateProvider`` around a leaf and resolves its fixed-depth wrapper.
@@ -142,7 +141,6 @@ def test_stateful_context_imports_the_backend_connection() -> None:
         'import { applyDelta, ReflexEvent, refs } from "$/utils/state"',
         'import { hydrateClientStorage, useEventLoop } from "$/utils/socket"',
         'import { ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext, registerApp, eventLoop } from "$/utils/context-registry"',
-        'import { jsx } from "@emotion/react";',
     ]
 
 
@@ -153,7 +151,6 @@ def test_stateless_context_does_not_import_the_backend_connection() -> None:
         'import { useContext, useMemo, useState, createElement, useEffect } from "react"',
         'import { applyDelta, useEventLoop, refs } from "$/utils/state"',
         'import { ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext, registerApp, eventLoop } from "$/utils/context-registry"',
-        'import { jsx } from "@emotion/react";',
     ]
     assert "utils/socket" not in rendered
 
@@ -305,7 +302,6 @@ export const refs = {};
         ("$/utils/state", state_stub),
         ("$/utils/socket", _SOCKET_STUB),
         ("$/utils/context-registry", registry_source),
-        ("@emotion/react", "export const jsx = () => null;\n"),
     ):
         stub = tmp_path / (
             "registry.mjs"

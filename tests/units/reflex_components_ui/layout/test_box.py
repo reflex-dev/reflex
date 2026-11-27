@@ -14,8 +14,7 @@ from reflex_components_ui.plugin import UIPlugin
 import reflex as rx
 
 BOX_PAGE = """import * as stylex from "@stylexjs/stylex"
-import {Fragment,useEffect} from "react"
-import {jsx} from "@emotion/react"
+import {Fragment,createElement as jsx,useEffect} from "react"
 
 
 

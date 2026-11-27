@@ -190,7 +190,8 @@ def _split_window_libraries(
 
     A deferred library costs a chunk of its whole namespace, so one the compiler
     registered is only kept when the app renders a dynamic component. A library
-    the app registered itself is always kept.
+    the app registered itself is always kept. Emotion is deferred like any
+    other: a dynamic component loads it when it renders a ``css`` prop.
 
     Args:
         dynamic_components: Whether the app renders a dynamic component.

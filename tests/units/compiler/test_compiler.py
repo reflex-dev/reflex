@@ -771,15 +771,13 @@ def test_compile_app_root_includes_radix_window_library_when_bundled(mocker):
 
 
 _APP_ROOT_HEAD = """
-import {jsx} from "@emotion/react"
-import {Fragment,useEffect} from "react"
+import {Fragment,createElement as jsx,useEffect} from "react"
 
 import { defaultColorMode } from "$/utils/context";
 import { ThemeProvider } from '$/utils/react-theme';
 import { Layout as AppLayout } from './_document';
 import { Outlet } from 'react-router';
 import * as React from "react";
-import * as emotion_react from "@emotion/react";
 import * as utils_context from "$/utils/context";
 import * as utils_context_registry from "$/utils/context-registry";
 import * as utils_state from "$/utils/state";
@@ -825,7 +823,6 @@ function ReflexProviders({children}) {
     // Make contexts and state objects available globally for dynamic eval'd components
     window.__reflex = {
           "react": React,
-    "@emotion/react": emotion_react,
     "$/utils/context": utils_context,
     "$/utils/context-registry": utils_context_registry,
     "$/utils/state": utils_state,
@@ -851,7 +848,6 @@ def _app_root_with_loaders(*loaders: str) -> str:
 if (typeof window !== "undefined") {
   window.__reflex = { ...window.__reflex,
         "react": React,
-    "@emotion/react": emotion_react,
     "$/utils/context": utils_context,
     "$/utils/context-registry": utils_context_registry,
     "$/utils/state": utils_state,
@@ -885,8 +881,13 @@ function ReflexProviders({children}) {
     )
 
 
+_EMOTION_LOADER = '"@emotion/react": () => import("$/utils/dynamic_libraries/emotion_react").then((module) => module.default),'
 _RADIX_LOADER = '"@radix-ui/themes": () => import("$/utils/dynamic_libraries/radix_ui_themes").then((module) => module.default),'
 _D3_LOADER = '"d3-format": () => import("$/utils/dynamic_libraries/d3_format").then((module) => module.default),'
+_EMOTION_MODULE = (
+    "emotion_react.js",
+    'import * as library from "@emotion/react";\nexport default library;\n',
+)
 _RADIX_MODULE = (
     "radix_ui_themes.js",
     'import * as library from "@radix-ui/themes";\nexport default library;\n',
@@ -903,8 +904,8 @@ _D3_MODULE = (
         pytest.param(
             (),
             True,
-            _app_root_with_loaders(_RADIX_LOADER),
-            [_RADIX_MODULE],
+            _app_root_with_loaders(_EMOTION_LOADER, _RADIX_LOADER),
+            [_EMOTION_MODULE, _RADIX_MODULE],
             id="dynamic_components",
         ),
         pytest.param(
@@ -913,8 +914,8 @@ _D3_MODULE = (
         pytest.param(
             ("d3-format@3.1.0",),
             True,
-            _app_root_with_loaders(_RADIX_LOADER, _D3_LOADER),
-            [_RADIX_MODULE, _D3_MODULE],
+            _app_root_with_loaders(_EMOTION_LOADER, _RADIX_LOADER, _D3_LOADER),
+            [_EMOTION_MODULE, _RADIX_MODULE, _D3_MODULE],
             id="dynamic_components_and_app_library",
         ),
         pytest.param(
@@ -936,7 +937,8 @@ def test_compile_app_root_loads_optional_libraries_on_demand(
     """Keep optional library namespaces out of root.jsx, in modules of their own.
 
     A library the compiler registered is only loadable when the app renders a
-    dynamic component, a library the app registered is always loadable.
+    dynamic component, a library the app registered is always loadable. Emotion
+    is one of the former: only a dynamic component with a ``css`` prop calls it.
 
     Args:
         app_libraries: The libraries the app registers with bundle_library.
@@ -1182,8 +1184,7 @@ def test_compile_document_root_prod(
         == f"""import {{Links,Meta,ScrollRestoration}} from "react-router"
 import reflexGlobalStyles from "$/styles/__reflex_global_styles.css?url"
 import {{Scripts}} from "$/utils/scripts"
-import {{jsx}} from "@emotion/react"
-import {{Fragment,useEffect}} from "react"
+import {{Fragment,createElement as jsx,useEffect}} from "react"
 
 export function Layout({{children}}) {{
   return (

@@ -22,8 +22,7 @@ from reflex.compiler import compiler
 PAGE = """import * as stylex from "@stylexjs/stylex"
 import "$/reflex-ui/colors/jade.stylex.js"
 import "$/reflex-ui/colors/ruby.stylex.js"
-import {Fragment,useEffect} from "react"
-import {jsx} from "@emotion/react"
+import {Fragment,createElement as jsx,useEffect} from "react"
 
 
 
@@ -46,8 +45,7 @@ export default Component;
 
 # A page whose only element was moved into a module of its own.
 MEMO_PAGE = """import {Button_button_f1bbe1600e526de2c75f843fcd30a1d1} from "$/utils/components/Button_button_f1bbe1600e526de2c75f843fcd30a1d1"
-import {Fragment,useEffect} from "react"
-import {jsx} from "@emotion/react"
+import {Fragment,createElement as jsx,useEffect} from "react"
 
 
 
@@ -72,8 +70,7 @@ import {isTrue,mergeSlotProps} from "$/utils/state"
 import {useStateContext} from "$/utils/context-registry"
 import * as stylex from "@stylexjs/stylex"
 import "$/reflex-ui/colors/ruby.stylex.js"
-import {jsx} from "@emotion/react"
-import {Fragment,memo,useEffect} from "react"
+import {Fragment,createElement as jsx,memo,useEffect} from "react"
 
 
 
@@ -100,8 +97,7 @@ RX_MEMO_MODULE = """
 import {isTrue} from "$/utils/state"
 import * as stylex from "@stylexjs/stylex"
 import "$/reflex-ui/colors/ruby.stylex.js"
-import {jsx} from "@emotion/react"
-import {Fragment,memo,useEffect} from "react"
+import {Fragment,createElement as jsx,memo,useEffect} from "react"
 
 
 
@@ -128,8 +124,7 @@ DYNAMIC_MODULE = (
     "//__reflex_evaluate:[]\n"
     "const React = window.__reflex.react;\n"
     "\n"
-    "const {jsx} = window.__reflex['@emotion/react']\n"
-    "const {Fragment,useEffect} = window.__reflex['react']\n"
+    "const {Fragment,createElement: jsx,useEffect} = window.__reflex['react']\n"
     "const {pyOr} = window.__reflex['$/utils/state']\n"
     "\n"
     "export default function MySSRComponent () {\n"

@@ -149,9 +149,7 @@ class ErrorBoundary(Component):
                             a(
                                 div(
                                     "Built with ",
-                                    svg_logo(
-                                        None, class_name="rx-error-boundary-logo"
-                                    ),
+                                    svg_logo(None, class_name="rx-error-boundary-logo"),
                                     class_name="rx-error-boundary-credit",
                                 ),
                                 href="https://reflex.dev",

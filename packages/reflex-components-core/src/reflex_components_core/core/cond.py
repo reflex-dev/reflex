@@ -83,6 +83,15 @@ class Cond(Component):
             )
         )
 
+    def _renders_css_prop(self) -> bool:
+        """Whether the component renders an element with a ``css`` prop.
+
+        Returns:
+            False: a condition renders no element of its own, and its children
+            answer for theirs.
+        """
+        return False
+
     def _render(self) -> CommonTag:
         true_child, false_child = self._get_cond_children()
         return CondTag(

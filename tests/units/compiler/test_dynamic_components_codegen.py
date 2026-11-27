@@ -468,7 +468,7 @@ def test_dynamic_component_codegen_wires_event_handlers() -> None:
 
     assert isinstance(code, str)
     assert code.startswith("//__reflex_evaluate")
-    assert "const {Fragment,useEffect}" in code
+    assert "const {Fragment,createElement: jsx,useEffect}" in code
     # ``addEvents`` is now a module-level callable in ``$/utils/context``;
     # no more ``useContext(EventLoopContext)`` hoist needed for dispatch.
     assert "const {addEvents} = window.__reflex['$/utils/context']" in code
@@ -536,7 +536,7 @@ def test_dynamic_component_codegen_wires_state_var_counter_events() -> None:
     assert "RadixThemesText" in code
     assert 'justify:"center"' in code
     assert 'gap:"5"' in code
-    assert "const {Fragment,useEffect}" in code
+    assert "const {Fragment,createElement: jsx,useEffect}" in code
     assert "const {addEvents} = window.__reflex['$/utils/context']" in code
     assert (
         "const {ReflexEvent,applyEventActions,pyOr} = window.__reflex['$/utils/state']"
