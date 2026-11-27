@@ -1,0 +1,11 @@
+# What a run of the harness leaves here.
+report/
+# What `reflex run` leaves here, as it would add the lines itself.
+.states
+.web
+reflex.lock/
+assets/
+*.db
+__pycache__/
+assets/external/
+*.py[cod]

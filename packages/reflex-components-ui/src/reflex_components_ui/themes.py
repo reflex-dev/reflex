@@ -9,18 +9,19 @@ and the build emits the CSS of nothing else.
 from __future__ import annotations
 
 import dataclasses
+import hashlib
 import json
 import operator
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Any, Literal, get_args
 
 from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.imports import ImportDict, ImportVar
-from reflex_base.vars.base import LiteralVar, Var, VarData
+from reflex_base.vars.base import LiteralVar, Var
 
 from reflex_components_ui import _radix_tokens
 from reflex_components_ui.constants import WEB_DIR
-from reflex_components_ui.style.lower import _suggest
+from reflex_components_ui.style.lower import suggest
 
 LiteralAccentColor = Literal[
     "tomato",
@@ -80,6 +81,14 @@ _MATCHING_GRAY_MAP = "reflexUIMatchingGrays"
 _RADIUS_MAP = "reflexUIRadii"
 _SCALING_MAP = "reflexUIScalings"
 _PANEL_MAP = "reflexUIPanels"
+_COLOR_SCHEME_MAP = "reflexUIColorSchemes"
+
+# What joins the class names of compiled styles, and its local name.
+_CLASS_NAME = ("class-name.js", "className")
+_CLASS_NAME_ALIAS = "reflexUIClassName"
+
+# What the name of a constant holding joined class names starts with.
+_CONSTANT = "reflexUIClasses"
 
 
 class ThemeError(ReflexError, ValueError):
@@ -109,7 +118,7 @@ def _check(name: str, option: str, value: object, accepts: str | None = None) ->
         )
         raise ThemeError(msg)
     shown = f'"{value}"' if isinstance(value, str) else repr(value)
-    suggestion = _suggest(value, values) if isinstance(value, str) else ""
+    suggestion = suggest(value, values) if isinstance(value, str) else ""
     choices = ", ".join([f'"{choice}"' for choice in values])
     msg = f"{name}: unknown {option} {shown}.{suggestion} The values are {choices}."
     raise ThemeError(msg)
@@ -171,20 +180,17 @@ class ThemeStyles:
     """What an element needs to carry a theme.
 
     Attributes:
-        refs: The arguments of ``stylex.props``, the last one winning.
-        imports: The module, the export and the local name of each StyleX
-            theme the arguments name.
-        declarations: The module-level statements the arguments rely on.
-        class_name: The class names the element carries beside the compiled
-            ones, if any.
-        var_data: The state the arguments read.
+        classes: The expression of the class names of the theme.
+        imports: The module, the export and the local name of everything the
+            expression and the declarations name.
+        declarations: The module-level statements the expression relies on.
+        vars: The Vars the expression reads, for the state they subscribe to.
     """
 
-    refs: tuple[str, ...]
+    classes: str
     imports: tuple[tuple[str, str, str | None], ...]
     declarations: tuple[str, ...] = ()
-    class_name: str | None = None
-    var_data: VarData | None = None
+    vars: tuple[Var, ...] = ()
 
     def import_dict(self) -> ImportDict:
         """Get the imports in the form a component returns them.
@@ -205,13 +211,13 @@ class _Builder:
 
     Attributes:
         name: What the options were given to, which starts an error message.
-        refs: The arguments of ``stylex.props`` so far.
-        imports: The StyleX themes the arguments name.
-        declarations: The module-level statements the arguments rely on.
-        var_data: The state the arguments read.
+        refs: The compiled styles of the element so far, the last one winning.
+        imports: What the styles and the declarations name.
+        declarations: The module-level statements the styles rely on.
+        vars: The Vars the styles read.
     """
 
-    __slots__ = ("declarations", "imports", "name", "refs", "var_data")
+    __slots__ = ("declarations", "imports", "name", "refs", "vars")
 
     def __init__(self, name: str):
         """Start with nothing.
@@ -223,7 +229,7 @@ class _Builder:
         self.refs: list[str] = []
         self.imports: set[tuple[str, str, str | None]] = set()
         self.declarations: list[str] = []
-        self.var_data: list[VarData | None] = []
+        self.vars: list[Var] = []
 
     def add(self, theme: tuple[str, str], alias: str | None = None) -> str:
         """Import a StyleX theme.
@@ -247,7 +253,7 @@ class _Builder:
         Returns:
             The expression of its value.
         """
-        self.var_data.append(value._get_all_var_data())
+        self.vars.append(value)
         return str(value)
 
     def lookup(
@@ -266,7 +272,9 @@ class _Builder:
         entries = ", ".join([
             f"{json.dumps(key)}: {self.add(theme)}" for key, theme in themes.items()
         ])
-        self.declarations.append(f"const {map_name} = {{ {entries} }};")
+        self.declarations.append(
+            f"const {map_name} = {{ __proto__: null, {entries} }};"
+        )
         return f"{map_name}[{self.bound(value)}]"
 
     def pick(
@@ -292,21 +300,40 @@ class _Builder:
             _check(self.name, option, value)
             self.refs.append(self.add(themes[value]))
 
-    def finish(self, class_name: str | None = None) -> ThemeStyles:
-        """Wrap up what was collected.
+    def call(self, refs: Sequence[str]) -> str:
+        """Write the call that joins the class names of compiled styles.
 
         Args:
-            class_name: The class names the element also carries.
+            refs: The compiled styles, the last one winning a property.
+
+        Returns:
+            The expression of their class names.
+        """
+        return f"{self.add(_CLASS_NAME, _CLASS_NAME_ALIAS)}({', '.join(refs)})"
+
+    def finish(self, classes: str) -> ThemeStyles:
+        """Wrap up what was collected.
+
+        The class names of themes that are all known when the app is compiled
+        are joined once, when the module loads, and not at every render.
+
+        Args:
+            classes: The expression of the class names of the element.
 
         Returns:
             What the element needs.
         """
+        declarations = self.declarations
+        if not self.vars:
+            digest = hashlib.sha256(classes.encode()).hexdigest()[:10]
+            name = f"{_CONSTANT}_{digest}"
+            declarations = [*declarations, f"const {name} = {classes};"]
+            classes = name
         return ThemeStyles(
-            refs=tuple(self.refs),
+            classes=classes,
             imports=tuple(sorted(self.imports, key=operator.itemgetter(0, 1))),
-            declarations=tuple(self.declarations),
-            class_name=class_name,
-            var_data=VarData.merge(*self.var_data),
+            declarations=tuple(declarations),
+            vars=tuple(self.vars),
         )
 
 
@@ -335,6 +362,7 @@ def theme_styles(
     panel_background: Any = None,
     has_background: Any = None,
     app_theme: Theme | None = None,
+    style: str | None = None,
 ) -> ThemeStyles:
     """Work out the StyleX themes of a theme element.
 
@@ -365,6 +393,8 @@ def theme_styles(
         has_background: Whether the element paints the background of the
             theme. None paints it when the element sets an appearance.
         app_theme: The theme of the app.
+        style: The compiled style of the element itself, which wins over
+            what a theme element sets, such as its text color.
 
     Returns:
         What the element needs to carry the theme.
@@ -454,33 +484,39 @@ def theme_styles(
             builder.refs.append(background)
     if appearance_ref is not None:
         builder.refs.append(appearance_ref)
-    return builder.finish(THEME_CLASS)
+    if style is not None:
+        builder.refs.append(style)
+    return builder.finish(f'"{THEME_CLASS} " + {builder.call(builder.refs)}')
 
 
-def app_theme_styles(theme: Theme) -> ThemeStyles:
+def app_theme_styles(theme: Theme, style: str | None = None) -> ThemeStyles:
     """Work out the StyleX themes of the element that wraps an app.
 
     Args:
         theme: The theme of the app.
+        style: The compiled style of the element itself.
 
     Returns:
         What the element needs: every option is set, so that nothing depends
         on what is around the app.
     """
-    return theme_styles("rx.ui.Theme", **dataclasses.asdict(theme))
+    return theme_styles("rx.ui.Theme", **dataclasses.asdict(theme), style=style)
 
 
 def color_scheme_styles(name: str, color_scheme: Any) -> ThemeStyles:
     """Work out the StyleX themes of a component with a color of its own.
+
+    The accent, and the focus colors that follow it. A gray component keeps
+    the focus colors of the theme, as it does in Radix Themes. A color bound
+    to state imports every accent: their class names are joined once, in a
+    table the element indexes.
 
     Args:
         name: The display name of the component, which starts an error message.
         color_scheme: The accent color of the component, or a Var holding it.
 
     Returns:
-        What the element needs: the accent, and the focus colors that follow
-        it. A gray component keeps the focus colors of the theme, as it does
-        in Radix Themes.
+        What the element needs.
 
     Raises:
         ThemeError: If the color is not an accent color.
@@ -488,15 +524,29 @@ def color_scheme_styles(name: str, color_scheme: Any) -> ThemeStyles:
     tokens = _radix_tokens
     builder = _Builder(name)
     color_scheme = literal_option(color_scheme)
+
+    def themes(accent: str) -> list[str]:
+        """Import the themes of one accent.
+
+        Args:
+            accent: The accent color.
+
+        Returns:
+            The compiled styles of the accent.
+        """
+        refs = [builder.add(tokens.ACCENT_THEMES[accent])]
+        if accent != "gray":
+            refs.append(builder.add(tokens.FOCUS_THEME))
+        return refs
+
     if isinstance(color_scheme, Var):
-        builder.refs.append(
-            builder.lookup(_ACCENT_MAP, tokens.ACCENT_THEMES, color_scheme)
+        entries = ", ".join([
+            f"{json.dumps(accent)}: {builder.call(themes(accent))}"
+            for accent in tokens.ACCENT_THEMES
+        ])
+        builder.declarations.append(
+            f"const {_COLOR_SCHEME_MAP} = {{ __proto__: null, {entries} }};"
         )
-        focus = builder.add(tokens.FOCUS_THEME)
-        builder.refs.append(f'({builder.bound(color_scheme)}) !== "gray" && {focus}')
-    else:
-        _check(name, "color_scheme", color_scheme, "accent_color")
-        builder.refs.append(builder.add(tokens.ACCENT_THEMES[color_scheme]))
-        if color_scheme != "gray":
-            builder.refs.append(builder.add(tokens.FOCUS_THEME))
-    return builder.finish()
+        return builder.finish(f"{_COLOR_SCHEME_MAP}[{builder.bound(color_scheme)}]")
+    _check(name, "color_scheme", color_scheme, "accent_color")
+    return builder.finish(builder.call(themes(color_scheme)))

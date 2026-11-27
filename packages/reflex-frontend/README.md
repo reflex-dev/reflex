@@ -75,6 +75,11 @@ without it appearing in its arguments. What there is, and where it is pinned:
   module local, but it stops the minifier from mangling the chunk that holds
   it. So a script sees those names and the globals, and nothing else. Renaming
   an export changes what compiled callbacks can call.
+- **The click before hydration**: the inline script `utils/scripts.js` renders
+  into a prerendered page records the last click in `window.__reflex_early`.
+  The entry point calls `takeEarlyClick` right before `hydrateRoot`, and the
+  click is dispatched again once the page is hydrated. An entry point that
+  hydrates without calling it loses that click, as before.
 - **Globals the runtime reads**: hooks other code installs on `window`
   (`__reflex_otel`, `__reflex`, `__reflex_load`) and the per-app `$/env.json`.
   Each is declared in `types/globals.d.ts`; reading one that is not fails the

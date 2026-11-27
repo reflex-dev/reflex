@@ -1,0 +1,32 @@
+"""Styles of a component as users write them: none of the calls is an error."""
+
+import reflex as rx
+from reflex_components_ui.layout.box import box
+
+
+class State(rx.State):
+    """State the styles are bound to."""
+
+    width: rx.Field[str] = rx.field("1em")
+    styles: rx.Field[dict[str, str]] = rx.field(default_factory=dict)
+
+
+box(style={"padding": "1em"})
+
+box(style={"display": "flex", "width": State.width, "margin_top": 2})
+
+box(style={"_hover": {"color": "red"}, ":focus-visible": {"outline_width": "2px"}})
+
+box(style={"width": ["100%", "50%"], "color": rx.color("ruby", 9)})
+
+box(style={"padding": rx.breakpoints(initial="1em", md="2em")})
+
+box(style=[{"padding": "1em"}, {"display": "flex"}])
+
+box(style=State.styles)
+
+box(style=rx.breakpoints(initial={"padding": "1em"}, md={"padding": "2em"}))
+
+# Keyword arguments stay open, as data_* and aria_* come through them: a
+# misspelt property there is an error of the compile, not of the type checker.
+box(padding="1em", data_state="open", aria_label="Box", paddng="1em")

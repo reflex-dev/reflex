@@ -2,6 +2,7 @@ import { startTransition, createElement } from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import { HydratedRouter } from "react-router/dom";
 import env from "$/env.json";
+import { takeEarlyClick } from "$/utils/scripts";
 
 const selector = env.MOUNT_TARGET;
 
@@ -57,6 +58,7 @@ if (selector) {
       });
   }
 } else {
+  takeEarlyClick();
   startTransition(() => {
     hydrateRoot(document, createElement(HydratedRouter));
   });

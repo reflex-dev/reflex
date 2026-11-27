@@ -467,23 +467,28 @@ def test_colors_and_tokens(
 
 
 def test_var_modules_name_the_module_of_every_custom_property():
-    """Each custom property Radix defines is found by the first word of its name."""
-    assert VAR_MODULES["ruby"] == RUBY
-    assert VAR_MODULES["gray"] == GRAY
-    for module, names in VAR_GROUPS.values():
-        for name in names:
-            word = name.removeprefix("--").partition("-")[0]
-            assert VAR_MODULES[word] == f"$/reflex-ui/{module}", name
-    assert sorted(set(VAR_MODULES.values())) == sorted({
-        f"$/reflex-ui/{module}" for module, _ in VAR_GROUPS.values()
-    })
+    """Each custom property Radix defines is found by its whole name."""
+    assert VAR_MODULES["--ruby-9"] == RUBY
+    assert VAR_MODULES["--gray-9"] == GRAY
+    assert VAR_MODULES == {
+        name: f"$/reflex-ui/{module}"
+        for module, names in VAR_GROUPS.values()
+        for name in names
+    }
+    assert len(VAR_MODULES) == 1070
     assert lower(
         "rx.ui.card",
         {
             "width": "calc(2 * var(--space-4))",
             "flex_grow": "var(--scaling)",
             "font_size": "var(--font-size-2, 14px)",
+            "line_height": "var( --line-height-2 )",
+            # Not custom properties of Radix Themes: an app may define them,
+            # and they import nothing, whatever word they start with.
             "color": "var(--mine-1)",
+            "background_color": "var(--color-mine)",
+            "border_top_color": "var(--gray-13)",
+            "font_family": "var(--code-font)",
         },
     ).imports == (
         "$/reflex-ui/tokens/scaling.stylex.js",

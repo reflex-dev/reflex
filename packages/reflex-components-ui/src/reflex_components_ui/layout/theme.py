@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 from collections.abc import Iterator
 from typing import Any, ClassVar
 
@@ -12,11 +13,11 @@ from reflex_base.plugins import get_plugin
 from reflex_base.utils.exceptions import ConfigError
 from reflex_base.utils.imports import ImportDict
 from reflex_base.vars.base import Var
-from reflex_base.vars.sequence import LiteralStringVar
 
-from reflex_components_ui.base import MISSING_PLUGIN_ERROR, ComponentStyles, UIComponent
+from reflex_components_ui.base import MISSING_PLUGIN_ERROR, UIComponent, add_styles
 from reflex_components_ui.plugin import UIPlugin
-from reflex_components_ui.style.emit import props_call
+from reflex_components_ui.style import ComponentStyles
+from reflex_components_ui.style.emit import style_object
 from reflex_components_ui.styles.theme import APP_THEME, APPEARANCE
 from reflex_components_ui.themes import (
     OPTIONS,
@@ -187,13 +188,19 @@ class ThemeElement(UIComponent):
         plugin = get_plugin(UIPlugin)
         if plugin is None:
             raise ConfigError(MISSING_PLUGIN_ERROR)
-        return self._resolve_theme_styles(plugin)
+        style = style_object(self._emit())
+        if style is None:
+            return self._resolve_theme_styles(plugin, None)
+        statement, name = style
+        theme = self._resolve_theme_styles(plugin, name)
+        return dataclasses.replace(theme, declarations=(statement, *theme.declarations))
 
-    def _resolve_theme_styles(self, plugin: UIPlugin) -> ThemeStyles:
+    def _resolve_theme_styles(self, plugin: UIPlugin, style: str | None) -> ThemeStyles:
         """Work out the StyleX themes of the options of the element.
 
         Args:
             plugin: The configured plugin.
+            style: The compiled style of the element itself.
 
         Returns:
             What the element needs to carry its theme.
@@ -208,6 +215,7 @@ class ThemeElement(UIComponent):
             panel_background=self.panel_background,
             has_background=self.has_background,
             app_theme=plugin.theme,
+            style=style,
         )
 
     def add_imports(self) -> ImportDict:
@@ -219,12 +227,15 @@ class ThemeElement(UIComponent):
         return self._theme_styles().import_dict()
 
     def add_custom_code(self) -> list[str]:
-        """Declare the maps an option bound to state is looked up in.
+        """Declare what the class names of the theme are read from.
 
         Returns:
-            The declarations, beside the one of the element's own style.
+            The declaration of the element's own style, which the others
+            name, then the ones of its theme.
         """
-        return list(self._theme_styles().declarations)
+        declaration = self._emit().declaration
+        declarations = self._theme_styles().declarations
+        return [*declarations] if declaration is None else [declaration, *declarations]
 
     def _render(self, props: dict[str, Any] | None = None) -> CommonTag:
         """Render the element with its themes and its style.
@@ -233,32 +244,12 @@ class ThemeElement(UIComponent):
             props: The props to render (if None, then use get_props).
 
         Returns:
-            The tag, with one ``stylex.props`` spread.
+            The tag, with the class names of its theme joined to the ones of
+            its style, which wins where both set a property.
         """
         tag = Component._render(self, props)
         theme = self._theme_styles()
-        # The generated stub of the base class leaves its private methods out.
-        style = self._stylex()  # pyright: ignore [reportAttributeAccessIssue]
-        refs = theme.refs if style is None else (*theme.refs, style.ref)
-        own = tag.props.get("className")
-        if own is None or isinstance(own, LiteralStringVar):
-            names = theme.class_name
-            if own is not None and own._var_value:
-                names = f"{names} {own._var_value}" if names else own._var_value
-            return tag.remove_props("className").set(
-                special_props=[
-                    *tag.special_props,
-                    Var(props_call(refs, names), _var_data=theme.var_data),
-                ]
-            )
-        return tag.add_props(
-            class_name=Var(
-                # Parenthesized: the expression may be a conditional.
-                f'({own!s}) + " " + {props_call(refs, theme.class_name)}.className',
-                _var_type=str,
-                _var_data=own._get_all_var_data(),
-            )._replace(merge_var_data=theme.var_data)
-        )
+        return add_styles(tag, dataclasses.replace(self._emit(), classes=theme.classes))
 
 
 class AppTheme(ThemeElement):
@@ -266,16 +257,17 @@ class AppTheme(ThemeElement):
 
     styles: ClassVar[ComponentStyles] = APP_THEME
 
-    def _resolve_theme_styles(self, plugin: UIPlugin) -> ThemeStyles:
+    def _resolve_theme_styles(self, plugin: UIPlugin, style: str | None) -> ThemeStyles:
         """Work out the StyleX themes of the theme of the app.
 
         Args:
             plugin: The configured plugin.
+            style: The compiled style of the element itself.
 
         Returns:
             What the element needs: every option of the theme is set.
         """
-        return app_theme_styles(plugin.theme)
+        return app_theme_styles(plugin.theme, style)
 
 
 theme = ThemeElement.create

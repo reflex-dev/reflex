@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import ClassVar
 
-from reflex_components_ui.base import ComponentStyles, UIComponent
+from reflex_components_ui.base import UIComponent
+from reflex_components_ui.style import ComponentStyles
 from reflex_components_ui.styles.box import BOX
 
 

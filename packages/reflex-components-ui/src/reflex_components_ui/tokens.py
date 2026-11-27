@@ -22,7 +22,7 @@ from typing import Literal, NoReturn, get_args
 
 from reflex_base.utils.exceptions import ReflexError
 
-from reflex_components_ui.style.lower import _suggest
+from reflex_components_ui.style.lower import suggest
 
 Step6 = Literal[1, 2, 3, 4, 5, 6]
 Step9 = Literal[1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -151,7 +151,7 @@ class _Tokens:
         if name[:1] == "_":
             raise AttributeError(name)
         names = self._names()
-        msg = f'{self._path} has no token "{name}".{_suggest(name, names)}'
+        msg = f'{self._path} has no token "{name}".{suggest(name, names)}'
         if names:
             msg += f" Its tokens are {', '.join(names)}"
             if self._steps:
@@ -549,7 +549,7 @@ def scale(name: LiteralColorScale) -> _Scale:
             raise TokenError(msg)
         if name not in scales:
             shown = f'"{name}"' if isinstance(name, str) else repr(name)
-            suggestion = _suggest(name, scales) if isinstance(name, str) else ""
+            suggestion = suggest(name, scales) if isinstance(name, str) else ""
             msg = (
                 f"rx.ui.tokens.scale: unknown color scale {shown}.{suggestion} "
                 f"The scales are {', '.join(sorted(scales))}."

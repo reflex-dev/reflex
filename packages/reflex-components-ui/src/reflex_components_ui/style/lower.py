@@ -69,11 +69,13 @@ class StyleError(ReflexError, ValueError):
     """A style that cannot be compiled."""
 
 
-# The module whose import emits the CSS of a custom property, by the first word
-# of the property's name: ``var(--ruby-9)`` needs the ruby scale, and
-# ``var(--font-size-2)`` the typography tokens.
+# The module whose import emits the CSS of a custom property, by the whole
+# name of the property: the first word does not tell, as ``--radius-1`` and
+# ``--radius-factor`` are different groups and a dozen first words are
+# typography. A custom property that is not in the generated list, such as one
+# an app defines, imports nothing.
 VAR_MODULES: dict[str, str] = {
-    name[2:].partition("-")[0]: f"$/{WEB_DIR}/{module}"
+    name: f"$/{WEB_DIR}/{module}"
     for module, names in VAR_GROUPS.values()
     for name in names
 }
@@ -92,7 +94,7 @@ _SINGLE_VALUE_VARS: frozenset[str] = frozenset([
     if not _MULTIPLE_VALUES.search(name)
 ])
 
-_VAR_NAME = re.compile(r"var\(--([a-z]+)[-),]")
+_VAR_NAME = re.compile(r"var\(\s*(--[\w-]+)")
 _IDENTIFIER = re.compile(r"-?[A-Za-z_][\w-]*")
 _PARENTHESISED = re.compile(r"\([^()]*\)")
 _COMBINATOR = re.compile(r"[\s>+~,&]")
@@ -286,7 +288,7 @@ _REPLACES: dict[str, tuple[str, ...]] = {
 }
 
 
-def _suggest(key: str, candidates: Any) -> str:
+def suggest(key: str, candidates: Any) -> str:
     """Word the suggestion that ends an error about a misspelt key.
 
     Args:
@@ -326,7 +328,7 @@ def _condition(name: str, key: str) -> str | None:
                 for pseudo in sorted(PSEUDO_CLASSES | PSEUDO_ELEMENTS)
                 if not pseudo.startswith("-")
             ]
-            msg = f'{name}: unknown pseudo-class "{key}".{_suggest(key, known)}'
+            msg = f'{name}: unknown pseudo-class "{key}".{suggest(key, known)}'
             raise StyleError(msg)
     elif first == "@":
         if key.startswith(_AT_RULES):
@@ -387,7 +389,7 @@ def _resolve(name: str, key: Any) -> _Entry:
                 )
                 msg = (
                     f'{name}: unknown CSS property "{key}".'
-                    f"{_suggest(key.replace('-', '_'), candidates)}"
+                    f"{suggest(key.replace('-', '_'), candidates)}"
                 )
                 raise StyleError(msg)
             entry = (None, condition, None, None)
@@ -1041,7 +1043,7 @@ def lower_layer(
             except KeyError:
                 msg = (
                     f'{name}: unknown layout prop "{prop}".'
-                    f"{_suggest(prop, sorted(_LAYOUT))}"
+                    f"{suggest(prop, sorted(_LAYOUT))}"
                 )
                 raise StyleError(msg) from None
             if read is not None:

@@ -16,20 +16,105 @@ const OPTIONS = {
 };
 
 // A page module as the Reflex compiler emits it: one declaration per distinct
-// style, and a literal `class_name` carried inside the `stylex.props` call.
+// style, each followed by the constant that holds its class names, which an
+// element joins with its own.
 const PAGE = `import * as stylex from "@stylexjs/stylex"
 import {jsx} from "@emotion/react"
 
 const sx_b26ac4fb71 = stylex.create({ s: {"boxSizing": "border-box", "display": "block"} });
+const sx_b26ac4fb71_c = stylex.props(sx_b26ac4fb71.s).className;
 const sx_f49d6b3475 = stylex.create({ s: {"boxSizing": "border-box", "display": "block", "padding": "4px"} });
+const sx_f49d6b3475_c = stylex.props(sx_f49d6b3475.s).className;
 
 export default function Component() {
-  return jsx("main",{},jsx("div",{...stylex.props(sx_b26ac4fb71.s)},"hello"),jsx("div",{...stylex.props(sx_f49d6b3475.s, { $$css: true, className: "p-8" })},"padded"))
+  return jsx("main",{},jsx("div",{className:sx_b26ac4fb71_c},"hello"),jsx("div",{className:"p-8" + " " + sx_f49d6b3475_c},"padded"))
+}
+`;
+
+// What the build makes of it: the declarations become strings, there is no
+// call into StyleX, and the rest of the module is as it was written.
+const COMPILED_PAGE = `import * as stylex from "@stylexjs/stylex"
+import {jsx} from "@emotion/react"
+
+const sx_b26ac4fb71_c = {
+  className: "x9f619 x1lliihq"
+}.className;
+const sx_f49d6b3475_c = {
+  className: "x9f619 x1lliihq xfawy5m"
+}.className;
+
+
+
+
+export default function Component() {
+  return jsx("main",{},jsx("div",{className:sx_b26ac4fb71_c},"hello"),jsx("div",{className:"p-8" + " " + sx_f49d6b3475_c},"padded"))
+}
+`;
+
+// A module whose bound prop indexes the class names of its values.
+const VARIANT = `import * as stylex from "@stylexjs/stylex"
+import {jsx} from "@emotion/react"
+
+const sx_0123456789 = stylex.create({ s: {"padding": "4px", "width": "var(--v0)"}, a0_0: {"color": "white"}, a0_1: {"color": "black", "opacity": 0.5}, a0: {"color": "black"} });
+const sx_0123456789_c = stylex.props(sx_0123456789.s).className;
+const sx_0123456789_0 = { __proto__: null, "solid": stylex.props(sx_0123456789.a0_0).className, "soft": stylex.props(sx_0123456789.a0_1).className };
+const sx_0123456789_0d = stylex.props(sx_0123456789.a0).className;
+
+export default function Component({kind, width}) {
+  return jsx("div",{className:sx_0123456789_c + " " + (sx_0123456789_0[kind] ?? sx_0123456789_0d),style:({ "--v0": (width) ?? "initial" })},"hello")
+}
+`;
+
+const COMPILED_VARIANT = `import * as stylex from "@stylexjs/stylex"
+import {jsx} from "@emotion/react"
+
+const sx_0123456789_c = {
+  className: "xfawy5m xw9a5fd"
+}.className;
+const sx_0123456789_0 = {
+  __proto__: null,
+  "solid": {
+    className: "x1awj2ng"
+  }.className,
+  "soft": {
+    className: "x1mqxbix xbyyjgo"
+  }.className
+};
+const sx_0123456789_0d = {
+  className: "x1mqxbix"
+}.className;
+
+
+
+
+export default function Component({kind, width}) {
+  return jsx("div",{className:sx_0123456789_c + " " + (sx_0123456789_0[kind] ?? sx_0123456789_0d),style:({ "--v0": (width) ?? "initial" })},"hello")
+}
+`;
+
+// A module that calls StyleX outside the statements of the Reflex compiler.
+const HANDWRITTEN = `import * as stylex from "@stylexjs/stylex"
+import {jsx} from "@emotion/react"
+
+const sx_b26ac4fb71 = stylex.create({ s: {"boxSizing": "border-box", "display": "block"} });
+const sx_b26ac4fb71_c = stylex.props(sx_b26ac4fb71.s).className;
+const own = stylex.create({ root: {"padding": "4px"} });
+
+export default function Component() {
+  return jsx("main",{...stylex.props(own.root)},jsx("div",{className:sx_b26ac4fb71_c},"hello"))
 }
 `;
 
 const COMPILED_CSS =
   "@layer reflex-ui.priority1{.xfawy5m{padding:4px}}@layer reflex-ui.priority2{.x9f619{box-sizing:border-box}.x1lliihq{display:block}}";
+
+// The chunk that links the stylesheet the styles are appended to.
+const ROOT = {
+  moduleIds: [
+    "/app/.web/app/root.jsx",
+    `/app/.web/styles/${STYLESHEET}.css?url`,
+  ],
+};
 
 beforeEach(() => {
   // The unplugin keeps the styles of every build of the process.
@@ -72,19 +157,85 @@ test("a page folds to class name strings and leaves no call into StyleX", async 
   const plugins = stylex(STYLESHEET, OPTIONS);
   expect(
     await transform(plugins, PAGE, "/app/.web/app/routes/_index.jsx"),
+  ).toBe(COMPILED_PAGE);
+});
+
+test("a prop and a value bound to state fold to a table of class names and a custom property", async () => {
+  const plugins = stylex(STYLESHEET, OPTIONS);
+  expect(
+    await transform(plugins, VARIANT, "/app/.web/app/routes/_index.jsx"),
+  ).toBe(COMPILED_VARIANT);
+});
+
+test("a module that uses StyleX elsewhere is compiled whole", async () => {
+  const plugins = stylex(STYLESHEET, OPTIONS);
+  expect(
+    await transform(plugins, HANDWRITTEN, "/app/.web/app/own.jsx"),
   ).toBe(`import * as stylex from "@stylexjs/stylex";
 import { jsx } from "@emotion/react";
+const sx_b26ac4fb71_c = {
+  className: "x9f619 x1lliihq"
+}.className;
 export default function Component() {
-  return jsx("main", {}, jsx("div", {
+  return jsx("main", {
     ...{
-      className: "x9f619 x1lliihq"
+      className: "xfawy5m"
     }
-  }, "hello"), jsx("div", {
-    ...{
-      className: "x9f619 x1lliihq xfawy5m p-8"
-    }
-  }, "padded"));
+  }, jsx("div", {
+    className: sx_b26ac4fb71_c
+  }, "hello"));
 }`);
+});
+
+test("a build compiles a module once, for every plugin and every name it has", async () => {
+  const source = PAGE.replace('"padding": "4px"', '"padding": "9px"');
+  const css = COMPILED_CSS.replace(
+    ".xfawy5m{padding:4px}",
+    ".xskserf{padding:9px}",
+  );
+  // React Router builds with two sets of plugins, and names a route twice.
+  const first = stylex(STYLESHEET, OPTIONS);
+  const second = stylex(STYLESHEET, OPTIONS);
+  const route = "/app/.web/app/routes/once.jsx";
+  /**
+   * @param {ReturnType<typeof stylex>} plugins
+   * @param {string} code
+   * @param {string} id
+   * @param {object} [context] What Vite binds the hook to.
+   * @returns {Promise<{ code: string }>} What the hook returns.
+   */
+  const compile = (plugins, code, id, context = {}) =>
+    withHook(plugins, "transform", "@stylexjs/unplugin").transform.call(
+      context,
+      code,
+      id,
+    );
+
+  const [client, child, server] = await Promise.all([
+    compile(first, source, `${route}?__react-router-build-client-route`),
+    compile(second, source, route),
+    compile(first, source, route),
+  ]);
+  expect(client.code).toBe(COMPILED_PAGE.replace("xfawy5m", "xskserf"));
+  // One result: the module went through Babel once.
+  expect(child).toBe(client);
+  expect(server).toBe(client);
+  // The styles are collected under each name, as a compile leaves them.
+  const store = /** @type {any} */ (globalThis).__stylex_unplugin_store;
+  expect([...store.rulesById.keys()]).toEqual([
+    `${route}?__react-router-build-client-route`,
+    route,
+  ]);
+  expect(withHook(second, "augmentChunkHash").augmentChunkHash(ROOT)).toBe(css);
+
+  // Another source of the same file is another compile, and so is every
+  // transform of a development server, where a module is compiled as it changes.
+  const changed = await compile(first, PAGE, route);
+  expect(changed.code).toBe(COMPILED_PAGE);
+  const watching = { meta: { watchMode: true } };
+  const served = await compile(first, PAGE, route, watching);
+  expect(served).not.toBe(changed);
+  expect(served.code).toBe(COMPILED_PAGE);
 });
 
 test("the styles are appended to the stylesheet, and the chunk that links it follows the rename", async () => {
@@ -155,12 +306,7 @@ test("the chunk that links the stylesheet is named after the compiled styles", a
   const plugins = stylex(STYLESHEET, OPTIONS);
   const plugin = withHook(plugins, "augmentChunkHash");
   expect(plugin.apply).toBe("build");
-  const root = {
-    moduleIds: [
-      "/app/.web/app/root.jsx",
-      `/app/.web/styles/${STYLESHEET}.css?url`,
-    ],
-  };
+  const root = ROOT;
   const page = {
     moduleIds: [
       "/app/.web/app/routes/_index.jsx",

@@ -191,6 +191,8 @@ extraPaths = [
   "packages/reflex-recharts/src",
   "packages/reflex-sonner/src",
   "packages/reflex-components-ui/src",
+  # The parity harness is read from the repository rather than installed.
+  "packages/reflex-components-ui/parity",
   "packages/reflex-components-internal/src",
   "packages/reflex-otel/src",
   "packages/reflex-build-sdk/src",
@@ -320,6 +322,9 @@ preview = true
 "packages/reflex-components-ui/hatch_build.py" = ["INP001"]
 "packages/reflex-components-ui/js/tests/fixtures/*" = ["INP001"]
 "scripts/changed_paths.py" = ["T201"]
+"scripts/ui_parity.py" = ["T201"]
+# A Reflex project of its own, beside the package it runs.
+"packages/reflex-components-ui/parity/rxconfig.py" = ["INP001"]
 "scripts/check_min_deps.py" = ["T201"]
 "scripts/check_outdated_deps.py" = ["T201"]
 "scripts/hash_examples.py" = ["T201"]
@@ -331,6 +336,8 @@ preview = true
 filterwarnings = "ignore:fields may not start with an underscore:RuntimeWarning"
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
+# The rx.ui parity harness, which no wheel ships.
+pythonpath = ["packages/reflex-components-ui/parity"]
 markers = [
   "performance: scheduled wall-time, service, memory, lifecycle, or browser benchmark",
 ]

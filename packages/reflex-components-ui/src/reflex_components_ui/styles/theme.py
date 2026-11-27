@@ -1,6 +1,6 @@
 """The look of the elements of a theme, beside what the theme itself sets."""
 
-from reflex_components_ui.base import ComponentStyles
+from reflex_components_ui.style import ComponentStyles
 
 # What Radix Themes gives its root theme: the background covers the page, and
 # the content stacks under what is rendered beside it, such as a toast.
