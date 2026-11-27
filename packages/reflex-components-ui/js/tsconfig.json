@@ -1,0 +1,24 @@
+{
+  // Type-checks the javascript that runs in a browser, in place from its JSDoc:
+  // nothing is emitted. The files that run in node are checked by
+  // tsconfig.node.json; `npm run typecheck` runs both.
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": true,
+    "target": "es2023",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["es2023", "dom", "dom.iterable"],
+    // No node types here: `process` or `Buffer` in browser code must fail.
+    "types": [],
+    "skipLibCheck": true,
+    "paths": {
+      "$/reflex-ui/*": ["./src/*"]
+    }
+  },
+  "include": ["src", "types"],
+  // The build files at the top of `src` run in node.
+  "exclude": ["src/*.js"]
+}

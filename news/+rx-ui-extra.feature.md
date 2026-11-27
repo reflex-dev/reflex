@@ -1,0 +1,1 @@
+Add the `ui` extra. `pip install 'reflex[ui]'` installs `reflex-components-ui`, a pre-release package of components that compile to plain HTML and static CSS, and exposes it as `rx.ui`. Without the extra, `rx.ui` raises an error that says what to install. The package has no components yet.

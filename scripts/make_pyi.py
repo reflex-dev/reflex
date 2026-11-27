@@ -30,6 +30,7 @@ DEFAULT_TARGETS = [
     "packages/reflex-components-react-player/src/reflex_components_react_player",
     "packages/reflex-components-recharts/src/reflex_components_recharts",
     "packages/reflex-components-sonner/src/reflex_components_sonner",
+    "packages/reflex-components-ui/src/reflex_components_ui",
 ]
 
 

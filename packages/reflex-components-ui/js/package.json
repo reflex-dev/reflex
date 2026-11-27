@@ -1,0 +1,35 @@
+{
+  "name": "reflex-components-ui-js",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The javascript the rx.ui components are compiled against: design tokens, themes and behaviour hooks.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reflex-dev/reflex.git",
+    "directory": "packages/reflex-components-ui/js"
+  },
+  "scripts": {
+    "lint": "eslint --max-warnings 0",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json",
+    "test": "vitest run",
+    "generate": "node scripts/generate.js",
+    "generate:check": "node scripts/generate.js --check",
+    "check": "npm run lint && npm run typecheck && npm run generate:check && npm test"
+  },
+  "dependencies": {
+    "@stylexjs/stylex": "0.19.2",
+    "@stylexjs/unplugin": "0.19.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@stylexjs/eslint-plugin": "0.19.2",
+    "@types/node": "22.20.5",
+    "eslint": "10.15.0",
+    "globals": "17.14.0",
+    "jsdom": "^26.1.0",
+    "typescript": "5.9.3",
+    "vitest": "^5.1.0"
+  }
+}

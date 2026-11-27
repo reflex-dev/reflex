@@ -1500,6 +1500,7 @@ _COMPONENT_SUBPACKAGE_TARGETS: dict[str, str] = {
     "react_router": "reflex_components_core.react_router",
     "recharts": "reflex_components_recharts",
     "sonner": "reflex_components_sonner",
+    "ui": "reflex_components_ui",
 }
 
 

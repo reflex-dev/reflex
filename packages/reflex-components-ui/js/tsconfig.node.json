@@ -1,0 +1,10 @@
+{
+  // Type-checks what runs in node: the build files at the top of `src`, the
+  // generators, the tests and this package's own configuration.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["src/*.js", "scripts", "tests", "*.js"],
+  "exclude": []
+}
