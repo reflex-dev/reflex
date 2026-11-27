@@ -2,8 +2,10 @@ import {
   createElement,
   Fragment,
   isValidElement,
+  startTransition,
   useContext,
   useEffect,
+  useState,
 } from "react";
 import {
   Scripts as RouterScripts,
@@ -62,21 +64,55 @@ observer.observe({type:"paint",buffered:true});
 }`;
 
 /**
- * Elements a click already acted on without javascript, or that are not safe
- * to click a second time: a link is being followed, a form control or a
- * `<details>` has changed state.
+ * How long the click of a page that is being hydrated is held back for at
+ * most. Hydration settles in milliseconds; the limit is for a page whose
+ * hydration never completes, which must not swallow clicks for good.
+ * Exported for the tests.
  */
-const ACTS_WITHOUT_SCRIPTS =
-  "a[href],area[href],input,select,textarea,label,summary,[contenteditable]";
-
-let earlyClick = null;
+export const HOLD_CLICK_TIMEOUT_MS = 10000;
 
 /**
- * Stop the inline script recording clicks, and keep the last one it saw.
+ * Where a click acts without javascript, or is not safe to dispatch a second
+ * time: a link is being followed, a form is submitted, a form control or a
+ * `<details>` has changed state. Such a click is left to the browser.
+ */
+const ACTS_WITHOUT_SCRIPTS =
+  "a[href],area[href],form,input,select,textarea,label,summary,[contenteditable]";
+
+let earlyClick = null;
+let holdTimer;
+
+/**
+ * Hold back a click on a page that is being hydrated.
  *
- * Called right before the page is hydrated. From then on React handles a
- * click itself, hydrating first if it has to, so a click recorded any later
- * would run its handler twice.
+ * React would hydrate at once and run the handler, before any mount effect
+ * of the page: a provider that sets itself up in one then overwrites what the
+ * handler did. The click is kept from React and dispatched again with the one
+ * recorded before, once the page has settled.
+ * @param {MouseEvent} event The click, in the capture phase at the window.
+ */
+const holdClick = (event) => {
+  earlyClick = null;
+  if (
+    event.target instanceof Element &&
+    !event.target.closest(ACTS_WITHOUT_SCRIPTS)
+  ) {
+    earlyClick = event;
+    event.stopImmediatePropagation();
+  }
+};
+
+const stopHolding = () => {
+  window.removeEventListener("click", holdClick, true);
+  clearTimeout(holdTimer);
+};
+
+/**
+ * Take over the clicks of a prerendered page that is about to be hydrated.
+ *
+ * Called right before `hydrateRoot`. The inline script stops recording, and
+ * its last click is kept. Until the page has settled, later clicks are held
+ * back here, so React never sees a click that is dispatched again afterwards.
  */
 export const takeEarlyClick = () => {
   const early = window.__reflex_early;
@@ -84,17 +120,24 @@ export const takeEarlyClick = () => {
   document.removeEventListener("click", early.record, true);
   earlyClick = early.click;
   window.__reflex_early = undefined;
+  window.addEventListener("click", holdClick, true);
+  holdTimer = setTimeout(() => {
+    earlyClick = null;
+    stopHolding();
+  }, HOLD_CLICK_TIMEOUT_MS);
 };
 
 /**
- * Dispatch again the click a prerendered page got before it was hydrated.
+ * Dispatch again the last click a prerendered page got before it could
+ * handle one properly, and let clicks through from here on.
  *
- * Without this the click is lost: the page is visible, and no handler is
- * attached yet. Only the last click counts, and only where the browser did
- * nothing with the first one. An entry point that never took the click over
- * gets none dispatched: there is no telling whether React handled it.
+ * Without this a click before hydration is lost: the page is visible, and no
+ * handler is attached yet. Only the last click counts, and only where the
+ * browser did nothing with it. An entry point that never took the clicks
+ * over gets none dispatched: there is no telling whether React handled it.
  */
 const replayEarlyClick = () => {
+  stopHolding();
   const click = earlyClick;
   earlyClick = null;
   const target = click?.target;
@@ -142,14 +185,24 @@ const useRouterScripts = RouterScripts;
  * (dev mode, the SPA fallback) has nothing to paint before its scripts run,
  * and gets what react-router renders.
  *
- * A click that comes while a prerendered page cannot handle one yet is
- * dispatched again once it is hydrated.
+ * A click that comes while a prerendered page cannot handle one yet, before
+ * or during hydration, is dispatched again once the page has settled.
  * @param {import("react-router").ScriptsProps} props Props for the script tags.
  * @returns {import("react").ReactNode} The script and link tags.
  */
 export function Scripts(props) {
   const rendered = useRouterScripts(props);
-  useEffect(replayEarlyClick, []);
+  // Effects run child first, and this component is a leaf: on mount, no
+  // provider above it has run its own yet, and none of the updates those
+  // schedule has been applied. A transition is rendered only once every
+  // update of a higher priority has been, which covers the updates of mount
+  // effects and of the effects those renders trigger in turn. So the click is
+  // dispatched from the effect of a transition started on mount.
+  const [settled, setSettled] = useState(false);
+  useEffect(() => startTransition(() => setSettled(true)), []);
+  useEffect(() => {
+    if (settled) replayEarlyClick();
+  }, [settled]);
   const isSpaMode = useContext(FrameworkContext)?.isSpaMode;
   if (isSpaMode !== false || !rendered) return rendered;
   const elements = flatten(rendered);

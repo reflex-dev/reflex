@@ -77,9 +77,12 @@ without it appearing in its arguments. What there is, and where it is pinned:
   an export changes what compiled callbacks can call.
 - **The click before hydration**: the inline script `utils/scripts.js` renders
   into a prerendered page records the last click in `window.__reflex_early`.
-  The entry point calls `takeEarlyClick` right before `hydrateRoot`, and the
-  click is dispatched again once the page is hydrated. An entry point that
-  hydrates without calling it loses that click, as before.
+  The entry point calls `takeEarlyClick` right before `hydrateRoot`; from then
+  until the page has settled, that module holds clicks back from React, which
+  would run a handler before the mount effects of the page. The last click is
+  dispatched once, from the effect of a transition `Scripts` starts on mount.
+  An entry point that hydrates without calling it loses a click made before
+  hydration, as before.
 - **Globals the runtime reads**: hooks other code installs on `window`
   (`__reflex_otel`, `__reflex`, `__reflex_load`) and the per-app `$/env.json`.
   Each is declared in `types/globals.d.ts`; reading one that is not fails the

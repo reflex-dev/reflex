@@ -48,6 +48,7 @@ def ScriptsAfterFirstPaintApp():
             heading,
             rx.el.p(CounterState.count, id="count"),
             rx.el.button("Increment", id="increment", on_click=CounterState.increment),
+            rx.el.button("Toggle", id="toggle", on_click=rx.toggle_color_mode),
             *links,
         )
 
@@ -185,3 +186,55 @@ def test_input_before_first_paint_starts_scripts(scripts_app: AppHarness, page: 
     expect(page.locator("#count")).to_have_text("1")
     increment.click()
     expect(page.locator("#count")).to_have_text("2")
+
+
+def test_click_before_hydration_outlasts_mount_effects(
+    scripts_app: AppHarness, page: Page
+):
+    """A replayed click is handled after the providers have set themselves up.
+
+    The theme provider restores the color mode in a mount effect, which must
+    not overwrite the mode the click switched to.
+    """
+    if not isinstance(scripts_app, AppHarnessProd):
+        pytest.skip("pages are prerendered in prod only")
+    page.emulate_media(color_scheme="light")
+    page.add_init_script(NEVER_PAINTED)
+    page.goto(_frontend_url(scripts_app), wait_until="load")
+    html = page.locator("html")
+    expect(html).to_have_class("light")
+    assert not page.evaluate(HYDRATED)
+
+    page.get_by_role("button", name="Toggle").click()
+    expect(html).to_have_class("dark")
+    page.wait_for_function(HYDRATED)
+    assert page.evaluate("localStorage.getItem('theme')") == "dark"
+
+
+# Clicks the toggle in the first microtask after the entry point hydrates:
+# the entry point clears `__reflex_early` right before it calls hydrateRoot.
+CLICK_WHILE_HYDRATING = """
+let early;
+Object.defineProperty(window, "__reflex_early", {
+    get: () => early,
+    set: (value) => {
+        if (early && !value) {
+            queueMicrotask(() => document.getElementById("toggle").click());
+        }
+        early = value;
+    },
+});
+"""
+
+
+def test_click_while_hydrating_outlasts_mount_effects(
+    scripts_app: AppHarness, page: Page
+):
+    """A click React handles by hydrating first is not undone by mount effects."""
+    if not isinstance(scripts_app, AppHarnessProd):
+        pytest.skip("pages are prerendered in prod only")
+    page.emulate_media(color_scheme="light")
+    page.add_init_script(CLICK_WHILE_HYDRATING)
+    page.goto(_frontend_url(scripts_app))
+    page.wait_for_function(HYDRATED)
+    expect(page.locator("html")).to_have_class("dark")
