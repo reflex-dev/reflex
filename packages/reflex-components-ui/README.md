@@ -42,6 +42,7 @@ js/                         the javascript package, with its own tooling
     base.css                the cascade layer order and the color scheme switch
     class-name.js           joins the class names of compiled styles: a theme's
     vite-plugin-stylex.js   the StyleX Vite plugin, fitted to the Reflex build
+    behaviors/              the little a component needs a script for
     colors/                 generated: one module for each Radix color scale
     tokens/                 generated: space, radius, typography, shadow, ...
     themes/                 generated: accent/<name>, gray/<name>, radius, scaling, ...
@@ -402,6 +403,79 @@ What a wave does for each component, in this order. `flex` (a layout), `text`
 10. **The record**: the wave's row in the run-time table below, the gzipped
     CSS and JavaScript it adds, and a news fragment in `news/`.
 
+What the display and action wave settled, for the waves after it:
+
+- **Zero is the first target, and the report says what kept a matrix from
+  it.** Run a matrix at `threshold=0, tolerance=0` first. What is left is a
+  bug unless the same props are equal in another frame: the browser dithers
+  a gradient and anti-aliases a rounded ring, a turned shape or a scaled
+  image by where they are on the page. Then keep the default threshold, say
+  in a comment how many cells were equal at zero and what the others hold,
+  and set `tolerance` no higher than what was measured.
+- **A reference that settles late is no reference.** Radix Themes shows the
+  fallback of an avatar and the scrollbars of a scroll area some time after
+  the page is ready, so a screenshot has them or not. Leave such a cell out
+  with a comment that says so, and cover the state in the contract, which
+  waits for it.
+- **An animation is compared by the contract.** A screenshot is taken with
+  animations off, and an animation that never ends is cancelled for it. A
+  step reads `element.getAnimations()` on both systems and asserts the
+  keyframes and the timing exactly, as the spinner and the skeleton do.
+- **A native element where Radix draws its own.** `rx.ui.scroll_area` is
+  one element that scrolls natively: `overflow` by the `scrollbars` prop,
+  `scrollbar-width: thin` and `scrollbar-color` in the grays Radix uses. It
+  needs no script and scrolls with JavaScript off; what the browser decides
+  (the shape of a scrollbar, whether it takes room, when it shows) is in the
+  allowlist with its reason. `rx.ui.progress` is a `div` with the ARIA of a
+  progress bar rather than a `<progress>`: a plain element costs no script
+  either, and the pseudo-elements a native bar is drawn with differ by
+  engine, of which only Chromium could be looked at when it was written.
+- **A script is the last resort, and is a function, not a component.**
+  `js/src/behaviors/<name>.js` exports plain functions with JSDoc types and a
+  vitest file under `js/tests/behaviors/`. A component reaches one through a
+  `Var` that carries its import, such as the `ref` of the image of an
+  avatar: no hook, no state, nothing rendered again, and a page without the
+  component does not load it. Render both states on the server and let the
+  script say which one holds (`data-status`), so that the page is right
+  before it runs, and say in the contract what shows with JavaScript off.
+- **What a class cannot say of the children of an element** is a rule of
+  `base.css`, on an attribute the wrapper renders: `[data-rx-callout] > *`
+  puts everything in a callout in its last column, `[data-rx-skeleton] > *`
+  hides what a skeleton stands in for.
+- **A component rendered as its child** without an `as_child` prop, as a
+  skeleton around one element, sets `_as_child` itself, and
+  `_merges_slot = False` when the child has to keep its own styles: each
+  then declares its own, and the element has the class names of both. What
+  must win over the child is `!important`, as it is in Radix Themes.
+- **A prop that is a CSS property** (`width`, `min_width`...) is moved into
+  the style with `props.style_props`, at the breakpoints of Radix Themes.
+- **A private variant.** A table may read something that is no prop, such as
+  whether a skeleton is around text: name the variant with an underscore
+  (`"_inline"`) and set the attribute of that name before the component is
+  initialized. Mind the names the base class uses (`_radius`, `_accent`).
+- **A shorthand that some values keep whole** (`padding: calc(...)`) and
+  others split does not mix across the values of one prop: StyleX resolves
+  styles in the order they are written, and a whole shorthand written after
+  its longhands cancels them. Write each side out, as the ghost button does.
+
+### What a wave adds to a page
+
+Gzipped (`gzip -9` of each file under `.web/build/client`), for an app whose
+only plugin is `UIPlugin()`, against the same page without the components:
+
+| page | JavaScript | CSS | files |
+| --- | --- | --- | --- |
+| one `rx.ui.button` | +405 B | +1,031 B | none |
+| a button with a `color_scheme` | +659 B | +2,081 B | one shared chunk of 188 B |
+| a button with a `radius` | +621 B | +1,031 B | one shared chunk of 287 B |
+| the 12 components of wave 2, one accent | +3,374 B | +5,295 B | Lucide's icon chunk (783 B), as `rx.icon` alone adds |
+
+The page without components is 146,124 B of JavaScript and 6,109 B of CSS,
+4.6 kB of it the theme. The script of an avatar is 231 B of the page's own
+chunk. Each further literal `color_scheme` on a page is about 1.05 kB of
+CSS, the scale of that color, and some 20 B of JavaScript: a page with six
+colors is 5.4 kB of CSS over the one with none, and still one chunk.
+
 ## Themes and tokens
 
 The plugin takes the theme of the app. Every option has the values and, the
@@ -736,6 +810,7 @@ appearance) about 0.3 s. Keep interactive states to a sweep or a small group.
 | --- | --- | --- | --- |
 | harness | box | 8 | 5 s + 1.1 s |
 | 1: layout and typography | 19, and `text.kbd` | 1011, 44 of them interactive | 27 s + 61 s |
+| 2: display and actions | 12 | 1379, 181 of them interactive | 56 s + 178 s for both waves, 115 s of it this one |
 
 ## Rules the tooling enforces
 
