@@ -399,8 +399,9 @@ registers it.
 
 Both systems are on one page, in frames on the pixel grid, and are cropped by
 the same rectangle relative to their frame. The device scale factor and the
-viewport are fixed, the page is hydrated and its fonts loaded before it is
-read, transitions and animations are off, and the "Built with Reflex" badge is
+viewport are fixed, the page is hydrated (an effect of the first render has
+run, so the root committed) and its fonts loaded before it is read, a style
+or script tag beside a component is never taken for it, transitions and animations are off, and the "Built with Reflex" badge is
 not rendered. Hover, focus and active are driven through the pointer and the
 keyboard, never by a class, and the run stops if an element does not match
 `:hover`, `:focus-visible` or `:active` when it should. The CI jobs do not

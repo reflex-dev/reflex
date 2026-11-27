@@ -17,6 +17,7 @@ from typing import Any
 from playwright.sync_api import Browser, ConsoleMessage, Page
 
 from ui_parity.allowlist import Allowlist
+from ui_parity.hydration import IS_HYDRATED
 from ui_parity.systems import System
 
 # What a step runs on: the HTML the server sent, the page with scripts off,
@@ -29,13 +30,6 @@ HYDRATED = "hydrated"
 HYDRATION_STEP = "hydrates with no warnings"
 
 VIEWPORT = {"width": 1280, "height": 720}
-
-# Resolves once React has attached to the server-rendered root of the page.
-_HYDRATED_SCRIPT = """() => {
-    const root = document.querySelector("[data-contract-root]");
-    return root !== null
-        && Object.keys(root).some((key) => key.startsWith("__reactFiber"));
-}"""
 
 # Elements that have no end tag, so they never hold another.
 _VOID = frozenset({
@@ -304,7 +298,7 @@ def _check(
         page.on("pageerror", lambda error: run.problems.append(f"error: {error}"))
         page.goto(url)
         if step.on == HYDRATED:
-            page.wait_for_function(_HYDRATED_SCRIPT)
+            page.wait_for_function(IS_HYDRATED)
         step.check(run)
     finally:
         context.close()

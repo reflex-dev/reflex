@@ -13,6 +13,7 @@ from typing import Any
 import reflex as rx
 from ui_parity.components import CONTRACTS, MATRICES
 from ui_parity.contract import Contract
+from ui_parity.hydration import HydrationMarker
 from ui_parity.matrix import Matrix
 from ui_parity.systems import SYSTEMS, System
 
@@ -109,6 +110,7 @@ def parity_page(matrix: Matrix) -> rx.Component:
             for props_id, props in matrix.rendered().items()
             for system in SYSTEMS
         ),
+        HydrationMarker.create(),
         style={
             "display": "grid",
             "grid_template_columns": f"repeat(auto-fill, {matrix.stage[0]}px)",
@@ -130,6 +132,7 @@ def contract_page(contract: Contract, system: System) -> rx.Component:
     """
     return rx.el.main(
         contract.render(system.namespace),
+        HydrationMarker.create(),
         custom_attrs={"data-contract-root": system.name},
         style={"padding": f"{PADDING}px"},
     )
