@@ -10,7 +10,8 @@ its value. A value is one of:
   left out when the style gives the property no unconditional value;
 - ``None``, which unsets the property. It only appears as the ``"default"`` of a
   condition map and in the alternatives of a state-bound variant;
-- a ``Keyframes``, the value of ``animationName`` alone.
+- a ``Keyframes``, the value of ``animationName`` alone: the animations a
+  style plays.
 
 Every shorthand that can be split is expanded to its longhands, so that two
 styles that set the same thing set the same keys and the last one wins. The
@@ -636,28 +637,30 @@ _SNAKE_KEYS = tuple(_ENTRIES)
 
 
 class Keyframes:
-    """The keyframes of an animation, declared with the style that plays them.
+    """The keyframes of the animations a style plays, declared with it.
 
     Two of them are equal, and hash the same, when they hold the same
     declarations, so one animation is declared once per module however many
     styles play it.
 
     Attributes:
-        source: The frames as the object ``stylex.keyframes`` takes.
+        sources: The frames of each animation, in the order they are played,
+            as the objects ``stylex.keyframes`` takes.
         imports: The modules that define the custom properties the frames
             use, sorted.
     """
 
-    __slots__ = ("imports", "source")
+    __slots__ = ("imports", "sources")
 
-    def __init__(self, source: str, imports: tuple[str, ...]):
+    def __init__(self, sources: tuple[str, ...], imports: tuple[str, ...]):
         """Hold lowered keyframes.
 
         Args:
-            source: The frames as the object ``stylex.keyframes`` takes.
+            sources: The frames of each animation, as the objects
+                ``stylex.keyframes`` takes.
             imports: The modules the frames need, sorted.
         """
-        self.source = source
+        self.sources = sources
         self.imports = imports
 
     def __eq__(self, other: object) -> bool:
@@ -667,17 +670,17 @@ class Keyframes:
             other: What to compare with.
 
         Returns:
-            Whether both declare the same animation.
+            Whether both declare the same animations.
         """
-        return isinstance(other, Keyframes) and self.source == other.source
+        return isinstance(other, Keyframes) and self.sources == other.sources
 
     def __hash__(self) -> int:
         """Hash consistently with equality.
 
         Returns:
-            The hash of the source.
+            The hash of the sources.
         """
-        return hash(self.source)
+        return hash(self.sources)
 
     def __repr__(self) -> str:
         """Show what the keyframes hold.
@@ -685,10 +688,13 @@ class Keyframes:
         Returns:
             The constructor call that would rebuild them.
         """
-        return f"Keyframes({self.source!r}, {self.imports!r})"
+        return f"Keyframes({self.sources!r}, {self.imports!r})"
 
 
-def keyframes(frames: Mapping[str, StyleProps | Mapping[str, Any]]) -> Any:
+def keyframes(
+    frames: Mapping[str, StyleProps | Mapping[str, Any]],
+    *more: Mapping[str, StyleProps | Mapping[str, Any]],
+) -> Any:
     """Declare the keyframes of an animation, for a style to play.
 
     The result is the value of ``animation_name``, in a style table or in the
@@ -702,10 +708,19 @@ def keyframes(frames: Mapping[str, StyleProps | Mapping[str, Any]]) -> Any:
             "animation_iteration_count": "infinite",
         }
 
+    Several sets of frames are as many animations played together, which the
+    longhands then list a value for each of, separated by commas::
+
+        {
+            "animation_name": keyframes(grow, fade),
+            "animation_duration": "5s, 2.5s",
+        }
+
     Args:
         frames: The styles of each frame, by ``from``, ``to`` or a percentage.
             Every value is a literal: a frame has no conditions and nothing
             bound to state.
+        *more: The frames of the animations played with the first one.
 
     Returns:
         The keyframes.
@@ -714,29 +729,32 @@ def keyframes(frames: Mapping[str, StyleProps | Mapping[str, Any]]) -> Any:
         StyleError: If a frame is not a dict of literal styles.
     """
     name = "rx.ui keyframes"
-    lowered: dict[str, dict[str, Any]] = {}
+    sources = []
     found: set[str] = set()
-    for frame, style in frames.items():
-        if not isinstance(style, Mapping):
-            msg = (
-                f'{name}: the frame "{frame}" must be a dict of styles, not '
-                f"{type(style).__name__}."
-            )
-            raise StyleError(msg)
-        props, _ = lower_layer(name, style)
-        for prop, value in props.items():
-            cls = value.__class__
-            if cls is str:
-                _modules(value, found)
-            elif cls is not int and cls is not float:
+    for animation in (frames, *more):
+        lowered: dict[str, dict[str, Any]] = {}
+        for frame, style in animation.items():
+            if not isinstance(style, Mapping):
                 msg = (
-                    f'{name}: the style "{prop}" of the frame "{frame}" must be '
-                    "a literal: a frame takes no condition and nothing bound "
-                    "to state."
+                    f'{name}: the frame "{frame}" must be a dict of styles, not '
+                    f"{type(style).__name__}."
                 )
                 raise StyleError(msg)
-        lowered[frame] = props
-    return Keyframes(json.dumps(lowered, ensure_ascii=False), tuple(sorted(found)))
+            props, _ = lower_layer(name, style)
+            for prop, value in props.items():
+                cls = value.__class__
+                if cls is str:
+                    _modules(value, found)
+                elif cls is not int and cls is not float:
+                    msg = (
+                        f'{name}: the style "{prop}" of the frame "{frame}" must be '
+                        "a literal: a frame takes no condition and nothing bound "
+                        "to state."
+                    )
+                    raise StyleError(msg)
+            lowered[frame] = props
+        sources.append(json.dumps(lowered, ensure_ascii=False))
+    return Keyframes(tuple(sources), tuple(sorted(found)))
 
 
 def _put(

@@ -610,17 +610,17 @@ def test_inline_rejects_what_an_inline_style_cannot_hold(
     assert str(raised.value) == message
 
 
-FADE = keyframes({"from": {"opacity": 1}, "to": {"opacity": 0.25}})
-SLIDE = keyframes({"to": {"top": "0"}})
+FADING = keyframes({"from": {"opacity": 1}, "to": {"opacity": 0.25}})
+SLIDING = keyframes({"to": {"top": "0"}})
 
 # A style that plays keyframes, at rest and under a condition, and a variant
 # bound to state that plays others.
 ANIMATED: ComponentStyles = {
     "base": {
-        "animation_name": {"default": FADE, ":hover": SLIDE},
+        "animation_name": {"default": FADING, ":hover": SLIDING},
         "animation_duration": "800ms",
     },
-    "variants": {"kind": {"slide": {"animation_name": SLIDE}}},
+    "variants": {"kind": {"slide": {"animation_name": SLIDING}}},
 }
 
 
@@ -664,11 +664,56 @@ def test_inline_cannot_play_keyframes():
     """Code evaluated in the browser declares no keyframes."""
     with pytest.raises(StyleError) as error:
         inline(
-            merge("rx.ui.spinner", {"base": {"animation_name": FADE}}), "rx.ui.spinner"
+            merge("rx.ui.spinner", {"base": {"animation_name": FADING}}),
+            "rx.ui.spinner",
         )
     assert str(error.value) == (
         'rx.ui.spinner: the style "animationName" plays keyframes, which a '
         "component rendered from state cannot apply: its code is evaluated in the "
         "browser and never reaches the StyleX compiler. Leave the animation out "
         "there, or render the component in a page and show it with rx.cond."
+    )
+
+
+FADE = {"from": {"opacity": 1}, "to": {"opacity": 0}}
+TINT = {"100%": {"background_color": "var(--accent-7)"}}
+
+
+def test_emit_declares_the_keyframes_of_one_animation():
+    style = {"animation_name": keyframes(FADE)}
+    assert emit(merge("rx.ui.box", NO_STYLES, style=style)) == Emitted(
+        declaration=(
+            "const sx_4e60b95abf_k0 = stylex.keyframes("
+            '{"from": {"opacity": 1}, "to": {"opacity": 0}});\n'
+            "const sx_4e60b95abf = stylex.create("
+            '{ s: {"animationName": sx_4e60b95abf_k0} });\n'
+            "const sx_4e60b95abf_c = stylex.props(sx_4e60b95abf.s).className;"
+        ),
+        classes="sx_4e60b95abf_c",
+    )
+
+
+def test_emit_lists_the_animations_played_together_in_a_template():
+    """Each animation is declared once, whichever styles play it, in any order."""
+    style = {
+        "animation_name": keyframes(FADE, TINT),
+        "animation_duration": "1s, 2s",
+        "_after": {"animation_name": keyframes(TINT)},
+        "_hover": {"animation_name": keyframes(TINT, FADE)},
+    }
+    assert emit(merge("rx.ui.box", NO_STYLES, style=style)) == Emitted(
+        declaration=(
+            "const sx_a97dd18a1b_k0 = stylex.keyframes("
+            '{"from": {"opacity": 1}, "to": {"opacity": 0}});\n'
+            "const sx_a97dd18a1b_k1 = stylex.keyframes("
+            '{"100%": {"backgroundColor": "var(--accent-7)"}});\n'
+            "const sx_a97dd18a1b = stylex.create({ s: {"
+            '"animationName": {"default": `${sx_a97dd18a1b_k0}, ${sx_a97dd18a1b_k1}`, '
+            '"::after": sx_a97dd18a1b_k1, '
+            '":hover": `${sx_a97dd18a1b_k1}, ${sx_a97dd18a1b_k0}`}, '
+            '"animationDuration": "1s, 2s"} });\n'
+            "const sx_a97dd18a1b_c = stylex.props(sx_a97dd18a1b.s).className;"
+        ),
+        classes="sx_a97dd18a1b_c",
+        imports=("$/reflex-ui/tokens/accent.stylex.js",),
     )

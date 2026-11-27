@@ -50,8 +50,8 @@ def component_names() -> list[str]:
     """List the names of rx.ui that create a component.
 
     A theme of the plugin and the design tokens are no components. A
-    namespace is its own name, then each of its members: ``text``,
-    ``text.em``.
+    namespace is its own name when it is called, then each of its members:
+    ``text``, ``text.em``.
 
     Returns:
         The names, sorted.
@@ -62,7 +62,9 @@ def component_names() -> list[str]:
         if isinstance(value, types.MethodType):
             names.append(name)
         elif isinstance(value, ComponentNamespace):
-            names.append(name)
+            # A namespace that is not called has members only.
+            if callable(value):
+                names.append(name)
             names.extend(f"{name}.{member}" for member in members(value))
     return sorted(names)
 
@@ -102,12 +104,23 @@ def differences(component: str) -> list[ApiDifference]:
 def test_every_wave_is_in_the_namespace():
     assert COMPONENTS == [
         "aspect_ratio",
+        "avatar",
+        "badge",
         "blockquote",
         "box",
         "button",
+        "callout",
+        "callout.icon",
+        "callout.root",
+        "callout.text",
+        "card",
         "center",
         "code",
         "container",
+        "data_list.item",
+        "data_list.label",
+        "data_list.root",
+        "data_list.value",
         "divider",
         "flex",
         "grid",
@@ -122,11 +135,21 @@ def test_every_wave_is_in_the_namespace():
         "list.unordered",
         "list_item",
         "ordered_list",
+        "progress",
+        "scroll_area",
         "section",
         "separator",
+        "skeleton",
         "spacer",
         "spinner",
         "stack",
+        "table.body",
+        "table.cell",
+        "table.column_header_cell",
+        "table.header",
+        "table.root",
+        "table.row",
+        "table.row_header_cell",
         "text",
         "text.em",
         "text.kbd",
@@ -139,7 +162,7 @@ def test_every_wave_is_in_the_namespace():
     ]
 
 
-@pytest.mark.parametrize("namespace", ["list", "text"])
+@pytest.mark.parametrize("namespace", ["callout", "data_list", "list", "table", "text"])
 def test_namespace_has_the_members_of_its_radix_counterpart(namespace: str):
     assert members(getattr(reflex_components_ui, namespace)) == members(
         getattr(rx, namespace)

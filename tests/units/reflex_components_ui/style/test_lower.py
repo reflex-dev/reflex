@@ -1509,94 +1509,64 @@ def test_layout_props_keep_the_breakpoints_of_radix_whatever_the_app_has():
     }
 
 
-FADE = keyframes({
-    "from": {"opacity": 1, "background_color": tokens.accent[9]},
-    "50%": {"margin_x": "2px"},
-    "to": {"opacity": 0.25},
-})
+FADE = {"from": {"opacity": 1}, "to": {"opacity": 0}}
+TINT = {"100%": {"background_color": tokens.accent[7]}}
+FADE_SOURCE = '{"from": {"opacity": 1}, "to": {"opacity": 0}}'
+TINT_SOURCE = '{"100%": {"backgroundColor": "var(--accent-7)"}}'
+ACCENT_MODULE = "$/reflex-ui/tokens/accent.stylex.js"
 
 
-def test_keyframes_lower_each_frame_and_compare_by_content():
-    """Frames are lowered like any style, and equal keyframes are one animation."""
-    assert FADE.source == (
-        '{"from": {"opacity": 1, "backgroundColor": "var(--accent-9)"}, '
-        '"50%": {"marginLeft": "2px", "marginRight": "2px"}, '
-        '"to": {"opacity": 0.25}}'
+def test_keyframes_hold_the_frames_of_each_animation_they_play():
+    """One set of frames is one animation, several are played together."""
+    one = keyframes(FADE)
+    assert (one.sources, one.imports) == ((FADE_SOURCE,), ())
+    assert repr(one) == f"Keyframes(({FADE_SOURCE!r},), ())"
+    several = keyframes(FADE, TINT)
+    assert (several.sources, several.imports) == (
+        (FADE_SOURCE, TINT_SOURCE),
+        (ACCENT_MODULE,),
     )
-    assert FADE.imports == ("$/reflex-ui/tokens/accent.stylex.js",)
-    again = keyframes({
-        "from": {"opacity": 1, "background_color": tokens.accent[9]},
-        "50%": {"margin_x": "2px"},
-        "to": {"opacity": 0.25},
-    })
-    assert again == FADE
-    assert hash(again) == hash(FADE)
-    assert again != keyframes({"from": {"opacity": 1}})
-    assert repr(keyframes({"to": {"top": "0"}})) == (
-        """Keyframes('{"to": {"top": "0"}}', ())"""
-    )
-
-
-def test_keyframes_are_the_value_of_animation_name():
-    """The style that plays keyframes imports what their frames use."""
+    # Equal by what they declare, in the order they play it.
+    assert several == keyframes(FADE, TINT)
+    assert hash(several) == hash(keyframes(FADE, TINT))
+    assert several != keyframes(TINT, FADE)
+    assert several != one
     lowered = lower(
-        "rx.ui.spinner",
-        {
-            "animation_name": {
-                "default": FADE,
-                "@media (prefers-reduced-motion: reduce)": "none",
-            },
-            "animation_duration": "800ms",
-        },
+        "rx.ui.box", {"animation_name": several, "animation_duration": "1s, 2s"}
     )
     assert lowered.style == {
-        "animationName": {
-            "default": FADE,
-            "@media (prefers-reduced-motion: reduce)": "none",
-        },
-        "animationDuration": "800ms",
+        "animationName": several,
+        "animationDuration": "1s, 2s",
     }
-    assert lowered.imports == ("$/reflex-ui/tokens/accent.stylex.js",)
-    assert lowered == lower(
-        "rx.ui.spinner",
-        {
-            "animation_duration": "800ms",
-            "animation_name": {
-                "default": FADE,
-                "@media (prefers-reduced-motion: reduce)": "none",
-            },
-        },
-    )
+    assert lowered.imports == (ACCENT_MODULE,)
 
 
 @pytest.mark.parametrize(
-    ("create", "message"),
+    ("frames", "message"),
     [
         (
-            lambda: lower("rx.ui.spinner", {"transition_property": FADE}),
-            (
-                'rx.ui.spinner: style "transition_property" is given keyframes, '
-                "which are the value of animation_name."
-            ),
+            (FADE, {"to": "red"}),
+            'rx.ui keyframes: the frame "to" must be a dict of styles, not str.',
         ),
         (
-            lambda: keyframes({"from": "opacity: 1"}),  # pyright: ignore[reportArgumentType]
-            'rx.ui keyframes: the frame "from" must be a dict of styles, not str.',
-        ),
-        (
-            lambda: keyframes({"to": {"opacity": {"default": 1, ":hover": 0}}}),
+            (FADE, {"to": {"color": {"default": "red", ":hover": "blue"}}}),
             (
-                'rx.ui keyframes: the style "opacity" of the frame "to" must be a '
+                'rx.ui keyframes: the style "color" of the frame "to" must be a '
                 "literal: a frame takes no condition and nothing bound to state."
             ),
         ),
-        (
-            lambda: keyframes({"to": {"opacty": 1}}),
-            'rx.ui keyframes: unknown CSS property "opacty". Did you mean "opacity"?',
-        ),
     ],
 )
-def test_keyframes_errors(create: Any, message: str):
+def test_keyframes_check_every_animation(frames: tuple[Any, ...], message: str):
     with pytest.raises(StyleError) as error:
-        create()
+        keyframes(*frames)
     assert str(error.value) == message
+
+
+def test_keyframes_are_the_value_of_animation_name_alone():
+    with pytest.raises(StyleError) as error:
+        lower("rx.ui.box", {"animation_duration": keyframes(FADE, TINT)})
+    assert str(error.value) == (
+        'rx.ui.box: style "animation_duration" is given keyframes, which are '
+        "the value of animation_name."
+    )

@@ -207,6 +207,11 @@ class UIComponent(Component):
     # component, as Radix Themes falls back to its default.
     _as_tags: ClassVar[frozenset[str]] = frozenset()
 
+    # Whether an rx.ui child rendered in place of the element has its styles
+    # merged into the ones of the element. Otherwise each declares its own,
+    # and the child has the class names of both.
+    _merges_slot: ClassVar[bool] = True
+
     # Whether a `radius` field is the radius of the element itself, applied
     # as a theme. A theme element has the option for what is inside it.
     _own_radius: ClassVar[bool] = True
@@ -536,7 +541,7 @@ class UIComponent(Component):
             self._merge_styles()
         merged = self._merged
         slot = self._slot
-        if isinstance(slot, UIComponent):
+        if self._merges_slot and isinstance(slot, UIComponent):
             merged = over(merged, slot._slot_styles())
         return merged
 
