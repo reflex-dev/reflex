@@ -1,46 +1,33 @@
-"""The look of text."""
+"""The look of text, and of the inline elements that mark it up."""
 
 from typing import Any
 
 from reflex_components_ui import tokens
 from reflex_components_ui.style import ComponentStyles
 from reflex_components_ui.styles.typography import (
-    ACCENT_SCOPE,
-    ACCENT_SCOPE_HIGH_CONTRAST,
-    ACCENT_TEXT,
     ALIGN,
+    COLOR,
+    COLOR_HIGH_CONTRAST,
+    SIZE,
+    TRIM,
     WEIGHT,
-    trim,
 )
 
-# The line height and the letter spacing are custom properties, so that text
-# and code inside the element follow its size.
-SIZE: dict[str, Any] = {
-    str(step): {
-        "font_size": tokens.font_size[step],
-        "--line-height": tokens.line_height[step],
-        "--letter-spacing": tokens.letter_spacing[step],
-    }
-    for step in (1, 2, 3, 4, 5, 6, 7, 8, 9)
+# What every element that is text has, a link and a quotation among them.
+TEXT_BASE: dict[str, Any] = {
+    "margin": "0",
+    "line_height": f"var(--line-height, {tokens.default.line_height})",
+    "letter_spacing": "var(--letter-spacing, inherit)",
 }
 
 TEXT: ComponentStyles = {
-    "base": {
-        "margin": "0",
-        "line_height": f"var(--line-height, {tokens.default.line_height})",
-        "letter_spacing": "var(--letter-spacing, inherit)",
-    },
+    "base": TEXT_BASE,
     "variants": {
         "size": SIZE,
         "weight": WEIGHT,
         "align": ALIGN,
-        "trim": trim(
-            f"var(--leading-trim-start, {tokens.default.leading_trim_start})",
-            f"var(--leading-trim-end, {tokens.default.leading_trim_end})",
-        ),
-        "color_scheme": {"true": {**ACCENT_SCOPE, "color": tokens.accent.a[11]}},
-        # Inside an element with a color; no declaration otherwise.
-        "high_contrast": {"true": {"color": f"var({ACCENT_TEXT})"}},
+        "trim": TRIM,
+        **COLOR,
         "as_": {
             "label": {
                 "@media (pointer: coarse)": {
@@ -55,10 +42,41 @@ TEXT: ComponentStyles = {
             },
         },
     },
-    "compound": [
-        {
-            "props": {"color_scheme": "true", "high_contrast": "true"},
-            "style": {**ACCENT_SCOPE_HIGH_CONTRAST, "color": tokens.accent[12]},
-        },
-    ],
+    "compound": [COLOR_HIGH_CONTRAST],
 }
+
+
+def _inline(element: Any, **style: Any) -> ComponentStyles:
+    """Make the look of an inline element from its typography tokens.
+
+    Args:
+        element: The tokens of the element.
+        **style: What the element has beside its font.
+
+    Returns:
+        The style table.
+    """
+    return {
+        "base": {
+            "font_family": element.font_family,
+            "font_size": f"calc({element.font_size_adjust} * 1em)",
+            "font_style": element.font_style,
+            "font_weight": element.font_weight,
+            "letter_spacing": (
+                f"calc({element.letter_spacing} + "
+                f"var(--letter-spacing, {tokens.default.letter_spacing}))"
+            ),
+            **style,
+        },
+    }
+
+
+_BOXED: dict[str, Any] = {
+    "box_sizing": "border-box",
+    "line_height": "1.25",
+    "color": "inherit",
+}
+
+EM: ComponentStyles = _inline(tokens.em, **_BOXED)
+STRONG: ComponentStyles = _inline(tokens.strong)
+QUOTE: ComponentStyles = _inline(tokens.quote, **_BOXED)

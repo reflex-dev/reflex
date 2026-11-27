@@ -480,7 +480,7 @@ def test_table_is_lowered_again_when_the_breakpoints_change():
             None,
             (
                 'rx.ui.card: unknown key "variant" in a style table. Use "base", '
-                '"variants", "compound" or "parts".'
+                '"variants", "defaults", "compound" or "parts".'
             ),
         ),
         (

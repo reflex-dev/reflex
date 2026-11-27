@@ -44,16 +44,19 @@ class ComponentStyles(TypedDict, total=False):
     """The look of a component: a table of styles selected by its props.
 
     A variant is keyed by the name of a prop and then by its values, written
-    as strings: ``"true"`` and ``"false"`` for a boolean prop.
+    as strings: ``"true"`` and ``"false"`` for a boolean prop. ``defaults``
+    gives the value a prop selects styles by when the element leaves it out,
+    for a default the component has in its look alone, not in its API.
     """
 
     base: StyleProps
     variants: dict[str, dict[str, StyleProps]]
+    defaults: dict[str, str]
     compound: list[CompoundStyle]
     parts: dict[str, ComponentStyles]
 
 
-_TABLE_KEYS = frozenset(("base", "variants", "compound", "parts"))
+_TABLE_KEYS = frozenset(("base", "variants", "defaults", "compound", "parts"))
 _NO_PROPS: Mapping[str, Any] = {}
 
 
@@ -224,6 +227,7 @@ class _Table:
         breakpoints: The breakpoints the table was lowered with.
         consulted: The props the table or one of its parts reads, in the order
             their values are keyed by.
+        defaults: The value each consulted prop has when it is not set.
         base: The lowered base style.
         variants: For each variant, the position of its prop in ``consulted``
             and the lowered style of each value.
@@ -239,6 +243,7 @@ class _Table:
         "breakpoints",
         "compound",
         "consulted",
+        "defaults",
         "merged",
         "parts",
         "resolved",
@@ -260,8 +265,7 @@ class _Table:
         for key in source:
             if key not in _TABLE_KEYS:
                 msg = (
-                    f'{name}: unknown key "{key}" in a style table. Use "base", '
-                    '"variants", "compound" or "parts".'
+XX
                 )
                 raise StyleError(msg)
         self.source = source
@@ -280,6 +284,10 @@ class _Table:
             positions.update(dict.fromkeys(part.consulted, 0))
         positions = {prop: position for position, prop in enumerate(positions)}
         self.consulted = tuple(positions)
+        defaults = source.get("defaults", _NO_PROPS)
+        self.defaults: tuple[str | None, ...] = tuple([
+            defaults.get(prop) for prop in positions
+        ])
         self.variants: tuple[tuple[int, dict[str | None, Layer]], ...] = tuple([
             (
                 positions[prop],
@@ -595,6 +603,7 @@ def _merge(
     chosen = []
     bound = None
     responsive = None
+    defaults = table.defaults
     for prop in table.consulted:
         value = props.get(prop)
         if value.__class__ is not str and value is not None:
@@ -612,6 +621,8 @@ def _merge(
                     value = value.get("initial")
                     if value.__class__ is not str and value is not None:
                         value = _variant_key(value)
+        if value is None:
+            value = defaults[len(chosen)]
         chosen.append(value)
     keys = tuple(chosen)
 

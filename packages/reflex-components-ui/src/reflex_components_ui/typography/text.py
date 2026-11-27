@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import ClassVar, Literal
 
-from reflex_base.components.component import field
+from reflex_base.components.component import ComponentNamespace, field
 from reflex_base.vars.base import Var
 from reflex_components_core.core.breakpoints import Responsive
 from reflex_components_core.core.markdown_component_map import MarkdownComponentMap
@@ -12,7 +12,7 @@ from reflex_components_core.el import elements
 
 from reflex_components_ui.base import UIComponent
 from reflex_components_ui.style import ComponentStyles
-from reflex_components_ui.styles.text import TEXT
+from reflex_components_ui.styles.text import EM, QUOTE, STRONG, TEXT
 from reflex_components_ui.themes import LiteralAccentColor
 from reflex_components_ui.typography.base import (
     LiteralTextAlign,
@@ -84,4 +84,44 @@ class Text(UIComponent, elements.Span, MarkdownComponentMap):
     )
 
 
-text = Text.create
+class Span(Text):
+    """A variant of text rendering as <span> element."""
+
+    as_: Var[LiteralType] = Var.create("span")
+
+
+class Em(UIComponent, elements.Em):
+    """Marks text to stress emphasis."""
+
+    tag = "em"
+
+    styles: ClassVar[ComponentStyles] = EM
+
+
+class Quote(UIComponent, elements.Q):
+    """A short inline quotation."""
+
+    tag = "q"
+
+    styles: ClassVar[ComponentStyles] = QUOTE
+
+
+class Strong(UIComponent, elements.Strong):
+    """Marks text to signify strong importance."""
+
+    tag = "strong"
+
+    styles: ClassVar[ComponentStyles] = STRONG
+
+
+class TextNamespace(ComponentNamespace):
+    """Text and the inline elements that mark it up."""
+
+    __call__ = staticmethod(Text.create)
+    em = staticmethod(Em.create)
+    quote = staticmethod(Quote.create)
+    strong = staticmethod(Strong.create)
+    span = staticmethod(Span.create)
+
+
+text = TextNamespace()

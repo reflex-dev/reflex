@@ -386,7 +386,8 @@ class UIComponent(Component):
         if (
             len(children) != 1
             or not isinstance(children[0], Component)
-            or type(children[0]).render is not Component.render
+            or type(children[0]).render
+            not in (Component.render, UIComponent.render)
         ):
             msg = (
                 f"{name}: as_child renders the only child in place of the "
@@ -619,6 +620,9 @@ class UIComponent(Component):
         slot = self._slot
         if slot is None:
             return super().render()
+        # The child may itself render as its own child.
+        while isinstance(slot, UIComponent) and slot._slot is not None:
+            slot = slot._slot
         rendered = self._render().render([child.render() for child in slot.children])
         slot._replace_prop_names(rendered)
         return rendered
