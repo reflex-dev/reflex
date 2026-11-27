@@ -28,6 +28,7 @@ from reflex_base.event import Event, EventSpec
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils import log
 
 from reflex.app import App
 from reflex.istate.manager import StateManager
@@ -57,6 +58,24 @@ def _isolate_app_in_context() -> Generator[None, None, None]:
     object.__setattr__(ctx, "_app", None)
     yield
     object.__setattr__(ctx, "_app", None)
+
+
+@pytest.fixture(autouse=True)
+def _isolate_managed_logging() -> Generator[None, None, None]:
+    """Run each test outside managed logging and detach the sinks it attached.
+
+    Invoking the reflex CLI in-process enables managed logging for the whole
+    process, so without this every later test would inherit it. A private
+    MonkeyPatch, rather than the ``monkeypatch`` fixture, leaves the teardown
+    order of other autouse fixtures unchanged.
+
+    Yields:
+        None.
+    """
+    with pytest.MonkeyPatch.context() as mp:
+        mp.delenv(log._MANAGED_ENV_VAR, raising=False)
+        yield
+        log._reset()
 
 
 @pytest.fixture
@@ -531,13 +550,29 @@ def forked_registration_context() -> Generator[RegistrationContext, None, None]:
     """Fork the registration context and attach it.
 
     Sets the forked context as the current registration context for the duration
-    of the test, then resets it afterwards.
+    of the test, then resets it afterwards. A state defined in the fork also
+    registers its dependencies on the classes of the states it reads, which
+    outlive the fork, so their dependency tracking is restored as well.
 
     Yields:
         The forked RegistrationContext.
     """
-    with RegistrationContext.get().fork() as ctx:
+    context = RegistrationContext.get()
+    tracking = [
+        (
+            state,
+            {var: set(deps) for var, deps in state._var_dependencies.items()},
+            set(state._potentially_dirty_states),
+            set(state._always_dirty_substates),
+        )
+        for state in context.base_states.values()
+    ]
+    with context.fork() as ctx:
         yield ctx
+    for state, var_dependencies, potentially_dirty, always_dirty in tracking:
+        state._var_dependencies = var_dependencies
+        state._potentially_dirty_states = potentially_dirty
+        state._always_dirty_substates = always_dirty
 
 
 @pytest.fixture

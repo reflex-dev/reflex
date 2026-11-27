@@ -35,7 +35,7 @@ def initialize_gitignore(
     if gitignore_file.exists():
         current_ignore = [ln.strip() for ln in gitignore_file.read_text().splitlines()]
 
-    if files_to_ignore == current_ignore:
+    if set(files_to_ignore).issubset(current_ignore):
         logger.debug(f"{gitignore_file} already up to date.")
         return
     files_to_ignore = [ln for ln in files_to_ignore if ln not in current_ignore]
@@ -141,13 +141,13 @@ def initialize_agents_md(
     """
     plan = _plan_agents_md(agents_file, claude_file)
 
-    import httpx
+    import httpx2
 
     logger.debug(f"Fetching {url}")
     try:
         response = net.get(url, timeout=5)
         response.raise_for_status()
-    except httpx.HTTPError as e:
+    except httpx2.HTTPError as e:
         logger.warning(f"Failed to fetch AGENTS.md from {url} due to {e}. Skipping.")
         return
 

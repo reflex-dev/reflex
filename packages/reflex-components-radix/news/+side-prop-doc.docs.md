@@ -1,0 +1,1 @@
+Fix the `side` prop description of `rx.tooltip`, `rx.dropdown_menu.content` and `rx.context_menu.content`, which ran two sentences together and, on the menus, described the tooltip and gave the tooltip's default. The dropdown menu now states its "bottom" default.

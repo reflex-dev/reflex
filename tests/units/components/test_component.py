@@ -49,6 +49,7 @@ from reflex import (
 )
 from reflex.state import BaseState
 from reflex.utils import imports
+from tests.units.field_errors import backend_var_error
 
 
 @pytest.mark.parametrize("name", ["div", "", None])
@@ -789,23 +790,86 @@ def test_component_create_unallowed_types(children, test_component):
 
 
 def test_component_create_backend_var_child(test_component):
-    """A backend var child reports its repr rather than formatting the field."""
+    """A backend var child raises the backend var format error."""
 
     class BackendChildState(BaseState):
         _secret: int = 42
 
-    with pytest.raises(ChildrenTypeError, match=r"received child Field\(default=42"):
+    with pytest.raises(BackendVarFormatError) as exc_info:
         test_component.create(BackendChildState._secret)
+    assert str(exc_info.value) == backend_var_error("BackendChildState._secret")
 
 
-def test_component_create_backend_var_prop():
-    """A backend var passed to a typed prop reports its repr, not a format error."""
+class EventChildState(BaseState):
+    """State with an event handler to pass as a child."""
 
-    class BackendPropState(BaseState):
-        _size: str = "3"
+    def do_something(self):
+        """An event handler."""
 
-    with pytest.raises(TypeError, match=r"got value Field\(default='3'"):
-        rx.heading("x", size=BackendPropState._size)  # pyright: ignore[reportArgumentType]
+
+@pytest.mark.parametrize(
+    ("make_child", "type_name"),
+    [
+        pytest.param(lambda: rx.redirect("/x"), "EventSpec", id="event_spec"),
+        pytest.param(
+            lambda: EventChildState.do_something, "EventHandler", id="event_handler"
+        ),
+        pytest.param(
+            lambda: EventChain(
+                events=[rx.redirect("/x")], args_spec=no_args_event_spec
+            ),
+            "EventChain",
+            id="event_chain",
+        ),
+    ],
+)
+def test_component_create_event_child(make_child, type_name, test_component):
+    """An event child names its type and adds a note on how to run the event.
+
+    Args:
+        make_child: Builds the event child.
+        type_name: The type name the message reports.
+        test_component: A test component.
+    """
+    with pytest.raises(ChildrenTypeError) as exc_info:
+        test_component.create(make_child())
+    assert str(exc_info.value) == (
+        f"Component TestComponent received child of type {type_name}. Accepted types "
+        "are other components, state vars, or primitive Python types (dict excluded)."
+    )
+    assert exc_info.value.__notes__ == [
+        (
+            "Bind an event to an event trigger such as on_click, or pass it to "
+            "on_load in app.add_page to run it when the page loads. "
+            "See https://reflex.dev/docs/events/events-overview/"
+        )
+    ]
+
+
+class BackendPropState(BaseState):
+    """A state with a backend var, for typed prop misuse tests."""
+
+    _size: str = "3"
+
+
+@pytest.mark.parametrize(
+    "create",
+    [
+        lambda f: rx.heading("x", size=f),
+        lambda f: rx.el.div(title=f),
+        lambda f: rx.link("x", href=f),
+    ],
+    ids=["heading_size", "div_title", "link_href"],
+)
+def test_component_create_backend_var_prop(create: Callable[[Any], Component]):
+    """A backend var passed to a typed prop raises the backend var format error.
+
+    Args:
+        create: Creates a component with the backend var as a prop.
+    """
+    with pytest.raises(BackendVarFormatError) as exc_info:
+        create(BackendPropState._size)
+    assert str(exc_info.value) == backend_var_error("BackendPropState._size")
 
 
 class BackendSrcState(BaseState):
@@ -2289,7 +2353,7 @@ def test_add_style_embedded_vars(test_state: type[TestState]):
     page._add_style_recursive(Style())
 
     assert (
-        f'const {test_state.get_name()} = useStateContext("{test_state.get_full_name()}")'
+        f'const {test_state.get_name()} = useStateContext("{test_state.get_full_name()}", ["num{FIELD_MARKER}"])'
         in page._get_all_hooks_internal()
     )
     assert any(

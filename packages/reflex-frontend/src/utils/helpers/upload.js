@@ -14,6 +14,8 @@ import { parseJson } from "$/utils/helpers/json";
  * @param refs The refs object to store the abort controller in.
  * @param getBackendURL Function to get the backend URL.
  * @param getToken Function to get the Reflex token.
+ * @param waitForSession Wait for the session cookie before starting HTTP traffic.
+ * @param devMode Whether the app runs in development mode.
  *
  * @returns The response from posting to the UPLOADURL endpoint.
  */
@@ -28,6 +30,8 @@ export const uploadFiles = async (
   refs,
   getBackendURL,
   getToken,
+  waitForSession,
+  devMode,
 ) => {
   files = files ?? [];
 
@@ -38,14 +42,41 @@ export const uploadFiles = async (
     return false;
   }
 
+  const controller = new AbortController();
+  refs[upload_ref_name] = controller;
+  if (waitForSession) {
+    let abortWaiting;
+    const cancelled = new Promise((resolve) => {
+      abortWaiting = resolve;
+      controller.signal.addEventListener("abort", abortWaiting, { once: true });
+    });
+    try {
+      await Promise.race([waitForSession(), cancelled]);
+    } catch (error) {
+      console.log("Upload session error:", error.message);
+      delete refs[upload_ref_name];
+      return false;
+    } finally {
+      controller.signal.removeEventListener("abort", abortWaiting);
+    }
+  }
+  if (controller.signal.aborted || !socket.connected) {
+    delete refs[upload_ref_name];
+    return false;
+  }
+
   // Track how many partial updates have been processed for this upload.
   let resp_idx = 0;
   // Set when the server ends the stream with an error frame (handler raised).
   let stream_error;
-  const eventHandler = (progressEvent) => {
+  const eventHandler = (responseText, complete = false) => {
     const event_callbacks = socket._callbacks.$event;
     // Whenever called, responseText will contain the entire response so far.
-    const chunks = progressEvent.event.target.responseText.trim().split("\n");
+    const response = responseText.trim();
+    if (!response) {
+      return;
+    }
+    const chunks = response.split("\n");
     // So only process _new_ chunks beyond resp_idx.
     for (const chunk_json of chunks.slice(resp_idx)) {
       let chunk;
@@ -54,7 +85,7 @@ export const uploadFiles = async (
       } catch (e) {
         // The last chunk may be incomplete; the next progress event parses it
         // again, so only report errors when the full response is available.
-        if (progressEvent.progress === 1) {
+        if (complete) {
           console.log("Error parsing chunk", chunk_json, e);
         }
         return;
@@ -75,7 +106,6 @@ export const uploadFiles = async (
     }
   };
 
-  const controller = new AbortController();
   const formdata = new FormData();
 
   // Bound handler args are sent as a JSON form field that must precede the
@@ -91,16 +121,19 @@ export const uploadFiles = async (
   });
 
   // Send the file to the server.
-  refs[upload_ref_name] = controller;
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
 
     // Set up event handlers
     xhr.onload = function () {
+      const ok = xhr.status >= 200 && xhr.status < 300;
+      if (ok) {
+        eventHandler(xhr.responseText, true);
+      }
       if (stream_error !== undefined) {
         reject(new Error(stream_error));
-      } else if (xhr.status >= 200 && xhr.status < 300) {
+      } else if (ok) {
         resolve({
           data: xhr.responseText,
           status: xhr.status,
@@ -110,7 +143,22 @@ export const uploadFiles = async (
           },
         });
       } else {
-        reject(new Error(`HTTP error! status: ${xhr.status}`));
+        /** @type {Error & { rejection?: string }} */
+        const error = new Error(`HTTP error! status: ${xhr.status}`);
+        if (xhr.status >= 400 && xhr.status < 500) {
+          // The server refused the request before the event handler ran, so
+          // no backend error reaches the page for it. Only development shows
+          // the server's own words, as for a failed event handler.
+          if (devMode) {
+            error.rejection = `The server rejected the upload (${xhr.status}): ${xhr.responseText.slice(0, 200)}`;
+          } else if (xhr.status === 403) {
+            error.rejection =
+              "Your session has expired. Reload the page and try again.";
+          } else {
+            error.rejection = "The server rejected the upload.";
+          }
+        }
+        reject(error);
       }
     };
 
@@ -137,20 +185,10 @@ export const uploadFiles = async (
     }
 
     // Handle download progress with streaming response parsing
-    xhr.onprogress = function (event) {
+    xhr.onprogress = function () {
       // Only a 2xx body is an update stream; onload reports an error status.
       if (xhr.status < 200 || xhr.status >= 300) return;
-      if (eventHandler) {
-        const progressEvent = {
-          event: {
-            target: {
-              responseText: xhr.responseText,
-            },
-          },
-          progress: event.lengthComputable ? event.loaded / event.total : 0,
-        };
-        eventHandler(progressEvent);
-      }
+      eventHandler(xhr.responseText);
     };
 
     // Handle abort controller
@@ -160,6 +198,7 @@ export const uploadFiles = async (
 
     // Configure and send request
     xhr.open("POST", getBackendURL(env.UPLOAD));
+    xhr.withCredentials = true;
     xhr.setRequestHeader("Reflex-Client-Token", getToken());
     xhr.setRequestHeader("Reflex-Event-Handler", handler);
     // Instrumentation hook (installed by reflex-otel): may add trace headers.
@@ -181,6 +220,19 @@ export const uploadFiles = async (
   })
     .catch((error) => {
       console.log("Upload error:", error.message);
+      if (error.rejection) {
+        // Show it as a failed event handler is shown: a toast, or an alert
+        // when the app has no toast provider.
+        if (refs.__toast) {
+          refs.__toast.error("Upload failed.", {
+            description: error.rejection,
+            position: "top-center",
+            id: "upload_error",
+          });
+        } else {
+          window.alert(`Upload failed. ${error.rejection}`);
+        }
+      }
       return false;
     })
     .finally(() => {

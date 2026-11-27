@@ -364,12 +364,12 @@ def file_lock(path: str | Path) -> Iterator[Path]:
                 os.close(lock_fd)
 
 
-def _write_json_file(file_path: Path, value: dict[str, object]) -> None:
+def _write_json_file(file_path: Path, value: object) -> None:
     """Atomically replace a JSON file with a complete document.
 
     Args:
         file_path: The destination JSON file.
-        value: The complete JSON object to write.
+        value: The complete JSON value to write.
     """
     open_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY | getattr(os, "O_BINARY", 0)
     temp_path = file_path.with_name(f".{file_path.name}.{secrets.token_hex(8)}.tmp")

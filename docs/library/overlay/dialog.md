@@ -195,14 +195,11 @@ def dialog_example():
 
 Check out the [menu docs](/docs/library/overlay/dropdown-menu/) for an example of opening a dialog from within a dropdown menu.
 
-## Form Submission to a Database from a Dialog
+## Form Submission from a Dialog
 
-This example adds new users to a database from a dialog using a form.
+This example collects a name and email in a dialog and shows a toast when the form is submitted. To store the submission, follow [Queries](/docs/database/queries/) inside the event handler.
 
-1. It defines a User model with name and email fields.
-2. The `add_user_to_db` method adds a new user to the database, checking for existing emails.
-3. On form submission, it calls the `add_user_to_db` method.
-4. The UI component has:
+The UI has:
 
 - A button to open a dialog
 - A dialog containing a form to add a new user
@@ -210,28 +207,12 @@ This example adds new users to a database from a dialog using a form.
 - Submit and Cancel buttons
 
 ```python demo exec
-class User(rx.Model, table=True):
-    """The user model."""
-
-    name: str
-    email: str
-
-
 class State(rx.State):
-    current_user: User = User()
+    current_user: dict[str, str] = {}
 
     @rx.event
-    def add_user_to_db(self, form_data: dict):
+    def add_user(self, form_data: dict[str, str]):
         self.current_user = form_data
-        ### Uncomment the code below to add your data to a database ###
-        # with rx.session() as session:
-        #     if session.exec(
-        #         select(User).where(user.email == self.current_user["email"])
-        #     ).first():
-        #         return rx.window_alert("User with this email already exists")
-        #     session.add(User(**self.current_user))
-        #     session.commit()
-
         return rx.toast.info(
             f"User {self.current_user['name']} has been added.", position="bottom-right"
         )
@@ -273,7 +254,7 @@ def index() -> rx.Component:
                     direction="column",
                     spacing="4",
                 ),
-                on_submit=State.add_user_to_db,
+                on_submit=State.add_user,
                 reset_on_submit=False,
             ),
             max_width="450px",

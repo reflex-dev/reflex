@@ -32,9 +32,11 @@ from typing import (
 )
 
 from reflex_base import constants
+from reflex_base.config import get_state_auto_setters, get_state_explicit_event_handlers
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import PerformanceMode, auto_reload_cooldown, environment
 from reflex_base.event import (
+    _UNDECORATED_STATE_METHOD_MARKER,
     BACKGROUND_TASK_MARKER,
     EVENT_ACTIONS_MARKER,
     SUPERSEDES_MARKER,
@@ -56,6 +58,7 @@ from reflex_base.utils.exceptions import (
     UnretrievableVarValueError,
 )
 from reflex_base.utils.exceptions import ImmutableStateError as ImmutableStateError
+from reflex_base.utils.log import dedupe_once
 from reflex_base.utils.serializers import serializer
 from reflex_base.utils.types import _isinstance
 from reflex_base.vars import Field, VarData, field
@@ -65,6 +68,7 @@ from reflex_base.vars.base import (
     EvenMoreBasicBaseState,
     ToOperation,
     Var,
+    _declared_value,
     _inherited_value,
     _is_descriptor,
     _private_prefixes,
@@ -545,6 +549,8 @@ all_base_state_classes: dict[str, None] = {}
 _ROUTER_FIELD_NAMES = frozenset((*constants.ROUTER_VARS, constants.ROUTER_DATA))
 
 
+_WRAPPED_HANDLER_DEPRECATION = "Decorators above @rx.event"
+
 # What a wrapper stacked above @rx.event takes over from the function it
 # wraps: what functools.wraps copied from a plain function (its name, module,
 # docstring and the annotations the payload coercion reads, which it took
@@ -584,6 +590,38 @@ def _method_above_handler(value: Any) -> staticmethod | classmethod | None:
         removal_version="1.0",
     )
     return type(value)(value.__func__.fn)
+
+
+def _wraps_event_handler(value: Any) -> bool:
+    """Whether a method wraps an ``@rx.event`` handler under another decorator.
+
+    Args:
+        value: A class attribute.
+
+    Returns:
+        True if its ``__wrapped__`` chain reaches an EventHandler.
+    """
+    return isinstance(
+        inspect.unwrap(value, stop=lambda f: isinstance(f, EventHandler)),
+        EventHandler,
+    )
+
+
+def _mark_undecorated_method(owner: type, name: str, fn: Callable) -> None:
+    """Mark a method that explicit event handler mode leaves undecorated.
+
+    Wiring a marked method to an event trigger raises a targeted error. Only a
+    method defined in the owner's class body is marked: a callback defined
+    elsewhere may be shared.
+
+    Args:
+        owner: The state or mixin whose class body may define the method.
+        name: The attribute name of the method.
+        fn: The method.
+    """
+    prefix = owner.__dict__.get("__original_qualname__", owner.__qualname__)
+    if fn.__qualname__ == f"{prefix}.{name}":
+        setattr(fn, _UNDECORATED_STATE_METHOD_MARKER, True)
 
 
 class BaseState(EvenMoreBasicBaseState, state_root=True):
@@ -816,8 +854,9 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             )
             raise StateValueError(msg)
 
+        explicit = cls.is_user_defined() and get_state_explicit_event_handlers()
         cls._bind_fields()
-        cls._bind_mixin_members()
+        mixin_handlers = cls._bind_mixin_members(explicit)
 
         # Set the base and computed vars.
         cls.base_vars = {
@@ -859,6 +898,13 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             elif (method := _method_above_handler(fn)) is not None:
                 setattr(cls, name, method)
             elif cls._item_is_event_handler(name, fn):
+                if (
+                    explicit
+                    and name not in mixin_handlers
+                    and not _wraps_event_handler(fn)
+                ):
+                    _mark_undecorated_method(cls, name, fn)
+                    continue
                 handler = cls._create_event_handler(fn)
                 cls.event_handlers[name] = handler
                 setattr(cls, name, handler)
@@ -877,7 +923,9 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         A field declared on this class or a parent state stays bound where it
         is declared: its value lives on that state's instance. One declared on
-        a mixin or non-state base gets a copy bound to this class.
+        a mixin or non-state base gets a copy bound to this class. A var a mixin
+        declares without a default only restates the type of the var declared
+        further along the MRO, which is bound in its place.
         """
         tree_states = set()
         state_cls: type[BaseState] | None = cls
@@ -886,12 +934,20 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             state_cls = state_cls.get_parent_state()
         fields = cls.__fields__
         for name, declared in list(fields.items()):
-            f = _inherited_value(cls.__mro__, name)
-            if not isinstance(f, Field):
-                if callable(f) or _is_descriptor(f):
-                    # Overridden by something else, like a property.
-                    del fields[name]
-                    continue
+            f = _declared_value(cls.__mro__, name)
+            if isinstance(f, Field):
+                if (
+                    f._owner in tree_states
+                    and _inherited_value(cls.__mro__, name) is not f
+                ):
+                    # A mixin restating the parent state's var hides it on this
+                    # class; expose the parent's without rebinding it.
+                    type.__setattr__(cls, name, f)
+            elif callable(f) or _is_descriptor(f):
+                # Overridden by something else, like a property.
+                del fields[name]
+                continue
+            else:
                 # Declared by a plain base, which holds no field of its own.
                 f = declared
             if f._owner not in tree_states:
@@ -900,12 +956,19 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             fields[name] = f
 
     @classmethod
-    def _bind_mixin_members(cls) -> None:
+    def _bind_mixin_members(cls, explicit: bool) -> set[str]:
         """Copy the computed vars and event handler functions of mixins onto this class.
 
         A member is copied only where this class resolves the name to the mixin's
         member, so this class or an earlier base overrides it as usual.
+
+        Args:
+            explicit: Only copy event handler functions decorated with `@rx.event`.
+
+        Returns:
+            The names of the event handler functions copied onto this class.
         """
+        handlers: set[str] = set()
         for mixin_cls in cls._mixins():
             for name, value in mixin_cls.__dict__.items():
                 if _inherited_value(cls.__mro__, name) is not value:
@@ -925,12 +988,18 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                     fn = cls._copy_fn(value.fn)
                     fn.__qualname__ = f"{cls.__name__}.{name}"
                     setattr(cls, name, fn)
+                    handlers.add(name)
                 elif (method := _method_above_handler(value)) is not None:
                     setattr(cls, name, method)
                 elif cls._item_is_event_handler(name, value):
+                    if explicit and not _wraps_event_handler(value):
+                        _mark_undecorated_method(mixin_cls, name, value)
+                        continue
                     fn = cls._copy_fn(value)
                     fn.__qualname__ = f"{cls.__name__}.{name}"
                     setattr(cls, name, fn)
+                    handlers.add(name)
+        return handlers
 
     @classmethod
     def _add_event_handler(
@@ -991,15 +1060,29 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             inner := inspect.unwrap(value, stop=lambda f: isinstance(f, EventHandler)),
             EventHandler,
         ):
-            console.deprecate(
-                feature_name="Decorators above @rx.event",
-                reason=(
-                    f"`{name}` is decorated above @rx.event; apply other "
-                    "decorators below it."
-                ),
-                deprecation_version="0.11.0",
-                removal_version="1.0",
-            )
+            # The default dedupe key is the feature name plus the class source
+            # location, which would name only the first method of a class.
+            # Dedupe per wrapped function and attribute name instead: every
+            # name a handler is assigned to is reported once, and classes built
+            # again from the same definition (ComponentState instances, states
+            # defined in a function) stay quiet. A partial or callable instance
+            # has no __qualname__.
+            if dedupe_once((
+                _WRAPPED_HANDLER_DEPRECATION,
+                inner.fn.__module__,
+                getattr(inner.fn, "__qualname__", None),
+                name,
+            )):
+                console.deprecate(
+                    feature_name=_WRAPPED_HANDLER_DEPRECATION,
+                    reason=(
+                        f"`{name}` is decorated above @rx.event; apply other "
+                        "decorators below it."
+                    ),
+                    deprecation_version="0.11.0",
+                    removal_version="1.0",
+                    dedupe=False,
+                )
             for attr in _STACKED_HANDLER_ATTRIBUTES:
                 if hasattr(inner.fn, attr):
                     setattr(value, attr, getattr(inner.fn, attr))
@@ -1092,6 +1175,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             proposed_name = f"{cls.__name__}_{ix}"
         setattr(reflex.istate.dynamic, proposed_name, cls)
         cls.__original_name__ = cls.__name__
+        cls.__original_qualname__ = cls.__qualname__
         cls.__original_module__ = cls.__module__
         cls.__name__ = cls.__qualname__ = proposed_name
         cls.__module__ = reflex.istate.dynamic.__name__
@@ -1377,7 +1461,6 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         Raises:
             VarTypeError: if the variable has an incorrect type
         """
-        from reflex_base.config import get_state_auto_setters
         from reflex_base.utils.exceptions import VarTypeError
 
         if not types.is_valid_var_type(prop._var_type):
@@ -2120,8 +2203,14 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         """
         if include_computed:
             self._mark_dirty_computed_vars()
+        # Read stored fields straight from the instance dict; defaults not
+        # stored yet go through `get_value`.
+        values = self.__dict__
         base_vars = {
-            prop_name: self.get_value(prop_name) for prop_name in self.base_vars
+            prop_name: values[prop_name]
+            if prop_name in values
+            else self.get_value(prop_name)
+            for prop_name in self.base_vars
         }
         if initial and include_computed:
             computed_vars = {

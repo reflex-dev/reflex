@@ -29,6 +29,7 @@ from reflex_base.constants.compiler import SpecialAttributes
 from reflex_base.event import (
     EventCallback,
     EventChain,
+    EventHandler,
     EventSpec,
     args_specs_from_fields,
     no_args_event_spec,
@@ -37,6 +38,7 @@ from reflex_base.event import (
 from reflex_base.style import Style, format_as_emotion
 from reflex_base.utils import format, imports, types
 from reflex_base.utils.compat import MISSING_TYPE
+from reflex_base.utils.exceptions import BackendVarFormatError
 from reflex_base.utils.imports import ImportDict, ImportVar, ParsedImportDict
 from reflex_base.vars import VarData
 from reflex_base.vars.base import (
@@ -946,6 +948,7 @@ class Component(BaseComponent, ABC):
         Raises:
             TypeError: If an invalid prop is passed.
             ValueError: If an event trigger passed is not valid.
+            BackendVarFormatError: If a child or typed prop is a field with no frontend var.
         """
         # Set the id and children initially.
         children = kwargs.get("children", [])
@@ -998,6 +1001,8 @@ class Component(BaseComponent, ABC):
                     expected_type = typing.get_args(
                         types.get_field_type(type(self), key)
                     )[0]
+                except BackendVarFormatError:
+                    raise
                 except TypeError:
                     # If it is not a valid var, check the base types.
                     passed_type = type(value)
@@ -1287,7 +1292,16 @@ class Component(BaseComponent, ABC):
 
             # Make sure the child is a valid type.
             if isinstance(child, dict) or not isinstance(child, ComponentChildTypes):
-                raise ChildrenTypeError(component=cls.__name__, child=child)
+                if isinstance(child, Field):
+                    raise child._no_frontend_var_error()
+                error = ChildrenTypeError(component=cls.__name__, child=child)
+                if isinstance(child, (EventSpec, EventHandler, EventChain)):
+                    error.add_note(
+                        "Bind an event to an event trigger such as on_click, or pass "
+                        "it to on_load in app.add_page to run it when the page loads. "
+                        "See https://reflex.dev/docs/events/events-overview/"
+                    )
+                raise error
 
     @classmethod
     def create(cls: type[T], *children, **props) -> T:
