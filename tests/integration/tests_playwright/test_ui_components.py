@@ -204,17 +204,43 @@ def UIComponentsApp(radix: bool = False):
             ),
         )
 
+    if radix:
+
+        class ThemeState(rx.State):
+            accent: str = "red"
+            appearance: str = "inherit"
+
+            @rx.event
+            def change(self):
+                self.accent = "green"
+                self.appearance = "dark"
+
+        def bound():
+            return rx.el.main(
+                rx.ui.theme(
+                    probe("bound-probe"),
+                    accent_color=ThemeState.accent,
+                    gray_color="slate",
+                    appearance=ThemeState.appearance,
+                    id="bound",
+                ),
+                rx.el.button("change", id="change", on_click=ThemeState.change),
+            )
+
     assets = Path.cwd() / "assets"
     assets.mkdir(exist_ok=True)
     (assets / "unlayered.css").write_text(".unlayered { padding: 2px }")
 
-    app = rx.App(stylesheets=["unlayered.css"], enable_state=False)
+    # Only the app beside Radix Themes has state: the other one shows what a
+    # page costs without it.
+    app = rx.App(stylesheets=["unlayered.css"], enable_state=radix)
     app.add_page(index)
     app.add_page(literal, route="/literal")
     app.add_page(theme, route="/theme")
     app.add_page(sweep, route="/sweep")
     if radix:
         app.add_page(mixed, route="/mixed")
+        app.add_page(bound, route="/bound")
 
     config = rx.config.get_config()
     config.plugins = [
@@ -571,6 +597,23 @@ def test_nested_theme_overrides_its_subtree_only(ui_app: AppHarness, page: Page)
             ];
         })"""
     )
+    # Text selected inside a theme has the color of its focus ring.
+    selection = page.evaluate(
+        """() => ["root-probe", "nested-probe"].map((id) => {
+            const probe = document.getElementById(id);
+            const reference = probe.appendChild(document.createElement("i"));
+            reference.style.color = "var(--focus-a5)";
+            return [
+                getComputedStyle(probe, "::selection").backgroundColor,
+                getComputedStyle(reference).color,
+            ];
+        })"""
+    )
+    # Indigo a5 of the light scale, and red a5 of the dark one.
+    assert selection == [
+        ["rgba(0, 68, 255, 0.176)", "rgba(0, 68, 255, 0.176)"],
+        ["rgba(255, 32, 71, 0.337)", "rgba(255, 32, 71, 0.337)"],
+    ]
     viewport = page.viewport_size
     assert viewport is not None
     assert themes == [
@@ -815,3 +858,36 @@ def test_radix_components_follow_the_rx_ui_theme(mixed_app: AppHarness, page: Pa
         ["rgba(34, 255, 153, 0.118)", "rgba(70, 254, 165, 0.83)"],
     ]
     assert in_ui_theme == read("radix-dark")
+
+
+def test_theme_bound_to_state_follows_it(mixed_app: AppHarness, page: Page):
+    """Every accent is on the page, and the browser applies the one in state."""
+    assert mixed_app.frontend_url is not None
+    page.goto(mixed_app.frontend_url.rstrip("/") + "/bound/")
+    probe = page.locator("#bound-probe")
+    expect(probe).to_have_css("color", RED_11["light"])
+
+    def read() -> list[str]:
+        return page.locator("#bound").evaluate(
+            """(theme) => [
+                getComputedStyle(theme.querySelector("#bound-probe")).backgroundColor,
+                getComputedStyle(theme).colorScheme,
+                getComputedStyle(theme).backgroundColor,
+                [...theme.parentElement.classList].filter((name) =>
+                    ["inherit", "light", "dark"].includes(name),
+                ).join(" "),
+                getComputedStyle(theme.parentElement).display,
+            ]"""
+        )
+
+    # The appearance of the page, and no background of its own.
+    assert read() == [
+        SLATE_2["light"],
+        "light",
+        "rgba(0, 0, 0, 0)",
+        "inherit",
+        "contents",
+    ]
+    page.locator("#change").click()
+    expect(probe).to_have_css("color", "rgb(61, 214, 140)")
+    assert read() == [SLATE_2["dark"], "dark", "rgb(17, 17, 19)", "dark", "contents"]

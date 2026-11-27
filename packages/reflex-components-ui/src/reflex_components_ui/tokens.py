@@ -18,7 +18,7 @@ exist and a name that is misspelt are errors to a type checker, and raise a
 
 from __future__ import annotations
 
-from typing import Literal, NoReturn
+from typing import Literal, NoReturn, get_args
 
 from reflex_base.utils.exceptions import ReflexError
 
@@ -540,7 +540,7 @@ def scale(name: LiteralColorScale) -> _Scale:
     """
     found = _SCALES.get(name)
     if found is None:
-        scales = LiteralColorScale.__args__
+        scales = get_args(LiteralColorScale)
         if name == "accent" or name == "gray":
             msg = (
                 f'rx.ui.tokens.scale: "{name}" is not a color scale of its own, '

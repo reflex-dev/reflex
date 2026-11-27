@@ -16,7 +16,7 @@ from reflex_components_ui.constants import (
     STYLEX_VERSION,
     WEB_DIR,
 )
-from reflex_components_ui.themes import Theme
+from reflex_components_ui.themes import Theme, ThemeError
 
 # Declares the cascade layers, so it comes before any stylesheet that names one.
 BASE_STYLESHEET_IMPORT = f"@import url('../{WEB_DIR}/base.css');"
@@ -77,6 +77,21 @@ class UIPlugin(Plugin):
     """
 
     theme: Theme = dataclasses.field(default_factory=Theme)
+
+    def __post_init__(self):
+        """Check that the theme is one of rx.ui.
+
+        Raises:
+            ThemeError: If the theme is something else, such as the theme
+                component of Radix Themes.
+        """
+        if not isinstance(self.theme, Theme):
+            msg = (
+                "rx.plugins.UIPlugin: theme must be an rx.ui.Theme(...), not "
+                f"{type(self.theme).__name__}. The theme of Radix Themes, "
+                "rx.theme(...), goes to rx.plugins.RadixThemesPlugin."
+            )
+            raise ThemeError(msg)
 
     def get_frontend_development_dependencies(self, **context) -> list[str]:
         """Get the packages that compile the styles.
