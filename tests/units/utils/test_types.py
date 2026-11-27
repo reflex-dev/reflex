@@ -154,4 +154,10 @@ class ExtensionsUserInfo(typing_extensions.TypedDict, total=False):
     ],
 )
 def test_isinstance_typing_extensions_typed_dict(value: dict, expected: bool) -> None:
+    """Check that _isinstance validates typing_extensions TypedDict values.
+
+    Args:
+        value: The value to check.
+        expected: Whether the value matches the TypedDict.
+    """
     assert types._isinstance(value, ExtensionsUserInfo, nested=2) == expected

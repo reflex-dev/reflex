@@ -55,7 +55,10 @@ def _determine_value_type(var_type: GenericType):
             if arg is not type(None)
         ])
 
-    if is_typeddict(origin_var_type) or dataclasses.is_dataclass(origin_var_type):
+    if is_typeddict(origin_var_type):
+        return unionize(*types.get_typed_dict_field_types(var_type).values())
+
+    if dataclasses.is_dataclass(origin_var_type):
         annotations = get_type_hints(origin_var_type)
         return unionize(*annotations.values())
 
