@@ -75,7 +75,14 @@ MATRIX = Matrix(
         "viewport": [520],
     },
     groups=[
-        {"content": ["tall", "wide", "large"], "scrollbars": SCROLLBARS, "type": TYPES},
+        # Not `auto` around what overflows: Radix Themes then shows its
+        # scrollbars once it has measured the content, some time after the
+        # page is ready, so a screenshot has them or not.
+        {
+            "content": ["tall", "wide", "large"],
+            "scrollbars": SCROLLBARS,
+            "type": ["always", "scroll", "hover"],
+        },
         {"content": ["large"], "appearance": [DARK]},
     ],
     crop="stage",

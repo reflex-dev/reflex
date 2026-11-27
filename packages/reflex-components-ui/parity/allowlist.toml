@@ -72,9 +72,3 @@ component = "scroll_area"
 check = "pixels"
 cells = "*type-always*"
 reason = "rx.ui.scroll_area scrolls natively and has the scrollbars of the browser, thin and in the grays of the theme, where rx.scroll_area draws scrollbars of its own with JavaScript. Their shape and where they show follow the browser and the system: they may take room beside the content or lie over it, and `type` \"hover\" and \"scroll\" and `scroll_hide_delay` are left to them."
-
-[[look]]
-component = "scroll_area"
-check = "pixels"
-cells = "content-*_type-auto"
-reason = "rx.ui.scroll_area scrolls natively and has the scrollbars of the browser, thin and in the grays of the theme, where rx.scroll_area draws scrollbars of its own with JavaScript. Their shape and where they show follow the browser and the system: they may take room beside the content or lie over it, and `type` \"hover\" and \"scroll\" and `scroll_hide_delay` are left to them."

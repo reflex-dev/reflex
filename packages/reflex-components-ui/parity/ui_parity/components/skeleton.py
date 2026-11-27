@@ -9,7 +9,7 @@ import reflex as rx
 from ui_parity.contract import HYDRATED, NO_JAVASCRIPT, SERVER, Contract, Run
 from ui_parity.matrix import DARK, LIGHT, Matrix
 
-HOLDS = ["text", "words", "button", "soft-button", "avatar", "card", "nothing"]
+HOLDS = ["text", "words", "button", "soft-button", "card"]
 
 
 def _skeleton(namespace: Any, props: Mapping[str, Any]) -> Any:
@@ -48,8 +48,7 @@ def _skeleton(namespace: Any, props: Mapping[str, Any]) -> Any:
 MATRIX = Matrix(
     component="skeleton",
     render=_skeleton,
-    # A skeleton that holds nothing and is not loading renders nothing.
-    cross={"holds": HOLDS[:-1], "loading": [True, False]},
+    cross={"holds": HOLDS, "loading": [True, False]},
     sweep={
         "width": {
             "fixed": "120px",
@@ -60,12 +59,16 @@ MATRIX = Matrix(
         "max_width": ["40px"],
         "min_height": ["60px"],
         "max_height": ["8px"],
-        "holds": ["nothing"],
+        # Loading only. A skeleton that holds nothing and is not loading
+        # renders nothing, and an avatar that is shown is the matrix of the
+        # avatar: the one of Radix Themes shows its fallback some time after
+        # the page is ready.
+        "holds": ["nothing", "avatar"],
         "appearance": [DARK],
         "viewport": [520],
     },
     groups=[
-        {"holds": HOLDS, "appearance": [LIGHT, DARK]},
+        {"holds": [*HOLDS, "nothing", "avatar"], "appearance": [LIGHT, DARK]},
         {"holds": ["nothing", "button"], "width": ["120px"], "height": ["40px"]},
         {
             "holds": ["nothing", "text"],
