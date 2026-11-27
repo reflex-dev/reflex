@@ -39,8 +39,7 @@ const NO_COMPONENTS = {
         "Component",
         "PureComponent",
       ],
-      message:
-        "No React components in src: import the hooks you need by name.",
+      message: "No React components in src: import the hooks you need by name.",
     },
     ...[
       "react-dom",
