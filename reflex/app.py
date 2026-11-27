@@ -78,7 +78,7 @@ from reflex_components_core.core.banner import (
 )
 from reflex_components_core.core.breakpoints import set_breakpoints
 from reflex_components_core.core.sticky import sticky
-from reflex_components_sonner.toast import toast
+from reflex_components_sonner.toast import ToasterRequest
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
 from starlette.applications import Starlette
@@ -262,6 +262,15 @@ def extra_overlay_function() -> Component | None:
     if extra_config:
         return _component_from_import_path(extra_config, "extra_overlay_function")
     return None
+
+
+def default_toaster() -> Component:
+    """Default toaster: bundled only when the app sends a toast.
+
+    Returns:
+        The toaster the compiler tells from one the app configured.
+    """
+    return compiler.DEFAULT_TOASTER
 
 
 def default_overlay_component() -> Component:
@@ -931,7 +940,7 @@ class App(MiddlewareMixin, LifespanMixin):
         admin_dash: Removed. rx.AdminDash raises with a link to the migration guide.
         frontend_exception_handler: Frontend [error handler](https://reflex.dev/docs/utility-methods/exception-handlers/) function.
         backend_exception_handler: Backend [error handler](https://reflex.dev/docs/utility-methods/exception-handlers/) function.
-        toaster: Put the [toast](https://reflex.dev/docs/library/overlay/toast/) provider in the app wrap.
+        toaster: Put the [toast](https://reflex.dev/docs/library/overlay/toast/) provider in the app wrap. The default one is bundled only when the app sends a toast; pass a provider to always bundle it, or None for no provider.
         api_transformer: One or more transforms applied to the backend ASGI app before it runs — mount a FastAPI/Starlette app or wrap it in ASGI middleware. See the [API Transformer docs](https://reflex.dev/docs/api-routes/overview/) for examples.
     """
 
@@ -1034,7 +1043,7 @@ class App(MiddlewareMixin, LifespanMixin):
         [Exception], EventSpec | list[EventSpec] | None
     ] = default_backend_exception_handler
 
-    toaster: Component | None = dataclasses.field(default_factory=toast.provider)
+    toaster: Component | None = dataclasses.field(default_factory=default_toaster)
 
     hydrate_fallback: Component | ComponentCallable | None = None
 
@@ -2168,7 +2177,17 @@ class App(MiddlewareMixin, LifespanMixin):
     def _app_root(self, app_wrappers: dict[tuple[int, str], Component]) -> Component:
         for component in tuple(app_wrappers.values()):
             app_wrappers.update(component._get_all_app_wrap_components())
-        order = sorted(app_wrappers, key=operator.itemgetter(0), reverse=True)
+        # A toast call asks for the toaster with a marker wrap, which the
+        # compiler answered when it resolved the wraps: it is not rendered.
+        order = sorted(
+            (
+                key
+                for key, wrapper in app_wrappers.items()
+                if not isinstance(wrapper, ToasterRequest)
+            ),
+            key=operator.itemgetter(0),
+            reverse=True,
+        )
         root = copy.deepcopy(app_wrappers[order[0]])
 
         def reducer(parent: Component, key: tuple[int, str]) -> Component:

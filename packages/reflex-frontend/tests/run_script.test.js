@@ -9,6 +9,8 @@ import { describe, expect, test, vi } from "vitest";
 import { getClientState } from "$/utils/client_state";
 import { eventLoop } from "$/utils/context-registry";
 import { applyEvent, getToken } from "$/utils/state";
+// The connection to the backend, which holds the session token.
+import "$/utils/socket";
 
 const callScript = (code, callback, socket = null) =>
   applyEvent(

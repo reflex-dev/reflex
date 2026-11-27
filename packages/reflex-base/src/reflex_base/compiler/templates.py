@@ -448,6 +448,15 @@ export const initialEvents = () => []
 """
     )
 
+    # Only an app with state imports the connection to the backend, so an app
+    # without state bundles neither it nor socket.io and the cookie library.
+    state_imports_str = (
+        'import { applyDelta, ReflexEvent, refs } from "$/utils/state"\n'
+        'import { hydrateClientStorage, useEventLoop } from "$/utils/socket"'
+        if state_name
+        else 'import { applyDelta, useEventLoop, refs } from "$/utils/state"'
+    )
+
     disable_owner_stacks_str = (
         r"""
 // Disable React dev-build owner-stack capture: the per-element Error()
@@ -477,7 +486,7 @@ if (typeof window !== "undefined") {
     )
 
     return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ useContext, useMemo, useState, createElement, useEffect }} from "react"
-import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
+{state_imports_str}
 import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext, registerApp, eventLoop }} from "$/utils/context-registry"
 import {{ jsx }} from "@emotion/react";
 {disable_owner_stacks_str}

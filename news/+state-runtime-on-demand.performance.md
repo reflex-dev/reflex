@@ -1,0 +1,3 @@
+An app without state no longer bundles Socket.io, the cookie library or the code that connects to the backend, and no app bundles the toaster unless it sends a toast: a static page ships about 28 kB less gzipped JavaScript, and an app with state that sends no toast about 8 kB less.
+
+The toaster is bundled when a toast call is compiled into a page, when an event handler refers to `rx.toast`, or when `rx.App` is given a `toaster`. A toast the compiler could not foresee, and a connection error, show as a plain notice in an app with state; pass `toaster=rx.toast.provider()` to `rx.App` to always bundle the toaster.

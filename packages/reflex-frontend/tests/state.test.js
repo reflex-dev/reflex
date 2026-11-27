@@ -41,6 +41,9 @@ import {
   ReflexEvent,
   spreadArraysOrObjects,
 } from "$/utils/state";
+// The connection to the backend, as the context module of an app with state
+// loads it: the token and the cookie reader are its.
+import "$/utils/socket";
 
 const clearCookies = () => {
   for (const cookie of document.cookie.split("; ")) {

@@ -3,13 +3,18 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import vm from "node:vm";
 
-const source = await readFile(
-  new URL(
-    "../../../packages/reflex-frontend/src/utils/state.js",
-    import.meta.url,
-  ),
-  "utf8",
-);
+// The modules under test: an app with state loads the connection in
+// utils/socket.js, which reaches the event queue in utils/state.js.
+const sources = {};
+for (const name of ["state", "event_loop", "socket"]) {
+  sources[`$/utils/${name}`] = await readFile(
+    new URL(
+      `../../../packages/reflex-frontend/src/utils/${name}.js`,
+      import.meta.url,
+    ),
+    "utf8",
+  );
+}
 const tokenKey = "reflex:ws://localhost:8000/_event:token";
 
 /** Evaluate the actual frontend module with controlled transport and browser APIs. */
@@ -239,19 +244,26 @@ async function setup({
     "$/utils/helpers/throttle": { default() {} },
     "$/utils/helpers/upload": { uploadFiles() {} },
   };
-  const module = new vm.SourceTextModule(source, {
-    context,
-    initializeImportMeta(meta) {
-      meta.hot = {
-        dispose(fn) {
-          dispose = fn;
+  const modules = Object.fromEntries(
+    Object.entries(sources).map(([name, source]) => [
+      name,
+      new vm.SourceTextModule(source, {
+        context,
+        initializeImportMeta(meta) {
+          meta.hot = {
+            dispose(fn) {
+              dispose = fn;
+            },
+          };
         },
-      };
-    },
-  });
-  await module.link((name) => {
-    // state.js imports itself to hand its exports to server-provided scripts.
-    if (name === "$/utils/state") return module;
+      }),
+    ]),
+  );
+  // What compiled code imports; its calls reach the connection once loaded.
+  const module = modules["$/utils/state"];
+  const connection = modules["$/utils/socket"];
+  await connection.link((name) => {
+    if (modules[name]) return modules[name];
     assert.ok(imports[name], `unexpected import: ${name}`);
     return new vm.SyntheticModule(
       Object.keys(imports[name]),
@@ -262,7 +274,7 @@ async function setup({
       { context },
     );
   });
-  await module.evaluate();
+  await connection.evaluate();
   const socket = { current: null };
   return {
     sockets,

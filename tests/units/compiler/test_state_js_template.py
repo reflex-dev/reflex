@@ -9,6 +9,9 @@ import pytest
 from reflex_base.constants import Templates
 
 STATE_JS_TEMPLATE = Templates.Dirs.WEB_TEMPLATE / "utils" / "state.js"
+# The connection to the backend, split from state.js so that an app without
+# state does not bundle it.
+SOCKET_JS_TEMPLATE = Templates.Dirs.WEB_TEMPLATE / "utils" / "socket.js"
 
 ADD_EVENTS_ALIAS = "const addEvents = (...args) => eventLoop.addEvents(...args);"
 
@@ -65,7 +68,7 @@ def test_state_js_does_not_register_deprecated_unload_listener() -> None:
     (tab close, navigation, bfcache), so the deprecated listener must not be
     re-introduced.
     """
-    content = STATE_JS_TEMPLATE.read_text()
+    content = STATE_JS_TEMPLATE.read_text() + SOCKET_JS_TEMPLATE.read_text()
 
     assert 'addEventListener("unload"' not in content, (
         "state.js registers a deprecated `unload` listener; use `pagehide` instead."
@@ -82,13 +85,13 @@ def test_state_js_still_handles_page_lifecycle_disconnect() -> None:
     recommended Web Page Lifecycle pattern; verify the replacement listeners
     remain wired so the socket is closed when the user navigates away.
     """
-    content = STATE_JS_TEMPLATE.read_text()
+    content = SOCKET_JS_TEMPLATE.read_text()
 
     assert 'addEventListener("pagehide"' in content, (
-        "state.js should register a `pagehide` listener to disconnect the socket."
+        "socket.js should register a `pagehide` listener to disconnect the socket."
     )
     assert 'addEventListener("beforeunload"' in content, (
-        "state.js should keep its `beforeunload` listener as a disconnect fallback."
+        "socket.js should keep its `beforeunload` listener as a disconnect fallback."
     )
 
 

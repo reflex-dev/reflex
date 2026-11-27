@@ -30,9 +30,25 @@ LiteralPosition = Literal[
     "bottom-right",
 ]
 
+
+class ToasterRequest(Component):
+    """An empty app wrap that asks the app for its toaster.
+
+    A toast call carries it in its var data, so compiling the call into a page
+    tells the compiler that the app sends a toast. It renders an empty fragment
+    wherever it is left in place.
+    """
+
+    library = "react"
+    tag = "Fragment"
+
+
 toast_ref = Var(
     _js_expr="refs['__toast']",
-    _var_data=VarData(imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag="refs")]}),
+    _var_data=VarData(
+        imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag="refs")]},
+        app_wraps=[(44, ToasterRequest.create())],
+    ),
 )
 
 _TOAST_STYLE_PROP_ALIASES = (

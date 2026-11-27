@@ -16,7 +16,7 @@ from reflex_base.vars.function import FunctionStringVar
 from reflex_base.vars.number import BooleanVar
 from reflex_base.vars.sequence import LiteralArrayVar
 from reflex_components_lucide.icon import Icon
-from reflex_components_sonner.toast import ToastProps, toast_ref
+from reflex_components_sonner.toast import ToastProps
 
 from reflex_components_core import el
 from reflex_components_core.base.fragment import Fragment
@@ -145,7 +145,15 @@ setTimeout(() => {{
             )
 
         individual_hooks = [
-            Var(f"const toast = {toast_ref};"),
+            # Whichever toast function the app installed. Unlike ``toast_ref``
+            # this does not ask the app for its toaster: a connection error is
+            # no reason to bundle it, and shows as a plain notice without it.
+            Var(
+                "const toast = refs['__toast'];",
+                _var_data=VarData(
+                    imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag="refs")]}
+                ),
+            ),
             f"const toast_props = {LiteralVar.create(props)!s};",
             "const [userDismissed, setUserDismissed] = useState(false);",
             "const [waitedForBackend, setWaitedForBackend] = useState(false);",
