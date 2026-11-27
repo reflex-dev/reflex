@@ -23,7 +23,12 @@ from reflex_base.components.client_state_context import (
     local_client_state_names,
     scoped_memo_wrapper,
 )
-from reflex_base.components.component import BaseComponent, Component, ComponentStyle
+from reflex_base.components.component import (
+    BaseComponent,
+    Component,
+    ComponentStyle,
+    _check_prohibited_imports,
+)
 from reflex_base.components.dynamic import _bundle_imports
 from reflex_base.components.memo import (
     DEFAULT_MEMO_WRAPPER,
@@ -641,6 +646,8 @@ def compile_experimental_component_memo(
                 for data in hooks.values()
                 if data is not None and data.imports
             ]
+            for hook_import_dict in hook_imports:
+                _check_prohibited_imports(hook_import_dict, type(render).__name__)
             if added_imports or hook_imports:
                 all_imports = merge_parsed_imports(
                     all_imports, *added_imports, *hook_imports
@@ -817,12 +824,16 @@ def _root_only_added_imports(component: Component) -> list[ParsedImportDict]:
         Parsed import dicts from each ``add_imports`` method on the root.
     """
     added: list[ParsedImportDict] = []
+    component_name = type(component).__name__
     for clz in component._iter_parent_classes_with_method("add_imports"):
         import_dicts = clz.add_imports(component)
         if isinstance(import_dicts, list):
-            added.extend(imports.parse_imports(item) for item in import_dicts)
+            parsed = [imports.parse_imports(item) for item in import_dicts]
         else:
-            added.append(imports.parse_imports(import_dicts))
+            parsed = [imports.parse_imports(import_dicts)]
+        for import_dict in parsed:
+            _check_prohibited_imports(import_dict, component_name)
+        added.extend(parsed)
     return added
 
 

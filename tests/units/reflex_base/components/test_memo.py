@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 from reflex_base import constants
 from reflex_base.components import memo
-from reflex_base.components.component import Component
+from reflex_base.components.component import PROHIBITED_LIBRARY_IMPORTS, Component
 from reflex_base.components.component import field as component_field
 from reflex_base.constants.compiler import MemoizationMode
 from reflex_base.registry import RegistrationContext
@@ -425,3 +425,58 @@ def test_passthrough_memo_analysis_reuse_keeps_cached_imports_isolated():
             "react": [ImportVar(tag="memo")],
             f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="mergeSlotProps")],
         }
+
+
+@pytest.mark.parametrize(
+    "bad_package",
+    ["react-router-dom", "react-router-dom/server", "react-router-dom@7.18.2"],
+)
+def test_passthrough_memo_rejects_prohibited_pre_swap_root_imports(bad_package: str):
+    """Pre-swap child-conditional ``add_imports`` and hook imports are validated."""
+
+    class BadConditionalAddImports(Div):
+        def add_imports(self):
+            return {bad_package: [ImportVar(tag="Link")]} if self.children else {}
+
+    class BadConditionalHookImports(Div):
+        def add_hooks(self):
+            return (
+                [
+                    Var(
+                        "badHook",
+                        _var_data=VarData(
+                            imports={bad_package: [ImportVar(tag="useBad")]}
+                        ),
+                    )
+                ]
+                if self.children
+                else []
+            )
+
+    with RegistrationContext.ensure_context().fork():
+        hole = Bare.create(Var(_js_expr="children", _var_type=Component))
+        for bad_cls in (BadConditionalAddImports, BadConditionalHookImports):
+            comp = bad_cls.create(Div.create("child"))
+            definition = memo.MemoComponentDefinition(
+                fn=lambda children, comp=comp: comp,
+                python_name=bad_cls.__name__,
+                params=(
+                    memo.MemoParam(
+                        name="children",
+                        kind=memo.MemoParamKind.CHILDREN,
+                        annotation=Component,
+                        parameter_kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                        js_prop_name="children",
+                        placeholder_name="children",
+                    ),
+                ),
+                export_name=bad_cls.__name__,
+                _component=memo._LazyBody.ready(comp),
+                passthrough_hole_child=hole,
+            )
+            with pytest.raises(ValueError) as exc_info:
+                utils.compile_experimental_component_memo(definition)
+            assert str(exc_info.value) == (
+                f"The component `{bad_cls.__name__}` references `{bad_package}`, "
+                f"but {PROHIBITED_LIBRARY_IMPORTS['react-router-dom']}"
+            )
