@@ -11,7 +11,7 @@ from reflex_base.components.props import NoExtrasAllowedProps
 from reflex_base.constants.base import Dirs
 from reflex_base.event import EventSpec, run_script
 from reflex_base.style import Style, resolved_color_mode
-from reflex_base.utils import format
+from reflex_base.utils import console, format
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.serializers import serializer
 from reflex_base.vars import VarData
@@ -35,9 +35,10 @@ toast_ref = Var(
     _var_data=VarData(imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag="refs")]}),
 )
 
-_TOAST_STYLE_PROP_ALIASES = (
-    ("actionButtonStyles", "actionButtonStyle"),
-    ("cancelButtonStyles", "cancelButtonStyle"),
+# Deprecated button style prop names and their replacements. Remove in 1.0.
+_DEPRECATED_BUTTON_STYLE_PROPS = (
+    ("action_button_styles", "action_button_style"),
+    ("cancel_button_styles", "cancel_button_style"),
 )
 
 
@@ -130,9 +131,16 @@ class ToastProps(NoExtrasAllowedProps):
     # Class name for the toast.
     class_name: str | None
 
-    action_button_styles: Style | None
+    # Custom style for the toast primary button.
+    action_button_style: Style | None
 
     # Custom style for the toast secondary button.
+    cancel_button_style: Style | None
+
+    # Deprecated, use `action_button_style`.
+    action_button_styles: Style | None
+
+    # Deprecated, use `cancel_button_style`.
     cancel_button_styles: Style | None
 
     # The function gets called when either the close button is clicked, or the toast is swiped.
@@ -140,6 +148,27 @@ class ToastProps(NoExtrasAllowedProps):
 
     # Function that gets called when the toast disappears automatically after it's timeout (duration` prop).
     on_auto_close: Any | None
+
+    def __init__(self, component_name: str | None = None, **kwargs: Any):
+        """Initialize the toast props, moving deprecated prop names to their replacements.
+
+        If a deprecated name and its replacement are both passed, the replacement is used.
+
+        Args:
+            component_name: The custom name of the component.
+            **kwargs: Kwargs to initialize the props.
+        """
+        for deprecated_name, name in _DEPRECATED_BUTTON_STYLE_PROPS:
+            if deprecated_name not in kwargs:
+                continue
+            console.deprecate(
+                feature_name=f"The `{deprecated_name}` toast prop",
+                reason=f"Use `{name}` instead, which matches Sonner's option name",
+                deprecation_version="0.11.1",
+                removal_version="1.0",
+            )
+            kwargs.setdefault(name, kwargs.pop(deprecated_name))
+        super().__init__(component_name=component_name, **kwargs)
 
     def dict(self, *args: Any, **kwargs: Any) -> builtins.dict[str, Any]:
         """Convert the object to a dictionary.
@@ -152,9 +181,6 @@ class ToastProps(NoExtrasAllowedProps):
             The object as a dictionary with ToastAction fields intact.
         """
         d = super().dict(*args, **kwargs)
-        for reflex_name, sonner_name in _TOAST_STYLE_PROP_ALIASES:
-            if reflex_name in d:
-                d[sonner_name] = d.pop(reflex_name)
         # Keep these fields as ToastAction so they can be serialized specially
         if "action" in d:
             d["action"] = self.action
