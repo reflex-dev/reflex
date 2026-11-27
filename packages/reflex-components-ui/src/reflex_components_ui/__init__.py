@@ -10,6 +10,7 @@ _SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = {
     "components.aspect_ratio": ["aspect_ratio"],
     "components.badge": ["badge"],
     "components.button": ["button"],
+    "components.card": ["card"],
     "components.data_list": ["data_list"],
     "components.icon_button": ["icon_button"],
     "components.inset": ["inset"],

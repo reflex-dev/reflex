@@ -108,6 +108,7 @@ def test_every_wave_is_in_the_namespace():
         "blockquote",
         "box",
         "button",
+        "card",
         "center",
         "code",
         "container",

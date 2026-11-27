@@ -9,12 +9,17 @@ import reflex as rx
 from ui_parity.contract import HYDRATED, NO_JAVASCRIPT, SERVER, Contract, Run
 from ui_parity.matrix import DARK, Matrix
 
+# A translucent card blurs what is behind it, 64 pixels around: the frames
+# beside its own, which are not the same for the two systems. A filter makes
+# an element the root of the backdrop of what it holds.
+_BACKDROP_ROOT = {"filter": "opacity(1)"}
+
 
 def _inset(namespace: Any, props: Mapping[str, Any]) -> Any:
     """Create an inset inside a card, which says how far its edges are.
 
-    The card is the Radix one for both systems: it sets the custom properties
-    an inset reads, and rx.ui has no card yet.
+    The card is the one of the same system: it sets the custom properties an
+    inset reads.
 
     Args:
         namespace: ``rx`` or ``rx.ui``.
@@ -25,17 +30,20 @@ def _inset(namespace: Any, props: Mapping[str, Any]) -> Any:
     """
     props = dict(props)
     card = props.pop("card", {})
-    return rx.card(
-        namespace.inset(
-            rx.el.div(
-                "The quick brown fox",
-                style={"background_color": "rgba(128, 128, 128, 0.4)"},
+    return rx.el.div(
+        namespace.card(
+            namespace.inset(
+                rx.el.div(
+                    "The quick brown fox",
+                    style={"background_color": "rgba(128, 128, 128, 0.4)"},
+                ),
+                custom_attrs={"data-inset": ""},
+                **props,
             ),
-            custom_attrs={"data-inset": ""},
-            **props,
+            rx.el.div("jumps over the lazy dog"),
+            **card,
         ),
-        rx.el.div("jumps over the lazy dog"),
-        **card,
+        style=_BACKDROP_ROOT,
     )
 
 
@@ -80,14 +88,13 @@ MATRIX = Matrix(
     stage=(260, 140),
     target="[data-inset]",
     crop="stage",
-    # Not held to zero, as the other layouts are: the card around the inset
-    # is the same Radix card in both frames, and the browser dithers its
-    # rounded corners and its shadow by position.
+    threshold=0,
+    tolerance=0,
 )
 
 CONTRACT = Contract(
     component="inset",
-    render=lambda namespace: rx.card(
+    render=lambda namespace: namespace.card(
         namespace.inset(namespace.box("content"), id="inset", side="top"),
         id="card",
     ),
