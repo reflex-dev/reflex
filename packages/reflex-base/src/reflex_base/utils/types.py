@@ -34,11 +34,11 @@ from typing import (  # noqa: UP035
     _SpecialGenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
     cast,
     get_args,
-    is_typeddict,
 )
 from typing import Self as Self
 from typing import get_origin as get_origin_og
 from typing import get_type_hints as get_type_hints_og
+from typing import is_typeddict as is_typeddict
 
 import typing_extensions
 from typing_extensions import TypeAliasType, TypeIs, TypeVarTuple
@@ -488,6 +488,22 @@ def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
             declare, as when Python 3.11 drops the type arguments of a
             ``typing.TypedDict`` subclass of a specialized generic TypedDict.
     """
+    return _get_typed_dict_field_types(typed_dict, allow_undeclared=False)
+
+
+def _get_typed_dict_field_types(
+    typed_dict: Any, *, allow_undeclared: bool
+) -> dict[str, Any]:
+    """Resolve fields for schema introspection or runtime validation.
+
+    Args:
+        typed_dict: The TypedDict class or specialization.
+        allow_undeclared: Keep unresolved type variables for runtime checks
+            when an older Python version has dropped inherited type arguments.
+
+    Returns:
+        The resolved hints, possibly containing unresolved type variables.
+    """
     origin = get_origin_og(typed_dict) or typed_dict
     field_types = _typed_dict_hints(origin, include_extras=False)
     # Hints of inherited fields still name the generic base's type parameters,
@@ -512,7 +528,9 @@ def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
             base_annotations = _typed_dict_annotations(base_origin)
             field_types.update(
                 (name, hint)
-                for name, hint in get_typed_dict_field_types(base).items()
+                for name, hint in _get_typed_dict_field_types(
+                    base, allow_undeclared=allow_undeclared
+                ).items()
                 if annotations[name] == base_annotations[name]
             )
     substitution = _match_type_args(
@@ -520,11 +538,10 @@ def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
     )
     declared = getattr(typed_dict, "__parameters__", ())
     for name, hint in field_types.items():
-        if isinstance(hint, TypeVar) and hint in substitution:
-            hint = substitution[hint]
-        elif substitution and (params := getattr(hint, "__parameters__", ())):
-            hint = _apply_type_params(hint, params, substitution)
-        hint = resolve_type_alias(hint)
+        hint = _specialize_typed_dict_hint(hint, substitution)
+        field_types[name] = hint
+        if allow_undeclared:
+            continue
         params = (
             (hint,)
             if isinstance(hint, TypeVar)
@@ -539,8 +556,24 @@ def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
                 "typing_extensions.TypedDict instead."
             )
             raise TypeError(msg)
-        field_types[name] = hint
     return field_types
+
+
+def _specialize_typed_dict_hint(hint: Any, substitution: dict[Any, Any]) -> Any:
+    """Apply a TypedDict specialization to a field or extra-items hint.
+
+    Args:
+        hint: The type hint to specialize.
+        substitution: Type arguments by type parameter.
+
+    Returns:
+        The specialized hint with type aliases resolved.
+    """
+    if isinstance(hint, TypeVar):
+        hint = substitution.get(hint, hint)
+    elif substitution and (params := getattr(hint, "__parameters__", ())):
+        hint = _apply_type_params(hint, params, substitution)
+    return resolve_type_alias(hint)
 
 
 def _unionize(args: list[GenericType]) -> GenericType:
@@ -1297,43 +1330,46 @@ def does_obj_satisfy_typed_dict(
         return False
 
     typed_dict = get_origin_og(cls) or cls
-    key_names_to_values = get_typed_dict_field_types(cls)
-    required_keys: frozenset[str] = getattr(
-        typed_dict, "__required_keys__", frozenset()
-    )
-    is_closed = getattr(typed_dict, "__closed__", False)
+    if not get_required_typed_dict_keys(typed_dict).issubset(obj):
+        return False
+
     extra_items_type = getattr(typed_dict, "__extra_items__", Any)
     if any(extra_items_type is sentinel for sentinel in _NO_EXTRA_ITEMS_SENTINELS):
         # Extra keys of a non-closed TypedDict are unconstrained; a closed
-        # one already rejected them above.
+        # TypedDict rejects them regardless of the sentinel.
         extra_items_type = Any
+    elif extra_items_type is not Any:
+        extra_items_type = _specialize_typed_dict_hint(
+            extra_items_type,
+            _match_type_args(getattr(typed_dict, "__parameters__", ()), get_args(cls)),
+        )
+        while get_origin_og(extra_items_type) in _TYPED_DICT_QUALIFIERS:
+            extra_items_type = get_args(extra_items_type)[0]
 
+    is_closed = getattr(typed_dict, "__closed__", False) or extra_items_type in (
+        typing.Never,
+        typing.NoReturn,
+    )
+    if nested <= 0:
+        if not is_closed:
+            return True
+        field_names = _typed_dict_annotations(typed_dict)
+        return all(key in field_names for key in obj)
+
+    field_types = _get_typed_dict_field_types(cls, allow_undeclared=True)
     for key, value in obj.items():
-        if is_closed and key not in key_names_to_values:
+        if is_closed and key not in field_types:
             return False
-        if nested:
-            if key in key_names_to_values:
-                expected_type = key_names_to_values[key]
-                if not _isinstance(
-                    value,
-                    expected_type,
-                    nested=nested - 1,
-                    treat_var_as_type=treat_var_as_type,
-                    treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
-                ):
-                    return False
-            else:
-                if not _isinstance(
-                    value,
-                    extra_items_type,
-                    nested=nested - 1,
-                    treat_var_as_type=treat_var_as_type,
-                    treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
-                ):
-                    return False
+        if not _isinstance(
+            value,
+            field_types.get(key, extra_items_type),
+            nested=nested - 1,
+            treat_var_as_type=treat_var_as_type,
+            treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+        ):
+            return False
 
-    # required keys are all present
-    return required_keys.issubset(frozenset(obj))
+    return True
 
 
 class _Unloaded:
@@ -1450,19 +1486,19 @@ def _isinstance(
 
     origin = origin_attr if origin_attr is not None else _get_origin_cached(cls)
 
-    if origin is None:
-        # cls is a typed dict
-        if is_typeddict(cls):
-            if nested:
-                return does_obj_satisfy_typed_dict(
-                    obj,
-                    cls,
-                    nested=nested - 1,
-                    treat_var_as_type=treat_var_as_type,
-                    treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
-                )
+    if typing_extensions.is_typeddict(origin if origin is not None else cls):
+        if nested <= 0:
             return isinstance(obj, dict)
+        # A plain TypedDict consumes one level before checking field values.
+        return does_obj_satisfy_typed_dict(
+            obj,
+            cls,
+            nested=nested if origin is not None else nested - 1,
+            treat_var_as_type=treat_var_as_type,
+            treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+        )
 
+    if origin is None:
         # cls is a float
         if cls is float:
             return isinstance(obj, (float, int))
@@ -1532,14 +1568,6 @@ def _isinstance(
         )
 
     if nested > 0 and args:
-        if typing_extensions.is_typeddict(origin):
-            return does_obj_satisfy_typed_dict(
-                obj,
-                cls,
-                nested=nested,
-                treat_var_as_type=treat_var_as_type,
-                treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
-            )
         if origin is list:
             expected_class = Sequence if treat_mutable_obj_as_immutable else list
             return isinstance(obj, expected_class) and _all_isinstance(

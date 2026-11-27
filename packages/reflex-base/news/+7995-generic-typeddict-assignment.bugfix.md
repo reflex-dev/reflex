@@ -1,1 +1,1 @@
-Generic ``TypedDict`` state assignments now validate fields using their specialized type arguments.
+Fix assignments to generic ``TypedDict`` state fields in production and validate specialized field types in development.
