@@ -147,6 +147,102 @@ STYLED_MEMO_DECLARATIONS = [
 ]
 
 
+# The declarations of the buttons of the actions page that read state or
+# send an event: the one whose loading is bound to state has a style for
+# each value, and the other is a plain solid button.
+ACTIONS_MEMO_DECLARATIONS = [
+    (
+        'const sx_8d448f3b8d = stylex.create({ s: {"marginTop": "0", "marginRight'
+        '": "0", "marginBottom": "0", "marginLeft": "0", "paddingTop": "0", "padd'
+        'ingRight": "var(--space-3)", "paddingBottom": "0", "paddingLeft": "var(-'
+        '-space-3)", "borderTopWidth": "0", "borderRightWidth": "0", "borderBotto'
+        'mWidth": "0", "borderLeftWidth": "0", "borderTopStyle": "none", "borderR'
+        'ightStyle": "none", "borderBottomStyle": "none", "borderLeftStyle": "non'
+        'e", "backgroundColor": {"default": "var(--accent-9)", "@media (hover: ho'
+        'ver)": {":hover:not(:active)": "var(--accent-10)"}, ":active:not([data-s'
+        'tate=\'open\'])": "var(--accent-10)", "[data-disabled]": "var(--gray-a3)"}'
+        ', "backgroundImage": "none", "appearance": "none", "boxSizing": "border-'
+        'box", "fontSize": "var(--font-size-2)", "lineHeight": "var(--line-height'
+        '-2)", "letterSpacing": "var(--letter-spacing-2)", "fontWeight": "var(--f'
+        'ont-weight-medium)", "textTransform": "inherit", "textIndent": "initial"'
+        ', "textShadow": "inherit", "wordSpacing": "inherit", "cursor": {"default'
+        '": "inherit", ":where(button)": "var(--cursor-button)", ":any-link": "va'
+        'r(--cursor-link)", "[data-disabled]": "var(--cursor-disabled)"}, "outlin'
+        'eStyle": {"default": "none", "@media (pointer: coarse)": {":active:not(['
+        'data-state=\'open\'], [data-disabled], :focus-visible)": "solid"}, ":focus'
+        '-visible:not([data-disabled])": "solid"}, "WebkitTapHighlightColor": "tr'
+        'ansparent", "display": "inline-flex", "alignItems": "center", "justifyCo'
+        'ntent": "center", "flexShrink": 0, "userSelect": "none", "verticalAlign"'
+        ': "top", "fontFamily": "var(--default-font-family)", "fontStyle": "norma'
+        'l", "textAlign": "center", "--spinner-opacity": {"[data-disabled]": "1"}'
+        ', "--base-button-classic-active-padding-top": "2px", "--base-button-heig'
+        'ht": "var(--space-6)", "borderRadius": "max(var(--radius-2), var(--radiu'
+        's-full))", "rowGap": "var(--space-2)", "columnGap": "var(--space-2)", "c'
+        'olor": {"default": "var(--accent-contrast)", "[data-disabled]": "var(--g'
+        'ray-a8)"}, "filter": {":active:not([data-state=\'open\'])": "var(--rx-if-l'
+        "ight, brightness(0.92) saturate(1.1)) var(--rx-if-dark, brightness(1.08)"
+        ')", "[data-disabled]": "none"}, "outlineWidth": {"@media (pointer: coars'
+        "e)\": {\":active:not([data-state='open'], [data-disabled], :focus-visible)"
+        '": "0.5em"}, ":focus-visible:not([data-disabled])": "2px"}, "outlineColo'
+        'r": {"@media (pointer: coarse)": {":active:not([data-state=\'open\'], [dat'
+        'a-disabled], :focus-visible)": "var(--accent-a4)"}, ":focus-visible:not('
+        '[data-disabled])": "var(--focus-8)"}, "outlineOffset": {"@media (pointer'
+        ": coarse)\": {\":active:not([data-state='open'], [data-disabled], :focus-v"
+        'isible)": "0"}, ":focus-visible:not([data-disabled])": "2px"}, "--rx-acc'
+        'ent-text": "var(--accent-12)", "--rx-accent-link": "var(--accent-12)", "'
+        '--rx-accent-link-line": "underline", "--rx-accent-link-line-color": "col'
+        'or-mix(in oklab, var(--accent-a6), var(--gray-a6))", "height": "var(--ba'
+        'se-button-height)", "--rx-icon-opacity": "0.9"}, a0_0: {"position": "rel'
+        'ative"} });'
+    ),
+    "const sx_8d448f3b8d_c = stylex.props(sx_8d448f3b8d.s).className;",
+    (
+        'const sx_8d448f3b8d_0 = { __proto__: null, "true": stylex.props(sx_8d448'
+        "f3b8d.a0_0).className };"
+    ),
+    (
+        'const sx_6fb0976665 = stylex.create({ s: {"marginTop": "0", "marginRight'
+        '": "0", "marginBottom": "0", "marginLeft": "0", "paddingTop": "0", "padd'
+        'ingRight": "var(--space-3)", "paddingBottom": "0", "paddingLeft": "var(-'
+        '-space-3)", "borderTopWidth": "0", "borderRightWidth": "0", "borderBotto'
+        'mWidth": "0", "borderLeftWidth": "0", "borderTopStyle": "none", "borderR'
+        'ightStyle": "none", "borderBottomStyle": "none", "borderLeftStyle": "non'
+        'e", "backgroundColor": {"default": "var(--accent-9)", "@media (hover: ho'
+        'ver)": {":hover:not(:active)": "var(--accent-10)"}, ":active:not([data-s'
+        'tate=\'open\'])": "var(--accent-10)", "[data-disabled]": "var(--gray-a3)"}'
+        ', "backgroundImage": "none", "appearance": "none", "boxSizing": "border-'
+        'box", "fontSize": "var(--font-size-2)", "lineHeight": "var(--line-height'
+        '-2)", "letterSpacing": "var(--letter-spacing-2)", "fontWeight": "var(--f'
+        'ont-weight-medium)", "textTransform": "inherit", "textIndent": "initial"'
+        ', "textShadow": "inherit", "wordSpacing": "inherit", "cursor": {"default'
+        '": "inherit", ":where(button)": "var(--cursor-button)", ":any-link": "va'
+        'r(--cursor-link)", "[data-disabled]": "var(--cursor-disabled)"}, "outlin'
+        'eStyle": {"default": "none", "@media (pointer: coarse)": {":active:not(['
+        'data-state=\'open\'], [data-disabled], :focus-visible)": "solid"}, ":focus'
+        '-visible:not([data-disabled])": "solid"}, "WebkitTapHighlightColor": "tr'
+        'ansparent", "display": "inline-flex", "alignItems": "center", "justifyCo'
+        'ntent": "center", "flexShrink": 0, "userSelect": "none", "verticalAlign"'
+        ': "top", "fontFamily": "var(--default-font-family)", "fontStyle": "norma'
+        'l", "textAlign": "center", "--spinner-opacity": {"[data-disabled]": "1"}'
+        ', "--base-button-classic-active-padding-top": "2px", "--base-button-heig'
+        'ht": "var(--space-6)", "borderRadius": "max(var(--radius-2), var(--radiu'
+        's-full))", "rowGap": "var(--space-2)", "columnGap": "var(--space-2)", "c'
+        'olor": {"default": "var(--accent-contrast)", "[data-disabled]": "var(--g'
+        'ray-a8)"}, "filter": {":active:not([data-state=\'open\'])": "var(--rx-if-l'
+        "ight, brightness(0.92) saturate(1.1)) var(--rx-if-dark, brightness(1.08)"
+        ')", "[data-disabled]": "none"}, "outlineWidth": {"@media (pointer: coars'
+        "e)\": {\":active:not([data-state='open'], [data-disabled], :focus-visible)"
+        '": "0.5em"}, ":focus-visible:not([data-disabled])": "2px"}, "outlineColo'
+        'r": {"@media (pointer: coarse)": {":active:not([data-state=\'open\'], [dat'
+        'a-disabled], :focus-visible)": "var(--accent-a4)"}, ":focus-visible:not('
+        '[data-disabled])": "var(--focus-8)"}, "outlineOffset": {"@media (pointer'
+        ": coarse)\": {\":active:not([data-state='open'], [data-disabled], :focus-v"
+        'isible)": "0"}, ":focus-visible:not([data-disabled])": "2px"}, "height":'
+        ' "var(--base-button-height)", "--rx-icon-opacity": "0.9"} });'
+    ),
+    "const sx_6fb0976665_c = stylex.props(sx_6fb0976665.s).className;",
+]
+
 # The colors the theme pages are read through, as Radix Themes defines them.
 INDIGO_11 = {"light": "rgb(58, 91, 199)", "dark": "rgb(158, 177, 255)"}
 RED_11 = {"light": "rgb(206, 44, 49)", "dark": "rgb(255, 149, 146)"}
@@ -411,6 +507,72 @@ def UIComponentsApp(radix: bool = False):
             rx.ui.separator(id="separator"),
         )
 
+    class ActionState(rx.State):
+        """What the display and action components are bound to."""
+
+        busy: rx.Field[bool] = rx.field(False)
+
+        @rx.event
+        def start(self):
+            """Start loading."""
+            self.busy = True
+
+        @rx.event
+        def finish(self):
+            """Stop loading."""
+            self.busy = False
+
+    def actions():
+        table = rx.ui.table
+        return rx.el.main(
+            # Loading bound to state, a color and a radius of its own.
+            rx.ui.button(
+                "Save",
+                id="save",
+                loading=ActionState.busy,
+                on_click=ActionState.start,
+                color_scheme="red",
+                radius="full",
+            ),
+            rx.ui.button("Done", id="done", on_click=ActionState.finish),
+            # The style a class adds when an app is compiled.
+            rx.ui.icon_button(rx.el.span("+"), id="add", variant="ghost", size="1"),
+            rx.ui.spinner(id="spinner"),
+            rx.ui.skeleton("1,204 euros", id="skeleton"),
+            # What differs between the appearances and is no color.
+            rx.ui.button("Light", variant="classic", id="classic-light"),
+            rx.ui.theme(
+                rx.ui.button("Dark", variant="classic", id="classic-dark"),
+                appearance="dark",
+            ),
+            rx.ui.card(
+                rx.ui.inset(rx.el.div("edge", id="edge"), side="top", id="inset"),
+                rx.ui.badge("Paid", color_scheme="green", id="badge"),
+                rx.ui.callout("Saved.", id="callout"),
+                rx.ui.progress(value=40, id="progress"),
+                id="card",
+                size="2",
+            ),
+            rx.ui.avatar(fallback="AB", id="initials"),
+            rx.el.div(rx.ui.avatar(src="/missing.png", fallback="CD"), id="broken"),
+            rx.ui.box(
+                rx.ui.scroll_area(rx.ui.box(height="400px"), id="area"),
+                height="100px",
+            ),
+            table.root(
+                table.header(table.row(table.column_header_cell("Name", id="th"))),
+                table.body(table.row(table.cell("Ada", id="td"))),
+                variant="surface",
+                id="table",
+            ),
+            rx.ui.data_list.root(
+                rx.ui.data_list.item(
+                    rx.ui.data_list.label("Name", id="dt"),
+                    rx.ui.data_list.value("Ada", id="dd"),
+                ),
+            ),
+        )
+
     # The style of the app for a component of the wave, as an app writes it.
     app = rx.App(
         stylesheets=["unlayered.css"],
@@ -418,6 +580,7 @@ def UIComponentsApp(radix: bool = False):
     )
     app.add_page(index)
     app.add_page(wave, route="/wave")
+    app.add_page(actions, route="/actions")
     app.add_page(literal, route="/literal")
     app.add_page(styled, route="/styled")
     app.add_page(theme, route="/theme")
@@ -657,6 +820,7 @@ def test_equal_styles_share_one_declaration(ui_app: AppHarness, page: Page):
     name = ui_app.app_name
     assert declarations(web / "app_components" / name / f"{name}.jsx") == [
         *WAVE_MEMO_DECLARATIONS,
+        *ACTIONS_MEMO_DECLARATIONS,
         *STYLED_MEMO_DECLARATIONS,
     ]
 
@@ -1302,3 +1466,63 @@ def test_layout_and_typography_components_are_styled_and_navigate(
     styled = _styled_url(ui_app).rstrip("/")
     page.wait_for_url(lambda url: url.rstrip("/") == styled)
     assert page.evaluate("window.loadedOnce") is True
+
+
+# What the page of the display and action components computes to, by id.
+ACTIONS = {
+    # The accent and the radius of one element: red 9, and a full radius.
+    "save": {
+        "background-color": "rgb(229, 72, 77)",
+        "border-top-left-radius": "9999px",
+    },
+    # The padding of the class, over the one of its size, and the margins
+    # that take the padding of a ghost button back.
+    "add": {"padding-top": "6px", "margin-top": "-4px"},
+    "card": {"padding-top": "16px", "position": "relative"},
+    # An inset reaches the border of the rx.ui card around it, one pixel wide.
+    "inset": {"margin-top": "-15px", "margin-left": "-15px"},
+    "badge": {"color": "rgba(0, 113, 63, 0.87)"},
+    "initials": {"width": "40px", "height": "40px"},
+    "area": {"overflow-y": "auto", "scrollbar-width": "thin"},
+    # What a surface table hands down to its header and to its last row.
+    "th": {"background-color": "rgba(0, 0, 85, 0.024)", "font-weight": "700"},
+    "td": {"box-shadow": "none"},
+    "dt": {"color": "rgba(0, 7, 20, 0.624)"},
+}
+
+
+def test_display_and_action_components_work_in_an_app(ui_app: AppHarness, page: Page):
+    """The second wave of components works in a real app, in dev and prod."""
+    assert ui_app.frontend_url is not None
+    page.goto(ui_app.frontend_url.rstrip("/") + "/actions")
+    save = page.locator("#save")
+    expect(save).to_have_css("background-color", "rgb(229, 72, 77)")
+    assert _computed_styles(page, ACTIONS) == ACTIONS
+
+    # A light and a dark classic button differ by more than their colors.
+    assert page.evaluate(
+        """() => ["classic-light", "classic-dark"].map((id) =>
+            getComputedStyle(document.getElementById(id), "::after").borderTopWidth)"""
+    ) == ["2px", "1px"]
+
+    # The keyframes of a style are compiled, and play.
+    assert page.evaluate(
+        """() => ["#spinner > span", "#skeleton"].map((selector) => {
+            const [animation] = document.querySelector(selector).getAnimations();
+            return [animation.playState, animation.effect.getTiming().duration];
+        })"""
+    ) == [["running", 800], ["running", 1000]]
+
+    # The one script of the wave: a broken image gives way to its fallback.
+    expect(page.locator("#broken img")).to_have_css("display", "none")
+    expect(page.locator("#broken").get_by_text("CD")).to_be_visible()
+
+    # Loading follows the state: the button is disabled under a spinner.
+    assert save.is_enabled()
+    save.click()
+    expect(save).to_be_disabled()
+    expect(save).to_have_attribute("data-disabled", "true")
+    expect(save.locator("span > span > span")).to_have_count(8)
+    page.locator("#done").click()
+    expect(save).to_be_enabled()
+    expect(save).to_have_text("Save")
