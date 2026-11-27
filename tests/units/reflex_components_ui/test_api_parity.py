@@ -136,6 +136,7 @@ def test_every_wave_is_in_the_namespace():
         "list_item",
         "ordered_list",
         "progress",
+        "scroll_area",
         "section",
         "separator",
         "skeleton",
