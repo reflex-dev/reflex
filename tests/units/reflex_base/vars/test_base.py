@@ -17,7 +17,7 @@ import weakref
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from pathlib import Path
-from typing import Any, ClassVar, Literal, Self, TypedDict, TypeVar
+from typing import Any, ClassVar, Generic, Literal, Self, TypedDict, TypeVar
 from unittest import mock
 
 import pytest
@@ -2699,6 +2699,36 @@ def test_state_var_type_check_depth_follows_env_mode(
     with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
         state.items = "not a list"  # pyright: ignore[reportAttributeAccessIssue]
     assert any(f"{name}.items" in r.getMessage() for r in caplog.records)
+
+
+_PayloadT = TypeVar("_PayloadT")
+
+
+class _GenericPayload(TypedDict, Generic[_PayloadT]):
+    value: _PayloadT
+
+
+@pytest.mark.usefixtures("restore_env_mode")
+@pytest.mark.parametrize("env_mode", [constants.Env.DEV, constants.Env.PROD])
+def test_generic_typed_dict_state_assignment(
+    caplog: pytest.LogCaptureFixture, env_mode: constants.Env
+):
+    """Accept valid specialized TypedDict assignments in both environment modes.
+
+    Args:
+        caplog: Pytest log capture fixture.
+        env_mode: The environment mode for state type checking.
+    """
+
+    class AssignmentState(BaseState):
+        payload: _GenericPayload[str] = {"value": "initial"}
+
+    environment.REFLEX_ENV_MODE.set(env_mode)
+    state = AssignmentState()
+    with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
+        state.payload = {"value": "updated"}
+    assert state.payload == {"value": "updated"}
+    assert caplog.messages == []
 
 
 @pytest.mark.asyncio

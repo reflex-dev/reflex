@@ -528,6 +528,8 @@ def test_get_required_typed_dict_keys_with_postponed_annotations(tmp_path, monke
     try:
         assert get_required_typed_dict_keys(module.Data) == {"name"}
         assert get_required_typed_dict_keys(module.Partial) == {"email", "phone"}
+        assert _isinstance({"name": "Ada"}, module.Data, nested=1)
+        assert not _isinstance({"phone": "555-0100"}, module.Partial, nested=1)
     finally:
         del sys.modules["postponed_typed_dicts"]
 
@@ -626,6 +628,71 @@ class _GenericBase(TypedDict, Generic[_FieldT]):
     maybe: _FieldT | None
 
 
+def test_isinstance_resolves_generic_typed_dict_fields():
+    """Generic TypedDict specializations validate their resolved field types."""
+    assert _isinstance({"value": "text", "maybe": None}, _GenericBase[str], nested=1)
+    assert _isinstance({"value": 1, "maybe": 2}, _GenericBase[int], nested=1)
+    assert not _isinstance({"value": 1, "maybe": None}, _GenericBase[str], nested=1)
+    assert not _isinstance(
+        {"value": "text", "maybe": None}, _GenericBase[int], nested=1
+    )
+    assert _isinstance({"value": 1, "maybe": None}, _GenericBase[int] | None, nested=1)
+    assert _isinstance(None, _GenericBase[int] | None, nested=1)
+    assert not _isinstance(
+        {"value": "text", "maybe": None}, _GenericBase[int] | None, nested=1
+    )
+
+
+def test_isinstance_generic_typed_dict_at_depth_zero():
+    """A depth-zero check recognizes generic TypedDicts as dictionaries."""
+    value = {"value": "text", "maybe": None}
+    assert _isinstance(value, _GenericBase[str], nested=0)
+    assert not _isinstance([], _GenericBase[str], nested=0)
+    assert _isinstance([value], list[_GenericBase[str]], nested=1)
+    assert not _isinstance([[]], list[_GenericBase[str]], nested=1)
+
+
+def test_isinstance_plain_typing_extensions_typed_dict():
+    """A plain backport TypedDict follows the same depth rules as a stdlib one."""
+    assert _isinstance({"name": "Ada"}, _SignupData, nested=0)
+    assert _isinstance({"name": "Ada", "email": "a@example.org"}, _SignupData, nested=1)
+    assert not _isinstance({"name": "Ada"}, _SignupData, nested=1)
+    assert not _isinstance({"name": 1, "email": "a@example.org"}, _SignupData, nested=2)
+
+
+class _GenericExtraItems(TypedDict, Generic[_FieldT], extra_items=list[_FieldT]):
+    name: str
+
+
+class _GenericReadOnlyExtraItems(
+    TypedDict, Generic[_FieldT], extra_items=ReadOnly[list[_FieldT]]
+):
+    name: str
+
+
+class _GenericNoExtraItems(TypedDict, Generic[_FieldT], extra_items=typing.Never):
+    value: _FieldT
+
+
+@pytest.mark.parametrize("schema", [_GenericExtraItems, _GenericReadOnlyExtraItems])
+def test_isinstance_resolves_generic_typed_dict_extra_items(schema):
+    """Typed extra items use the same type arguments as named fields.
+
+    Args:
+        schema: A generic TypedDict with writable or read-only extra items.
+    """
+    assert _isinstance({"name": "a", "extra": [1]}, schema[int], nested=2)
+    assert not _isinstance({"name": "a", "extra": ["bad"]}, schema[int], nested=2)
+
+
+def test_isinstance_rejects_extra_items_typed_as_never():
+    """An extra-items type of Never disallows extra keys."""
+    assert _isinstance({"value": 1}, _GenericNoExtraItems[int], nested=1)
+    assert not _isinstance(
+        {"value": 1, "extra": 2}, _GenericNoExtraItems[int], nested=1
+    )
+
+
 class _GenericMiddle(_GenericBase[list[_ItemT]], Generic[_ItemT]):
     flag: bool
 
@@ -679,6 +746,9 @@ def test_get_typed_dict_field_types_through_stdlib_plain_subclass():
     else:
         with pytest.raises(TypeError, match=r"typing_extensions\.TypedDict"):
             get_typed_dict_field_types(Plain)
+    assert _isinstance({"value": ["text"]}, Plain, nested=1)
+    assert _isinstance({"value": ["text"]}, Plain, nested=3)
+    assert not _isinstance({}, Plain, nested=1)
 
 
 class _Unresolved(TypedDict):
