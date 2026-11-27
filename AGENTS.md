@@ -26,7 +26,6 @@ uv run python scripts/make_pyi.py                                # regenerate .p
 uv run pre-commit run --all-files                                # all pre-commit hooks
 npm --prefix packages/reflex-frontend ci && npm --prefix packages/reflex-frontend run check   # frontend package: lint, type-check (JSDoc) and unit tests
 npm --prefix packages/reflex-components-ui/js ci && npm --prefix packages/reflex-components-ui/js run check   # rx.ui javascript: lint, type-check (JSDoc), generated files and unit tests
-npm --prefix packages/reflex-components-ui/js ci && npm --prefix packages/reflex-components-ui/js run check   # rx.ui javascript: lint, type-check (JSDoc), generated files and unit tests
 ```
 
 ## Layout
