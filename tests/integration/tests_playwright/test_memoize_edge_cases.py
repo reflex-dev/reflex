@@ -161,6 +161,195 @@ def MemoEdgeCasesApp():
         def set_markdown_alt(self):
             self.markdown_source = "Updated **memo-md-away** text"
 
+    class LoopState(rx.State):
+        """State for hooks of components inside ``rx.foreach``."""
+
+        items: list[str] = ["alpha", "beta", "gamma"]
+        tags: list[str] = ["x", "y"]
+        mounted: rx.Field[list[str]] = rx.field(default_factory=list)
+        unmounted: rx.Field[list[str]] = rx.field(default_factory=list)
+        submitted: str = ""
+
+        @rx.event
+        def record_mount(self, name: str):
+            self.mounted.append(name)
+
+        @rx.event
+        def record_unmount(self, name: str):
+            self.unmounted.append(name)
+
+        @rx.event
+        def clear_log(self):
+            self.mounted = []
+            self.unmounted = []
+
+        @rx.event
+        def add_item(self):
+            self.items.append("delta")
+
+        @rx.event
+        def remove_item(self):
+            self.items.pop()
+
+        @rx.event
+        def handle_submit(self, index: int, form_data: dict):
+            self.submitted = f"{index}:{form_data['note']}"
+
+    class MemoHookState(rx.State):
+        """State for hooks under a branch or a loop in an ``@rx.memo`` body."""
+
+        show: bool = True
+        items: list[str] = ["alpha", "beta"]
+        mounted: rx.Field[list[str]] = rx.field(default_factory=list)
+        unmounted: rx.Field[list[str]] = rx.field(default_factory=list)
+
+        @rx.event
+        def record_mount(self, name: str):
+            self.mounted.append(name)
+
+        @rx.event
+        def record_unmount(self, name: str):
+            self.unmounted.append(name)
+
+        @rx.event
+        def toggle(self):
+            self.show = not self.show
+
+        @rx.event
+        def clear_log(self):
+            self.mounted = []
+            self.unmounted = []
+
+    @rx.memo
+    def memo_branch(show: rx.Var[bool], label: rx.Var[str]) -> rx.Component:
+        return rx.box(
+            rx.cond(
+                show,
+                rx.text(
+                    label,
+                    on_mount=MemoHookState.record_mount(label),
+                    on_unmount=MemoHookState.record_unmount(label),
+                    class_name="memo-branch",
+                ),
+            ),
+        )
+
+    @rx.memo
+    def memo_loop(items: rx.Var[list[str]]) -> rx.Component:
+        return rx.box(
+            rx.foreach(
+                items,
+                lambda item: rx.text(
+                    item,
+                    key=item,
+                    on_mount=MemoHookState.record_mount(item),
+                    class_name="memo-loop-item",
+                ),
+            ),
+        )
+
+    def memo_hooks():
+        return rx.box(
+            memo_branch(show=MemoHookState.show, label="shown"),
+            memo_branch(show=~MemoHookState.show, label="hidden"),
+            memo_loop(items=MemoHookState.items),
+            rx.button("toggle", on_click=MemoHookState.toggle, id="memo-hooks-toggle"),
+            rx.button("clear", on_click=MemoHookState.clear_log, id="memo-hooks-clear"),
+            rx.text(MemoHookState.mounted.join(","), id="memo-hooks-mounted"),
+            rx.text(MemoHookState.unmounted.join(","), id="memo-hooks-unmounted"),
+        )
+
+    def picker(
+        label: rx.Var[str] | str,
+        picked: rx.ClientStateVar,
+        choice: rx.Var[str] | str,
+        id: rx.Var[str] | str,
+    ) -> rx.Component:
+        # Hooks of its own, so it compiles into a wrapper that takes the
+        # client state hook out of the memo function.
+        return rx.el.button(
+            label,
+            title=picked.value,
+            on_click=picked.set(choice),
+            on_mount=MemoHookState.record_mount(label),
+            class_name="picker",
+            id=id,
+            key=id,
+        )
+
+    @rx.memo
+    def memo_loop_picker(name: rx.Var[str], items: rx.Var[list[str]]) -> rx.Component:
+        # Created in the memo body, used only inside the loop.
+        picked = rx.client_state("none")
+        return rx.box(
+            rx.foreach(
+                items,
+                lambda item: picker(item, picked, item, f"{name}-{item}"),
+            ),
+        )
+
+    @rx.memo
+    def memo_branch_picker(name: rx.Var[str], show: rx.Var[bool]) -> rx.Component:
+        # Created in the memo body, used only inside the branches.
+        picked = rx.client_state("none")
+        return rx.box(
+            rx.cond(
+                show,
+                picker("shown", picked, "shown", f"{name}-shown"),
+                picker("hidden", picked, "hidden", f"{name}-hidden"),
+            ),
+        )
+
+    @rx.memo
+    def memo_match_picker(name: rx.Var[str], show: rx.Var[bool]) -> rx.Component:
+        # Created in the memo body, used only inside the cases.
+        picked = rx.client_state("none")
+        return rx.box(
+            rx.match(
+                show,
+                (True, picker("shown", picked, "shown", f"{name}-shown")),
+                picker("hidden", picked, "hidden", f"{name}-hidden"),
+            ),
+        )
+
+    def memo_client_state():
+        return rx.box(
+            memo_loop_picker(name="loop-a", items=MemoHookState.items),
+            memo_loop_picker(name="loop-b", items=MemoHookState.items),
+            memo_branch_picker(name="branch-a", show=MemoHookState.show),
+            memo_branch_picker(name="branch-b", show=MemoHookState.show),
+            memo_match_picker(name="match-a", show=MemoHookState.show),
+            memo_match_picker(name="match-b", show=MemoHookState.show),
+            rx.button("toggle", on_click=MemoHookState.toggle, id="memo-cs-toggle"),
+        )
+
+    def loop_item(item: rx.Var[str], index: rx.Var[int]) -> rx.Component:
+        return rx.box(
+            rx.text(
+                item,
+                on_mount=LoopState.record_mount(item),
+                on_unmount=LoopState.record_unmount(item),
+                class_name="loop-item",
+            ),
+            # A hook in a nested loop reads the outer and the inner loop variable.
+            rx.foreach(
+                LoopState.tags,
+                lambda tag: rx.text(
+                    tag, on_mount=LoopState.record_mount(f"{item}-{tag}")
+                ),
+            ),
+            # A snapshot wrapper passes the loop variable to a wrapper inside it.
+            rx.auto_scroll(
+                rx.text("s", on_mount=LoopState.record_mount(f"{item}-scroll"))
+            ),
+            # Mirrors reflex-dev/reflex#3210: the submit hook reads the index.
+            rx.form(
+                rx.input(name="note"),
+                rx.button("save", type="submit", class_name="loop-submit"),
+                on_submit=lambda form_data: LoopState.handle_submit(index, form_data),
+            ),
+        )
+
     def index():
         return rx.box(
             rx.el.style("body { --memo-marker: " + MemoState.css_marker + "; }"),
@@ -268,10 +457,19 @@ def MemoEdgeCasesApp():
                 "unrelated", on_click=OtherState.bump_unrelated, id="probe-unrelated"
             ),
             rx.text(OtherState.unrelated, id="unrelated-out"),
+            rx.foreach(LoopState.items, loop_item),
+            rx.button("add", on_click=LoopState.add_item, id="loop-add"),
+            rx.button("remove", on_click=LoopState.remove_item, id="loop-remove"),
+            rx.button("clear", on_click=LoopState.clear_log, id="loop-clear"),
+            rx.text(LoopState.mounted.join(","), id="loop-mounted"),
+            rx.text(LoopState.unmounted.join(","), id="loop-unmounted"),
+            rx.text(LoopState.submitted, id="loop-submitted"),
         )
 
     app = rx.App()
     app.add_page(index, title=MemoState.title_marker)
+    app.add_page(memo_hooks, route="/memo-hooks")
+    app.add_page(memo_client_state, route="/memo-client-state")
 
 
 @pytest.fixture(scope="module")
@@ -778,3 +976,176 @@ def test_slot_transparency_adds_no_rerenders(memo_app: AppHarness, page: Page) -
         "() => [...document.querySelectorAll('[data-probe]')]"
         ".every((n) => n.__mountTag === 'mounted')"
     ), "re-rendering must not remount the probe nodes"
+
+
+def test_foreach_item_hooks_run_per_item_with_loop_vars(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """Hooks of components inside ``rx.foreach`` run per item with the loop vars.
+
+    Regression for reflex-dev/reflex#7791 and reflex-dev/reflex#3210: such a
+    hook was compiled outside the loop, so reading the loop variable crashed
+    the page with a ``ReferenceError`` and other hooks ran once for the list.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    assert memo_app.frontend_url is not None
+    page_errors: list[str] = []
+    page.on("pageerror", lambda error: page_errors.append(str(error)))
+    page.goto(memo_app.frontend_url)
+
+    mounted = page.locator("#loop-mounted")
+    unmounted = page.locator("#loop-unmounted")
+    expect(page.locator(".loop-item")).to_have_text(["alpha", "beta", "gamma"])
+
+    # Each item, nested loop item and snapshot-wrapped item mounts by itself.
+    initial = {
+        f"{item}{suffix}"
+        for item in ("alpha", "beta", "gamma")
+        for suffix in ("", "-x", "-y", "-scroll")
+    }
+    for name in initial:
+        expect(mounted).to_contain_text(re.compile(rf"(^|,){name}(,|$)"))
+    assert set(mounted.inner_text().split(",")) == initial
+
+    # A new item fires only its own hooks. Strict mode may run an effect twice.
+    page.click("#loop-clear")
+    expect(mounted).to_have_text("")
+    page.click("#loop-add")
+    expect(page.locator(".loop-item")).to_have_count(4)
+    expect(mounted).to_contain_text("delta-scroll")
+    expect(mounted).to_contain_text("delta-y")
+    assert set(mounted.inner_text().split(",")) == {
+        "delta",
+        "delta-x",
+        "delta-y",
+        "delta-scroll",
+    }
+
+    # A removed item fires its own unmount hook, and no other item remounts.
+    page.click("#loop-clear")
+    expect(mounted).to_have_text("")
+    expect(unmounted).to_have_text("")
+    page.click("#loop-remove")
+    expect(page.locator(".loop-item")).to_have_count(3)
+    expect(unmounted).to_have_text(re.compile(r"^delta(,delta)*$"))
+    expect(mounted).to_have_text("")
+
+    # Each form submits with the index of its own item.
+    submitted = page.locator("#loop-submitted")
+    page.locator("input[name='note']").nth(2).fill("third")
+    page.locator(".loop-submit").nth(2).click()
+    expect(submitted).to_have_text("2:third")
+    page.locator("input[name='note']").nth(0).fill("first")
+    page.locator(".loop-submit").nth(0).click()
+    expect(submitted).to_have_text("0:first")
+
+    assert not page_errors
+
+
+def _event_log(*names: str, optional: tuple[str, ...] = ()) -> re.Pattern[str]:
+    """Match a comma separated event log by the names it holds.
+
+    Strict mode may run an effect twice, so a name may repeat.
+
+    Args:
+        names: The names the log must hold, each at least once.
+        optional: Other names the log may hold.
+
+    Returns:
+        A pattern that matches the whole log.
+    """
+    name = "|".join(map(re.escape, (*names, *optional)))
+    required = "".join(rf"(?=(.*,)?{re.escape(name)}(,|$))" for name in names)
+    return re.compile(rf"^{required}({name})(,({name}))*$")
+
+
+def test_memo_body_hooks_follow_their_branch_and_loop_item(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """Hooks under ``rx.cond`` / ``rx.foreach`` in an ``@rx.memo`` body are scoped.
+
+    Regression for reflex-dev/reflex#7836: such a hook was compiled at the top
+    of the memo function, so the hidden branch's ``on_mount`` fired with the
+    memo, toggling the condition fired nothing, and a hook reading a loop
+    variable crashed the page with a ``ReferenceError``.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    assert memo_app.frontend_url is not None
+    page_errors: list[str] = []
+    page.on("pageerror", lambda error: page_errors.append(str(error)))
+    page.goto(memo_app.frontend_url.removesuffix("/") + "/memo-hooks")
+
+    mounted = page.locator("#memo-hooks-mounted")
+    unmounted = page.locator("#memo-hooks-unmounted")
+    expect(page.locator(".memo-loop-item")).to_have_text(["alpha", "beta"])
+    expect(page.locator(".memo-branch")).to_have_text(["shown"])
+
+    # Only the shown branch and each loop item mount.
+    expect(mounted).to_have_text(_event_log("shown", "alpha", "beta"))
+
+    # Toggling unmounts the branch that was shown and mounts the other one.
+    page.click("#memo-hooks-clear")
+    expect(mounted).to_have_text("")
+    expect(unmounted).to_have_text("")
+    page.click("#memo-hooks-toggle")
+    expect(page.locator(".memo-branch")).to_have_text(["hidden"])
+    expect(mounted).to_have_text(_event_log("hidden"))
+    # Strict mode also runs the cleanup of the branch it mounts twice.
+    expect(unmounted).to_have_text(_event_log("shown", optional=("hidden",)))
+
+    assert not page_errors
+
+
+def test_memo_body_client_state_under_branch_or_loop_is_per_instance(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """Client state created in a memo body stays one slot per memo instance.
+
+    The state is used only inside an ``rx.foreach`` item, an ``rx.cond``
+    branch or an ``rx.match`` case that has hooks of its own, so the compiler
+    moves the ``useClientState`` call into a generated wrapper. Items and
+    branches of one instance still share the slot, and another instance of
+    the same memo has its own.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    assert memo_app.frontend_url is not None
+    page_errors: list[str] = []
+    page.on("pageerror", lambda error: page_errors.append(str(error)))
+    page.goto(memo_app.frontend_url.removesuffix("/") + "/memo-client-state")
+    expect(page.locator(".picker")).to_have_count(8)
+
+    def titles(*ids: str) -> list[str | None]:
+        return [page.locator(f"#{id_}").get_attribute("title") for id_ in ids]
+
+    # A loop item sets the state for every item of its instance only.
+    page.click("#loop-a-alpha")
+    expect(page.locator("#loop-a-beta")).to_have_attribute("title", "alpha")
+    assert titles("loop-a-alpha", "loop-b-alpha", "loop-b-beta") == [
+        "alpha",
+        "none",
+        "none",
+    ]
+    page.click("#loop-b-beta")
+    expect(page.locator("#loop-b-alpha")).to_have_attribute("title", "beta")
+    assert titles("loop-a-alpha", "loop-a-beta") == ["alpha", "alpha"]
+
+    # A branch sets the state the other branch of its instance then reads.
+    page.click("#branch-a-shown")
+    page.click("#match-a-shown")
+    expect(page.locator("#branch-a-shown")).to_have_attribute("title", "shown")
+    expect(page.locator("#match-a-shown")).to_have_attribute("title", "shown")
+    page.click("#memo-cs-toggle")
+    expect(page.locator("#branch-a-hidden")).to_have_attribute("title", "shown")
+    expect(page.locator("#match-a-hidden")).to_have_attribute("title", "shown")
+    assert titles("branch-b-hidden", "match-b-hidden") == ["none", "none"]
+
+    assert not page_errors

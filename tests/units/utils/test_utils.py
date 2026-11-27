@@ -9,6 +9,7 @@ import pytest
 from packaging import version
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.config import get_config
 from reflex_base.event import EventHandler
 from reflex_base.utils.exceptions import ReflexError, SystemPackageMissingError
 from reflex_base.vars.base import Var
@@ -489,11 +490,11 @@ def test_initialize_agents_md_refreshes_managed_section(tmp_path, mocker):
 
 def test_initialize_agents_md_warns_on_fetch_failure(tmp_path, mocker, caplog):
     """Test that a failed fetch warns without writing AGENTS.md or the bridge."""
-    import httpx
+    import httpx2
 
     agents_file = tmp_path / "AGENTS.md"
     claude_file = tmp_path / "CLAUDE.md"
-    mocker.patch("reflex.utils.net.get", side_effect=httpx.ConnectError("boom"))
+    mocker.patch("reflex.utils.net.get", side_effect=httpx2.ConnectError("boom"))
 
     frontend_skeleton.initialize_agents_md(
         agents_file=agents_file, claude_file=claude_file
@@ -903,7 +904,7 @@ def test_compile_vite_config_reads_minify_env(
 ) -> None:
     """_compile_vite_config threads the VITE_MINIFY env var into the template."""
     monkeypatch.setenv(environment.VITE_MINIFY.name, "true" if minify else "false")
-    config = frontend_skeleton._compile_vite_config(prerequisites.get_config())
+    config = frontend_skeleton._compile_vite_config(get_config())
     assert f"minify: {'true' if minify else 'false'}," in config
 
 

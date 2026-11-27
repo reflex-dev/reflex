@@ -1,11 +1,19 @@
 """Tests for the disk state manager."""
 
+import asyncio
+import contextlib
 import math
 import os
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
+from reflex_base.constants import Env
+from reflex_base.environment import environment
+from reflex_base.vars.base import computed_var
 
+from reflex.istate.manager import disk
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.token import BaseStateToken, StateToken
 from reflex.state import BaseState
@@ -16,6 +24,22 @@ class DiskPersistState(BaseState):
     """A state for testing disk persistence."""
 
     num: float = 3.15
+
+
+class DiskFailureRoot(BaseState):
+    """A state whose handler fails, written as a tree.
+
+    A substate rides along so the failure path covers the whole tree, not just
+    the state the token names.
+    """
+
+    num: float = 0.0
+
+
+class DiskFailureChild(DiskFailureRoot):
+    """A substate written alongside its failed handler's root state."""
+
+    child_value: str = ""
 
 
 def test_states_directory_survives_chdir(tmp_path: Path, monkeypatch):
@@ -37,6 +61,150 @@ def test_states_directory_survives_chdir(tmp_path: Path, monkeypatch):
     assert manager.states_directory == states_dir
     # Purge resolves against the original directory, not the new cwd.
     manager._purge_expired_states()
+
+
+async def test_idle_write_queue_scans_only_when_files_can_expire(
+    tmp_path, monkeypatch, disk_clock
+):
+    """Idle queue ticks skip unexpired files but still purge at their deadline."""
+    now = disk_clock
+    state_file = tmp_path / "session.pkl"
+    state_file.touch()
+    os.utime(state_file, (950, 950))
+    manager = StateManagerDisk(token_expiration=100)
+    listing = Mock(wraps=disk.path_ops.ls)
+    monkeypatch.setattr(disk.path_ops, "ls", listing)
+    ticks = iter([1002, 1049, 1051])
+
+    async def advance():
+        await asyncio.sleep(0)
+        assert state_file.exists() == (now[0] <= 1050)
+        if (next_tick := next(ticks, None)) is None:
+            raise asyncio.CancelledError
+        now[0] = next_tick
+
+    monkeypatch.setattr(manager, "_process_write_queue_delay", advance)
+    with pytest.raises(asyncio.CancelledError):
+        await manager._process_write_queue()
+    assert listing.call_count == 1
+
+
+@pytest.fixture
+def disk_clock(tmp_path, monkeypatch):
+    """Control disk deadlines without changing the process-wide clock.
+
+    Returns:
+        A list containing the current wall-clock and monotonic timestamp.
+    """
+    now = [1000.0]
+    clock = SimpleNamespace(time=lambda: now[0], monotonic=lambda: now[0])
+    monkeypatch.setattr(disk, "time", clock)
+    monkeypatch.setattr(disk.prerequisites, "get_states_dir", lambda: tmp_path)
+    return now
+
+
+async def test_new_files_after_empty_scan_expire(tmp_path, monkeypatch, disk_clock):
+    """An empty scan cannot postpone discovery beyond one token lifetime."""
+    manager = StateManagerDisk(token_expiration=100)
+    state_file = tmp_path / "later.pkl"
+    state_file.touch()
+    os.utime(state_file, (1001, 1001))
+    listing = Mock(wraps=disk.path_ops.ls)
+    monkeypatch.setattr(disk.path_ops, "ls", listing)
+
+    disk_clock[0] = 1002
+    await manager._maybe_purge_expired_states()
+    listing.assert_not_called()
+    disk_clock[0] = 1100
+    await manager._maybe_purge_expired_states()
+    assert state_file.exists()
+    disk_clock[0] = 1102
+    await manager._maybe_purge_expired_states()
+    assert not state_file.exists()
+    assert listing.call_count == 2
+
+
+@pytest.mark.parametrize("lifetime", [5, 200])
+async def test_disk_expiration_lifetime_changes(tmp_path, disk_clock, lifetime):
+    """Changing the lifetime invalidates deadlines from the previous setting."""
+    state_file = tmp_path / "existing.pkl"
+    state_file.touch()
+    os.utime(state_file, (990, 990))
+    manager = StateManagerDisk(token_expiration=100)
+    manager.token_expiration = lifetime
+
+    await manager._maybe_purge_expired_states()
+    assert state_file.exists() == (lifetime == 200)
+    disk_clock[0] = 1191
+    await manager._maybe_purge_expired_states()
+    assert not state_file.exists()
+
+
+async def test_disk_write_keeps_expiration_deadline(monkeypatch, disk_clock):
+    """A write skips rescanning, and the written file still expires on schedule."""
+    manager = StateManagerDisk(token_expiration=100)
+    listing = Mock(wraps=disk.path_ops.ls)
+    monkeypatch.setattr(disk.path_ops, "ls", listing)
+    token = StateToken(ident="written", cls=dict)
+    disk_clock[0] = 1050
+    await manager.set_state_for_substate(token, {"count": 1})
+    state_file = manager.token_path(token)
+    os.utime(state_file, (1050, 1050))
+
+    disk_clock[0] = 1060
+    await manager._maybe_purge_expired_states()
+    listing.assert_not_called()
+    disk_clock[0] = 1100
+    await manager._maybe_purge_expired_states()
+    assert state_file.exists()
+    disk_clock[0] = 1151
+    await manager._maybe_purge_expired_states()
+    assert not state_file.exists()
+    assert listing.call_count == 2
+
+
+async def test_wall_clock_rollback_keeps_expiration_deadline(monkeypatch, disk_clock):
+    """Moving the wall clock back does not defer the next disk scan."""
+    disk_clock[0] = 20_000
+    manager = StateManagerDisk(token_expiration=100)
+    monkeypatch.setattr(disk.time, "time", lambda: disk_clock[0] - 18_000)
+    token = StateToken(ident="after-rollback", cls=dict)
+    await manager.set_state_for_substate(token, {"count": 1})
+    state_file = manager.token_path(token)
+    os.utime(state_file, (2000, 2000))
+
+    disk_clock[0] = 20_100
+    await manager._maybe_purge_expired_states()
+    assert state_file.exists()
+    disk_clock[0] = 20_101
+    await manager._maybe_purge_expired_states()
+    assert not state_file.exists()
+
+
+async def test_disk_expiration_lifetime_changes_while_scan_dispatched(
+    tmp_path, monkeypatch, disk_clock
+):
+    """A deadline is associated with the lifetime actually used by the worker."""
+    state_file = tmp_path / "changed-lifetime.pkl"
+    state_file.touch()
+    os.utime(state_file, (990, 990))
+    manager = StateManagerDisk(token_expiration=100)
+    manager._next_disk_purge = 0
+
+    async def scan_with_temporary_lifetime(fn):
+        await asyncio.sleep(0)
+        manager.token_expiration = 200
+        result = fn()
+        manager.token_expiration = 100
+        return result
+
+    with monkeypatch.context() as patch:
+        patch.setattr(disk, "run_in_thread", scan_with_temporary_lifetime)
+        await manager._maybe_purge_expired_states()
+
+    disk_clock[0] = 1091
+    await manager._maybe_purge_expired_states()
+    assert not state_file.exists()
 
 
 @pytest.mark.asyncio
@@ -166,4 +334,234 @@ async def test_set_state_for_substate_builds_tokens_for_written_states_only(
         await state_manager.set_state_for_substate(token, state)
 
     assert written == [DiskTreeFirst]
+    await state_manager.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("env_mode", "hot_reload", "after_reload"),
+    [
+        (Env.DEV, True, ["a"]),
+        (Env.DEV, False, ["a", "b"]),
+        (Env.PREVIEW, True, ["a", "b"]),
+        (Env.PROD, False, ["a", "b"]),
+    ],
+)
+async def test_states_from_disk_recompute_cached_vars(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    env_mode: Env,
+    hot_reload: bool,
+    after_reload: list[str],
+):
+    """Under the dev hot reloader, states read back from disk recompute cached vars.
+
+    A state is only read from disk when it is not in memory, as after a hot
+    reload, which may have changed what the computed vars return. The fields
+    keep their values. Outside a dev hot reloader the cache is kept.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        env_mode: The mode the app runs in.
+        hot_reload: Whether the backend runs under the dev hot reloader.
+        after_reload: The cached var value expected after the reload.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    monkeypatch.setenv("REFLEX_ENV_MODE", env_mode.value)
+    monkeypatch.setenv(
+        environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name, str(hot_reload)
+    )
+    rows = ["a", "b"]
+
+    class DiskCachedState(BaseState):
+        count: int = 0
+
+        @computed_var(cache=True)
+        def data(self) -> list[str]:
+            """The rows, which a reload can change.
+
+            Returns:
+                A copy of the rows.
+            """
+            return list(rows)
+
+    class DiskCachedChild(DiskCachedState):
+        @computed_var(cache=True)
+        def child_data(self) -> list[str]:
+            """The rows, cached on the substate.
+
+            Returns:
+                A copy of the rows.
+            """
+            return list(rows)
+
+    token = BaseStateToken(ident="client", cls=DiskCachedState)
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    async with state_manager.modify_state(token) as state:
+        assert isinstance(state, DiskCachedState)
+        state.count = 99
+        child = await state.get_state(DiskCachedChild)
+        assert (state.data, child.child_data) == (["a", "b"], ["a", "b"])
+    rows[:] = ["a"]
+    # A state still in memory keeps its cached values.
+    assert await state_manager.get_state(token) is state
+    assert state.data == ["a", "b"]
+    await state_manager.close()
+
+    reloaded_state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    state = await reloaded_state_manager.get_state(token)
+    assert isinstance(state, DiskCachedState)
+    child = await state.get_state(DiskCachedChild)
+    assert (state.count, state.data, child.child_data) == (
+        99,
+        after_reload,
+        after_reload,
+    )
+    await reloaded_state_manager.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("write_debounce_seconds", [0, 60])
+async def test_modify_exception_persists_state(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, write_debounce_seconds: int
+):
+    """Keep the writes of a handler that raises, like the other state managers.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        write_debounce_seconds: The debounce interval under test.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=write_debounce_seconds)
+    token = BaseStateToken(ident="client", cls=DiskPersistState)
+
+    with pytest.raises(RuntimeError, match=r"^handler failed$"):
+        async with state_manager.modify_state(token) as state:
+            assert isinstance(state, DiskPersistState)
+            state.num = 1.5
+            msg = "handler failed"
+            raise RuntimeError(msg)
+
+    await state_manager.close()
+
+    # A manager that starts from the directory alone must see the write.
+    fresh_state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    persisted_state = await fresh_state_manager.get_state(token)
+    assert isinstance(persisted_state, DiskPersistState)
+    assert math.isclose(persisted_state.num, 1.5)
+    await fresh_state_manager.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("write_debounce_seconds", [0, 60])
+async def test_modify_cancelled_persists_state(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, write_debounce_seconds: int
+):
+    """Keep mutations and cancellation cleanup visible to the next read from disk.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        write_debounce_seconds: The debounce interval under test.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=write_debounce_seconds)
+    token = BaseStateToken(ident="client", cls=DiskFailureRoot)
+    started = asyncio.Event()
+
+    async def modify():
+        """Mutate state before cancellation and again during handler cleanup."""
+        async with state_manager.modify_state(token) as state:
+            assert isinstance(state, DiskFailureRoot)
+            state.num = 1.0
+            child = state.substates[DiskFailureChild.get_name()]
+            assert isinstance(child, DiskFailureChild)
+            child.child_value = "cancelled"
+            started.set()
+            try:
+                await asyncio.Event().wait()
+            finally:
+                state.num = 2.0
+
+    task = asyncio.create_task(modify())
+    await asyncio.wait_for(started.wait(), timeout=5)
+    task.cancel("superseded")
+    with pytest.raises(asyncio.CancelledError, match=r"^superseded$"):
+        await task
+
+    await state_manager.close()
+
+    # A manager that starts from the directory alone must see the whole tree.
+    fresh_state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    persisted_state = await fresh_state_manager.get_state(token)
+    assert isinstance(persisted_state, DiskFailureRoot)
+    assert math.isclose(persisted_state.num, 2.0)
+    persisted_child = persisted_state.substates[DiskFailureChild.get_name()]
+    assert isinstance(persisted_child, DiskFailureChild)
+    assert persisted_child.child_value == "cancelled"
+    await fresh_state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_repeated_cancellation_waits_for_state_save(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Keep the state lock until a repeatedly cancelled handler finishes saving.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    token = BaseStateToken(ident="client", cls=DiskPersistState)
+    started = asyncio.Event()
+    saving = asyncio.Event()
+    release_save = asyncio.Event()
+    original_set_state = state_manager.set_state
+
+    async def save(*args, **kwargs):
+        """Pause the state write while the handler is cancelled again.
+
+        Args:
+            args: The positional arguments for the real set_state.
+            kwargs: The keyword arguments for the real set_state.
+        """
+        saving.set()
+        await release_save.wait()
+        await original_set_state(*args, **kwargs)
+
+    monkeypatch.setattr(state_manager, "set_state", save)
+
+    async def modify():
+        """Mutate state and suspend until superseded."""
+        async with state_manager.modify_state(token) as state:
+            assert isinstance(state, DiskPersistState)
+            state.num = 1.5
+            started.set()
+            await asyncio.Event().wait()
+
+    task = asyncio.create_task(modify())
+    try:
+        await asyncio.wait_for(started.wait(), timeout=5)
+        task.cancel("superseded")
+        await asyncio.wait_for(saving.wait(), timeout=5)
+        for _ in range(2):
+            task.cancel("shutdown")
+            await asyncio.sleep(0)
+        # Neither the save nor the lock may be abandoned to the new cancellation.
+        assert not task.done()
+        assert state_manager._is_locked(token)
+        release_save.set()
+        with pytest.raises(asyncio.CancelledError, match=r"^superseded$"):
+            await task
+        assert not state_manager._is_locked(token)
+    finally:
+        release_save.set()
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
     await state_manager.close()

@@ -15,13 +15,17 @@ from unittest import mock
 
 import pytest
 from click.testing import CliRunner
+from pytest_mock import MockerFixture
 from reflex_base import constants
 from reflex_base.config import Config
 from reflex_base.environment import environment
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import log
 from reflex_base.utils.decorator import cached_procedure
 from reflex_base.utils.exceptions import EnvironmentVarValueError
 
+from reflex.app import App
+from reflex.compiler import compiler
 from reflex.reflex import cli
 from reflex.testing import chdir
 from reflex.utils import frontend_skeleton, js_runtimes, prerequisites
@@ -323,6 +327,63 @@ assert not loaded, f"database modules imported eagerly: {loaded}"
     )
 
     assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize("dry_run", [False, True])
+def test_get_compiled_app_ignores_stale_nocompile_marker(
+    tmp_working_dir: Path,
+    clean_registration_context: RegistrationContext,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    dry_run: bool,
+) -> None:
+    """A compile-skip marker left by an interrupted dev run skips no CLI compile.
+
+    A dev run touches the marker for its backend worker, which removes it when
+    it first loads the app. A run stopped before then leaves the marker behind,
+    and `reflex run`, `reflex export` and `reflex compile` all compile through
+    `get_compiled_app`.
+    """
+    app_name = "stale_marker_app"
+    (tmp_working_dir / "rxconfig.py").write_text(
+        "import reflex as rx\n\nconfig = rx.Config(\n"
+        f'    app_name="{app_name}", plugins=[rx.plugins.SitemapPlugin()]\n)\n'
+    )
+    (tmp_working_dir / app_name).mkdir()
+    (tmp_working_dir / app_name / "__init__.py").touch()
+    (tmp_working_dir / app_name / f"{app_name}.py").write_text(
+        "import reflex as rx\n\n\n"
+        'def index():\n    return rx.text("index")\n\n\n'
+        "app = rx.App(theme=None)\napp.add_page(index)\n"
+    )
+    web_dir = tmp_working_dir / constants.Dirs.WEB
+    web_dir.mkdir()
+    (web_dir / constants.PackageJson.PATH).touch()
+    marker = web_dir / constants.NOCOMPILE_FILE
+    marker.touch()
+    monkeypatch.delenv(environment.REFLEX_SKIP_COMPILE.name, raising=False)
+    monkeypatch.setattr(App, "_get_frontend_packages", lambda self, imports: None)
+    # Importing the app puts the working directory on sys.path; restore it after.
+    monkeypatch.syspath_prepend(tmp_working_dir)
+    compile_app = mocker.spy(compiler, "compile_app")
+
+    def forget_app_modules() -> None:
+        """Clear the temporary config and app modules from the import cache."""
+        for name in ("rxconfig", app_name, f"{app_name}.{app_name}"):
+            sys.modules.pop(name, None)
+
+    forget_app_modules()
+    try:
+        prerequisites.get_compiled_app(dry_run=dry_run)
+    finally:
+        forget_app_modules()
+
+    # True is a real compile; False is the path that only evaluates the pages.
+    assert compile_app.spy_return is True
+    assert not marker.exists()
+    # A real compile writes the page unless it is a dry run.
+    index_page = web_dir / constants.Dirs.PAGES / constants.Dirs.ROUTES / "_index.jsx"
+    assert index_page.exists() is not dry_run
 
 
 def _patch_web_dir(monkeypatch: pytest.MonkeyPatch, web_dir: Path):
@@ -2661,6 +2722,57 @@ def redis_url(monkeypatch: pytest.MonkeyPatch) -> str:
     monkeypatch.delenv("REFLEX_REDIS_MAX_CONNECTIONS", raising=False)
     monkeypatch.delenv("REFLEX_REDIS_POOL_TIMEOUT", raising=False)
     return url
+
+
+def test_redis_clients_have_no_socket_timeout(
+    redis_url: str, monkeypatch: pytest.MonkeyPatch
+):
+    """Every client is built without a socket timeout, which loses cancels on 3.11 (#7026)."""
+    unbounded = prerequisites.get_redis()
+    monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", "3")
+    capped = prerequisites.get_redis()
+    for client in (unbounded, capped, prerequisites.get_redis_sync()):
+        assert client is not None
+        assert client.connection_pool.connection_kwargs["socket_timeout"] is None
+
+
+async def test_redis_client_cancel_mid_send_always_ends_task():
+    """A task cancelled while sending a command ends, whatever the loop phase (#7026).
+
+    redis-py 8's socket timeout routes sends through asyncio.wait_for, which on
+    Python 3.11 loses a cancel that lands as the send completes, so the task
+    would run on and anything awaiting it (such as `StateManagerRedis.close`)
+    hangs. Needs a real server, so it runs in the redis CI legs.
+    """
+    redis = prerequisites.get_redis()
+    if redis is None:
+        pytest.skip("REFLEX_REDIS_URL is not set.")
+
+    async def ping_forever(connection):
+        while True:
+            await connection.send_packed_command(connection.pack_command("PING"))
+            await connection.read_response()
+
+    try:
+        for offset in range(40):
+            connection = await redis.connection_pool.get_connection()
+            task = asyncio.create_task(ping_forever(connection))
+            for _ in range(offset):
+                await asyncio.sleep(0)
+            task.cancel()
+            done, _ = await asyncio.wait({task}, timeout=2)
+            # Keep cancelling so a lost cancel fails the test instead of hanging it.
+            while not task.done():
+                task.cancel()
+                await asyncio.sleep(0.01)
+            await redis.connection_pool.release(connection)
+            assert done, f"cancellation lost at loop offset {offset}"
+            assert task.cancelled(), (
+                f"task failed instead of being cancelled at loop offset {offset}: "
+                f"{task.exception()!r}"
+            )
+    finally:
+        await redis.aclose(close_connection_pool=True)
 
 
 def test_get_redis_pool_unbounded_by_default(redis_url: str):

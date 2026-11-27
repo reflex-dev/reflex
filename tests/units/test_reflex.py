@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import logging
 import os
 import select
 import signal
@@ -18,6 +19,8 @@ import psutil
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.environment import environment
+from reflex_base.utils import log
 
 from reflex import reflex
 from reflex.testing import DEFAULT_TIMEOUT
@@ -28,6 +31,7 @@ _CLI_STARTUP_DENIED_MODULES = frozenset({
     "fastapi",
     "granian",
     "httpx",
+    "httpx2",
     "numpy",
     "pandas",
     "plotly",
@@ -250,6 +254,42 @@ def test_run_prod_sends_telemetry_synchronously(
     queued.assert_not_called()
     calls.send.assert_called_once_with("run-prod", config.telemetry_enabled)
     assert [name for name, _args, _kwargs in calls.mock_calls] == ["send", "serve"]
+
+
+@pytest.mark.parametrize(
+    ("running_mode", "generated"),
+    [
+        (constants.RunningMode.BACKEND_ONLY, True),
+        (constants.RunningMode.FRONTEND_ONLY, False),
+    ],
+)
+def test_run_exports_secret_key_before_backend_starts(
+    mocker, monkeypatch, running_mode: constants.RunningMode, generated: bool
+):
+    """Generate the secret key in the run process, so backend workers inherit it.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        monkeypatch: The environment override fixture.
+        running_mode: The parts of the app to run.
+        generated: Whether the run must export a secret key.
+    """
+    from reflex.utils import exec
+
+    generated_key = environment.REFLEX_GENERATED_SECRET_KEY.name
+    monkeypatch.setenv("REFLEX_SECRET_KEY", "unset")
+    monkeypatch.delenv("REFLEX_SECRET_KEY")
+    monkeypatch.setenv(generated_key, "unset")
+    monkeypatch.delenv(generated_key)
+    monkeypatch.setenv("REFLEX_ENV_MODE", "dev")
+    mocker.patch.object(reflex, "get_config")
+    # Stop before the servers start; the key must already be exported.
+    mocker.patch.object(exec, "output_system_info", side_effect=SystemExit)
+
+    with pytest.raises(SystemExit):
+        reflex._run(running_mode=running_mode)
+
+    assert (generated_key in os.environ) is generated
 
 
 def test_cloud_commands_registered():
@@ -1255,6 +1295,7 @@ with reflex._shutdown_signals() as begin_cleanup:
             time.sleep(1)
     finally:
         begin_cleanup()
+        print(wrapper.pid, flush=True)
         # The wrapper exits at once; the server holds the stop until the deadline.
         stop_process_tree(wrapper, timeout=60)
 """
@@ -1277,7 +1318,12 @@ def test_shutdown_signals_force_exit_kills_an_orphaned_descendant(tmp_path):
         server = int(_read_line(proc))
         assert _read_line(proc) == "ready\n"
         proc.send_signal(signal.SIGTERM)
-        # By now the wrapper is gone and the server is no longer found below the run.
+        # The cleanup has begun once the wrapper is reported, so the repeat
+        # window is measured from here rather than from the signal, which a
+        # busy runner may deliver late.
+        wrapper = int(_read_line(proc))
+        _assert_gone(wrapper, "the cleanup did not stop the wrapper")
+        # Now the server is no longer found below the run.
         time.sleep(reflex._REPEAT_IGNORE_SECONDS + 0.2)
         assert proc.poll() is None
         proc.send_signal(signal.SIGTERM)
@@ -1344,6 +1390,97 @@ def test_run_supervises_output_only_in_json_mode(
         run.assert_called_once()
 
 
+@pytest.fixture
+def run_cli_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Unset the variables ``reflex run`` reads or sets, and restore them after.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    for var in (
+        environment.REFLEX_COMPILE_CONTEXT,
+        environment.REFLEX_FRONTEND_ONLY,
+        environment.REFLEX_BACKEND_ONLY,
+        environment.REFLEX_FRONTEND_PORT,
+        environment.REFLEX_BACKEND_PORT,
+        environment.REFLEX_LOG_JSON,
+    ):
+        monkeypatch.delenv(var.name, raising=False)
+
+
+@pytest.mark.usefixtures("run_cli_env")
+@pytest.mark.parametrize(
+    ("argv", "frontend_port", "backend_port"),
+    [
+        ([], 3653, 8653),
+        (["--frontend-only"], 3653, None),
+        (["--backend-only"], None, 8653),
+        (["--frontend-only", "--frontend-port", "3001"], 3001, None),
+        (["--backend-only", "--backend-port", "8001"], None, 8001),
+    ],
+)
+def test_run_uses_config_ports_only_for_the_running_side(
+    mocker: MockerFixture,
+    argv: list[str],
+    frontend_port: int | None,
+    backend_port: int | None,
+):
+    """A port set in rxconfig.py does not reach ``_run`` for a side that does not run.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        argv: Extra ``reflex run`` arguments.
+        frontend_port: The frontend port expected to reach ``_run``.
+        backend_port: The backend port expected to reach ``_run``.
+    """
+    config = mocker.patch.object(reflex, "get_config").return_value
+    config.frontend_port = 3653
+    config.backend_port = 8653
+    run = mocker.patch.object(reflex, "_run")
+
+    result = click.testing.CliRunner().invoke(reflex.cli, ["run", *argv])
+
+    assert result.exit_code == 0, result.output
+    assert run.call_args.kwargs["frontend_port"] == frontend_port
+    assert run.call_args.kwargs["backend_port"] == backend_port
+
+
+@pytest.mark.usefixtures("run_cli_env")
+@pytest.mark.parametrize(
+    ("argv", "message"),
+    [
+        (
+            ["--frontend-only", "--backend-port", "8001"],
+            "Cannot specify --backend-port when not running backend.",
+        ),
+        (
+            ["--backend-only", "--frontend-port", "3001"],
+            "Cannot specify --frontend-port when not running frontend.",
+        ),
+    ],
+)
+def test_run_rejects_a_port_flag_for_the_side_that_does_not_run(
+    mocker: MockerFixture,
+    argv: list[str],
+    message: str,
+):
+    """An explicit port flag for the side that does not run is still an error.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        argv: Extra ``reflex run`` arguments.
+        message: The expected error message.
+    """
+    config = mocker.patch.object(reflex, "get_config").return_value
+    config.frontend_port = 3653
+    config.backend_port = 8653
+
+    result = click.testing.CliRunner().invoke(reflex.cli, ["run", *argv])
+
+    assert result.exit_code == 1
+    assert result.output == f"{message}\n"
+
+
 @pytest.mark.parametrize(
     "args", [["init"], ["migrate"], ["makemigrations"], ["status"]]
 )
@@ -1388,13 +1525,34 @@ def test_db_commands_run_without_sqlmodel(
     monkeypatch.setattr(
         reflex, "find_spec", lambda name: None if name == "sqlmodel" else object()
     )
-    monkeypatch.setattr(prerequisites, "get_app", lambda: None)
+    monkeypatch.setattr(prerequisites, "get_compiled_app", lambda dry_run: None)
     monkeypatch.setattr(prerequisites, "check_db_initialized", lambda: False)
 
     result = click.testing.CliRunner().invoke(reflex.db_cli, ["migrate"])
 
-    assert result.exit_code == 0, result.output
+    assert result.exit_code == 1, result.output
     assert "pip install reflex[db]" not in caplog.text
+
+
+def test_cli_enables_managed_logging():
+    """Invoking the CLI in-process switches this process to managed logging."""
+    result = click.testing.CliRunner().invoke(reflex.cli, ["db", "--help"])
+
+    assert result.exit_code == 0, result.output
+    assert os.environ.get(log._MANAGED_ENV_VAR) == "true"
+    assert logging.getLogger("reflex").propagate is False
+
+
+def test_managed_logging_does_not_leak_into_the_next_test():
+    """A test after an in-process CLI invocation starts without managed logging.
+
+    Runs right after test_cli_enables_managed_logging, in file order.
+    """
+    reflex_logger = logging.getLogger("reflex")
+
+    assert os.environ.get(log._MANAGED_ENV_VAR) is None
+    assert reflex_logger.handlers == []
+    assert reflex_logger.propagate is True
 
 
 @pytest.fixture

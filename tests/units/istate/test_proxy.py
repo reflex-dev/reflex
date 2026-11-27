@@ -9,7 +9,7 @@ import sys
 import weakref
 from asyncio import CancelledError
 from collections.abc import Callable, Mapping
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from operator import attrgetter, itemgetter
 from types import MappingProxyType
 from typing import Any, ClassVar, assert_type
@@ -214,6 +214,79 @@ async def test_state_proxy_releases_lock_when_rehydrate_fails(
     async with asyncio.timeout(1):
         async with attached_mock_event_context.state_manager.modify_state(state_token):
             pass
+
+
+class ProxyLinkedTestState(rx.State):
+    """A state reached from another state's proxy through `get_state`."""
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("cancelled", [False, True])
+async def test_linked_state_proxy_releases_lock_when_entering_fails(
+    attached_mock_event_context: EventContext,
+    monkeypatch: pytest.MonkeyPatch,
+    cancelled: bool,
+):
+    """A linked proxy that fails to enter must release the lock its parent took.
+
+    Args:
+        attached_mock_event_context: The attached mock event context.
+        monkeypatch: The pytest monkeypatch fixture.
+        cancelled: Whether entering is cancelled rather than raising.
+    """
+    root_proxy = StateProxy(ProxyTestState())
+    async with root_proxy:
+        linked_proxy = await root_proxy.get_state(ProxyLinkedTestState)
+
+    entering = asyncio.Event()
+
+    async def failing_get_state(self: BaseState, state_cls: type[BaseState]):
+        """Fail to load the linked state, after the parent took the lock.
+
+        Args:
+            self: The parent state.
+            state_cls: The linked state class.
+
+        Raises:
+            RuntimeError: Always, unless cancelled first.
+        """
+        entering.set()
+        if cancelled:
+            await asyncio.Event().wait()
+        msg = "Simulated get_state failure"
+        raise RuntimeError(msg)
+
+    monkeypatch.setattr(BaseState, "get_state", failing_get_state)
+
+    async def enter_linked_proxy():
+        """Enter the linked proxy as a background task would."""
+        async with linked_proxy:
+            pass
+
+    task = asyncio.create_task(enter_linked_proxy())
+    try:
+        async with asyncio.timeout(1):
+            await entering.wait()
+            if cancelled:
+                task.cancel()
+                with pytest.raises(CancelledError):
+                    await task
+            else:
+                with pytest.raises(RuntimeError, match="Simulated get_state failure"):
+                    await task
+    finally:
+        task.cancel()
+        with suppress(Exception, CancelledError):
+            await task
+
+    state_token = BaseStateToken(
+        ident=attached_mock_event_context.token, cls=ProxyTestState
+    )
+    async with asyncio.timeout(1):
+        async with attached_mock_event_context.state_manager.modify_state(state_token):
+            pass
+    async with asyncio.timeout(1), root_proxy:
+        pass
 
 
 @dataclasses.dataclass
@@ -479,6 +552,89 @@ async def test_inherited_handler_runs_on_its_state(
         assert root.count == 2  # pyright: ignore [reportAttributeAccessIssue]
         substate = root.get_substate(RedeclaringSubState.get_full_name().split("."))
         assert substate.count == 10  # pyright: ignore [reportAttributeAccessIssue]
+
+
+class SuperBackgroundMixin(BaseState, mixin=True):
+    """A mixin whose background handler a state overrides."""
+
+    steps: list[str] = []
+
+    @rx.event(background=True)
+    async def save(self):
+        """Record the mixin's step."""
+        async with self:
+            self.steps.append("mixin")
+
+
+class SuperBackgroundMixinUser(SuperBackgroundMixin, BaseState):
+    """A state extending the mixin's background handler through super()."""
+
+    @rx.event(background=True)
+    async def save(self):
+        """Record this state's step, then the mixin's."""
+        async with self:
+            self.steps.append("user")
+        await super().save()
+
+
+class SuperBackgroundParent(BaseState):
+    """A state whose background handler its substate overrides."""
+
+    steps: list[str] = []
+
+    @rx.event(background=True)
+    async def save(self):
+        """Record the parent's step."""
+        async with self:
+            self.steps.append("parent")
+
+
+class SuperBackgroundChild(SuperBackgroundParent):
+    """A substate extending its parent's background handler through super()."""
+
+    @rx.event(background=True)
+    async def save(self):
+        """Record this state's step, then the parent's."""
+        async with self:
+            self.steps.append("child")
+        await super().save()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("state_cls", "steps_owner", "steps"),
+    [
+        (SuperBackgroundMixinUser, SuperBackgroundMixinUser, ["user", "mixin"]),
+        (SuperBackgroundChild, SuperBackgroundParent, ["child", "parent"]),
+    ],
+)
+async def test_background_handler_extends_its_base_through_super(
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+    state_cls: type[BaseState],
+    steps_owner: type[BaseState],
+    steps: list[str],
+) -> None:
+    """A background handler calling super() runs the overridden handler in the same task.
+
+    Args:
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+        state_cls: The state overriding the background handler.
+        steps_owner: The state storing the recorded steps.
+        steps: The steps both handlers record, in order.
+    """
+    state_token = BaseStateToken(ident=token, cls=state_cls)
+    async with state_manager.modify_state(state_token) as root:
+        proxy = StateProxy(root.get_substate(state_cls.get_full_name().split(".")))
+
+    await state_cls.save.fn(proxy)  # pyright: ignore [reportAttributeAccessIssue]
+
+    async with state_manager.modify_state(state_token) as root:
+        owner = root.get_substate(steps_owner.get_full_name().split("."))
+        assert owner.steps == steps  # pyright: ignore [reportAttributeAccessIssue]
 
 
 @pytest.mark.asyncio
@@ -1502,3 +1658,136 @@ async def test_immutable_mutable_proxy_async_context_dict_view_paths(
     ) as state:
         assert isinstance(state, NestedMutableProxyState)
         assert state.data == {"a": {"x": 10}, "b": {"y": 20}}
+
+
+@pytest.mark.asyncio
+async def test_proxy_context_sets_and_clears_locked_root(
+    attached_mock_event_context: EventContext,
+):
+    """``async with self`` marks the context's locked root for its duration.
+
+    Args:
+        attached_mock_event_context: The attached event context fixture.
+    """
+    state_proxy = StateProxy(ProxyTestState())
+    assert attached_mock_event_context.locked_root is None
+    async with state_proxy as mutable:
+        locked_root = attached_mock_event_context.locked_root
+        assert locked_root is not None
+        assert locked_root is mutable.__wrapped__._get_root_state()  # pyright: ignore[reportAttributeAccessIssue]
+    assert attached_mock_event_context.locked_root is None
+
+
+class AugmentedAssignState(BaseState):
+    """A test state with container vars mutated through augmented assignment."""
+
+    items: list[int] = [1]
+    selected: set[int] = {1}
+    mapping: dict[str, int] = {"a": 1}
+
+
+def test_mutable_proxy_inplace_list_operations_mark_dirty() -> None:
+    """`+=` and `*=` on a proxied list mark the field dirty.
+
+    The mutation is applied through a local alias of the state var, which is the
+    shape that used to bypass dirty tracking: `items = state.items` holds the
+    proxy, so the augmented assignment never goes through `__setattr__`.
+    """
+    state = AugmentedAssignState()
+    state._clean()
+
+    items = state.items
+    items += [2]
+    assert state.dirty_vars == {"items"}
+    assert state.items == [1, 2]
+    assert state.get_delta() == {
+        AugmentedAssignState.get_full_name(): {"items" + FIELD_MARKER: [1, 2]},
+    }
+
+    # Start from a clean state so a missing mark in `*=` cannot hide behind the
+    # dirty flag that `+=` just set.
+    state._clean()
+    items = state.items
+    items *= 2
+    assert state.dirty_vars == {"items"}
+    assert state.items == [1, 2, 1, 2]
+
+
+def test_mutable_proxy_inplace_set_operations_mark_dirty() -> None:
+    """`|=`, `&=`, `-=` and `^=` on a proxied set mark the field dirty."""
+    state = AugmentedAssignState()
+    state._clean()
+
+    selected = state.selected
+    selected |= {2}
+    assert state.dirty_vars == {"selected"}
+    assert state.selected == {1, 2}
+    assert state.get_delta() == {
+        AugmentedAssignState.get_full_name(): {"selected" + FIELD_MARKER: {1, 2}},
+    }
+
+    # Each operator starts from a clean state, otherwise the dirty flag left by
+    # the previous one would make the assertion pass unconditionally.
+    state._clean()
+    selected = state.selected
+    selected &= {2}
+    assert state.dirty_vars == {"selected"}
+    assert state.selected == {2}
+
+    state._clean()
+    selected = state.selected
+    selected ^= {3}
+    assert state.dirty_vars == {"selected"}
+    assert state.selected == {2, 3}
+
+    state._clean()
+    selected = state.selected
+    selected -= {2}
+    assert state.dirty_vars == {"selected"}
+    assert state.selected == {3}
+
+
+def test_mutable_proxy_inplace_dict_operations_mark_dirty() -> None:
+    """`|=` on a proxied dict marks the field dirty."""
+    state = AugmentedAssignState()
+    state._clean()
+
+    mapping = state.mapping
+    mapping |= {"b": 2}
+    assert state.dirty_vars == {"mapping"}
+    assert state.mapping == {"a": 1, "b": 2}
+    assert state.get_delta() == {
+        AugmentedAssignState.get_full_name(): {
+            "mapping" + FIELD_MARKER: {"a": 1, "b": 2},
+        },
+    }
+
+
+def test_immutable_mutable_proxy_inplace_operations_raise(
+    attached_mock_event_context: EventContext,
+) -> None:
+    """Augmented assignment outside a mutable context leaves the state untouched.
+
+    Args:
+        attached_mock_event_context: The attached event context.
+    """
+    state = AugmentedAssignState()
+    proxy = StateProxy(state)
+
+    items = proxy.items
+    assert isinstance(items, ImmutableMutableProxy)
+    with pytest.raises(ImmutableStateError):
+        items += [2]
+
+    selected = proxy.selected
+    with pytest.raises(ImmutableStateError):
+        selected |= {2}
+
+    mapping = proxy.mapping
+    with pytest.raises(ImmutableStateError):
+        mapping |= {"b": 2}
+
+    assert state.items == [1]
+    assert state.selected == {1}
+    assert state.mapping == {"a": 1}
+    assert not state.dirty_vars

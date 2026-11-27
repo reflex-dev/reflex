@@ -11,6 +11,7 @@ import pytest
 from reflex_base import constants
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.registry import RegistrationContext
+from reflex_base.session import SessionToken
 
 import reflex as rx
 from reflex.istate import shared as shared_module
@@ -65,7 +66,8 @@ def _mock_app(token_manager) -> tuple[Mock, list[str]]:
     modified_tokens: list[str] = []
 
     @asynccontextmanager
-    async def modify_state(token, previous_dirty_vars=None):
+    async def modify_state(token, previous_dirty_vars=None, *, session_token):
+        assert session_token is SessionToken.SYSTEM
         modified_tokens.append(token.ident)
         yield Mock()
 

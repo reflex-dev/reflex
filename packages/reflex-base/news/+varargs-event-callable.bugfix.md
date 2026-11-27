@@ -1,0 +1,1 @@
+A callable passed to an event trigger gets the trigger's arguments only through its positional parameters: `lambda *args: ...` gets all of them, even none, and `lambda key, **kwargs: ...` or `lambda key, *, flag=1: ...` no longer raises `TypeError`. A callable with a keyword-only parameter that has no default now fails when the page is built, with an error saying how to fix it.

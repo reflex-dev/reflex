@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
 from reflex_base import constants
@@ -15,6 +15,56 @@ from reflex_base.vars.base import VarData
 if TYPE_CHECKING:
     from reflex.compiler.utils import _ImportDict
     from reflex_base.components.component import Component
+
+
+_STATE_HOOK = re.compile(
+    r'const (\w+) = useStateContext\(("[^"]*")(?:, (\[[^\]]*\]))?\)'
+)
+
+
+def _merge_state_hooks(
+    hooks: dict[str, VarData | None],
+) -> dict[str, VarData | None]:
+    """Merge the field subscriptions to one state into a single hook.
+
+    A hook without a field list reads the whole substate, so it wins over the
+    field lists for the same state.
+
+    Args:
+        hooks: The hooks of one component.
+
+    Returns:
+        The hooks with one ``useStateContext`` call per state.
+    """
+    merged: dict[str, VarData | None] = {}
+    # Per state variable: its first hook, the quoted state name, and the union
+    # of the field lists (None once a hook reads the whole substate).
+    states: dict[str, tuple[str, str, dict[str, None] | None]] = {}
+    for hook, data in hooks.items():
+        match = _STATE_HOOK.fullmatch(hook) if "useStateContext(" in hook else None
+        if match is None:
+            merged[hook] = data
+            continue
+        var_name, state_name, field_list = match.groups()
+        fields = None if field_list is None else dict.fromkeys(json.loads(field_list))
+        if (first := states.get(var_name)) is None:
+            states[var_name] = (hook, state_name, fields)
+            merged[hook] = data
+        elif first[2] is not None:
+            states[var_name] = (
+                first[0],
+                state_name,
+                None if fields is None else first[2] | fields,
+            )
+    if len(merged) == len(hooks):
+        return hooks
+    first_hooks = {}
+    for var_name, (first, state_name, fields) in states.items():
+        args = (
+            state_name if fields is None else f"{state_name}, {json.dumps([*fields])}"
+        )
+        first_hooks[first] = f"const {var_name} = useStateContext({args})"
+    return {first_hooks.get(hook, hook): data for hook, data in merged.items()}
 
 
 class _RenderUtils:
@@ -200,17 +250,19 @@ if (typeof window !== "undefined") {{
   const loaders = {{
 {loaders}
   }};
-  let pending;
-  window.__reflex_load = () => {{
-    if (!pending) {{
-      pending = Promise.all(Object.entries(loaders).map(async ([name, load]) => {{
-        window.__reflex[name] = await load();
-      }})).catch((error) => {{
-        pending = undefined;
-        throw error;
-      }});
-    }}
-    return pending;
+  const pending = Object.create(null);
+  window.__reflex_load = (libraries = Object.keys(loaders)) => {{
+    return Promise.all(libraries.filter((name) => Object.hasOwn(loaders, name) && !Object.hasOwn(window.__reflex, name)).map((name) => {{
+      if (!pending[name]) {{
+        pending[name] = loaders[name]().then((module) => {{
+          window.__reflex[name] = module;
+        }}).catch((error) => {{
+          delete pending[name];
+          throw error;
+        }});
+      }}
+      return pending[name];
+    }}));
   }};
 }}
 """
@@ -447,6 +499,8 @@ export function getConnectErrors() {{
 
 export function UploadFilesProvider({{ children }}) {{
   const [filesById, setFilesById] = useState({{}})
+  // Serialized callbacks run outside components and read the current selection.
+  refs["__upload_files"] = filesById;
   refs["__clear_selected_files"] = (id) => setFilesById(filesById => {{
     const newFilesById = {{...filesById}}
     delete newFilesById[id]
@@ -598,6 +652,7 @@ def page_template(
     hooks: dict[str, VarData | None],
     render: dict[str, Any],
     route: str = "",
+    client_state_owns: Sequence[str] = (),
 ):
     """Template for a single react page.
 
@@ -625,6 +680,10 @@ def page_template(
             entirely — ``page_template`` ships in ``reflex-base``, so an
             out-of-tree caller predating the parameter keeps working and gets
             the pre-existing unnamed ``Component``.
+        client_state_owns: The local client state names the page owns. When
+            given, the exported component is ``Component`` wrapped in a client
+            state scope claiming them, so hooks in the page body resolve inside
+            it.
 
     Returns:
         Rendered React page component as string.
@@ -638,6 +697,11 @@ def page_template(
         f"Component.displayName = {json.dumps(f'Component({route})')};\n"
         if route
         else ""
+    )
+    export_str = (
+        f"withClientStateScope(Component, {json.dumps(list(client_state_owns))})"
+        if client_state_owns
+        else "Component"
     )
     return f"""{imports_str}
 
@@ -653,7 +717,7 @@ function Component() {{
   )
 }}
 {display_name_str}
-export default Component;
+export default {export_str};
 """
 
 
@@ -674,19 +738,27 @@ def package_json_template(
         additional_keys: Additional keys to include in the package.json file.
 
     Returns:
-        Rendered package.json content as string.
+        Rendered package.json content as string, laid out the way bun rewrites
+        it so a later ``bun add`` does not reformat the file.
     """
     # Ensure "type" is not duplicated since it's always set to "module"
     additional_keys.pop("type", None)
-    return json.dumps({
-        "name": additional_keys.pop("name", "reflex"),
-        "type": "module",
-        "scripts": scripts,
-        "dependencies": dependencies,
-        "devDependencies": dev_dependencies,
-        "overrides": overrides,
-        **additional_keys,
-    })
+    return (
+        json.dumps(
+            {
+                "name": additional_keys.pop("name", "reflex"),
+                "type": "module",
+                "scripts": scripts,
+                "dependencies": dependencies,
+                "devDependencies": dev_dependencies,
+                "overrides": overrides,
+                **additional_keys,
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n"
+    )
 
 
 def vite_config_template(
@@ -1001,6 +1073,21 @@ def dynamic_components_module_template(
 _MEMO_WRAPPER_CALLEE_RE = re.compile(r"[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*")
 
 
+def memo_wrapper_callee(wrapper: str) -> str:
+    """Make a memo wrapper expression safe to call by appending ``(...)``.
+
+    Args:
+        wrapper: The wrapper's JS expression.
+
+    Returns:
+        The expression, parenthesized unless it is a plain identifier or
+        member chain.
+    """
+    if _MEMO_WRAPPER_CALLEE_RE.fullmatch(wrapper):
+        return wrapper
+    return f"({wrapper})"
+
+
 def _render_memo_component(component: dict[str, Any]) -> str:
     """Render the ``export const`` statement for one memoized component.
 
@@ -1025,8 +1112,8 @@ def _render_memo_component(component: dict[str, Any]) -> str:
     )
 }})"""
     wrapper = component.get("wrapper")
-    if wrapper and not _MEMO_WRAPPER_CALLEE_RE.fullmatch(wrapper):
-        wrapper = f"({wrapper})"
+    if wrapper:
+        wrapper = memo_wrapper_callee(wrapper)
     export_expr = f"{wrapper}{function_expr}" if wrapper else function_expr
     name = component["name"]
     # ``display_name`` is resolved by the caller (``compile_experimental_component_memo``),
@@ -1164,7 +1251,8 @@ def _render_hooks(hooks: dict[str, VarData | None]) -> str:
     """Render hooks in the order they were declared and merged.
 
     Every hook's dependencies are declared before it, so declaration order is
-    the dependency order.
+    the dependency order. The field subscriptions to one state merge into the
+    first of them, which comes before every hook that reads that state.
 
     Args:
         hooks: Dictionary of hooks to render.
@@ -1172,4 +1260,8 @@ def _render_hooks(hooks: dict[str, VarData | None]) -> str:
     Returns:
         Rendered hooks code as string.
     """
-    return "\n".join(hooks)
+    # Imported here: reflex_base.client_state imports this module.
+    from reflex_base.client_state import _check_declarations
+
+    _check_declarations(hooks)
+    return "\n".join(_merge_state_hooks(hooks))

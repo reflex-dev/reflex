@@ -5,6 +5,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from reflex_base.constants import Templates
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
@@ -12,21 +13,21 @@ import pytest
     "script",
     [
         "client_event_queue.mjs",
+        "client_session.mjs",
         "client_state_updates.mjs",
+        "client_upload.mjs",
+        "client_upload_session.mjs",
         "state_string_helpers.mjs",
     ],
 )
 def test_client_runtime(script: str) -> None:
-    """Verify queue processing, incoming state updates, and string helpers.
+    """Verify queue processing, incoming state and upload updates, and string helpers.
 
     Args:
         script: Runtime regression script to execute.
     """
     tests = Path(__file__).parent
-    source = (
-        tests.parents[2]
-        / "packages/reflex-base/src/reflex_base/.templates/web/utils/state.js"
-    )
+    source = Templates.Dirs.WEB_TEMPLATE / "utils" / "state.js"
     result = subprocess.run(
         [
             "node",

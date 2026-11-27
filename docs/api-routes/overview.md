@@ -80,6 +80,8 @@ async def login(username: str, password: str):
 app = rx.App(api_transformer=fastapi_app)
 ```
 
+Mounting a third-party admin UI such as starlette-admin works the same way; see the [admin dashboard guide](/docs/database/admin-dashboard/).
+
 ### Using a Callable Transformer
 
 You can also provide a callable that transforms the ASGI app:

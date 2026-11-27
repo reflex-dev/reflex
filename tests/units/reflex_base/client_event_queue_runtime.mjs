@@ -3,14 +3,27 @@ import { SourceTextModule, SyntheticModule } from "node:vm";
 /** Evaluate the complete frontend module with isolated dependency stubs. */
 export async function createQueueRuntime(
   source,
-  { uploadFiles, throttle, dependencies: dependencyOverrides } = {},
+  {
+    uploadFiles,
+    throttle,
+    dependencies: dependencyOverrides,
+    io,
+    env,
+    browser,
+    initialState = {},
+  } = {},
 ) {
   const unused = () => {
     throw new Error("Unexpected frontend dependency in queue test");
   };
   const app = {
-    initialEvents: () => [],
-    initialState: {},
+    initialEvents: (first) => [
+      {
+        name: "reflex___state.test.hydrate_and_load",
+        payload: first ? { hashes: { test_state: "compiled-defaults" } } : {},
+      },
+    ],
+    initialState,
     onLoadInternalEvent: unused,
     state_name: "test_state",
     exception_state_name: "test_exception_state",
@@ -23,10 +36,11 @@ export async function createQueueRuntime(
       document: {},
       localStorage: { clear() {}, removeItem() {} },
       sessionStorage: { clear() {}, removeItem() {} },
+      ...browser,
     },
-    "socket.io-client": { default: unused },
+    "socket.io-client": { default: io ?? unused },
     mergician: { mergician: unused },
-    "$/env.json": { default: {} },
+    "$/env.json": { default: env ?? {} },
     "universal-cookie": {
       default: class {
         remove() {}
@@ -45,6 +59,13 @@ export async function createQueueRuntime(
       useParams: () => ({}),
     },
     "$/utils/context": app,
+    "$/utils/client_state": {
+      CLIENT_STATE_REF: "__client_state",
+      getClientState: unused,
+      // Published on `refs` when the module loads, so it has to answer.
+      getClientStore: () => ({}),
+      setClientState: unused,
+    },
     "$/utils/context-registry": {
       app,
       eventLoop: { addEvents: unused },
@@ -66,6 +87,8 @@ export { event_queue };
   );
   const linked = new Map();
   await module.link((specifier) => {
+    // state.js imports itself to hand its exports to server-provided scripts.
+    if (specifier === "$/utils/state") return module;
     if (!linked.has(specifier)) {
       const exports = dependencies[specifier];
       if (!exports)

@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import functools
-import inspect
 from collections.abc import Callable, Iterable
 from hashlib import md5
 from typing import Any
 
 from reflex_base.components.component import Component, field
 from reflex_base.components.tags import IterTag
+from reflex_base.components.tags.iter_tag import _render_fn_params
 from reflex_base.constants import MemoizationMode
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.utils import types
@@ -80,7 +80,7 @@ class Foreach(Component):
         # noqa: DAR401 with_traceback
         # noqa: DAR402 UntypedVarError
         """
-        from reflex_base.vars import ArrayVar, ObjectVar, StringVar
+        from reflex_base.vars import ArrayVar, ObjectVar, SetVar, StringVar
 
         from reflex.state import ComponentState
 
@@ -111,6 +111,9 @@ class Foreach(Component):
         if isinstance(iterable, StringVar):
             iterable = _string_chars_operation(iterable)
 
+        if isinstance(iterable, SetVar):
+            iterable = iterable.to_array()
+
         if not isinstance(iterable, ArrayVar):
             msg = (
                 f"Could not foreach over var `{iterable!s}` of type {iterable._var_type}. "
@@ -140,8 +143,7 @@ class Foreach(Component):
     def _render(self) -> IterTag:
         props = {}
 
-        render_sig = inspect.signature(self.render_fn)
-        params = list(render_sig.parameters.values())
+        params = _render_fn_params(self.render_fn)
 
         # Validate the render function signature.
         if len(params) == 0 or len(params) > 2:

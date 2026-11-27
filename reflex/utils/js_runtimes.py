@@ -251,14 +251,14 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
     Raises:
         SystemExit: If the script fails to download.
     """
-    import httpx
+    import httpx2
 
     # Download the script
     logger.debug(f"Downloading {url}")
     try:
         response = net.get(url)
         response.raise_for_status()
-    except httpx.HTTPError as e:
+    except httpx2.HTTPError as e:
         logger.error(
             f"Failed to download bun install script. You can install or update bun manually from https://bun.com \n{e}"
         )
@@ -479,8 +479,8 @@ def _existing_web_package_sections() -> tuple[set[str], set[str]]:
     if not web_pkg_json_path.exists():
         return set(), set()
     try:
-        data = json.loads(web_pkg_json_path.read_text())
-    except (json.JSONDecodeError, OSError) as e:
+        data = json.loads(web_pkg_json_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as e:
         logger.warning(
             f"Failed to read {web_pkg_json_path}: {e}; skipping existing package check."
         )

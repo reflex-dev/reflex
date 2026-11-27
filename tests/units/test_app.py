@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import asyncio
-import builtins
 import contextlib
 import contextvars
+import dataclasses
 import functools
 import io
 import json
@@ -14,19 +14,19 @@ import pickle
 import re
 import tempfile
 import threading
+import traceback
 import unittest.mock
 import uuid
 from collections.abc import AsyncGenerator, Generator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import nullcontext as does_not_raise
-from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock, Mock
 
+import httpx2
 import pytest
 import pytest_asyncio
-import reflex_base
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
@@ -34,12 +34,15 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanE
 from pytest_mock import MockerFixture
 from reflex_base import otel
 from reflex_base.components.component import Component
+from reflex_base.constants import Templates
 from reflex_base.constants.state import FIELD_MARKER
-from reflex_base.event import Event
+from reflex_base.event import Event, EventSpec
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
+from reflex_base.event.processor.event_processor import QueueShutDown
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
 from reflex_base.registry import RegistrationContext
+from reflex_base.session import SessionToken, SessionTokenManager
 from reflex_base.style import Style
 from reflex_base.utils import exceptions, format, memo_paths
 from reflex_base.utils.imports import ImportVar
@@ -47,6 +50,7 @@ from reflex_base.utils.types import ASGIApp, Receive, Scope, Send
 from reflex_base.vars.base import computed_var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
+from reflex_components_core.core import _upload as upload_module
 from reflex_components_core.core.upload import selected_files
 from reflex_components_radix.themes.typography.text import Text
 from reflex_otel import ReflexInstrumentor
@@ -58,12 +62,12 @@ from starlette.exceptions import HTTPException
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse, PlainTextResponse, StreamingResponse
-from starlette.routing import Route
+from starlette.routing import Mount, Route
 from starlette.testclient import TestClient
-from starlette_admin.auth import AuthProvider
+from starlette.websockets import WebSocketDisconnect
 
 import reflex as rx
-from reflex import AdminDash, constants
+from reflex import constants
 from reflex._upload import upload
 from reflex.app import (
     App,
@@ -75,6 +79,7 @@ from reflex.app import (
     _RootMiddleware,
     _sio_dumps,
     _sio_loads,
+    _SocketSession,
     default_overlay_component,
 )
 from reflex.compiler.compiler import (
@@ -90,8 +95,10 @@ from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
+from reflex.istate.shared import UPDATE_OTHER_CLIENT_TASKS
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.model import Model
+from reflex.session_middleware import SessionMiddleware
 from reflex.state import (
     BaseState,
     OnLoadInternalState,
@@ -101,9 +108,16 @@ from reflex.state import (
 )
 from reflex.utils import build
 from reflex.utils import exec as exec_utils
-from reflex.utils.token_manager import RedisTokenManager, SocketRecord
+from reflex.utils.token_manager import (
+    LocalTokenManager,
+    RedisTokenManager,
+    SocketRecord,
+)
+from tests.units.exception_handler_helpers import logged
+from tests.units.field_errors import backend_var_error
 
 from .conftest import active_tracer, chdir, metric_points
+from .mock_redis import mock_redis
 from .states import GenState
 from .states.upload import (
     ChildFileUploadState,
@@ -115,7 +129,7 @@ from .states.upload import (
 if TYPE_CHECKING:
     from multiprocessing.connection import Connection
 
-    from sqlalchemy.engine.base import Engine
+    from tests.units.exception_handler_helpers import TypeCheckingOnlyError
 
 
 class EmptyState(BaseState):
@@ -194,68 +208,6 @@ def test_model() -> type[Model]:
     return TestModel
 
 
-@pytest.fixture(scope="session")
-def test_model_auth() -> type[Model]:
-    """A default model.
-
-    Returns:
-        A default model.
-    """
-
-    class TestModelAuth(Model, table=True):
-        """A test model with auth."""
-
-    return TestModelAuth
-
-
-@pytest.fixture
-def test_get_engine():
-    """A default database engine.
-
-    Returns:
-        A default database engine.
-    """
-    import sqlmodel
-
-    enable_admin = True
-    url = "sqlite:///test.db"
-    return sqlmodel.create_engine(
-        url,
-        echo=False,
-        connect_args={"check_same_thread": False} if enable_admin else {},
-    )
-
-
-@pytest.fixture
-def test_custom_auth_admin() -> type[AuthProvider]:
-    """A default auth provider.
-
-    Returns:
-        A default default auth provider.
-    """
-    from starlette_admin.auth import AuthProvider
-
-    class TestAuthProvider(AuthProvider):
-        """A test auth provider."""
-
-        login_path: str = "/login"
-        logout_path: str = "/logout"
-
-        def login(self):  # pyright: ignore [reportIncompatibleMethodOverride]
-            """Login."""
-
-        def is_authenticated(self):  # pyright: ignore [reportIncompatibleMethodOverride]
-            """Is authenticated."""
-
-        def get_admin_user(self):  # pyright: ignore [reportIncompatibleMethodOverride]
-            """Get admin user."""
-
-        def logout(self):  # pyright: ignore [reportIncompatibleMethodOverride]
-            """Logout."""
-
-    return TestAuthProvider
-
-
 def test_app_warns_about_a_deprecated_duration_name_at_startup(
     monkeypatch: pytest.MonkeyPatch,
 ):
@@ -287,23 +239,6 @@ def test_default_app(app: App):
     assert app._middlewares == []
     assert app.style == Style()
     assert app.admin_dash is None
-
-
-def test_setup_admin_dash_skips_optional_imports_without_config(
-    app: App, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """A default app must not load the optional admin and database stacks."""
-    real_import = builtins.__import__
-
-    def import_without_admin(name, *args, **kwargs):
-        if name.startswith("starlette_admin") or name == "reflex.model":
-            msg = f"unexpected optional import: {name}"
-            raise AssertionError(msg)
-        return real_import(name, *args, **kwargs)
-
-    monkeypatch.setattr(builtins, "__import__", import_without_admin)
-
-    app._setup_admin_dash()
 
 
 def test_multiple_states_error(
@@ -385,6 +320,66 @@ def test_prepare_404_page_empty_string_metadata_uses_defaults():
 
     assert prepared.page.title == constants.Page404.TITLE
     assert prepared.page.description == constants.Page404.DESCRIPTION
+
+
+class BackendMetaState(BaseState):
+    """A state with a backend var, for page metadata misuse tests."""
+
+    _meta: str = "x"
+
+
+@pytest.mark.parametrize("key", ["title", "description", "image"])
+def test_add_page_backend_var_meta_raises_format_error(
+    app: App, index_page: ComponentCallable, key: str
+):
+    """A backend var passed as page metadata raises when the page is added.
+
+    Args:
+        app: The app to test.
+        index_page: The index page.
+        key: The page metadata argument given the backend var.
+    """
+    with pytest.raises(
+        exceptions.BackendVarFormatError,
+        match=r"Backend var 'BackendMetaState\._meta' exists only",
+    ):
+        app.add_page(index_page, route="/meta", **{key: BackendMetaState._meta})  # pyright: ignore[reportArgumentType]
+
+
+def test_add_page_backend_var_meta_content_raises_format_error(
+    app: App, index_page: ComponentCallable
+):
+    """A backend var in a meta tag's content raises when the page is compiled.
+
+    Args:
+        app: The app to test.
+        index_page: The index page.
+    """
+    app.add_page(
+        index_page,
+        route="/meta",
+        meta=[{"name": "x", "content": BackendMetaState._meta}],
+    )
+    with pytest.raises(exceptions.BackendVarFormatError) as exc_info:
+        app._compile_page("meta")
+    assert str(exc_info.value) == backend_var_error("BackendMetaState._meta")
+
+
+@pytest.mark.parametrize("as_list", [False, True])
+def test_add_page_backend_var_on_load_raises_format_error(
+    app: App, index_page: ComponentCallable, as_list: bool
+):
+    """A backend var passed as on_load raises when the page is added.
+
+    Args:
+        app: The app to test.
+        index_page: The index page.
+        as_list: Whether on_load is given as a list.
+    """
+    on_load = [BackendMetaState._meta] if as_list else BackendMetaState._meta
+    with pytest.raises(exceptions.BackendVarFormatError) as exc_info:
+        app.add_page(index_page, route="/meta", on_load=on_load)  # pyright: ignore[reportArgumentType]
+    assert str(exc_info.value) == backend_var_error("BackendMetaState._meta")
 
 
 def test_add_page_set_route(app: App, index_page: ComponentCallable):
@@ -540,67 +535,6 @@ def test_add_duplicate_page_route_error(app: App, first_page, second_page, route
         app.add_page(second_page, route="/" + route.strip("/") if route else None)
 
 
-@pytest.mark.skipif(
-    not find_spec("starlette_admin")
-    or not find_spec("sqlmodel")
-    or not find_spec("pydantic"),
-    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
-)
-def test_initialize_with_admin_dashboard(
-    test_model: type[Model], mocker: MockerFixture
-):
-    """Test setting the admin dashboard of an app.
-
-    Args:
-        test_model: The default model.
-        mocker: pytest mocker object.
-    """
-    conf = rx.Config(app_name="testing", db_url="sqlite:///reflex.db")
-    mocker.patch("reflex_base.config._get_config", return_value=conf)
-    app = App(admin_dash=AdminDash(models=[test_model]))
-    assert app.admin_dash is not None
-    assert len(app.admin_dash.models) > 0
-    assert app.admin_dash.models[0] == test_model
-
-
-@pytest.mark.skipif(
-    not find_spec("starlette_admin")
-    or not find_spec("sqlmodel")
-    or not find_spec("pydantic"),
-    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
-)
-@pytest.mark.parametrize("with_transformer", [False, True])
-def test_admin_dashboard_routes_remain_reversible(
-    test_model: type[Model],
-    mocker: MockerFixture,
-    tmp_path: Path,
-    with_transformer: bool,
-):
-    """Serve admin pages through the public ASGI app with working named routes.
-
-    Args:
-        test_model: A model to list in the dashboard.
-        mocker: The mock fixture for skipping frontend compilation.
-        tmp_path: The directory for the dashboard database.
-        with_transformer: Whether another Starlette application wraps the API.
-    """
-    conf = rx.Config(app_name="testing", db_url=f"sqlite:///{tmp_path / 'admin.db'}")
-    mocker.patch("reflex_base.config._get_config", return_value=conf)
-    app = App(
-        admin_dash=AdminDash(models=[test_model]),
-        api_transformer=Starlette() if with_transformer else None,
-    )
-    mocker.patch.object(app, "_compile")
-    api = app()
-    router = app.api_transformer or app._api
-    assert isinstance(router, Starlette)
-    assert str(router.url_path_for("admin:index")) == "/admin/"
-    with TestClient(api) as client:
-        response = client.get("/admin/")
-    assert response.status_code == 200
-    assert "Reflex Admin Dashboard" in response.text
-
-
 def test_api_transformer_lifespans_run(mocker: MockerFixture):
     """Send ASGI lifespan events through the api_transformer apps.
 
@@ -651,6 +585,28 @@ def test_api_transformer_lifespans_run(mocker: MockerFixture):
         assert client.get("/db").json() == {"db": "conn", "own_app": True}
         assert client.get("/ping").text == '"pong"'
     assert events[4:] == ["callable http", "outer stop", "inner stop", "reflex stop"]
+
+
+def test_api_transformer_named_routes_resolve(mocker: MockerFixture):
+    """Resolve the named routes of a Starlette api_transformer through the served app.
+
+    Admin UIs mounted this way, such as starlette-admin, build every link with url_for.
+
+    Args:
+        mocker: The mock fixture for skipping frontend compilation.
+    """
+
+    async def index(request: Request) -> PlainTextResponse:  # noqa: RUF029
+        return PlainTextResponse(str(request.url_for("admin:index")))
+
+    transformer = Starlette(
+        routes=[Mount("/admin", routes=[Route("/", index, name="index")], name="admin")]
+    )
+    app = App(api_transformer=transformer)
+    mocker.patch.object(app, "_compile")
+
+    with TestClient(app()) as client:
+        assert client.get("/admin/").text == "http://testserver/admin/"
 
 
 @pytest.mark.parametrize("also_registered", [False, True])
@@ -814,69 +770,6 @@ def test_unhandled_route_error_gets_cors_headers(
     assert response.headers.get_list("access-control-allow-origin") == [
         "http://example.com"
     ]
-
-
-@pytest.mark.skipif(
-    not find_spec("starlette_admin")
-    or not find_spec("sqlmodel")
-    or not find_spec("pydantic"),
-    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
-)
-def test_initialize_with_custom_admin_dashboard(
-    test_get_engine: Engine,
-    test_custom_auth_admin: type[AuthProvider],
-    test_model_auth: Model,
-):
-    """Test setting the custom admin dashboard of an app.
-
-    Args:
-        test_get_engine: The default database engine.
-        test_model_auth: The default model for an auth admin dashboard.
-        test_custom_auth_admin: The custom auth provider.
-    """
-    from starlette_admin.contrib.sqla.admin import Admin
-
-    custom_auth_provider = test_custom_auth_admin()
-    custom_admin = Admin(test_get_engine, auth_provider=custom_auth_provider)
-    app = App(admin_dash=AdminDash(models=[test_model_auth], admin=custom_admin))
-    assert app.admin_dash is not None
-    assert app.admin_dash.admin is not None
-    assert len(app.admin_dash.models) > 0
-    assert app.admin_dash.models[0] == test_model_auth
-    assert app.admin_dash.admin.auth_provider == custom_auth_provider
-
-
-@pytest.mark.skipif(
-    not find_spec("starlette_admin")
-    or not find_spec("sqlmodel")
-    or not find_spec("pydantic"),
-    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
-)
-def test_initialize_admin_dashboard_with_view_overrides(
-    test_model: type[Model], mocker: MockerFixture
-):
-    """Test setting the admin dashboard of an app with view class overridden.
-
-    Args:
-        test_model: The default model.
-        mocker: pytest mocker object.
-    """
-    from starlette_admin.contrib.sqla.view import ModelView
-
-    class TestModelView(ModelView):
-        pass
-
-    conf = rx.Config(app_name="testing", db_url="sqlite:///reflex.db")
-    mocker.patch("reflex_base.config._get_config", return_value=conf)
-
-    app = App(
-        admin_dash=AdminDash(
-            models=[test_model], view_overrides={test_model: TestModelView}
-        )
-    )
-    assert app.admin_dash is not None
-    assert app.admin_dash.models == [test_model]
-    assert app.admin_dash.view_overrides[test_model] == TestModelView
 
 
 @pytest.mark.asyncio
@@ -1742,6 +1635,7 @@ async def test_upload_file_closes_form_if_response_cancelled_before_stream_start
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("attached_mock_event_context")
 async def test_upload_file_raises_client_disconnect_when_stream_send_fails(
     token: str,
 ):
@@ -1770,7 +1664,8 @@ async def test_upload_file_raises_client_disconnect_when_stream_send_fails(
 
     stream_closed = asyncio.Event()
 
-    async def enqueue_stream_delta(_token, _event):
+    async def enqueue_stream_delta(_token, _event, *, session_token):
+        assert session_token is request_mock.scope.get("reflex.session")
         try:
             yield {"state": {"ok": True}}
             await asyncio.Event().wait()
@@ -1810,6 +1705,7 @@ async def test_upload_file_raises_client_disconnect_when_stream_send_fails(
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("attached_mock_event_context")
 @pytest.mark.parametrize(
     "state",
     [FileUploadState, ChildFileUploadState, GrandChildFileUploadState],
@@ -1853,6 +1749,7 @@ async def test_upload_file_without_annotation(
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("attached_mock_event_context")
 async def test_upload_file_unknown_handler_returns_400(
     token: str,
 ):
@@ -1883,7 +1780,183 @@ async def test_upload_file_unknown_handler_returns_400(
     await app.state_manager.close()
 
 
+async def _post_failing_upload(
+    handler: str,
+    token: str,
+    processor: BaseStateEventProcessor,
+) -> tuple[httpx2.Response, list[tuple[Exception, list[str]]]]:
+    """POST an upload to a failing handler through a real ASGI app.
+
+    The transport re-raises any exception that escapes the app, which the
+    server would otherwise log a second time.
+
+    Args:
+        handler: The FileUploadState handler to upload to.
+        token: The client token.
+        processor: The event processor serving the upload.
+
+    Returns:
+        The response, and each exception the backend exception handler
+        received, with the names of its traceback's frames at that time.
+    """
+    handled: list[tuple[Exception, list[str]]] = []
+
+    def _handle(ex: Exception) -> None:
+        handled.append((ex, [f.name for f in traceback.extract_tb(ex.__traceback__)]))
+
+    processor.backend_exception_handler = _handle
+    api = Starlette(
+        routes=[
+            Route("/_upload", upload(Mock(event_processor=processor)), methods=["POST"])
+        ]
+    )
+    async with httpx2.AsyncClient(
+        transport=httpx2.ASGITransport(app=api), base_url="http://test"
+    ) as client:
+        response = await client.post(
+            "/_upload",
+            files=[("files", ("a.txt", b"data", "text/plain"))],
+            headers={
+                "reflex-client-token": token,
+                "reflex-event-handler": f"{FileUploadState.get_full_name()}.{handler}",
+            },
+        )
+    await processor.join()
+    return response, handled
+
+
 @pytest.mark.asyncio
+async def test_upload_handler_error_before_any_update_returns_500(
+    token: str,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+):
+    """A handler that raises before streaming anything gets a clean 500 response.
+
+    Args:
+        token: a Token.
+        attached_mock_base_state_event_processor: The event processor serving the upload.
+    """
+    response, handled = await _post_failing_upload(
+        "failing_upload",
+        token,
+        attached_mock_base_state_event_processor,
+    )
+    assert response.status_code == 500, response.text
+    # Handled once, by the backend exception handler, with the handler's frame.
+    ((error, frames),) = handled
+    assert isinstance(error, OSError)
+    assert "failing_upload" in frames
+
+
+@pytest.mark.asyncio
+async def test_upload_handler_error_after_update_ends_stream_with_error_frame(
+    token: str,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+):
+    """A handler that raises after streaming an update ends the stream with an error frame.
+
+    Args:
+        token: a Token.
+        attached_mock_base_state_event_processor: The event processor serving the upload.
+    """
+    response, handled = await _post_failing_upload(
+        "yield_then_fail_upload",
+        token,
+        attached_mock_base_state_event_processor,
+    )
+    assert response.status_code == 200
+    *updates, last = [json.loads(line) for line in response.text.splitlines()]
+    assert updates[0]["delta"] == {
+        FileUploadState.get_full_name(): {"img_list" + FIELD_MARKER: ["partial"]}
+    }
+    # An explicit error frame, not a truncated body.
+    assert list(last) == ["error"]
+    ((error, frames),) = handled
+    assert isinstance(error, OSError)
+    assert "yield_then_fail_upload" in frames
+
+
+async def _raise_queue_shut_down(  # noqa: RUF029
+    token: str, event: Event, session_token: SessionToken | None = None
+) -> AsyncGenerator[Any]:
+    """Fail like enqueue_stream_delta on a processor that is not running.
+
+    Args:
+        token: The client token.
+        event: The upload event.
+        session_token: The browser session of the upload.
+
+    Yields:
+        Nothing.
+
+    Raises:
+        QueueShutDown: Always, before yielding.
+    """
+    msg = "Event processor is not running, call .start(...) first."
+    raise QueueShutDown(msg)
+    yield
+
+
+def _raise_type_error(value: Any) -> str:
+    """Fail like json_dumps on a state update it cannot serialize.
+
+    Args:
+        value: The value to serialize.
+
+    Returns:
+        A plain dict (the error frame) as JSON.
+
+    Raises:
+        TypeError: For anything else, i.e. a state update.
+    """
+    if isinstance(value, dict):
+        return json.dumps(value)
+    msg = "Object of type X is not JSON serializable"
+    raise TypeError(msg)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("target", "replacement", "error"),
+    [
+        ("enqueue_stream_delta", _raise_queue_shut_down, QueueShutDown),
+        ("json_dumps", _raise_type_error, TypeError),
+    ],
+)
+async def test_upload_error_the_event_processor_did_not_report_reaches_the_server(
+    token: str,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+    monkeypatch: pytest.MonkeyPatch,
+    target: str,
+    replacement: Any,
+    error: type[Exception],
+):
+    """An upload failure the event processor never reported is not swallowed.
+
+    Args:
+        token: a Token.
+        attached_mock_base_state_event_processor: The event processor serving the upload.
+        monkeypatch: pytest monkeypatch fixture.
+        target: What fails: the processor's stream or the update serialization.
+        replacement: The failing stand-in for the target.
+        error: The exception the stand-in raises.
+    """
+    monkeypatch.setattr(
+        attached_mock_base_state_event_processor
+        if target == "enqueue_stream_delta"
+        else upload_module,
+        target,
+        replacement,
+    )
+    # It escapes the app, so the server logs it.
+    with pytest.raises(error):
+        await _post_failing_upload(
+            "upload_alias_handler", token, attached_mock_base_state_event_processor
+        )
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("attached_mock_event_context")
 @pytest.mark.parametrize(
     "state",
     [FileUploadState, ChildFileUploadState, GrandChildFileUploadState],
@@ -3770,11 +3843,12 @@ def test_call_app():
     api = app()
     assert isinstance(api, _RootMiddleware)
     assert isinstance(api.app, CORSMiddleware)
-    assert api.app.app is app._api
+    assert isinstance(api.app.app, SessionMiddleware)
+    assert api.app.app.app is app._api
 
 
 def _probe_worker_token_identity(app: App, redis: AsyncMock, sender: Connection):
-    """Run the server startup path in a forked worker and report delta routing.
+    """Run the server startup path in a forked worker and report its identities and delta routing.
 
     Args:
         app: The application created before the fork.
@@ -3788,11 +3862,14 @@ def _probe_worker_token_identity(app: App, redis: AsyncMock, sender: Connection)
             assert app.event_namespace is not None
             manager = app.event_namespace._token_manager
             assert isinstance(manager, RedisTokenManager)
+            state_manager = app.state_manager
+            assert isinstance(state_manager, StateManagerRedis)
             published = await manager.emit_lost_and_found(
                 "client", StateUpdate(delta={"state": {"count": 1}})
             )
             sender.send((
                 manager.instance_id,
+                state_manager._instance_id,
                 published,
                 redis.publish.call_args.args if published else None,
             ))
@@ -3808,9 +3885,14 @@ def _probe_worker_token_identity(app: App, redis: AsyncMock, sender: Connection)
     reason="Requires a server that forks after importing the app",
 )
 def test_forked_workers_publish_deltas_to_the_socket_owner():
-    """Give forked workers distinct identities before routing backend deltas."""
+    """Give forked workers distinct identities before routing backend deltas.
+
+    Each worker's state manager also gets its own identity, by which the other
+    workers tell its redis lock waiters from theirs.
+    """
     app = App()
-    app._state_manager = StateManagerMemory()
+    state_manager = app._state_manager = StateManagerRedis(redis=mock_redis())
+    supervisor_state_manager_id = state_manager._instance_id
     redis = AsyncMock()
     manager = RedisTokenManager(redis)
     assert app.event_namespace is not None
@@ -3821,6 +3903,7 @@ def test_forked_workers_publish_deltas_to_the_socket_owner():
     )
     workers = multiprocessing.get_context("fork")
     worker_ids = set()
+    worker_state_manager_ids = {supervisor_state_manager_id}
 
     for _ in range(2):
         receiver, sender = workers.Pipe(duplex=False)
@@ -3831,13 +3914,15 @@ def test_forked_workers_publish_deltas_to_the_socket_owner():
         sender.close()
         try:
             assert receiver.poll(10), "The forked worker did not report a result"
-            worker_id, published, publish_args = receiver.recv()
+            worker_id, state_manager_id, published, publish_args = receiver.recv()
             process.join(timeout=10)
             assert process.exitcode == 0
             assert published, "A live socket owned by another worker was discarded"
             assert worker_id != owner_id
             assert worker_id not in worker_ids
             worker_ids.add(worker_id)
+            assert state_manager_id not in worker_state_manager_ids
+            worker_state_manager_ids.add(state_manager_id)
             assert publish_args[0] == f"channel:token_manager_lost_and_found_{owner_id}"
             record = pickle.loads(publish_args[1])
             assert record.token == "client"
@@ -3850,6 +3935,7 @@ def test_forked_workers_publish_deltas_to_the_socket_owner():
             process.close()
 
     assert manager.instance_id == owner_id
+    assert state_manager._instance_id == supervisor_state_manager_id
 
 
 @pytest.fixture
@@ -4045,6 +4131,227 @@ custom_exception_handlers = {
 }
 
 
+class CustomAppError(Exception):
+    """An exception class defined outside reflex.app."""
+
+
+def custom_exception_handler_with_custom_error(exception: CustomAppError):
+    """Custom exception handler annotated with an application exception.
+
+    Args:
+        exception: The exception to handle.
+    """
+    print("Custom Backend Exception")
+    print(exception)
+
+
+def test_exception_handler_annotation_resolves_outside_reflex_app():
+    """String annotations resolve in the handler's module, not reflex.app."""
+    rx.App(
+        # A narrower annotation than ``Exception`` is the case under test.
+        frontend_exception_handler=custom_exception_handler_with_custom_error,  # pyright: ignore[reportArgumentType]
+        backend_exception_handler=custom_exception_handler_with_custom_error,  # pyright: ignore[reportArgumentType]
+    )
+
+
+class ClassBasedDecorator:
+    """Decorator that keeps ``__wrapped__`` on itself and forwards through ``__call__``."""
+
+    def __init__(self, fn):
+        """Mirror the function's metadata onto the decorator instance.
+
+        Args:
+            fn: The function to wrap.
+        """
+        functools.update_wrapper(self, fn)
+
+    def __call__(self, *args, **kwargs):
+        """Call the wrapped function.
+
+        Args:
+            *args: Positional arguments for the wrapped function.
+            **kwargs: Keyword arguments for the wrapped function.
+
+        Returns:
+            The value returned by the wrapped function.
+        """
+        return self.__wrapped__(*args, **kwargs)  # pyright: ignore[reportAttributeAccessIssue]
+
+
+class ClassCustomExceptionHandler:
+    """Handler provided as a class instead of a function or an instance."""
+
+    def __call__(self, exception: CustomAppError):
+        """Handle the exception.
+
+        Args:
+            exception: The exception to handle.
+        """
+        print("Custom Backend Exception")
+        print(exception)
+
+
+def test_exception_handler_unwraps_class_based_decorator():
+    """A decorator instance forwards to its function through ``__wrapped__``."""
+    handler = ClassBasedDecorator(custom_exception_handler_with_custom_error)
+    rx.App(frontend_exception_handler=handler, backend_exception_handler=handler)
+
+
+def test_exception_handler_rejects_class():
+    """A class is rejected because its signature is the one of its constructor."""
+    with pytest.raises(ValueError, match="does not take the required argument"):
+        rx.App(frontend_exception_handler=ClassCustomExceptionHandler)  # pyright: ignore[reportArgumentType] - the class itself is the case under test
+
+
+@logged
+def decorated_custom_exception_handler(exception: CustomAppError):
+    """Handler decorated in another module.
+
+    Args:
+        exception: The exception to handle.
+    """
+    print("Custom Backend Exception")
+    print(exception)
+
+
+def quoted_custom_exception_handler(exception: "CustomAppError"):  # noqa: UP037  # the quotes are the case under test
+    """Handler with an explicitly quoted forward reference.
+
+    Args:
+        exception: The exception to handle.
+    """
+    print("Custom Backend Exception")
+    print(exception)
+
+
+class CallableCustomExceptionHandler:
+    """Handler provided as a callable instance."""
+
+    def __call__(self, exception: CustomAppError):
+        """Handle the exception.
+
+        Args:
+            exception: The exception to handle.
+        """
+        print("Custom Backend Exception")
+        print(exception)
+
+
+class DecoratedCallableCustomExceptionHandler:
+    """Handler provided as a callable instance whose ``__call__`` is decorated."""
+
+    @logged
+    def __call__(self, exception: CustomAppError):
+        """Handle the exception.
+
+        Args:
+            exception: The exception to handle.
+        """
+        print("Custom Backend Exception")
+        print(exception)
+
+
+@pytest.mark.parametrize(
+    "handler_fn",
+    [
+        pytest.param(decorated_custom_exception_handler, id="decorated"),
+        pytest.param(quoted_custom_exception_handler, id="quoted"),
+        pytest.param(CallableCustomExceptionHandler(), id="callable_instance"),
+        pytest.param(
+            DecoratedCallableCustomExceptionHandler(),
+            id="decorated_callable_instance",
+        ),
+    ],
+)
+def test_exception_handler_annotation_resolves_in_handler_module(handler_fn):
+    """Annotations resolve for decorated, quoted and callable-instance handlers.
+
+    Args:
+        handler_fn: The exception handler to validate.
+    """
+    rx.App(frontend_exception_handler=handler_fn, backend_exception_handler=handler_fn)
+
+
+def backend_exception_handler_with_invalid_string_return_annotation(
+    exception: CustomAppError,
+) -> int:
+    """Backend handler whose string return annotation resolves to an invalid type.
+
+    Args:
+        exception: The exception to handle.
+
+    Returns:
+        int: The wrong return type.
+    """
+    print("Custom Backend Exception")
+    print(exception)
+    return 0
+
+
+class BackendCallableExceptionHandlerWithStringReturnAnnotation:
+    """Backend handler whose decorated ``__call__`` has a string return annotation."""
+
+    @logged
+    def __call__(self, exception: CustomAppError) -> EventSpec | None:
+        """Handle the exception.
+
+        Args:
+            exception: The exception to handle.
+        """
+        print("Custom Backend Exception")
+        print(exception)
+
+
+def test_backend_exception_handler_return_annotation_is_resolved():
+    """A string return annotation is resolved before it is validated."""
+    rx.App(
+        backend_exception_handler=BackendCallableExceptionHandlerWithStringReturnAnnotation()
+    )
+
+
+def test_backend_exception_handler_rejects_invalid_resolved_return_annotation():
+    """An invalid return annotation is rejected after resolution."""
+    # An ``int`` return type is the case under test.
+    handler = backend_exception_handler_with_invalid_string_return_annotation
+    with pytest.raises(ValueError, match="has the wrong return type"):
+        rx.App(backend_exception_handler=handler)  # pyright: ignore[reportArgumentType]
+
+
+def frontend_handler_with_type_checking_only_return(
+    exception: Exception,
+) -> TypeCheckingOnlyError | None:
+    """Frontend handler whose return annotation is defined only for type checkers.
+
+    Args:
+        exception: The exception to handle.
+    """
+    print(exception)
+
+
+def frontend_handler_with_type_checking_only_exception(
+    exception: TypeCheckingOnlyError,
+):
+    """Frontend handler whose exception annotation is defined only for type checkers.
+
+    Args:
+        exception: The exception to handle.
+    """
+    print(exception)
+
+
+def test_exception_handler_allows_type_checking_only_return_annotation():
+    """A name imported only under TYPE_CHECKING does not stop the validation."""
+    handler = frontend_handler_with_type_checking_only_return
+    rx.App(frontend_exception_handler=handler)  # pyright: ignore[reportArgumentType]
+
+
+def test_exception_handler_rejects_type_checking_only_exception_annotation():
+    """An exception annotation that cannot be resolved is rejected, not crashed on."""
+    with pytest.raises(ValueError, match="has the wrong type for exception argument"):
+        handler = frontend_handler_with_type_checking_only_exception
+        rx.App(frontend_exception_handler=handler)  # pyright: ignore[reportArgumentType]
+
+
 @pytest.mark.parametrize(
     ("handler_fn", "expected"),
     [
@@ -4220,10 +4527,11 @@ async def test_app_modify_state_clean(token: str, substate: bool, frontend: bool
             exp_delta = {Sub.get_full_name(): {"sub_count_rx_state_": 1}}
         else:
             exp_delta = {Base.get_full_name(): {"count_rx_state_": 1}}
-        assert (
-            app._event_namespace.emit_update.call_args.kwargs["update"].delta
-            == exp_delta
-        )
+        assert app._event_namespace.emit_update.call_args.kwargs == {
+            "update": StateUpdate(delta=exp_delta),
+            "token": token,
+            "suppress_warnings": True,
+        }
     else:
         assert app._event_namespace.emit_update.call_count == 0
 
@@ -4381,6 +4689,171 @@ async def test_modify_state_rebinds_event_context_to_token(
         assert EventContext.get().token == "token-A"
     finally:
         EventContext.reset(actor_token)
+
+
+@pytest.mark.parametrize(
+    "authorization", ["inherited", "explicit", "system", "anonymous", "foreign"]
+)
+async def test_modify_state_session_authorization(
+    app_with_processor: App,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    authorization: str,
+):
+    """Out-of-band state access validates inherited and explicit sessions before reads.
+
+    Args:
+        app_with_processor: The application fixture.
+        monkeypatch: Environment fixture.
+        mocker: Mock fixture.
+        authorization: How the caller supplies its session.
+    """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "enforce")
+    app_with_processor._state_manager = StateManagerMemory()
+    app_with_processor._event_namespace = AsyncMock()
+    manager = SessionTokenManager("modify", secrets=(b"s" * 32,))
+    session = manager.create()
+    token = manager.create_client_token(session)
+    assert app_with_processor._event_processor is not None
+    root = app_with_processor._event_processor._root_context
+    assert root is not None
+    root = dataclasses.replace(
+        root,
+        session_token=session if authorization == "inherited" else SessionToken.SYSTEM,
+    )
+    kwargs = (
+        {}
+        if authorization == "inherited"
+        else {
+            "session_token": {
+                "explicit": session,
+                "system": SessionToken.SYSTEM,
+                "anonymous": None,
+                "foreign": manager.create(),
+            }[authorization],
+        }
+    )
+    modify = mocker.spy(app_with_processor.state_manager, "modify_state_with_links")
+    with root:
+        if authorization in {"anonymous", "foreign"}:
+            with pytest.raises(exceptions.SessionAuthorizationError):
+                async with app_with_processor.modify_state(
+                    BaseStateToken(ident=token, cls=EmptyState), **kwargs
+                ):
+                    pytest.fail("Unauthorized state access was permitted")
+            modify.assert_not_called()
+        else:
+            async with app_with_processor.modify_state(
+                BaseStateToken(ident=token, cls=EmptyState), **kwargs
+            ):
+                assert EventContext.get().session_token is (
+                    SessionToken.SYSTEM if authorization == "system" else session
+                )
+                assert EventContext.get().token == token
+            modify.assert_called_once()
+        assert EventContext.get() is root
+
+
+async def test_modify_state_emits_only_to_connected_tokens(
+    monkeypatch: pytest.MonkeyPatch,
+    clean_registration_context: RegistrationContext,
+    caplog: pytest.LogCaptureFixture,
+):
+    """Modify state emits only to tokens that a browser connected with.
+
+    A shared state token has no socket: its linked clients get the update
+    through the shared state fan-out. A browser token that another client links
+    to, or whose state expired while it stayed connected, still gets the emit.
+    Modify state logs no warning for a token without a socket, while a regular
+    emit to a browser that disconnected still does.
+
+    Args:
+        monkeypatch: Restore root metadata changed by defining a shared state.
+        clean_registration_context: Isolate the temporary shared state class.
+        caplog: Capture the warnings of the app.
+    """
+    links = State.get_fields()["_reflex_internal_links"]
+    monkeypatch.setattr(links, "default", links.default)
+    monkeypatch.setattr(links, "default_factory", links.default_factory)
+    monkeypatch.setattr(
+        State, "_always_dirty_substates", State._always_dirty_substates.copy()
+    )
+
+    class CounterState(rx.SharedState):
+        count: int = 0
+
+    app = App(_state=State)
+    state_manager = app._state_manager = StateManagerMemory()
+    app._event_processor = Mock(
+        _root_context=EventContext(
+            token="", state_manager=state_manager, enqueue_impl=AsyncMock()
+        )
+    )
+    event_namespace = app._event_namespace = EventNamespace("/event", app)
+    event_namespace._token_manager = LocalTokenManager()
+    emit = event_namespace.emit = AsyncMock()
+    with app.set_contexts():
+        for token in ("client", "target", "expired", "gone"):
+            await event_namespace.link_token_to_sid(f"{token}-sid", token)
+    await event_namespace._token_manager.disconnect_token("gone", "gone-sid")
+
+    async def modify(token: str, count: int | None = None, link: str = "") -> list:
+        """Modify the counter of a token and wait for the shared state fan-out.
+
+        Args:
+            token: The token to modify.
+            count: The count to set, if any.
+            link: The token to link the counter to, if any.
+
+        Returns:
+            The socket ids the updates were emitted to.
+        """
+        emit.reset_mock()
+        async with app.modify_state(
+            BaseStateToken(ident=token, cls=CounterState)
+        ) as root_state:
+            counter = await root_state.get_state(CounterState)
+            if link:
+                await counter._link_to(link)
+            if count is not None:
+                counter.count = count
+        await asyncio.gather(*UPDATE_OTHER_CLIENT_TASKS)
+        return [call.kwargs["to"] for call in emit.await_args_list]
+
+    def app_warnings() -> list[str]:
+        """Get the warnings logged by the app.
+
+        Returns:
+            The messages of the reflex.app warning records.
+        """
+        return [
+            record.getMessage()
+            for record in caplog.records
+            if record.name == "reflex.app" and record.levelno == logging.WARNING
+        ]
+
+    with caplog.at_level(logging.WARNING, logger="reflex.app"):
+        assert await modify("client", link="shared") == ["client-sid"]
+        assert await modify("client", count=1) == ["client-sid"]
+        # The shared token gets no emit; its linked client gets the fan-out.
+        assert await modify("shared", count=2) == ["client-sid"]
+        # A shared token that no client linked to yet has no socket either.
+        assert await modify("unlinked", count=3) == []
+
+        # A browser token that another client links to is still connected.
+        await modify("target", count=4)
+        await modify("client", link="target")
+        assert await modify("target", count=5) == ["target-sid", "client-sid"]
+        # A connected browser whose state expired still gets the emit.
+        state_manager._purge_token(BaseStateToken(ident="expired", cls=State))
+        assert await modify("expired", count=6) == ["expired-sid"]
+
+        assert await modify("gone", count=7) == []
+        assert app_warnings() == []
+
+        await event_namespace.emit_update(StateUpdate(), token="gone")
+    assert emit.await_count == 0
+    assert app_warnings() == ["Attempting to send delta to disconnected client 'gone'"]
 
 
 def test_set_contexts_no_event_processor(isolated_context: contextvars.Context):
@@ -4752,6 +5225,22 @@ def test_static_router_data_keeps_every_repeated_header_field(
         (1, "203.0.113.7", "10.0.0.2", "203.0.113.7"),
         (2, "6.6.6.6, 203.0.113.7, 10.0.0.2", "127.0.0.1", "203.0.113.7"),
         (2, "203.0.113.7", "10.0.0.2", "10.0.0.2"),
+        (1, "203.0.113.7:51234", "10.0.0.2", "203.0.113.7"),
+        (1, "[2001:db8::1]:443", "10.0.0.2", "2001:db8::1"),
+        (1, "[2001:db8::1]", "10.0.0.2", "2001:db8::1"),
+        (1, "2001:db8:0:0:0:0:0:1", "10.0.0.2", "2001:db8::1"),
+        (1, "6.6.6.6, not an ip <script>", "10.0.0.2", "10.0.0.2"),
+        (1, "[2001:db8::1", "10.0.0.2", "10.0.0.2"),
+        (1, "[2001:db8::1]junk", "10.0.0.2", "10.0.0.2"),
+        (1, "[2001:db8::1]:", "10.0.0.2", "10.0.0.2"),
+        (1, "203.0.113.7:garbage", "10.0.0.2", "10.0.0.2"),
+        (1, "203.0.113.7:", "10.0.0.2", "10.0.0.2"),
+        (1, "203.0.113.7:65536", "10.0.0.2", "10.0.0.2"),
+        (1, "[2001:db8::1]:100000", "10.0.0.2", "10.0.0.2"),
+        (1, "::ffff:203.0.113.7", "10.0.0.2", "203.0.113.7"),
+        (1, "[::ffff:203.0.113.7]:443", "10.0.0.2", "203.0.113.7"),
+        (1, "fe80::1%not an ip <script>", "10.0.0.2", "10.0.0.2"),
+        (1, "[fe80::1%eth0]:443", "10.0.0.2", "10.0.0.2"),
     ],
 )
 def test_static_router_data_resolves_client_ip_from_trusted_proxy_hops(
@@ -4777,6 +5266,30 @@ def test_static_router_data_resolves_client_ip_from_trusted_proxy_hops(
     )
 
     assert router_data[constants.RouteVar.CLIENT_IP] == expected_ip
+
+
+def test_static_router_data_logs_ignored_forwarded_client_ip(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """A forwarded entry that is not an IP address is logged and ignored."""
+    monkeypatch.setattr("reflex.app.get_config", lambda: Mock(trusted_proxy_hops=1))
+    with caplog.at_level(logging.DEBUG, logger="reflex.app"):
+        router_data = EventNamespace("/event", Mock())._build_static_router_data(
+            "sid1",
+            {
+                "asgi.scope": {
+                    "headers": [(b"x-forwarded-for", b"not an ip <script>")],
+                    "client": ("10.0.0.2", 1234),
+                }
+            },
+        )
+
+    assert router_data[constants.RouteVar.CLIENT_IP] == "10.0.0.2"
+    assert [
+        record.getMessage()
+        for record in caplog.records
+        if record.name == "reflex.app" and record.levelno == logging.DEBUG
+    ] == ["Ignoring X-Forwarded-For entry 'not an ip <script>': not an IP address."]
 
 
 def test_call_ignores_stale_marker_without_dev_backend_reload(
@@ -5122,9 +5635,7 @@ def test_client_error_constants_match_frontend():
 
     Nothing at runtime keeps the two definitions in sync, so pin them here.
     """
-    state_js = (
-        Path(reflex_base.__file__).parent / ".templates/web/utils/state.js"
-    ).read_text()
+    state_js = (Templates.Dirs.WEB_TEMPLATE / "utils/state.js").read_text()
     assert (
         f'const CLIENT_ERROR_EVENT = "{constants.SocketEvent.CLIENT_ERROR}"' in state_js
     )
@@ -5139,21 +5650,29 @@ def test_client_error_constants_match_frontend():
 
 
 @pytest_asyncio.fixture
-async def event_namespace_with_processor_mock() -> AsyncGenerator[EventNamespace, None]:
+async def event_namespace_with_processor_mock(
+    attached_mock_event_context: EventContext,
+) -> AsyncGenerator[EventNamespace, None]:
     """An EventNamespace whose app has a mocked event processor.
+
+    Args:
+        attached_mock_event_context: The active event context.
 
     Yields:
         The EventNamespace instance.
     """
     app = App()
     app._event_processor = Mock(enqueue=AsyncMock())
+    app._session_token_manager = SessionTokenManager("test", secrets=(b"s" * 32,))
     event_namespace = EventNamespace("/event", app)
+    event_namespace.emit = AsyncMock()
+    token_manager = event_namespace._token_manager
     yield event_namespace
     # The token manager is backed by redis when one is configured; drop the
     # tokens these tests link so they do not show up in another test's
     # enumeration of the shared instance. Awaited rather than run in a fresh
     # loop via asyncio.run: the redis client is bound to the test's loop.
-    await event_namespace._token_manager.disconnect_all()
+    await token_manager.disconnect_all()
 
 
 @pytest.mark.parametrize("owner", ["current", "replacement", "remote", "missing"])
@@ -5234,6 +5753,10 @@ async def test_on_event_uses_connect_time_router_data(
 
     enqueue_mock = cast(AsyncMock, event_namespace.app.event_processor.enqueue)
     enqueue_mock.assert_called_once()
+    assert (
+        enqueue_mock.call_args.kwargs["session_token"]
+        is event_namespace._sessions["sid1"].session
+    )
     enqueued_token, event = enqueue_mock.call_args[0]
     assert enqueued_token == token
     assert event.router_data[constants.RouteVar.CLIENT_TOKEN] == token
@@ -5366,11 +5889,629 @@ async def test_on_event_falls_back_to_environ_without_connect(
     enqueue_mock = cast(AsyncMock, event_namespace.app.event_processor.enqueue)
     assert enqueue_mock.call_count == 2
     for call in enqueue_mock.call_args_list:
+        assert call.kwargs["session_token"] is None
         _, event = call[0]
         assert event.router_data[constants.RouteVar.SESSION_ID] == "sid1"
         assert (
             event.router_data[constants.RouteVar.HEADERS]["user-agent"] == "test-agent"
         )
+
+
+@pytest.mark.parametrize("mode", ["off", "warn", "enforce"])
+@pytest.mark.parametrize("cookie", ["missing", "invalid", "valid"])
+@pytest.mark.parametrize("client", ["missing", "bound", "foreign"])
+async def test_connect_session_authorization(
+    event_namespace_with_processor_mock: EventNamespace,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    mode: str,
+    cookie: str,
+    client: str,
+):
+    """Connection tokens are replaced before state access when enforcement requires it.
+
+    Args:
+        event_namespace_with_processor_mock: The connected namespace fixture.
+        monkeypatch: Environment fixture.
+        mocker: Mock fixture.
+        mode: The authorization policy.
+        cookie: The cookie validity.
+        client: The incoming client token's binding.
+    """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", mode)
+    namespace = event_namespace_with_processor_mock
+    manager = namespace.app._session_token_manager
+    browser_session = manager.create()
+    incoming = (
+        ""
+        if client == "missing"
+        else manager.create_client_token(
+            browser_session if client == "bound" else manager.create()
+        )
+    )
+    state = Mock(router_data={})
+    accesses = []
+
+    @contextlib.asynccontextmanager
+    async def modify_state(token):
+        """Check authorization at the first state access.
+
+        Args:
+            token: The requested state token.
+
+        Yields:
+            A minimal mutable state.
+        """
+        context = EventContext.get()
+        assert context.token == token.ident
+        socket_session = namespace._sessions.get("sid")
+        assert context.session_token is (
+            socket_session.session if socket_session is not None else None
+        )
+        if mode == "enforce":
+            assert context.session_token is not None
+            assert context.session_token.authorizes(token.ident)
+        accesses.append(token.ident)
+        yield state
+
+    mocker.patch.object(namespace.app.state_manager, "modify_state", modify_state)
+    scope = _connect_environ(incoming)["asgi.scope"]
+    scope["type"] = "websocket"
+    if cookie != "missing":
+        credential = manager.encode(browser_session) if cookie == "valid" else "invalid"
+        scope["headers"].append((
+            b"cookie",
+            f"__Host-{manager.cookie_name}={credential}".encode(),
+        ))
+
+    async def connect(scope, receive, send):
+        """Pass the validated handshake into Socket.IO."""
+        await namespace.on_connect(
+            "sid", {"QUERY_STRING": f"token={incoming}", "asgi.scope": scope}
+        )
+
+    await SessionMiddleware(connect, manager, "https://api.test")(
+        scope, AsyncMock(), AsyncMock()
+    )
+    emitted = {
+        call.args[0]: call.args[1]
+        for call in cast(AsyncMock, namespace.emit).call_args_list
+    }
+    replacement_expected = not incoming or (
+        mode == "enforce" and (cookie != "valid" or client != "bound")
+    )
+    assert ("new_token" in emitted) is replacement_expected
+    assert ("session_token" in emitted) is (mode != "off" and cookie != "valid")
+    if mode != "off":
+        session = namespace._sessions["sid"].session
+        if cookie == "valid":
+            assert session.id == browser_session.id
+        if "session_token" in emitted:
+            issued = manager.decode(emitted["session_token"], exchange=True)
+            assert issued is not None
+            assert issued.id == session.id
+    else:
+        assert not namespace._sessions
+    token = emitted.get("new_token", incoming)
+    assert accesses == ([token] if token else [])
+    if token:
+        assert namespace.sid_to_token["sid"] == token
+
+
+async def test_link_rejects_foreign_client_before_state_access(
+    event_namespace_with_processor_mock: EventNamespace,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+):
+    """Direct token linking must not load or register an unauthorized client.
+
+    Args:
+        event_namespace_with_processor_mock: The namespace fixture.
+        monkeypatch: Environment fixture.
+        mocker: Mock fixture.
+    """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "enforce")
+    namespace = event_namespace_with_processor_mock
+    manager = namespace.app._session_token_manager
+    namespace._sessions["sid"] = _SocketSession(manager.create(), 0, False)
+    foreign_token = manager.create_client_token(manager.create())
+    link = mocker.patch.object(
+        namespace._token_manager, "link_token_to_sid", new_callable=AsyncMock
+    )
+    modify = mocker.patch.object(namespace.app.state_manager, "modify_state")
+    with pytest.raises(exceptions.SessionAuthorizationError):
+        await namespace.link_token_to_sid("sid", foreign_token)
+    link.assert_not_called()
+    modify.assert_not_called()
+
+
+async def test_duplicate_client_stays_bound_to_session(
+    event_namespace_with_processor_mock: EventNamespace,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Duplicate-tab replacement tokens retain the requesting session's binding.
+
+    Args:
+        event_namespace_with_processor_mock: The namespace fixture.
+        monkeypatch: Environment fixture.
+    """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "enforce")
+    namespace = event_namespace_with_processor_mock
+    manager = namespace.app._session_token_manager
+    session = manager.create()
+    token = manager.create_client_token(session)
+    environ = _connect_environ(token)
+    environ["asgi.scope"]["reflex.session"] = session
+    await namespace.on_connect("sid1", environ)
+    await namespace.on_connect("sid2", environ)
+    replacement = namespace.sid_to_token["sid2"]
+    assert replacement != token
+    assert session.authorizes(replacement)
+    assert namespace.sid_to_token["sid1"] == token
+    cast(AsyncMock, namespace.emit).assert_awaited_once_with(
+        "new_token", replacement, to="sid2"
+    )
+
+
+async def test_session_refresh_notice_is_throttled(
+    event_namespace_with_processor_mock: EventNamespace,
+    mocker: MockerFixture,
+):
+    """A connection requests cookie refresh at the interval, preserving event context.
+
+    Args:
+        event_namespace_with_processor_mock: The namespace fixture.
+        mocker: Mock fixture.
+    """
+    namespace = event_namespace_with_processor_mock
+    manager = namespace.app._session_token_manager
+    session = manager.create()
+    token = manager.create_client_token(session)
+    environ = _connect_environ(token)
+    environ["asgi.scope"]["reflex.session"] = session
+    await namespace.on_connect("sid", environ)
+    now = mocker.patch(
+        "reflex.app.time.time",
+        return_value=session.issued_at + manager.refresh_interval - 1,
+    )
+    await namespace.on_event("sid", _client_event_payload())
+    cast(AsyncMock, namespace.emit).assert_not_called()
+    now.return_value += 2
+    await namespace.on_event("sid", _client_event_payload())
+    await namespace.on_event("sid", _client_event_payload())
+    cast(AsyncMock, namespace.emit).assert_awaited_once_with(
+        "session_refresh", to="sid"
+    )
+    enqueue = cast(AsyncMock, namespace.app.event_processor.enqueue)
+    assert all(
+        call.kwargs["session_token"] is session for call in enqueue.call_args_list
+    )
+    task = namespace.on_disconnect("sid")
+    if task is not None:
+        await task
+    assert "sid" not in namespace._sessions
+
+
+async def test_socket_without_cookie_renews_its_session_in_band(
+    event_namespace_with_processor_mock,
+    mocker,
+):
+    """A socket that connected without a cookie renews through an exchange credential."""
+    namespace = event_namespace_with_processor_mock
+    manager = namespace.app._session_token_manager
+    # A cookie lifetime below the maximum session age leaves room to renew.
+    mocker.patch.object(manager, "ttl", 100)
+    await namespace.on_connect("sid", _connect_environ(""))
+    session = namespace._sessions["sid"].session
+    token = namespace.sid_to_token["sid"]
+    emitted = cast(AsyncMock, namespace.emit)
+    mocker.patch("reflex_base.session.time.time", return_value=session.expires_at + 1)
+    assert manager.decode(manager.encode(session)) is None
+    await namespace.on_session_refresh("sid")
+    credential = emitted.call_args.args[1]
+    # The socket credential is for one exchange and is not valid as a cookie.
+    assert manager.decode(credential) is None
+    renewed = manager.decode(credential, exchange=True)
+    assert renewed is not None
+    assert renewed.id == session.id
+    assert renewed.authorizes(token)
+    # The stored session has the full lifetime; the credential has one minute.
+    stored = namespace._sessions["sid"].session
+    assert stored.id == renewed.id
+    assert stored.expires_at > renewed.expires_at
+    emitted.reset_mock()
+    task = namespace.on_disconnect("sid")
+    if task is not None:
+        await task
+    await namespace.on_session_refresh("sid")
+    emitted.assert_not_called()
+
+
+async def test_socket_with_cookie_never_gets_a_credential(
+    event_namespace_with_processor_mock,
+    mocker,
+):
+    """A socket that connected with a cookie renews over HTTP, also after expiry.
+
+    The backend keeps the session as it was at connect and cannot see later
+    renewals of the cookie. The session endpoint can: it renews a valid cookie
+    and issues a new session for an expired one.
+    """
+    namespace = event_namespace_with_processor_mock
+    manager = namespace.app._session_token_manager
+    mocker.patch.object(manager, "ttl", 100)
+    session = manager.create()
+    environ = _connect_environ(manager.create_client_token(session))
+    environ["asgi.scope"]["reflex.session"] = session
+    await namespace.on_connect("sid", environ)
+    emitted = cast(AsyncMock, namespace.emit)
+    emitted.reset_mock()
+    mocker.patch("reflex.app.time.time", return_value=session.expires_at + 1)
+
+    await namespace.on_session_refresh("sid")
+
+    emitted.assert_awaited_once_with("session_token", None, to="sid")
+    assert namespace._sessions["sid"].session is session
+
+
+@pytest.mark.parametrize("cookie", [True, False])
+async def test_session_refresh_sends_credential_only_without_a_valid_cookie(
+    event_namespace_with_processor_mock: EventNamespace,
+    cookie: bool,
+):
+    """A socket that connected with a valid cookie renews it over HTTP.
+
+    The browser holds that credential in an HttpOnly cookie, so the socket does
+    not send it to page scripts. A socket that connected without a cookie gets
+    the credential in-band, because the browser has no other copy.
+
+    Args:
+        event_namespace_with_processor_mock: The namespace fixture.
+        cookie: Whether the socket connected with a valid session cookie.
+    """
+    namespace = event_namespace_with_processor_mock
+    manager = namespace.app._session_token_manager
+    environ = _connect_environ("")
+    session = manager.create() if cookie else None
+    environ["asgi.scope"]["reflex.session"] = session
+    await namespace.on_connect("sid", environ)
+    emitted = cast(AsyncMock, namespace.emit)
+    emitted.reset_mock()
+
+    await namespace.on_session_refresh("sid")
+
+    emitted.assert_awaited_once()
+    event, credential = emitted.call_args.args
+    assert event == "session_token"
+    if cookie:
+        assert credential is None
+        assert namespace._sessions["sid"].session is session
+    else:
+        renewed = manager.decode(credential, exchange=True)
+        assert renewed is not None
+        assert renewed.id == namespace._sessions["sid"].session.id
+    task = namespace.on_disconnect("sid")
+    if task is not None:
+        await task
+    assert "sid" not in namespace._sessions
+
+
+@pytest.mark.parametrize("mode", ["warn", "enforce"])
+async def test_shared_state_link_to_client_token_needs_its_session(
+    monkeypatch: pytest.MonkeyPatch,
+    clean_registration_context: RegistrationContext,
+    mode: str,
+):
+    """A shared state link cannot reach the state of another session's client.
+
+    A link to a client token reads and writes that client's instance of the
+    shared state, so enforcement applies the session check to the link.
+
+    Args:
+        monkeypatch: Environment fixture; restores root metadata.
+        clean_registration_context: Isolate the temporary shared state class.
+        mode: The session token mode.
+    """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", mode)
+    links = State.get_fields()["_reflex_internal_links"]
+    monkeypatch.setattr(links, "default", links.default)
+    monkeypatch.setattr(links, "default_factory", links.default_factory)
+    monkeypatch.setattr(
+        State, "_always_dirty_substates", State._always_dirty_substates.copy()
+    )
+
+    class DraftState(rx.SharedState):
+        draft: str = ""
+
+    app = App(_state=State)
+    state_manager = app._state_manager = StateManagerMemory()
+    app._event_processor = Mock(
+        _root_context=EventContext(
+            token="",
+            session_token=SessionToken.SYSTEM,
+            state_manager=state_manager,
+            enqueue_impl=AsyncMock(),
+        )
+    )
+    app._event_namespace = AsyncMock()
+    manager = SessionTokenManager("link", secrets=(b"s" * 32,))
+    victim_session, attacker_session = manager.create(), manager.create()
+    victim = manager.create_client_token(victim_session)
+    attacker = manager.create_client_token(attacker_session)
+    second_tab = manager.create_client_token(attacker_session)
+
+    async def link(target: str) -> None:
+        """Link the attacker's shared state to a target, as its own session.
+
+        Args:
+            target: The token to link to.
+        """
+        async with app.modify_state(
+            BaseStateToken(ident=attacker, cls=DraftState),
+            session_token=attacker_session,
+        ) as root_state:
+            await (await root_state.get_state(DraftState))._link_to(target)
+
+    await link("room")
+    await link(second_tab)
+    if mode == "enforce":
+        with pytest.raises(exceptions.SessionAuthorizationError) as error:
+            await link(victim)
+        assert str(error.value) == "The session does not authorize this client token."
+        # The rejected link leaves the earlier link in place.
+        async with app.modify_state(
+            BaseStateToken(ident=second_tab, cls=DraftState),
+            session_token=attacker_session,
+        ) as root_state:
+            linked = await root_state.get_state(DraftState)
+            # The test client has no socket, so its router token is empty.
+            assert linked._linked_from == {""}
+    else:
+        await link(victim)
+    await asyncio.gather(*UPDATE_OTHER_CLIENT_TASKS)
+
+
+async def test_socket_sends_a_session_past_its_maximum_age_to_the_endpoint(
+    event_namespace_with_processor_mock: EventNamespace,
+    mocker: MockerFixture,
+):
+    """A socket whose session reached the maximum age renews at the session endpoint.
+
+    Args:
+        event_namespace_with_processor_mock: The namespace fixture.
+        mocker: Mock fixture.
+    """
+    namespace = event_namespace_with_processor_mock
+    manager = namespace.app._session_token_manager
+    await namespace.on_connect("sid", _connect_environ(""))
+    session = namespace._sessions["sid"].session
+    emitted = cast(AsyncMock, namespace.emit)
+    emitted.reset_mock()
+    mocker.patch(
+        "reflex.app.time.time", return_value=session.created_at + manager.max_age
+    )
+
+    await namespace.on_session_refresh("sid")
+
+    # The session endpoint issues the new session; the socket sends no credential.
+    emitted.assert_awaited_once_with("session_token", None, to="sid")
+    assert namespace._sessions["sid"].session is session
+
+
+async def test_failed_token_link_leaves_no_socket_session(
+    event_namespace_with_processor_mock: EventNamespace,
+    mocker: MockerFixture,
+):
+    """A connect that fails while linking its token keeps no session record.
+
+    A refused connect never reaches on_disconnect, so nothing else removes it.
+
+    Args:
+        event_namespace_with_processor_mock: The namespace fixture.
+        mocker: Mock fixture.
+    """
+    namespace = event_namespace_with_processor_mock
+    mocker.patch.object(
+        namespace, "link_token_to_sid", side_effect=RuntimeError("link failed")
+    )
+    with pytest.raises(RuntimeError) as error:
+        await namespace.on_connect("sid", _connect_environ(""))
+    assert str(error.value) == "link failed"
+    assert namespace._sessions == {}
+
+
+def test_session_manager_uses_the_configured_lifetimes(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """The app passes each session lifetime setting to its session manager.
+
+    Args:
+        monkeypatch: Config override fixture.
+    """
+    config = rx.Config(
+        app_name="lifetimes",
+        session_token_ttl=100,
+        session_token_refresh_interval=25,
+        session_token_max_age=300,
+    )
+    monkeypatch.setattr("reflex.app.get_config", lambda: config)
+    app = App()
+    app._api = Starlette()
+    app._add_default_endpoints()
+    manager = app._session_token_manager
+    assert (manager.ttl, manager.refresh_interval, manager.max_age) == (100, 25, 300)
+
+
+@pytest.mark.parametrize("mode", ["off", "warn", "enforce"])
+async def test_connect_needs_no_event_context(
+    monkeypatch: pytest.MonkeyPatch, mode: str
+):
+    """A socket connects when no event context is set.
+
+    A harness that drives the namespace directly, such as the benchmarks, has
+    no request scope.
+
+    Args:
+        monkeypatch: Environment fixture.
+        mode: The session token mode.
+    """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", mode)
+    app = App(_state=State)
+    app._state_manager = StateManagerMemory()
+    app._session_token_manager = SessionTokenManager("connect", secrets=(b"s" * 32,))
+    namespace = EventNamespace("/event", app)
+    namespace._token_manager = LocalTokenManager()
+    namespace.emit = AsyncMock()
+
+    await namespace.on_connect("sid", _connect_environ(""))
+
+    token = namespace.sid_to_token["sid"]
+    assert namespace.token_to_sid == {token: "sid"}
+    assert ("sid" in namespace._sessions) is (mode != "off")
+
+
+def _dropped_result_warning(label: str) -> str:
+    """The full warning for a frontend event whose return value is dropped.
+
+    Args:
+        label: How the warning names the handler.
+
+    Returns:
+        The expected warning message.
+    """
+    return (
+        f"Event handler {label} returned a value, but it was triggered from the "
+        "frontend, so the value is dropped: only backend code that awaits the "
+        "handler receives its return value. Return None or events to chain from "
+        "a handler used as an event trigger."
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("outcome", "warns"),
+    [
+        (42, True),
+        ({"rows": []}, True),
+        (None, False),
+        ([], False),
+        ("raise", False),
+        ("cancel", False),
+    ],
+)
+async def test_on_event_warns_once_in_dev_when_a_frontend_result_is_dropped(
+    token: str,
+    clean_registration_context: RegistrationContext,
+    event_namespace_with_processor_mock: EventNamespace,
+    mocker: MockerFixture,
+    outcome: Any,
+    warns: bool,
+):
+    """A value returned by a handler the frontend triggered warns, once per handler.
+
+    Only backend code awaiting a handler receives its return value. ``[]`` is
+    how a handler said "no events" before return values were results, so it
+    does not warn.
+
+    Args:
+        token: A token.
+        clean_registration_context: Keeps the test's state out of the shared
+            registration context; the app below is created inside it.
+        event_namespace_with_processor_mock: The event namespace fixture.
+        mocker: pytest-mock fixture.
+        outcome: What the event's future resolves to, or how it ends.
+        warns: Whether the dropped value is warned about.
+    """
+
+    class DroppedResultState(rx.State):
+        @rx.event
+        def handler(self):
+            pass
+
+    event_namespace = event_namespace_with_processor_mock
+    assert event_namespace.app._registration_context is clean_registration_context
+    await event_namespace._token_manager.link_token_to_sid(token, "sid1")
+    event_namespace.app.sio = Mock(
+        get_environ=Mock(return_value=_connect_environ(token))
+    )
+    warn = mocker.patch("reflex.app.logger.warning")
+    loop = asyncio.get_running_loop()
+    futures = [loop.create_future(), loop.create_future()]
+    enqueue_mock = cast(AsyncMock, event_namespace.app.event_processor.enqueue)
+    enqueue_mock.side_effect = futures
+    payload = {
+        **_client_event_payload(),
+        "name": format.format_event_handler(
+            DroppedResultState.event_handlers["handler"]
+        ),
+    }
+    for future in futures:
+        await event_namespace.on_event("sid1", payload)
+        if outcome == "raise":
+            future.set_exception(ValueError("handler failed"))
+        elif outcome == "cancel":
+            future.cancel()
+        else:
+            future.set_result(outcome)
+    await asyncio.sleep(0)
+
+    if not warns:
+        warn.assert_not_called()
+        return
+    warn.assert_called_once_with(
+        _dropped_result_warning(
+            "test_on_event_warns_once_in_dev_when_a_frontend_result_is_dropped"
+            ".<locals>.DroppedResultState.handler"
+        )
+    )
+
+
+@pytest.mark.asyncio
+async def test_on_event_does_not_watch_frontend_results_in_prod(
+    token: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """In prod, a frontend event's future gets no callback: the check is dev only.
+
+    Args:
+        token: A token.
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.PROD.value)
+    app = App()
+    future = Mock()
+    app._event_processor = Mock(enqueue=AsyncMock(return_value=future))
+    event_namespace = EventNamespace("/event", app)
+    try:
+        await event_namespace._token_manager.link_token_to_sid(token, "sid1")
+        event_namespace.app.sio = Mock(
+            get_environ=Mock(return_value=_connect_environ(token))
+        )
+        await event_namespace.on_event("sid1", _client_event_payload())
+    finally:
+        await event_namespace._token_manager.disconnect_all()
+    cast(AsyncMock, app.event_processor.enqueue).assert_awaited_once()
+    future.add_done_callback.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_dropped_result_warning_names_an_unregistered_event(  # noqa: RUF029
+    event_namespace_with_processor_mock: EventNamespace,
+    mocker: MockerFixture,
+):
+    """An event missing from the app's registry is named by its event name.
+
+    Args:
+        event_namespace_with_processor_mock: The event namespace fixture.
+        mocker: pytest-mock fixture.
+    """
+    warn = mocker.patch("reflex.app.logger.warning")
+    future = asyncio.get_running_loop().create_future()
+    future.set_result(42)
+    event_namespace_with_processor_mock._warn_dropped_result(
+        "unregistered_state.handler", future
+    )
+    warn.assert_called_once_with(_dropped_result_warning("unregistered_state.handler"))
 
 
 @pytest.mark.parametrize("compile_raises", [False, True])
@@ -5410,7 +6551,7 @@ def test_compile_releases_memo_naming_caches(
 
 @pytest.mark.asyncio
 async def test_on_connect_processes_boot_event_from_auth(
-    event_namespace: EventNamespace,
+    event_namespace_with_processor_mock: EventNamespace,
 ):
     """The hydrate event carried in the socket.io CONNECT packet is processed on connect.
 
@@ -5419,8 +6560,9 @@ async def test_on_connect_processes_boot_event_from_auth(
     first; a connect without a boot event still does.
 
     Args:
-        event_namespace: The event namespace.
+        event_namespace_with_processor_mock: The event namespace with session support.
     """
+    event_namespace = event_namespace_with_processor_mock
     event_namespace._token_manager = Mock()
     event_namespace._token_manager.link_token_to_sid = AsyncMock(return_value=None)
     event_namespace.on_event = AsyncMock()
@@ -5434,7 +6576,7 @@ async def test_on_connect_processes_boot_event_from_auth(
         "new_sid", {"QUERY_STRING": "token=abc"}, {"event": boot_event}
     )
     event_namespace._token_manager.link_token_to_sid.assert_awaited_once_with(
-        "abc", "new_sid"
+        "abc", "new_sid", token_factory=unittest.mock.ANY
     )
     event_namespace.on_event.assert_awaited_once_with("new_sid", boot_event)
     modify_state.assert_not_called()
@@ -5452,13 +6594,15 @@ async def test_on_connect_processes_boot_event_from_auth(
 
 @pytest.mark.asyncio
 async def test_on_connect_accepts_non_utf8_header_value(
-    event_namespace: EventNamespace,
+    event_namespace: EventNamespace, monkeypatch: pytest.MonkeyPatch
 ):
     """A non-UTF-8 request header value does not abort websocket connect.
 
     Args:
         event_namespace: The event namespace.
+        monkeypatch: Pytest monkeypatch fixture.
     """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "off")
     event_namespace._token_manager = Mock()
     event_namespace._token_manager.link_token_to_sid = AsyncMock(return_value=None)
     event_namespace.on_event = AsyncMock()
@@ -5504,14 +6648,18 @@ def _schema_checking_namespace(
 
 @pytest.mark.asyncio
 async def test_on_connect_reports_state_schema_mismatch(
-    event_namespace: EventNamespace, caplog: pytest.LogCaptureFixture
+    event_namespace: EventNamespace,
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     """A frontend compiled for another state tree is told once, and still hydrates.
 
     Args:
         event_namespace: The event namespace.
         caplog: pytest fixture capturing backend log records.
+        monkeypatch: Environment fixture.
     """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "off")
     on_event, emit = _schema_checking_namespace(event_namespace, "backend-schema")
     boot_event = {"name": "state.hydrate_and_load", "payload": {}, "router_data": {}}
 
@@ -5569,15 +6717,20 @@ async def test_on_connect_reports_state_schema_mismatch(
         pytest.param(None, id="no-auth"),
     ],
 )
+@pytest.mark.usefixtures("attached_mock_event_context")
 async def test_on_connect_sends_no_mismatch_without_one(
-    event_namespace: EventNamespace, auth: dict[str, Any] | None
+    event_namespace: EventNamespace,
+    auth: dict[str, Any] | None,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     """A matching or missing frontend schema sends nothing to the client.
 
     Args:
         event_namespace: The event namespace.
         auth: The CONNECT auth payload.
+        monkeypatch: Environment fixture.
     """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "off")
     on_event, emit = _schema_checking_namespace(event_namespace, "same")
     state = Mock(router_data={})
     event_namespace.app.state_manager.modify_state = Mock(
@@ -5592,13 +6745,14 @@ async def test_on_connect_sends_no_mismatch_without_one(
 
 @pytest.mark.asyncio
 async def test_on_connect_unlinks_token_when_boot_event_fails(
-    event_namespace: EventNamespace,
+    event_namespace_with_processor_mock: EventNamespace,
 ):
     """A boot event that fails to process drops the sid/token link before refusing the connect.
 
     Args:
-        event_namespace: The event namespace.
+        event_namespace_with_processor_mock: The event namespace with session support.
     """
+    event_namespace = event_namespace_with_processor_mock
     event_namespace._token_manager = Mock()
     event_namespace._token_manager.link_token_to_sid = AsyncMock(return_value=None)
     event_namespace._token_manager.disconnect_token = AsyncMock()
@@ -5614,6 +6768,7 @@ async def test_on_connect_unlinks_token_when_boot_event_fails(
     )
     # The connection-scoped router data cached for the refused sid goes too.
     assert "new_sid" not in event_namespace._static_router_data
+    assert "new_sid" not in event_namespace._sessions
 
 
 def test_call_app_wraps_with_otel_asgi_middleware():
@@ -5660,9 +6815,11 @@ async def test_on_event_uses_frontend_traceparent(otel_exporter):
     }
     seen: list = []
 
-    async def enqueue(token, event):
+    async def enqueue(token, event, *, session_token):
+        assert session_token is None
         await asyncio.sleep(0)
         seen.append(trace.get_current_span().get_span_context())
+        return Mock()
 
     mock_app.event_processor.enqueue = enqueue
     ns = EventNamespace(namespace="/", app=mock_app)
@@ -5779,10 +6936,14 @@ async def test_upload_handler_span_joins_the_request_trace(
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("attached_mock_event_context")
 async def test_connect_disconnect_counts_connections(otel_metrics):
     """Connect and disconnect adjust the open connection gauge."""
     mock_app = unittest.mock.Mock()
     mock_app._state = None
+    mock_app._session_token_manager = SessionTokenManager(
+        "metrics", secrets=(b"s" * 32,)
+    )
     ns = EventNamespace(namespace="/", app=mock_app)
     ns.emit = unittest.mock.AsyncMock()
     await ns.on_connect("sid1", {"QUERY_STRING": "token=t1"})
@@ -6031,6 +7192,34 @@ def test_write_stateful_pages_marker_concurrent_readers_see_valid_json(
     assert json.loads(marker.read_text()) == routes
 
 
+async def test_await_inside_app_modify_state_runs_inline(app_with_processor: App):
+    """A handler awaited inside ``modify_state`` runs on the locked state.
+
+    Args:
+        app_with_processor: An App with a mock event processor and root context.
+    """
+
+    class ModifyAwaitState(BaseState):
+        n: int = 0
+
+        @rx.event
+        def bump(self, by: int) -> int:
+            self.n += by
+            return self.n
+
+    app_with_processor._state_manager = StateManagerMemory()
+    app_with_processor._event_namespace = AsyncMock()
+    async with app_with_processor.modify_state(
+        BaseStateToken(ident="token-C", cls=ModifyAwaitState)
+    ) as state:
+        assert EventContext.get().locked_root is state._get_root_state()
+        assert await ModifyAwaitState.bump(2) == 2
+        assert await ModifyAwaitState.bump(3) == 5
+        assert (await state.get_state(ModifyAwaitState)).n == 5
+    with pytest.raises(LookupError):
+        EventContext.get()
+
+
 @pytest.mark.parametrize(
     ("prod", "config_kwargs", "expected"),
     [
@@ -6112,8 +7301,8 @@ def test_add_cors_and_socketio_use_resolved_origins(
 
     app = App(_state=rx.State)
     app._setup_state()
-    assert app.sio is not None
-    assert app.sio.eio.cors_allowed_origins == ["https://example.com"]
+    assert _socket_accepts(app, "https://example.com", "api.example.com")
+    assert not _socket_accepts(app, "https://evil.example", "api.example.com")
 
 
 @pytest.mark.parametrize(
@@ -6167,7 +7356,7 @@ def test_cors_left_unconfigured_in_prod_without_deploy_url(
     """Without deploy_url in prod mode, only same-origin requests reach the backend.
 
     No CORS middleware is installed, so browsers refuse cross-origin reads, and
-    Socket.IO falls back to its same-origin default.
+    Socket.IO accepts only the backend's own origin.
 
     Args:
         mocker: The pytest mocker fixture.
@@ -6185,17 +7374,479 @@ def test_cors_left_unconfigured_in_prod_without_deploy_url(
 
     app = App(_state=rx.State)
     app._setup_state()
-    assert app.sio is not None
-    assert app.sio.eio.cors_allowed_origins is None
-    environ = {"wsgi.url_scheme": "https", "HTTP_HOST": "app.example.com"}
-    allowed = app.sio.eio._cors_allowed_origins(environ)
-    assert "https://app.example.com" in allowed
-    assert "https://evil.example" not in allowed
+    assert _socket_accepts(
+        app, "https://app.example.com", "app.example.com", "X-Forwarded-Proto: https"
+    )
+    assert not _socket_accepts(
+        app, "https://evil.example", "app.example.com", "X-Forwarded-Proto: https"
+    )
 
     mocker.patch.object(app, "_compile")
     asgi_app = app()
     assert isinstance(asgi_app, _RootMiddleware)
     assert not isinstance(asgi_app.app, CORSMiddleware)
+
+
+def _socket_app(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    prod: bool = True,
+    **config_kwargs: Any,
+) -> App:
+    """Build an app whose Socket.IO server resolves origins from the given config.
+
+    Args:
+        mocker: The pytest mocker fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        prod: Whether to resolve in prod mode.
+        **config_kwargs: Extra config values.
+
+    Returns:
+        The app, with its Socket.IO server set up.
+    """
+    monkeypatch.delenv("REFLEX_CORS_ALLOWED_ORIGINS", raising=False)
+    monkeypatch.delenv("REFLEX_DEPLOY_URL", raising=False)
+    monkeypatch.delenv("REFLEX_TRUSTED_PROXY_HOPS", raising=False)
+    config = rx.Config(app_name="cors_app", **config_kwargs)
+    mocker.patch("reflex.app.get_config", return_value=config)
+    mocker.patch("reflex.app.is_prod_mode", return_value=prod)
+    app = App(_state=rx.State)
+    app._setup_state()
+    return app
+
+
+def _socket_accepts(app: App, origin: str, host: str, *headers: str) -> bool:
+    """Whether the app's Socket.IO server accepts a handshake from origin.
+
+    Args:
+        app: The app with a set-up Socket.IO server.
+        origin: The Origin header of the handshake.
+        host: The Host header of the handshake.
+        *headers: Extra "Name: value" request headers.
+
+    Returns:
+        Whether engine.io lets the origin through.
+    """
+    environ = {"HTTP_ORIGIN": origin, "HTTP_HOST": host}
+    for header in headers:
+        name, value = header.split(": ", 1)
+        environ["HTTP_" + name.upper().replace("-", "_")] = value
+    # engine.io's ASGI driver derives the scheme from X-Forwarded-Proto only.
+    environ["wsgi.url_scheme"] = environ.get("HTTP_X_FORWARDED_PROTO", "http")
+    assert app.sio is not None
+    allowed = app.sio.eio._cors_allowed_origins(environ)
+    # None means engine.io allows any origin.
+    return allowed is None or origin in allowed
+
+
+_XFP_HTTPS = "X-Forwarded-Proto: https"
+_XFH_APP = "X-Forwarded-Host: app.example.com"
+
+
+@pytest.mark.parametrize(
+    ("origin", "host", "headers", "hops", "accepted"),
+    [
+        # A TLS-terminating proxy that keeps Host but sends no X-Forwarded-Proto.
+        ("https://app.example.com", "app.example.com", (), 0, True),
+        ("https://app.example.com", "App.Example.COM", (), 0, True),
+        ("https://app.example.com", "app.example.com:443", (), 0, True),
+        ("https://app.example.com:8443", "app.example.com:8443", (), 0, True),
+        ("http://app.example.com", "app.example.com", (), 0, True),
+        ("http://localhost:3000", "localhost:3000", (), 0, True),
+        ("http://[::1]:3000", "[::1]:3000", (), 0, True),
+        ("https://app.example.com", "app.example.com", (_XFP_HTTPS,), 0, True),
+        # Caddy behind another TLS edge replaces the proto with http.
+        (
+            "https://app.example.com",
+            "app.example.com",
+            ("X-Forwarded-Proto: http",),
+            1,
+            True,
+        ),
+        (
+            "https://app.example.com",
+            "app.example.com",
+            ("X-Forwarded-Proto: wss",),
+            1,
+            True,
+        ),
+        # Forwarded headers count only through trusted_proxy_hops proxies.
+        ("http://app.example.com", "app.example.com", (_XFP_HTTPS,), 0, True),
+        ("http://app.example.com", "app.example.com", (_XFP_HTTPS,), 1, False),
+        (
+            "http://app.example.com",
+            "app.example.com",
+            ("X-Forwarded-Proto: wss",),
+            1,
+            False,
+        ),
+        (
+            "http://app.example.com",
+            "app.example.com",
+            ("X-Forwarded-Proto: http",),
+            1,
+            True,
+        ),
+        (
+            "https://app.example.com",
+            "origin.internal:8000",
+            (_XFP_HTTPS, _XFH_APP),
+            0,
+            False,
+        ),
+        (
+            "https://app.example.com",
+            "origin.internal:8000",
+            (_XFP_HTTPS, _XFH_APP),
+            1,
+            True,
+        ),
+        # A trusted chain takes the entry trusted_proxy_hops from the right.
+        (
+            "https://app.example.com",
+            "origin.internal:8000",
+            ("X-Forwarded-Host: evil.example, app.example.com",),
+            1,
+            True,
+        ),
+        (
+            "https://evil.example",
+            "origin.internal:8000",
+            ("X-Forwarded-Host: evil.example, app.example.com",),
+            1,
+            False,
+        ),
+        (
+            "https://app.example.com",
+            "origin.internal:8000",
+            ("X-Forwarded-Host: app.example.com, edge.internal",),
+            2,
+            True,
+        ),
+        # Proxies set X-Forwarded-Host and -Proto rather than append, so a chain
+        # shorter than the trusted hops is read from its leftmost entry.
+        ("https://app.example.com", "origin.internal:8000", (_XFH_APP,), 2, True),
+        ("http://app.example.com", "app.example.com", (_XFP_HTTPS,), 2, False),
+        ("https://evil.example", "origin.internal:8000", (_XFH_APP,), 2, False),
+        (
+            "https://evil.example",
+            "app.example.com",
+            (_XFP_HTTPS, "X-Forwarded-Host: evil.example"),
+            0,
+            False,
+        ),
+        ("https://app.example.com:8443", "app.example.com", (), 0, False),
+        ("https://app.example.com", "app.example.com:8443", (), 0, False),
+        ("http://127.0.0.1:3000", "localhost:3000", (), 0, False),
+        ("https://app.example.com", "127.0.0.1:8000", (), 0, False),
+        ("https://evil.example", "app.example.com", (), 0, False),
+        ("https://evil.example", "app.example.com", (_XFP_HTTPS,), 1, False),
+        ("https://app.example.com.evil.example", "app.example.com", (), 0, False),
+        ("https://evil.example@app.example.com", "app.example.com", (), 0, False),
+        ("https://app.example.com/path", "app.example.com", (), 0, False),
+        ("null", "app.example.com", (), 0, False),
+        ("chrome-extension://app.example.com", "app.example.com", (), 0, False),
+        ("https://app.example.com:99999", "app.example.com", (), 0, False),
+        ("https://app.example.com", "app.example.com:bad", (), 0, False),
+        ("https://[::1", "[::1", (), 0, False),
+        ("http://[::1]:3000", "[::1", (), 0, False),
+    ],
+)
+def test_socketio_prod_default_accepts_own_host_behind_tls_proxy(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    origin: str,
+    host: str,
+    headers: tuple[str, ...],
+    hops: int,
+    accepted: bool,
+):
+    """In prod without deploy_url, the websocket accepts the origin naming its own host.
+
+    An https Origin matches a request that arrived over http, as a TLS
+    terminator need not send X-Forwarded-Proto. X-Forwarded-Host and
+    X-Forwarded-Proto are read only through trusted_proxy_hops proxies; a
+    trusted proto of https rejects an http Origin.
+
+    Args:
+        mocker: The pytest mocker fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        origin: The Origin header of the handshake.
+        host: The Host header of the handshake.
+        headers: Extra request headers.
+        hops: The configured trusted_proxy_hops.
+        accepted: Whether the handshake should be accepted.
+    """
+    app = _socket_app(mocker, monkeypatch, trusted_proxy_hops=hops)
+    assert _socket_accepts(app, origin, host, *headers) is accepted
+
+
+@pytest.mark.parametrize(
+    ("prod", "config_kwargs", "origin", "host", "accepted"),
+    [
+        # deploy_url adds the frontend origin on top of the backend's own one.
+        (
+            True,
+            {"deploy_url": "https://app.example.com"},
+            "https://app.example.com",
+            "api.example.com",
+            True,
+        ),
+        (
+            True,
+            {"deploy_url": "https://app.example.com"},
+            "http://localhost:3000",
+            "localhost:3000",
+            True,
+        ),
+        (
+            True,
+            {"deploy_url": "https://app.example.com"},
+            "https://evil.example",
+            "api.example.com",
+            False,
+        ),
+        # An explicit list is used exactly as given.
+        (
+            True,
+            {"cors_allowed_origins": ["https://a.com"]},
+            "https://a.com",
+            "api.example.com",
+            True,
+        ),
+        (
+            True,
+            {"cors_allowed_origins": ["https://a.com"]},
+            "http://api:8000",
+            "api:8000",
+            False,
+        ),
+        (
+            False,
+            {"cors_allowed_origins": ["https://a.com"]},
+            "https://evil.example",
+            "a.com",
+            False,
+        ),
+        (
+            True,
+            {"cors_allowed_origins": ["*"]},
+            "https://evil.example",
+            "api.example.com",
+            True,
+        ),
+        (False, {}, "https://evil.example", "api.example.com", True),
+    ],
+)
+def test_socketio_origins_with_deploy_url_or_explicit_list(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    prod: bool,
+    config_kwargs: dict[str, Any],
+    origin: str,
+    host: str,
+    accepted: bool,
+):
+    """deploy_url extends the same-origin default; explicit lists and dev mode are unchanged.
+
+    Args:
+        mocker: The pytest mocker fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        prod: Whether to resolve in prod mode.
+        config_kwargs: Extra config values.
+        origin: The Origin header of the handshake.
+        host: The Host header of the handshake.
+        accepted: Whether the handshake should be accepted.
+    """
+    app = _socket_app(mocker, monkeypatch, prod=prod, **config_kwargs)
+    assert _socket_accepts(app, origin, host) is accepted
+
+
+@pytest.mark.parametrize(
+    ("config_kwargs", "origin", "host", "headers", "hint"),
+    [
+        (
+            {},
+            "https://cdn.example.com",
+            "api.example.com",
+            (),
+            (
+                "if it is your frontend's origin, set REFLEX_DEPLOY_URL on the "
+                "backend to the frontend's public URL"
+            ),
+        ),
+        # The origin is named only by an X-Forwarded-Host the backend does not trust.
+        (
+            {},
+            "https://app.example.com",
+            "origin.internal:8000",
+            ("X-Forwarded-Host: app.example.com",),
+            "set trusted_proxy_hops (REFLEX_TRUSTED_PROXY_HOPS)",
+        ),
+        # Any client can send the first rejected handshake of a worker.
+        (
+            {},
+            "https://evil.example",
+            "origin.internal:8000",
+            ("X-Forwarded-Host: evil.example",),
+            "set trusted_proxy_hops (REFLEX_TRUSTED_PROXY_HOPS)",
+        ),
+        (
+            {"trusted_proxy_hops": 2},
+            "https://evil.example",
+            "origin.internal:8000",
+            ("X-Forwarded-Host: app.example.com",),
+            "X-Forwarded-Host 'app.example.com' trusted",
+        ),
+        # A trusted proxy reports https for a page loaded over http.
+        (
+            {"trusted_proxy_hops": 1},
+            "http://app.example.com",
+            "app.example.com",
+            (_XFP_HTTPS,),
+            "serve the page over https",
+        ),
+        (
+            {"cors_allowed_origins": ["https://a.com"]},
+            "https://cdn.example.com",
+            "api.example.com",
+            (),
+            (
+                "if it is your frontend's origin, add it to cors_allowed_origins "
+                "(REFLEX_CORS_ALLOWED_ORIGINS)"
+            ),
+        ),
+    ],
+)
+def test_socketio_rejection_warns_once_with_fix(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    config_kwargs: dict[str, Any],
+    origin: str,
+    host: str,
+    headers: tuple[str, ...],
+    hint: str,
+):
+    """A rejected origin logs one warning naming the origin and the setting to change.
+
+    The warning never puts the rejected origin into a setting's value, since
+    any client can send the rejected handshake.
+
+    Args:
+        mocker: The pytest mocker fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest log capture fixture.
+        config_kwargs: Extra config values.
+        origin: The Origin header of the handshake.
+        host: The Host header of the handshake.
+        headers: Extra request headers.
+        hint: Text the warning must contain.
+    """
+    app = _socket_app(mocker, monkeypatch, **config_kwargs)
+    with caplog.at_level(logging.WARNING, logger="reflex.app"):
+        assert not _socket_accepts(app, origin, host, *headers)
+        assert not _socket_accepts(app, origin, host, *headers)
+    warnings = [r.getMessage() for r in caplog.records if r.name == "reflex.app"]
+    assert len(warnings) == 1
+    assert repr(origin) in warnings[0]
+    assert hint in warnings[0]
+    assert f"={origin}" not in warnings[0]
+    if not config_kwargs:
+        assert repr(host) in warnings[0]
+
+
+def test_socketio_rejection_names_forwarded_proto_mismatch(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+):
+    """An http origin rejected only for a trusted https X-Forwarded-Proto is named as such.
+
+    Args:
+        mocker: The pytest mocker fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest log capture fixture.
+    """
+    app = _socket_app(mocker, monkeypatch, trusted_proxy_hops=1)
+    with caplog.at_level(logging.WARNING, logger="reflex.app"):
+        assert not _socket_accepts(
+            app, "http://app.test:3341", "app.test:3341", _XFP_HTTPS
+        )
+    warnings = [r.getMessage() for r in caplog.records if r.name == "reflex.app"]
+    assert warnings == [
+        (
+            "Rejected an event websocket from origin 'http://app.test:3341': in prod "
+            "mode the backend accepts only its own origin (request Host "
+            "'app.test:3341', X-Forwarded-Host None trusted, X-Forwarded-Proto "
+            "'https' trusted); the page was loaded over http but the trusted "
+            "X-Forwarded-Proto says https, so fix the reverse proxy's "
+            "X-Forwarded-Proto or serve the page over https. This warning is logged "
+            "once per worker."
+        )
+    ]
+
+
+@pytest.mark.parametrize(
+    ("config_kwargs", "origin", "accepted"),
+    [
+        ({}, "https://app.example.com", True),
+        ({}, "https://evil.example", False),
+        # engine.io skips its origin check for an empty list, as before #7641.
+        ({"cors_allowed_origins": []}, "https://evil.example", True),
+    ],
+)
+def test_event_websocket_handshake_behind_tls_proxy(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    config_kwargs: dict[str, Any],
+    origin: str,
+    accepted: bool,
+):
+    """The prod event websocket opens for its own https origin without X-Forwarded-Proto.
+
+    Args:
+        mocker: The pytest mocker fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        config_kwargs: Extra config values.
+        origin: The Origin header of the handshake.
+        accepted: Whether the handshake should be accepted.
+    """
+    app = _socket_app(mocker, monkeypatch, **config_kwargs)
+    mocker.patch.object(app, "_compile")
+    # The proxy forwards plain ws with the public Host and no forwarded headers.
+    client = TestClient(app())
+    headers = {"Origin": origin, "Upgrade": "websocket"}
+    url = f"ws://app.example.com{constants.Endpoint.EVENT}/?EIO=4&transport=websocket"
+    if accepted:
+        with client.websocket_connect(url, headers=headers) as ws:
+            assert ws.receive_text().startswith("0")
+    else:
+        with (
+            pytest.raises(WebSocketDisconnect),
+            client.websocket_connect(url, headers=headers),
+        ):
+            pass
+
+
+def test_socketio_rejection_warning_bounds_logged_headers(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+):
+    """The rejection warning cuts oversized Origin and Host values.
+
+    Args:
+        mocker: The pytest mocker fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest log capture fixture.
+    """
+    app = _socket_app(mocker, monkeypatch)
+    long_host = "h" * 5000
+    with caplog.at_level(logging.WARNING, logger="reflex.app"):
+        assert not _socket_accepts(app, f"https://{long_host}.evil", long_host)
+    (warning,) = [r.getMessage() for r in caplog.records if r.name == "reflex.app"]
+    assert len(warning) < 2000
 
 
 def _polling_engine_app(max_size: int):
@@ -6445,3 +8096,95 @@ async def test_drain_oversized_body_middleware_passes_regular_requests_through()
 
     status, _, _ = await _asgi_http_call(app, "GET", "", b"")
     assert status == 200
+
+
+def test_client_state_conflicting_defaults_fail_the_compile(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    clean_registration_context: RegistrationContext,
+) -> None:
+    """One name declared on two pages with two defaults fails the compile.
+
+    Regression: this compiled, and whichever page mounted first decided the
+    value silently. Creating the vars must still work (hot reload declares again
+    them), so the error comes from the compile and names both declarations.
+    """
+    mocker.patch(
+        "reflex_base.config._get_config",
+        return_value=rx.Config(app_name="testing"),
+    )
+    app, _ = compilable_app
+    closed = rx.client_state(False, name="open_app")
+    opened = rx.client_state(True, name="open_app")
+    app.add_page(lambda: rx.text(closed.value), route="/a")
+    app.add_page(lambda: rx.text(opened.value), route="/b")
+
+    with pytest.raises(exceptions.ClientStateConflictError, match="'open_app'") as err:
+        app._compile(dry_run=True)
+    # A compile error, like the compiler's other app-level errors.
+    assert isinstance(err.value, exceptions.ReflexError)
+    message = str(err.value)
+    assert "`false`" in message
+    assert "`true`" in message
+    assert message.count(f"{__file__}:") == 2
+
+
+def test_client_state_identical_declarations_compile(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    clean_registration_context: RegistrationContext,
+) -> None:
+    """Two modules may each declare the same global var with the same default."""
+    mocker.patch(
+        "reflex_base.config._get_config",
+        return_value=rx.Config(app_name="testing"),
+    )
+    app, _ = compilable_app
+    first = rx.client_state(False, name="shared_app")
+    second = rx.client_state(False, name="shared_app")
+    app.add_page(lambda: rx.text(first.value), route="/a")
+    app.add_page(lambda: rx.text(second.value), route="/b")
+    app._compile(dry_run=True)
+
+
+def test_client_state_conflicts_do_not_outlive_a_compile(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    clean_registration_context: RegistrationContext,
+) -> None:
+    """A var declared again with an edited default compiles again (hot reload)."""
+    mocker.patch(
+        "reflex_base.config._get_config",
+        return_value=rx.Config(app_name="testing"),
+    )
+    app, _ = compilable_app
+    before = rx.client_state(False, name="edited_app")
+    app.add_page(lambda: rx.text(before.value), route="/a")
+    app._compile(dry_run=True)
+
+    after = rx.client_state(True, name="edited_app")
+    app._unevaluated_pages.clear()
+    app.add_page(lambda: rx.text(after.value), route="/a")
+    app._compile(dry_run=True)
+
+
+def test_add_page_rejects_undecorated_on_load(monkeypatch: pytest.MonkeyPatch):
+    """With explicit event handlers, an undecorated on_load fails when the page is added."""
+    monkeypatch.setenv("REFLEX_STATE_EXPLICIT_EVENT_HANDLERS", "true")
+
+    with RegistrationContext():
+
+        class OnLoadState(State):
+            def load(self):
+                pass
+
+        app = App()
+        with pytest.raises(
+            exceptions.EventHandlerValueError,
+            match=r"OnLoadState\.load is wired to on_load but is not an event handler",
+        ):
+            app.add_page(
+                lambda: rx.text("x"),
+                route="/load",
+                on_load=OnLoadState.load,  # pyright: ignore[reportArgumentType]
+            )

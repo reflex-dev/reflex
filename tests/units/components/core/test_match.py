@@ -1,9 +1,11 @@
 import re
+from typing import Any
 
 import pytest
 from reflex_base.components.component import Component
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.utils.exceptions import MatchTypeError
+from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import Var
 from reflex_components_core.core.match import Match
 
@@ -17,6 +19,7 @@ class MatchState(BaseState):
     value: int = 0
     num: int = 5
     string: str = "random string"
+    tags: set[str] = {"c", "d"}
 
 
 def test_match_components():
@@ -135,6 +138,73 @@ def test_match_vars(cases, expected):
     match_comp = Match.create(MatchState.value, *cases)
     assert isinstance(match_comp, Var)
     assert str(match_comp) == expected
+
+
+def test_match_set_case_compares_by_elements():
+    """A set case matches a set subject whatever order the subject arrives in.
+
+    A state set is serialized in its hash-seed dependent iteration order, so the
+    subject is swapped for the set case it equals before the JSON comparison.
+    The cases themselves compile as before.
+    """
+    tags = f"{MatchState.get_name()}.tags{FIELD_MARKER}"
+    match_var = Match.create(
+        MatchState.tags, ({"d", "c"}, "cd"), (["c", "d"], "list"), "other"
+    )
+    assert isinstance(match_var, Var)
+    assert str(match_var) == (
+        f'(() => {{ switch (JSON.stringify(pySetMatch({tags}, [["c", "d"]]))) {{'
+        'case JSON.stringify(["c", "d"]):  return ("cd");  break;'
+        'case JSON.stringify(["c", "d"]):  return ("list");  break;'
+        'default:  return ("other");  break;};})()'
+    )
+    var_data = match_var._get_all_var_data()
+    assert var_data is not None
+    assert (
+        ImportVar(tag="pySetMatch", install=False)
+        in dict(var_data.imports)["$/utils/helpers/set.js"]
+    )
+
+    match_comp = rx.match(
+        MatchState.tags, ({"d", "c"}, rx.text("cd")), rx.text("other")
+    )
+    assert isinstance(match_comp, Component)
+    match_child = match_comp.render()["children"][0]
+    assert match_child["cond"] == f'pySetMatch({tags}, [["c", "d"]])'
+    assert match_child["match_cases"][0][0] == ['["c", "d"]']
+    assert (
+        ImportVar(tag="pySetMatch", install=False)
+        in (match_comp._get_all_imports()["$/utils/helpers/set.js"])
+    )
+
+
+def test_match_set_case_with_untyped_subject():
+    """A subject not typed as a set still matches a set case it equals."""
+    result = Match.create(
+        Var(_js_expr="item", _var_type=Any),
+        ("ready", "string"),
+        ({1, 2}, "set"),
+        (MatchState.tags, "state set"),
+        "other",
+    )
+    tags = f"{MatchState.get_name()}.tags{FIELD_MARKER}"
+    assert str(result) == (
+        f"(() => {{ switch (JSON.stringify(pySetMatch(item, [[1, 2], {tags}]))) {{"
+        'case JSON.stringify("ready"):  return ("string");  break;'
+        'case JSON.stringify([1, 2]):  return ("set");  break;'
+        f'case JSON.stringify({tags}):  return ("state set");  break;'
+        'default:  return ("other");  break;};})()'
+    )
+
+
+def test_match_set_subject_without_set_case_is_unchanged():
+    """Only a set case changes the compiled match; a set subject alone does not."""
+    tags = f"{MatchState.get_name()}.tags{FIELD_MARKER}"
+    assert str(Match.create(MatchState.tags, (["c", "d"], "list"), "other")) == (
+        f"(() => {{ switch (JSON.stringify({tags})) {{"
+        'case JSON.stringify(["c", "d"]):  return ("list");  break;'
+        'default:  return ("other");  break;};})()'
+    )
 
 
 def test_match_on_component_without_default():
@@ -317,4 +387,4 @@ def test_match_multiple_default_cases(match_case):
 
 def test_match_no_cond():
     with pytest.raises(ValueError):
-        _ = Match.create(None)
+        _ = Match.create(None)  # pyright: ignore [reportCallIssue]
