@@ -7,7 +7,10 @@ from typing import Any
 import pytest
 from reflex_base.plugins import VitePluginEntry
 from reflex_components_ui.constants import JS_SRC
-from reflex_components_ui.plugin import Theme, UIPlugin, add_base_stylesheet
+from reflex_components_ui.plugin import UIPlugin, add_base_stylesheet
+from reflex_components_ui.themes import Theme, ThemeError
+
+import reflex as rx
 
 
 def test_plugin_installs_the_style_compiler_for_the_build_only():
@@ -89,4 +92,26 @@ def test_base_stylesheet_is_imported_ahead_of_every_other_stylesheet():
 
 def test_plugin_has_a_theme():
     assert UIPlugin().theme == Theme()
-    assert repr(UIPlugin()) == "UIPlugin(theme=Theme())"
+    assert repr(UIPlugin()) == (
+        "UIPlugin(theme=Theme(accent_color='blue', gray_color='auto', "
+        "radius='medium', scaling='100%', appearance='inherit', "
+        "panel_background='translucent', has_background=True))"
+    )
+
+
+def test_plugin_refuses_a_theme_of_radix_themes():
+    """The two themes are easy to take for each other in rxconfig.py."""
+    with pytest.raises(ThemeError) as error:
+        UIPlugin(theme=rx.theme(accent_color="indigo"))  # pyright: ignore [reportArgumentType]
+    assert str(error.value) == (
+        "rx.plugins.UIPlugin: theme must be an rx.ui.Theme(...), not Theme. The "
+        "theme of Radix Themes, rx.theme(...), goes to "
+        "rx.plugins.RadixThemesPlugin."
+    )
+    with pytest.raises(ThemeError) as error:
+        UIPlugin(theme={"accent_color": "indigo"})  # pyright: ignore [reportArgumentType]
+    assert str(error.value) == (
+        "rx.plugins.UIPlugin: theme must be an rx.ui.Theme(...), not dict. The "
+        "theme of Radix Themes, rx.theme(...), goes to "
+        "rx.plugins.RadixThemesPlugin."
+    )

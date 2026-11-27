@@ -1,5 +1,6 @@
 """Tests for merging the style table of a component with a user's style."""
 
+import re
 from typing import Any
 
 import pytest
@@ -16,6 +17,11 @@ from reflex_components_ui.style.merge import (
 import reflex as rx
 
 RUBY = "$/reflex-ui/colors/ruby.stylex.js"
+SPACE = "$/reflex-ui/tokens/space.stylex.js"
+ACCENT = "$/reflex-ui/tokens/accent.stylex.js"
+GRAY = "$/reflex-ui/tokens/gray.stylex.js"
+# The module of each token the expected styles of these tests name.
+TOKEN_MODULES = {"ruby": RUBY, "space": SPACE, "accent": ACCENT, "gray": GRAY}
 XS = "@media screen and (min-width: 30em)"
 
 
@@ -77,6 +83,24 @@ BASE = {
     "marginTop": "1px",
     "outlineWidth": "1px",
 }
+
+
+def _lowered(style: dict[str, Any], inline: Any = None) -> Lowered:
+    """Build the lowered style a test expects, with the modules its values need.
+
+    Args:
+        style: The lowered properties.
+        inline: A Var holding a whole dict of styles.
+
+    Returns:
+        The lowered style, importing the module of every token it names.
+    """
+    found = set(re.findall(r"var\(--([a-z]+)-", repr(style)))
+    return Lowered(
+        style, tuple(sorted([TOKEN_MODULES[word] for word in found])), inline
+    )
+
+
 SOLID_BACKGROUND = {"default": "var(--accent-9)", ":hover": "var(--accent-10)"}
 DOT = Merged(Lowered({"top": 0}))
 LABEL = Merged(Lowered({"flexGrow": 1}))
@@ -201,9 +225,7 @@ def test_merge_order(props: Any, style: Any, expected: dict[str, Any], parts: An
         parts: The merged styles of its inner elements.
     """
     merged = merge("rx.ui.button", BUTTON, props, style)
-    imports = (RUBY,) if expected.get("backgroundColor") == "var(--ruby-3)" else ()
-    assert merged == Merged(Lowered(expected, imports), (), parts)
-    assert merged.style.imports == imports
+    assert merged == Merged(_lowered(expected), (), parts)
     assert merged.dynamic == ()
     assert list(merged.parts) == ["icon", "label"]
 
@@ -217,7 +239,7 @@ def test_layout_props_merge_between_the_table_and_the_style():
         {"margin_left": "auto"},
         {"m": "2", "gap": "1"},
     ) == Merged(
-        Lowered({
+        _lowered({
             "display": "inline-flex",
             "color": "black",
             "marginTop": "var(--space-2)",
@@ -238,7 +260,7 @@ def test_whole_dict_var_style_is_carried_with_the_table_styles():
     """A Var holding the user style leaves the table styles compiled."""
     merged = merge("rx.ui.button", BUTTON, {"size": "1"}, MergeState.style)
     assert merged == Merged(
-        Lowered({**BASE, "height": "var(--space-5)"}, (), MergeState.style),
+        _lowered({**BASE, "height": "var(--space-5)"}, MergeState.style),
         (),
         SMALL_PARTS,
     )
@@ -278,7 +300,7 @@ def test_state_bound_variant_returns_every_value_unresolved():
         {"color": "pink", "_hover": {"background_color": "red"}},
     )
     assert merged == Merged(
-        Lowered({
+        _lowered({
             **BASE,
             "color": "pink",
             "height": "var(--space-6)",
@@ -289,23 +311,20 @@ def test_state_bound_variant_returns_every_value_unresolved():
                 ("variant",),
                 (VARIANT,),
                 {
-                    ("solid",): Lowered({
+                    ("solid",): _lowered({
                         "backgroundColor": {
                             "default": "var(--accent-9)",
                             ":hover": "red",
                         },
                         "fontWeight": "700",
                     }),
-                    ("soft",): Lowered(
-                        {
-                            "backgroundColor": {
-                                "default": "var(--ruby-3)",
-                                ":hover": "red",
-                            }
-                        },
-                        (RUBY,),
-                    ),
-                    ("ghost",): Lowered({"outline": "none", "outlineWidth": None}),
+                    ("soft",): _lowered({
+                        "backgroundColor": {
+                            "default": "var(--ruby-3)",
+                            ":hover": "red",
+                        }
+                    }),
+                    ("ghost",): _lowered({"outline": "none", "outlineWidth": None}),
                 },
             ),
         ),
@@ -325,14 +344,14 @@ def test_independent_state_bound_props_are_separate_alternatives():
     assert merge(
         "rx.ui.button", BUTTON, {"variant": "soft", "size": SIZE, "loading": LOADING}
     ) == Merged(
-        Lowered({**BASE, "backgroundColor": "var(--ruby-3)"}, (RUBY,)),
+        _lowered({**BASE, "backgroundColor": "var(--ruby-3)"}),
         (
             Alternatives(
                 ("size",),
                 (SIZE,),
                 {
-                    ("1",): Lowered({"height": "var(--space-5)"}),
-                    ("2",): Lowered({
+                    ("1",): _lowered({"height": "var(--space-5)"}),
+                    ("2",): _lowered({
                         "height": "var(--space-6)",
                         "color": {"default": "black", ":hover": "gray"},
                     }),
@@ -341,15 +360,15 @@ def test_independent_state_bound_props_are_separate_alternatives():
             Alternatives(
                 ("loading",),
                 (LOADING,),
-                {("true",): Lowered({"opacity": 0.5, "cursor": "wait"})},
+                {("true",): _lowered({"opacity": 0.5, "cursor": "wait"})},
             ),
         ),
         {
             "icon": Merged(
-                Lowered({"width": "1em"}),
+                _lowered({"width": "1em"}),
                 (
                     Alternatives(
-                        ("size",), (SIZE,), {("2",): Lowered({"width": "2em"})}
+                        ("size",), (SIZE,), {("2",): _lowered({"width": "2em"})}
                     ),
                 ),
                 {"dot": DOT},
@@ -362,7 +381,7 @@ def test_independent_state_bound_props_are_separate_alternatives():
 def test_state_bound_props_that_depend_on_each_other_are_one_alternative():
     """Props that share a property or a compound style are picked together."""
     solid = {"backgroundColor": SOLID_BACKGROUND}
-    soft = Lowered({"backgroundColor": "var(--ruby-3)"}, (RUBY,))
+    soft = _lowered({"backgroundColor": "var(--ruby-3)"})
     ghost = {"outline": "none", "outlineWidth": None}
     assert merge(
         "rx.ui.button", BUTTON, {"variant": VARIANT, "size": SIZE}
@@ -371,30 +390,25 @@ def test_state_bound_props_that_depend_on_each_other_are_one_alternative():
             ("variant", "size"),
             (VARIANT, SIZE),
             {
-                ("solid", "1"): Lowered({
+                ("solid", "1"): _lowered({
                     **solid,
                     "color": "white",
                     "height": "var(--space-5)",
                 }),
-                ("solid", "2"): Lowered({
+                ("solid", "2"): _lowered({
                     **solid,
                     "color": {"default": "white", ":hover": "gray"},
                     "height": "var(--space-6)",
                     "fontWeight": "700",
                 }),
-                ("soft", "1"): Lowered(
-                    {**soft.style, "height": "var(--space-5)"}, (RUBY,)
-                ),
-                ("soft", "2"): Lowered(
-                    {
-                        **soft.style,
-                        "height": "var(--space-6)",
-                        "color": {"default": "black", ":hover": "gray"},
-                    },
-                    (RUBY,),
-                ),
-                ("ghost", "1"): Lowered({**ghost, "height": "var(--space-5)"}),
-                ("ghost", "2"): Lowered({
+                ("soft", "1"): _lowered({**soft.style, "height": "var(--space-5)"}),
+                ("soft", "2"): _lowered({
+                    **soft.style,
+                    "height": "var(--space-6)",
+                    "color": {"default": "black", ":hover": "gray"},
+                }),
+                ("ghost", "1"): _lowered({**ghost, "height": "var(--space-5)"}),
+                ("ghost", "2"): _lowered({
                     **ghost,
                     "height": "var(--space-6)",
                     "color": {"default": "black", ":hover": "gray"},

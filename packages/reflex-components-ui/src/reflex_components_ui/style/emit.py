@@ -129,6 +129,29 @@ class Emitted:
 
 _NOTHING = Emitted()
 
+
+def style_object(emitted: Emitted) -> tuple[str, str] | None:
+    """Name the compiled style every instance has, before it is folded.
+
+    For what joins class names when the page loads: a theme is declared in a
+    module of its own, so StyleX cannot fold a call that names one. StyleX
+    drops a style that is only folded, and the build hands it nothing but the
+    statements that start like a declaration, so the style is kept by one.
+
+    Args:
+        emitted: The StyleX source of the styles of one element.
+
+    Returns:
+        The statement to place after the declaration and the name it gives
+        the style, or None when the element has none.
+    """
+    classes = emitted.classes
+    if classes is None:
+        return None
+    name = classes.removesuffix("_c")
+    return f"const {name}_o = {name}.{_KEY};", f"{name}_o"
+
+
 # The name of every literal declaration emitted so far, by its source.
 _NAMES: dict[str, str] = {}
 

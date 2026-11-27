@@ -12,7 +12,7 @@ from typing import Any
 import pytest
 from reflex_base.components.component import Component
 from reflex_base.config import get_config
-from reflex_base.plugins import CompileContext, CompilerHooks
+from reflex_base.plugins import CompileContext, CompilerHooks, Plugin
 from reflex_components_ui.plugin import UIPlugin
 
 from reflex.compiler.plugins import default_page_plugins
@@ -55,14 +55,15 @@ def compile_page(preserve_memo_registries: None) -> Callable[..., CompileContext
         preserve_memo_registries: Restores the memos a compile registers.
 
     Returns:
-        A function from a page to its compile context: the source of the page
+        A function from a page, and the plugins of the app to run beside the
+        ones of every compile, to its compile context: the source of the page
         is ``compiled_pages["/"].output_code``.
     """
 
-    def compile_page(page: Callable[[], Component]) -> CompileContext:
+    def compile_page(page: Callable[[], Component], *plugins: Plugin) -> CompileContext:
         ctx = CompileContext(
             pages=[_Page(route="/", component=page)],
-            hooks=CompilerHooks(plugins=default_page_plugins()),
+            hooks=CompilerHooks(plugins=(*default_page_plugins(), *plugins)),
         )
         with ctx:
             ctx.compile()

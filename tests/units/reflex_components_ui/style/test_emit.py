@@ -149,13 +149,24 @@ CASES: dict[str, tuple[dict[str, Any], tuple[Any, ...]]] = {
         },
         emitted(
             declaration=(
-                'const sx_e4b79af79d = stylex.create({ s: {"padding": '
-                '"var(--space-3)", "borderRadius": "var(--radius-4)", "boxShadow": '
-                '"var(--shadow-2)", "width": "320px", "zIndex": 2, "lineHeight": '
-                "1.5} });\n"
-                "const sx_e4b79af79d_c = stylex.props(sx_e4b79af79d.s).className;"
+                'const sx_283e421a96 = stylex.create({ s: {"paddingTop": '
+                '"var(--space-3)", "paddingRight": "var(--space-3)", '
+                '"paddingBottom": "var(--space-3)", "paddingLeft": '
+                '"var(--space-3)", "borderTopLeftRadius": "var(--radius-4)", '
+                '"borderTopRightRadius": "var(--radius-4)", '
+                '"borderBottomRightRadius": "var(--radius-4)", '
+                '"borderBottomLeftRadius": "var(--radius-4)", "boxShadow": '
+                '"var(--shadow-2)", "width": "320px", "zIndex": 2, '
+                '"lineHeight": 1.5} });\n'
+                "const sx_283e421a96_c = "
+                "stylex.props(sx_283e421a96.s).className;"
             ),
-            classes="sx_e4b79af79d_c",
+            classes="sx_283e421a96_c",
+            imports=(
+                "$/reflex-ui/tokens/radius.stylex.js",
+                "$/reflex-ui/tokens/shadow.stylex.js",
+                "$/reflex-ui/tokens/space.stylex.js",
+            ),
         ),
     ),
     # The card of the plan: its width bound to state, and a hover shadow.
@@ -169,13 +180,24 @@ CASES: dict[str, tuple[dict[str, Any], tuple[Any, ...]]] = {
         },
         emitted(
             declaration=(
-                'const sx_62330ed6a3 = stylex.create({ s: {"padding": '
-                '"var(--space-3)", "borderRadius": "var(--radius-4)", "boxShadow": '
+                'const sx_75ce444dca = stylex.create({ s: {"paddingTop": '
+                '"var(--space-3)", "paddingRight": "var(--space-3)", '
+                '"paddingBottom": "var(--space-3)", "paddingLeft": '
+                '"var(--space-3)", "borderTopLeftRadius": "var(--radius-4)", '
+                '"borderTopRightRadius": "var(--radius-4)", '
+                '"borderBottomRightRadius": "var(--radius-4)", '
+                '"borderBottomLeftRadius": "var(--radius-4)", "boxShadow": '
                 '{"default": "var(--shadow-2)", ":hover": "var(--shadow-3)"}, '
                 '"width": "var(--v0)"} });\n'
-                "const sx_62330ed6a3_c = stylex.props(sx_62330ed6a3.s).className;"
+                "const sx_75ce444dca_c = "
+                "stylex.props(sx_75ce444dca.s).className;"
             ),
-            classes="sx_62330ed6a3_c",
+            classes="sx_75ce444dca_c",
+            imports=(
+                "$/reflex-ui/tokens/radius.stylex.js",
+                "$/reflex-ui/tokens/shadow.stylex.js",
+                "$/reflex-ui/tokens/space.stylex.js",
+            ),
             variables=('"--v0": (<width>) ?? "initial"',),
             vars=("<width>",),
         ),
@@ -311,21 +333,24 @@ CASES: dict[str, tuple[dict[str, Any], tuple[Any, ...]]] = {
         emitted(
             declaration=(
                 'const sx_dae5511f98 = stylex.create({ s: {"rowGap": '
-                '"var(--space-3)", "columnGap": "var(--space-3)", "paddingTop": '
-                '{"default": "var(--space-1)", "@media screen and (min-width: '
+                '"var(--space-3)", "columnGap": "var(--space-3)", "paddingTop":'
+                ' {"default": "var(--space-1)", "@media screen and (min-width: '
                 '30em)": "var(--space-2)"}, "paddingRight": {"default": '
                 '"var(--space-1)", "@media screen and (min-width: 30em)": '
-                '"var(--space-2)"}, "paddingBottom": {"default": "var(--space-1)", '
-                '"@media screen and (min-width: 30em)": "var(--space-2)"}, '
-                '"paddingLeft": {"default": "var(--space-1)", "@media screen and '
-                '(min-width: 30em)": "var(--space-2)"}, "marginTop": "calc(-1 * '
-                'var(--space-2))", "marginRight": "calc(-1 * var(--space-2))", '
-                '"marginBottom": "calc(-1 * var(--space-2))", "marginLeft": "calc(-1 '
-                '* var(--space-2))", "gridTemplateColumns": "repeat(3, minmax(0, '
+                '"var(--space-2)"}, "paddingBottom": {"default": '
+                '"var(--space-1)", "@media screen and (min-width: 30em)": '
+                '"var(--space-2)"}, "paddingLeft": {"default": '
+                '"var(--space-1)", "@media screen and (min-width: 30em)": '
+                '"var(--space-2)"}, "marginTop": "calc(-1 * var(--space-2))", '
+                '"marginRight": "calc(-1 * var(--space-2))", "marginBottom": '
+                '"calc(-1 * var(--space-2))", "marginLeft": "calc(-1 * '
+                'var(--space-2))", "gridTemplateColumns": "repeat(3, minmax(0, '
                 '1fr))", "flexDirection": "column"} });\n'
-                "const sx_dae5511f98_c = stylex.props(sx_dae5511f98.s).className;"
+                "const sx_dae5511f98_c = "
+                "stylex.props(sx_dae5511f98.s).className;"
             ),
             classes="sx_dae5511f98_c",
+            imports=("$/reflex-ui/tokens/space.stylex.js",),
         ),
     ),
     "shorthand": (
@@ -446,12 +471,23 @@ CASES: dict[str, tuple[dict[str, Any], tuple[Any, ...]]] = {
         {"styles": CARD, "style": S.styles},
         emitted(
             declaration=(
-                'const sx_884e514c9c = stylex.create({ s: {"padding": '
-                '"var(--space-3)", "borderRadius": "var(--radius-4)", "boxShadow": '
+                'const sx_1026d57c33 = stylex.create({ s: {"paddingTop": '
+                '"var(--space-3)", "paddingRight": "var(--space-3)", '
+                '"paddingBottom": "var(--space-3)", "paddingLeft": '
+                '"var(--space-3)", "borderTopLeftRadius": "var(--radius-4)", '
+                '"borderTopRightRadius": "var(--radius-4)", '
+                '"borderBottomRightRadius": "var(--radius-4)", '
+                '"borderBottomLeftRadius": "var(--radius-4)", "boxShadow": '
                 '"var(--shadow-2)"} });\n'
-                "const sx_884e514c9c_c = stylex.props(sx_884e514c9c.s).className;"
+                "const sx_1026d57c33_c = "
+                "stylex.props(sx_1026d57c33.s).className;"
             ),
-            classes="sx_884e514c9c_c",
+            classes="sx_1026d57c33_c",
+            imports=(
+                "$/reflex-ui/tokens/radius.stylex.js",
+                "$/reflex-ui/tokens/shadow.stylex.js",
+                "$/reflex-ui/tokens/space.stylex.js",
+            ),
             inline="<styles>",
             vars=("<styles>",),
         ),
@@ -507,8 +543,14 @@ def test_emit_names_a_declaration_after_its_content():
 def test_inline_keeps_literals():
     style = {"top": "4px", "z_index": 2, "opacity": 0.5}
     assert inline(merge("rx.ui.box", CARD, style=style), "rx.ui.box") == {
-        "padding": "var(--space-3)",
-        "borderRadius": "var(--radius-4)",
+        "paddingTop": "var(--space-3)",
+        "paddingRight": "var(--space-3)",
+        "paddingBottom": "var(--space-3)",
+        "paddingLeft": "var(--space-3)",
+        "borderTopLeftRadius": "var(--radius-4)",
+        "borderTopRightRadius": "var(--radius-4)",
+        "borderBottomRightRadius": "var(--radius-4)",
+        "borderBottomLeftRadius": "var(--radius-4)",
         "boxShadow": "var(--shadow-2)",
         "top": "4px",
         "zIndex": 2,

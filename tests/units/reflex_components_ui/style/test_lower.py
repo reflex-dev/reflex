@@ -6,6 +6,8 @@ import pytest
 from reflex_base.breakpoints import breakpoints_values, set_breakpoints
 from reflex_base.constants.colors import Color
 from reflex_base.vars.base import LiteralVar, Var
+from reflex_components_ui import tokens
+from reflex_components_ui._radix_tokens import VAR_GROUPS
 from reflex_components_ui.style import _css_props
 from reflex_components_ui.style.lower import (
     _BORDERS,
@@ -27,7 +29,9 @@ from reflex_components_ui.style.lower import (
 import reflex as rx
 
 RUBY = "$/reflex-ui/colors/ruby.stylex.js"
-GRAY = "$/reflex-ui/colors/gray.stylex.js"
+GRAY = "$/reflex-ui/tokens/gray.stylex.js"
+ACCENT = "$/reflex-ui/tokens/accent.stylex.js"
+SPACE = "$/reflex-ui/tokens/space.stylex.js"
 XS = "@media screen and (min-width: 30em)"
 SM = "@media screen and (min-width: 48em)"
 MD = "@media screen and (min-width: 62em)"
@@ -202,7 +206,7 @@ def test_whole_dict_var_becomes_the_inline_style():
             "paddingBottom": "var(--space-2)",
             "paddingLeft": "var(--space-2)",
         },
-        (),
+        (SPACE,),
         StyleState.style,
     )
 
@@ -404,11 +408,11 @@ def test_responsive_values_follow_the_configured_breakpoints():
             {"color": "var(--gray-11)"},
             (GRAY,),
         ),
-        ({"color": rx.color("accent", 9)}, {"color": "var(--accent-9)"}, ()),
+        ({"color": rx.color("accent", 9)}, {"color": "var(--accent-9)"}, (ACCENT,)),
         (
             {"outline": f"1px solid {rx.color('ruby', 6)}", "color": "var(--gray-a11)"},
             {"outline": "1px solid var(--ruby-6)", "color": "var(--gray-a11)"},
-            (GRAY, RUBY),
+            (RUBY, GRAY),
         ),
         (
             {
@@ -423,7 +427,7 @@ def test_responsive_values_follow_the_configured_breakpoints():
                     ":hover": {"default": "var(--ruby-9)", XS: "var(--ruby-10)"},
                 }
             },
-            (GRAY, RUBY),
+            (RUBY, GRAY),
         ),
         (
             {"border_color": rx.color("ruby", 6)},
@@ -438,7 +442,7 @@ def test_responsive_values_follow_the_configured_breakpoints():
         (
             {"color": "var(--my-color)", "width": "var(--space-4)"},
             {"color": "var(--my-color)", "width": "var(--space-4)"},
-            (),
+            (SPACE,),
         ),
         (
             {"color": rx.color(SCALE, 9)},
@@ -462,50 +466,35 @@ def test_colors_and_tokens(
     assert lowered.imports == imports
 
 
-def test_var_modules_name_a_module_per_color_scale():
-    """Every Radix scale has a module, and a token can register its own."""
-    assert VAR_MODULES["ruby"] == RUBY
-    assert sorted(VAR_MODULES) == [
-        "amber",
-        "black",
-        "blue",
-        "bronze",
-        "brown",
-        "crimson",
-        "cyan",
-        "gold",
-        "grass",
-        "gray",
-        "green",
-        "indigo",
-        "iris",
-        "jade",
-        "lime",
-        "mauve",
-        "mint",
-        "olive",
-        "orange",
-        "pink",
-        "plum",
-        "purple",
-        "red",
-        "ruby",
-        "sage",
-        "sand",
-        "sky",
-        "slate",
-        "teal",
-        "tomato",
-        "violet",
-        "white",
-        "yellow",
-    ]
-    VAR_MODULES["space"] = "$/reflex-ui/tokens/space.stylex.js"
-    try:
-        lowered = lower("rx.ui.card", {"width": "calc(2 * var(--space-4))"})
-    finally:
-        del VAR_MODULES["space"]
-    assert lowered.imports == ("$/reflex-ui/tokens/space.stylex.js",)
+def test_var_modules_name_the_module_of_every_custom_property():
+    """Each custom property Radix defines is found by its whole name."""
+    assert VAR_MODULES["--ruby-9"] == RUBY
+    assert VAR_MODULES["--gray-9"] == GRAY
+    assert {
+        name: f"$/reflex-ui/{module}"
+        for module, names in VAR_GROUPS.values()
+        for name in names
+    } == VAR_MODULES
+    assert len(VAR_MODULES) == 1070
+    assert lower(
+        "rx.ui.card",
+        {
+            "width": "calc(2 * var(--space-4))",
+            "flex_grow": "var(--scaling)",
+            "font_size": "var(--font-size-2, 14px)",
+            "line_height": "var( --line-height-2 )",
+            # Not custom properties of Radix Themes: an app may define them,
+            # and they import nothing, whatever word they start with.
+            "color": "var(--mine-1)",
+            "background_color": "var(--color-mine)",
+            "border_top_color": "var(--gray-13)",
+            "font_family": "var(--code-font)",
+        },
+    ).imports == (
+        "$/reflex-ui/tokens/scaling.stylex.js",
+        "$/reflex-ui/tokens/space.stylex.js",
+        "$/reflex-ui/tokens/typography.stylex.js",
+    )
 
 
 def _sides(prefix: str, suffix: str, *values: Any) -> dict[str, Any]:
@@ -906,7 +895,10 @@ def test_layout_props(layout: dict[str, Any], expected: dict[str, Any]):
         layout: The layout props.
         expected: The lowered properties.
     """
-    assert lower("rx.ui.flex", None, layout) == Lowered(expected)
+    lowered = lower("rx.ui.flex", None, layout)
+    assert lowered.style == expected
+    # Only a step of the space scale needs a module.
+    assert lowered.imports == ((SPACE,) if "var(--space-" in repr(expected) else ())
 
 
 def test_layout_props_are_merged_under_the_style():
@@ -915,15 +907,18 @@ def test_layout_props_are_merged_under_the_style():
         "rx.ui.flex",
         {"padding_top": "1px", "_hover": {"row_gap": "0"}, "margin": WIDTH},
         {"p": "2", "gap": "3", "mt": "1"},
-    ) == Lowered({
-        "paddingTop": "1px",
-        "paddingRight": "var(--space-2)",
-        "paddingBottom": "var(--space-2)",
-        "paddingLeft": "var(--space-2)",
-        "rowGap": {"default": "var(--space-3)", ":hover": "0"},
-        "columnGap": "var(--space-3)",
-        "margin": WIDTH,
-    })
+    ) == Lowered(
+        {
+            "paddingTop": "1px",
+            "paddingRight": "var(--space-2)",
+            "paddingBottom": "var(--space-2)",
+            "paddingLeft": "var(--space-2)",
+            "rowGap": {"default": "var(--space-3)", ":hover": "0"},
+            "columnGap": "var(--space-3)",
+            "margin": WIDTH,
+        },
+        (SPACE,),
+    )
     assert (
         frozenset({
             "p",
@@ -1359,3 +1354,103 @@ def test_var_values_are_vars():
     value = lower("rx.ui.card", {"width": WIDTH}).style["width"]
     assert isinstance(value, Var)
     assert value.equals(WIDTH)
+
+
+@pytest.mark.parametrize(
+    ("style", "expected", "imports"),
+    [
+        (
+            {"padding": tokens.space[3]},
+            _sides("padding", "", *["var(--space-3)"] * 4),
+            (SPACE,),
+        ),
+        (
+            {"padding": f"{tokens.space[2]} {tokens.space[4]}"},
+            _sides(
+                "padding",
+                "",
+                "var(--space-2)",
+                "var(--space-4)",
+                "var(--space-2)",
+                "var(--space-4)",
+            ),
+            (SPACE,),
+        ),
+        (
+            {"margin": f"0 auto {tokens.space[1]}"},
+            _sides("margin", "", "0", "auto", "var(--space-1)", "auto"),
+            (SPACE,),
+        ),
+        (
+            {"gap": f"{tokens.space[1]} {tokens.space[2]}"},
+            {"rowGap": "var(--space-1)", "columnGap": "var(--space-2)"},
+            (SPACE,),
+        ),
+        (
+            {"border_radius": tokens.radius[3]},
+            {
+                "borderTopLeftRadius": "var(--radius-3)",
+                "borderTopRightRadius": "var(--radius-3)",
+                "borderBottomRightRadius": "var(--radius-3)",
+                "borderBottomLeftRadius": "var(--radius-3)",
+            },
+            ("$/reflex-ui/tokens/radius.stylex.js",),
+        ),
+        (
+            {"border_color": tokens.gray.a[6]},
+            _sides("border", "Color", *["var(--gray-a6)"] * 4),
+            (GRAY,),
+        ),
+        (
+            {"border": f"1px solid {tokens.accent[7]}"},
+            _border(ALL_SIDES, "1px", "solid", "var(--accent-7)"),
+            (ACCENT,),
+        ),
+        (
+            {"background": tokens.color.panel},
+            {"backgroundColor": "var(--color-panel)", "backgroundImage": "none"},
+            ("$/reflex-ui/tokens/color.stylex.js",),
+        ),
+        # A shadow is a list of layers and a font family a list of fonts: a
+        # shorthand that holds one is kept whole, as with any other property.
+        (
+            {"padding": tokens.shadow[1]},
+            {"padding": "var(--shadow-1)"},
+            ("$/reflex-ui/tokens/shadow.stylex.js",),
+        ),
+        (
+            {"margin": f"{tokens.space[1]} {tokens.default.font_family}"},
+            {"margin": "var(--space-1) var(--default-font-family)"},
+            (SPACE, "$/reflex-ui/tokens/typography.stylex.js"),
+        ),
+        (
+            {"padding": f"{tokens.space[1]} var(--mine)"},
+            {"padding": "var(--space-1) var(--mine)"},
+            (SPACE,),
+        ),
+        (
+            {"padding": f"calc({tokens.space[1]} * 2) {tokens.space[2]}"},
+            {"padding": "calc(var(--space-1) * 2) var(--space-2)"},
+            (SPACE,),
+        ),
+        (
+            {"font_size": tokens.font_size[2], "box_shadow": tokens.shadow[3]},
+            {"fontSize": "var(--font-size-2)", "boxShadow": "var(--shadow-3)"},
+            (
+                "$/reflex-ui/tokens/shadow.stylex.js",
+                "$/reflex-ui/tokens/typography.stylex.js",
+            ),
+        ),
+    ],
+)
+def test_design_tokens(style: Any, expected: dict[str, Any], imports: tuple[str, ...]):
+    """A token is its custom property: a shorthand gives one to each longhand.
+
+    Args:
+        style: The style as written.
+        expected: The lowered properties.
+        imports: The modules the style needs.
+    """
+    lowered = lower("rx.ui.card", style)
+    assert lowered == Lowered(expected, imports)
+    assert lowered.imports == imports

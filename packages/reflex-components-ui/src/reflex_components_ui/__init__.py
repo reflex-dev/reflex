@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from reflex_base.utils import lazy_loader
 
-_SUBMODULES: set[str] = set()
+_SUBMODULES: set[str] = {"tokens"}
 
 _SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = {
     "layout.box": ["box"],
+    "layout.theme": ["theme"],
+    "themes": ["Theme"],
 }
 
 __getattr__, __dir__, __all__ = lazy_loader.attach(

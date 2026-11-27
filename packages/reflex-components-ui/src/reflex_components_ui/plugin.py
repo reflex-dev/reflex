@@ -5,9 +5,10 @@ from __future__ import annotations
 import dataclasses
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 from reflex_base.constants import Dirs, Ext, PageNames
-from reflex_base.plugins import Plugin, VitePluginEntry
+from reflex_base.plugins import PageContext, Plugin, VitePluginEntry
 
 from reflex_components_ui.constants import (
     JS_SRC,
@@ -15,9 +16,19 @@ from reflex_components_ui.constants import (
     STYLEX_VERSION,
     WEB_DIR,
 )
+from reflex_components_ui.themes import Theme, ThemeError
 
 # Declares the cascade layers, so it comes before any stylesheet that names one.
 BASE_STYLESHEET_IMPORT = f"@import url('../{WEB_DIR}/base.css');"
+
+# Where the element that carries the theme of the app goes among the elements
+# around every page: inside the theme of Radix Themes, which is at 20, so that
+# a page with components of both follows this one.
+APP_THEME_WRAP = (15, "ReflexUITheme")
+
+# The element around it that carries the class of the appearance of the theme,
+# when it has one of its own.
+APP_APPEARANCE_WRAP = (16, "ReflexUIAppearance")
 
 # The cascade layer the styles of the components are compiled into.
 CSS_LAYER = "reflex-ui"
@@ -58,11 +69,6 @@ def add_base_stylesheet(content: str) -> str:
 
 
 @dataclasses.dataclass
-class Theme:
-    """The look of the rx.ui components across an app. It has no options yet."""
-
-
-@dataclasses.dataclass
 class UIPlugin(Plugin):
     """Compile the styles of the rx.ui components into the app's stylesheet.
 
@@ -71,6 +77,21 @@ class UIPlugin(Plugin):
     """
 
     theme: Theme = dataclasses.field(default_factory=Theme)
+
+    def __post_init__(self):
+        """Check that the theme is one of rx.ui.
+
+        Raises:
+            ThemeError: If the theme is something else, such as the theme
+                component of Radix Themes.
+        """
+        if not isinstance(self.theme, Theme):
+            msg = (
+                "rx.plugins.UIPlugin: theme must be an rx.ui.Theme(...), not "
+                f"{type(self.theme).__name__}. The theme of Radix Themes, "
+                "rx.theme(...), goes to rx.plugins.RadixThemesPlugin."
+            )
+            raise ThemeError(msg)
 
     def get_frontend_development_dependencies(self, **context) -> list[str]:
         """Get the packages that compile the styles.
@@ -125,3 +146,20 @@ class UIPlugin(Plugin):
             str(Path(Dirs.STYLES) / (PageNames.STYLESHEET_ROOT + Ext.CSS)),
             add_base_stylesheet,
         )
+
+    def compile_page(self, page_ctx: PageContext, /, **kwargs: Any) -> None:
+        """Wrap the app in the elements that carry its theme.
+
+        Args:
+            page_ctx: The page being compiled.
+            **kwargs: The context for the plugin.
+        """
+        # The component imports this module for the plugin it needs.
+        from reflex_components_ui.layout.theme import Appearance, AppTheme
+
+        wraps = page_ctx.app_wrap_components
+        wraps[APP_THEME_WRAP] = AppTheme.create()
+        if self.theme.appearance != "inherit":
+            wraps[APP_APPEARANCE_WRAP] = Appearance.create(
+                class_name=self.theme.appearance
+            )

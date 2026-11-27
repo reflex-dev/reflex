@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import functools
 import json
 from collections.abc import Iterator, Mapping, Sequence
@@ -30,6 +31,7 @@ from reflex_components_ui.style import (
 )
 from reflex_components_ui.style.emit import Emitted, emit, inline
 from reflex_components_ui.style.lower import suggest
+from reflex_components_ui.themes import color_scheme_styles
 
 MISSING_PLUGIN_ERROR = (
     "rx.ui components need rx.plugins.UIPlugin() in rxconfig.py plugins."
@@ -169,6 +171,7 @@ class UIComponent(Component):
         Raises:
             StyleError: If the style is not a dict of styles, a list of them or
                 a Var, or cannot be compiled.
+            ThemeError: If the ``color_scheme`` is not an accent color.
         """
         fields = self.get_fields()
         triggers = self.get_event_triggers()
@@ -207,6 +210,14 @@ class UIComponent(Component):
             {prop: kwargs.pop(prop) for prop in layout_props if prop in kwargs}
             if layout_props
             else None
+        )
+        # Before the props are checked against their types: the error of an
+        # unknown color lists the accent colors and suggests the closest.
+        color_scheme = kwargs.get("color_scheme") if "color_scheme" in fields else None
+        self._accent = (
+            None
+            if color_scheme is None
+            else color_scheme_styles(self._display_name(), color_scheme)
         )
         super()._post_init(*args, **kwargs)
         self._merge_styles()
@@ -284,6 +295,8 @@ class UIComponent(Component):
         """
         yield from super()._get_vars(include_children, ignore_ids)
         yield from self._emit().vars
+        if self._accent is not None:
+            yield from self._accent.vars
 
     def add_imports(self) -> ImportDict:
         """Import StyleX, which the build compiles away, and the CSS of tokens.
@@ -305,6 +318,8 @@ class UIComponent(Component):
             imports[""] = [
                 ImportVar(tag=module, install=False) for module in emitted.imports
             ]
+        if self._accent is not None:
+            imports.update(self._accent.import_dict())
         return imports
 
     def add_custom_code(self) -> list[str]:
@@ -322,7 +337,10 @@ class UIComponent(Component):
         if get_plugin(UIPlugin) is None:
             raise ConfigError(MISSING_PLUGIN_ERROR)
         declaration = self._emit().declaration
-        return [] if declaration is None else [declaration]
+        code = [] if declaration is None else [declaration]
+        if self._accent is not None:
+            code.extend(self._accent.declarations)
+        return code
 
     def _get_style(self) -> dict:
         """Get the props that carry the style: none, as ``_render`` adds them.
@@ -336,10 +354,12 @@ class UIComponent(Component):
         """Keep the props that are read as styles off the element.
 
         Returns:
-            The layout props and the props that select a variant.
+            The layout props, the props that select a variant, and the accent
+            color of the component: an attribute of that name is nothing to
+            an element.
         """
         layout_props, variants = self._style_props()
-        return [*layout_props, *variants]
+        return [*layout_props, *variants, "color_scheme"]
 
     def _render(self, props: dict[str, Any] | None = None) -> CommonTag:
         """Render the element with its style.
@@ -355,12 +375,28 @@ class UIComponent(Component):
             ConfigError: If the plugin that compiles the styles is not configured.
         """
         tag = super()._render(props)
+        accent = self._accent
         if is_rendering_dynamic_component():
+            if accent is not None:
+                msg = (
+                    f"{self._display_name()}: color_scheme cannot be applied to "
+                    "a component rendered from state: its code is evaluated in "
+                    "the browser and never reaches the StyleX compiler. Render "
+                    "the component in a page and show it with rx.cond."
+                )
+                raise StyleError(msg)
             style = inline(self._element_styles(), self._display_name())
             return tag.add_props(style=style) if style else tag
         if get_plugin(UIPlugin) is None:
             raise ConfigError(MISSING_PLUGIN_ERROR)
-        return _add_styles(tag, self._emit())
+        emitted = self._emit()
+        if accent is not None:
+            # The themes of an accent only set custom properties, so their
+            # class names stand beside the ones of the styles.
+            emitted = dataclasses.replace(
+                emitted, lookups=(*emitted.lookups, accent.classes)
+            )
+        return add_styles(tag, emitted)
 
 
 class Part(UIComponent):
@@ -439,7 +475,7 @@ def _bind_parts(
             _bind_parts(child.children, parts, name)
 
 
-def _add_styles(tag: CommonTag, emitted: Emitted) -> CommonTag:
+def add_styles(tag: CommonTag, emitted: Emitted) -> CommonTag:
     """Give a tag the class names and custom properties of its styles.
 
     Args:
