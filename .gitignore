@@ -32,8 +32,9 @@ reflex.db
 .env.*
 node_modules
 package-lock.json
-# ...except the frontend package, which CI installs with `npm ci`.
+# ...except the javascript packages, which CI installs with `npm ci`.
 !packages/reflex-frontend/package-lock.json
+!packages/reflex-components-ui/js/package-lock.json
 *.pyi
 .pre-commit-config.yaml
 .claude/.worktrees

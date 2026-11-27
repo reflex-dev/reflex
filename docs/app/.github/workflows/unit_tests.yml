@@ -64,7 +64,8 @@ jobs:
             --upgrade-package reflex-components-radix \
             --upgrade-package reflex-components-react-player \
             --upgrade-package reflex-components-recharts \
-            --upgrade-package reflex-components-sonner
+            --upgrade-package reflex-components-sonner \
+            --upgrade-package reflex-components-ui
 
       - name: Install custom reflex version (if specified)
         if: github.event.inputs.reflex_dep

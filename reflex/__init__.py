@@ -84,6 +84,8 @@ In the example above, you will be able to do `rx.list`
 
 from __future__ import annotations
 
+import importlib
+
 from reflex_base.utils import lazy_loader
 from reflex_components_radix.mappings import RADIX_MAPPING
 
@@ -247,14 +249,59 @@ _SUBMODULES: set[str] = {
     "plugins",
 }
 _SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = _MAPPING
-_EXTRA_MAPPINGS: dict[str, str] = _COMPONENT_NAME_TO_PATH
-getattr, __dir__, __all__ = lazy_loader.attach(
-    __name__,
-    submodules=_SUBMODULES,
-    submod_attrs=_SUBMOD_ATTRS,
-    **_EXTRA_MAPPINGS,
-)
+# `rx.ui` comes from the `ui` extra, which may not be installed. It stays out of
+# `attach` so that resolving it goes through `_import_ui`, whose error says what
+# to install: a native lazy import (Python 3.15) would raise its own instead.
+_EXTRA_MAPPINGS: dict[str, str] = {
+    **_COMPONENT_NAME_TO_PATH,
+    "ui": "reflex_components_ui",
+}
+
+
+def _attach():
+    """Attach the lazy names of the package, and list `ui` beside them.
+
+    Returns:
+        The lazy ``__getattr__``, and the ``__dir__`` and ``__all__`` of the package.
+    """
+    lazy_getattr, _, names = lazy_loader.attach(
+        __name__,
+        submodules=_SUBMODULES,
+        submod_attrs=_SUBMOD_ATTRS,
+        **_COMPONENT_NAME_TO_PATH,
+    )
+    names.append("ui")
+    return lazy_getattr, lambda: names, names
+
+
+getattr, __dir__, __all__ = _attach()
+
+
+def _import_ui():
+    """Import the `rx.ui` namespace and cache it on this module.
+
+    Returns:
+        The reflex_components_ui package.
+
+    Raises:
+        ModuleNotFoundError: If the `ui` extra is not installed.
+    """
+    package = _EXTRA_MAPPINGS["ui"]
+    try:
+        ui = importlib.import_module(package)
+    except ModuleNotFoundError as err:
+        if err.name != package:
+            raise
+        msg = (
+            "`rx.ui` requires the reflex-components-ui package, which is not "
+            "installed. Install it with `pip install 'reflex[ui]'`."
+        )
+        raise ModuleNotFoundError(msg, name=package) from None
+    globals()["ui"] = ui
+    return ui
 
 
 def __getattr__(name: str):
+    if name == "ui":
+        return _import_ui()
     return getattr(name)

@@ -79,6 +79,9 @@ testing = [
   "selenium >=4.0.0,<5.0",
   "uvicorn >=0.34.0,<1.0",
 ]
+# `rx.ui`: components compiled to plain HTML and static CSS. Optional while
+# the package is pre-release.
+ui = ["reflex-components-ui"]
 
 [project.urls]
 homepage = "https://reflex.dev"
@@ -121,6 +124,7 @@ dev = [
   "python-dotenv",
   "pyyaml",
   "reflex-bench",
+  "reflex-components-ui",
   "reflex-docgen",
   "reflex-otel",
   "reflex-release",
@@ -186,6 +190,7 @@ extraPaths = [
   "packages/reflex-react-router/src",
   "packages/reflex-recharts/src",
   "packages/reflex-sonner/src",
+  "packages/reflex-components-ui/src",
   "packages/reflex-components-internal/src",
   "packages/reflex-otel/src",
   "packages/reflex-build-sdk/src",
@@ -312,6 +317,7 @@ preview = true
 "docs/package/scripts/*.py" = ["INP001"]
 "packages/reflex-build-sdk/scripts/*.py" = ["INP001", "T201"]
 "packages/reflex-base/hatch_build.py" = ["INP001"]
+"packages/reflex-components-ui/hatch_build.py" = ["INP001"]
 "scripts/changed_paths.py" = ["T201"]
 "scripts/check_min_deps.py" = ["T201"]
 "scripts/check_outdated_deps.py" = ["T201"]
@@ -348,6 +354,7 @@ source = [
   "reflex_components_react_player",
   "reflex_components_recharts",
   "reflex_components_sonner",
+  "reflex_components_ui",
   "reflex_base",
   "reflex_docgen",
   "reflex_otel",
@@ -409,8 +416,9 @@ root-package = "reflex"
 root-source-dirs = ["reflex"]
 packages-dir = "packages"
 package-source-subdirs = ["src"]
-# reflex-base embeds the frontend javascript package as its web template.
-extra-source-dirs = { reflex-base = ["packages/reflex-frontend/src"] }
+# reflex-base embeds the frontend javascript package as its web template, and
+# reflex-components-ui the javascript its components are compiled against.
+extra-source-dirs = { reflex-base = ["packages/reflex-frontend/src"], reflex-components-ui = ["packages/reflex-components-ui/js/src"] }
 # Changelog dates and r/pre-<date> branch names are stamped in the project's
 # home timezone, so an evening release is not dated tomorrow by a UTC runner.
 release-timezone = "America/Los_Angeles"
@@ -553,6 +561,7 @@ reflex-components-radix = false
 reflex-components-react-player = false
 reflex-components-recharts = false
 reflex-components-sonner = false
+reflex-components-ui = false
 reflex-enterprise = false
 reflex-hosting-cli = false
 pillow = "2026-10-21T00:00:00Z"
@@ -575,6 +584,7 @@ reflex-components-radix.workspace = true
 reflex-components-react-player.workspace = true
 reflex-components-recharts.workspace = true
 reflex-components-sonner.workspace = true
+reflex-components-ui.workspace = true
 reflex-docgen.workspace = true
 reflex-release.workspace = true
 reflex-hosting-cli.workspace = true
