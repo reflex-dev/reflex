@@ -506,3 +506,29 @@ def test_errors(table: Any, style: Any, message: str):
     with pytest.raises(StyleError) as error:
         merge("rx.ui.card", table, None, style)
     assert str(error.value) == message
+
+
+def test_several_styles_are_merged_in_order():
+    """Each style is a layer over the ones before it, and a Var is the inline one."""
+    merged = merge(
+        "rx.ui.button",
+        {"base": {"color": "black", "padding_top": "1px"}},
+        style=[
+            {"color": "green", "_hover": {"color": "red"}},
+            {},
+            MergeState.style,
+            {"padding": "2px", "_hover": {"opacity": 0.5}},
+        ],
+    )
+    assert merged.style.style == {
+        "color": {"default": "green", ":hover": "red"},
+        "paddingTop": "2px",
+        "paddingRight": "2px",
+        "paddingBottom": "2px",
+        "paddingLeft": "2px",
+        "opacity": {":hover": 0.5},
+    }
+    assert merged.style.inline is MergeState.style
+    assert merge("rx.ui.button", {"base": {"color": "black"}}, style=[]) == merge(
+        "rx.ui.button", {"base": {"color": "black"}}
+    )

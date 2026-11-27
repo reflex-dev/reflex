@@ -269,7 +269,7 @@ _REPLACES: dict[str, tuple[str, ...]] = {
 }
 
 
-def _suggest(key: str, candidates: Any) -> str:
+def suggest(key: str, candidates: Any) -> str:
     """Word the suggestion that ends an error about a misspelt key.
 
     Args:
@@ -309,7 +309,7 @@ def _condition(name: str, key: str) -> str | None:
                 for pseudo in sorted(PSEUDO_CLASSES | PSEUDO_ELEMENTS)
                 if not pseudo.startswith("-")
             ]
-            msg = f'{name}: unknown pseudo-class "{key}".{_suggest(key, known)}'
+            msg = f'{name}: unknown pseudo-class "{key}".{suggest(key, known)}'
             raise StyleError(msg)
     elif first == "@":
         if key.startswith(_AT_RULES):
@@ -370,7 +370,7 @@ def _resolve(name: str, key: Any) -> _Entry:
                 )
                 msg = (
                     f'{name}: unknown CSS property "{key}".'
-                    f"{_suggest(key.replace('-', '_'), candidates)}"
+                    f"{suggest(key.replace('-', '_'), candidates)}"
                 )
                 raise StyleError(msg)
             entry = (None, condition, None, None)
@@ -1018,7 +1018,7 @@ def lower_layer(
             except KeyError:
                 msg = (
                     f'{name}: unknown layout prop "{prop}".'
-                    f"{_suggest(prop, sorted(_LAYOUT))}"
+                    f"{suggest(prop, sorted(_LAYOUT))}"
                 )
                 raise StyleError(msg) from None
             if read is not None:

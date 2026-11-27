@@ -9,7 +9,7 @@ the browser.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from itertools import product
 from typing import TYPE_CHECKING, Any, TypedDict
 
@@ -506,7 +506,7 @@ def _merge(
     name: str,
     table: _Table,
     props: Mapping[str, Any],
-    style: Mapping[str, Any] | Var | None,
+    style: Mapping[str, Any] | Var | Sequence[Mapping[str, Any] | Var] | None,
     layout: Mapping[str, Any] | None,
 ) -> Merged:
     """Merge a lowered style table with the style of one element.
@@ -515,7 +515,8 @@ def _merge(
         name: The display name of the component, for error messages.
         table: The lowered style table.
         props: The props of the element.
-        style: The style the user wrote.
+        style: The style the user wrote, or several of them in the order
+            they apply.
         layout: The layout props of the element.
 
     Returns:
@@ -558,8 +559,15 @@ def _merge(
     inline = None
     if isinstance(style, Var):
         inline = style
+    elif isinstance(style, Mapping):
+        if style:
+            layers.append(lower_layer(name, style))
     elif style:
-        layers.append(lower_layer(name, style))
+        for item in style:
+            if isinstance(item, Var):
+                inline = item
+            elif item:
+                layers.append(lower_layer(name, item))
 
     if bound is None:
         merged_props = dict(table.resolve(keys))
@@ -574,7 +582,11 @@ def merge(
     name: str,
     styles: ComponentStyles | Mapping[str, Any],
     props: Mapping[str, Any] | None = None,
-    style: StyleProps | Mapping[str, Any] | Var | None = None,
+    style: StyleProps
+    | Mapping[str, Any]
+    | Var
+    | Sequence[StyleProps | Mapping[str, Any] | Var]
+    | None = None,
     layout: Mapping[str, Any] | None = None,
 ) -> Merged:
     """Merge the style table of a component with the style of one element.
@@ -591,7 +603,8 @@ def merge(
             or, for a prop bound to state, a Var. Props the table does not
             read are ignored.
         style: The style the user wrote, or a Var holding a whole dict of
-            styles, which becomes the inline style of the element.
+            styles, which becomes the inline style of the element. A list or
+            tuple of them is merged in order, each over the ones before it.
         layout: The layout props of the element, such as ``p`` and ``gap``,
             which are merged after the table and before ``style``.
 

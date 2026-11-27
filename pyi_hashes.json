@@ -119,8 +119,8 @@
   "packages/reflex-components-recharts/src/reflex_components_recharts/recharts.pyi": "f2a9cf6db58d169289fbc76de6813300",
   "packages/reflex-components-sonner/src/reflex_components_sonner/toast.pyi": "87566e8afc48f0df46be8ca188bac2fb",
   "packages/reflex-components-ui/src/reflex_components_ui/__init__.pyi": "0fb77ee40f719777c68b2de2efdf799b",
-  "packages/reflex-components-ui/src/reflex_components_ui/base.pyi": "3a25570b63274a1490fa96a524a241fd",
-  "packages/reflex-components-ui/src/reflex_components_ui/layout/box.pyi": "55e59f481df8cb08185a820f84e0a10d",
+  "packages/reflex-components-ui/src/reflex_components_ui/base.pyi": "6ed32f40aa1d3ac1a21aa000f836dd3d",
+  "packages/reflex-components-ui/src/reflex_components_ui/layout/box.pyi": "fc1116971a8f022d5b67dcbe81275acb",
   "reflex/__init__.pyi": "540ab90bd8a7a89647f0bdd0a2fa3590",
   "reflex/components/__init__.pyi": "9facd05a776d0641432696bbf8e34388",
   "reflex/experimental/memo.pyi": "0fc8eae24cd0def5ea9d8d66ce87206e"
