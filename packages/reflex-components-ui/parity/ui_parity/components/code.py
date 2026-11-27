@@ -84,6 +84,8 @@ MATRIX = Matrix(
     stage=(300, 120),
     target="code",
     crop="stage",
+    threshold=0,
+    tolerance=0,
 )
 
 CONTRACT = Contract(

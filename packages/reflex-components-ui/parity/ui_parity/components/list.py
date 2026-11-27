@@ -93,6 +93,8 @@ MATRIX = Matrix(
         "list-style-type",
         "list-style-position",
     ),
+    threshold=0,
+    tolerance=0,
 )
 
 CONTRACT = Contract(

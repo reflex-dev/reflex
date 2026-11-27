@@ -78,6 +78,8 @@ MATRIX = Matrix(
          "viewport": [520, 800, 1100, 1280]},
     ],
     stage=(260, 200),
+    threshold=0,
+    tolerance=0,
 )
 
 CONTRACT = Contract(

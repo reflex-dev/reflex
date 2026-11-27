@@ -80,6 +80,9 @@ MATRIX = Matrix(
     stage=(260, 140),
     target="[data-inset]",
     crop="stage",
+    # Not held to zero, as the other layouts are: the card around the inset
+    # is the same Radix card in both frames, and the browser dithers its
+    # rounded corners and its shadow by position.
 )
 
 CONTRACT = Contract(

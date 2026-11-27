@@ -96,6 +96,8 @@ MATRIX = Matrix(
         "text-decoration-thickness",
         "text-underline-offset",
     ),
+    threshold=0,
+    tolerance=0,
 )
 
 CONTRACT = Contract(
