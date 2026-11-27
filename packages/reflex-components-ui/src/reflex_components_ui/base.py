@@ -262,6 +262,22 @@ class UIComponent(Component):
                     literals[prop] = choices
         return literals
 
+    @classmethod
+    @functools.cache
+    def _layout_defaults(cls) -> dict[str, Any]:
+        """Get the layout props an element has without being given them.
+
+        Returns:
+            The default of each layout prop whose field has one.
+        """
+        layout_props, _ = cls._style_props()
+        fields = cls.get_fields()
+        return {
+            prop: fields[prop].default_value()
+            for prop in layout_props
+            if prop in cls._get_defaulted_props()
+        }
+
     def _check_literals(self, kwargs: Mapping[str, Any]) -> None:
         """Fail on a value a prop does not take, naming the ones it does.
 
@@ -333,7 +349,10 @@ class UIComponent(Component):
         if inline is not None:
             self._styles.append(inline)
         self._layout = (
-            {prop: kwargs.pop(prop) for prop in layout_props if prop in kwargs}
+            {
+                **self._layout_defaults(),
+                **{prop: kwargs.pop(prop) for prop in layout_props if prop in kwargs},
+            }
             if layout_props
             else None
         )
@@ -345,12 +364,14 @@ class UIComponent(Component):
             if color_scheme is None
             else color_scheme_styles(self._display_name(), color_scheme)
         )
-        self._under: Merged | None = None
+        # Whether a parent with `as_child` renders as this element, and
+        # whether this element renders as its only child.
+        self._slotted = False
+        self._as_child = False
         super()._post_init(*args, **kwargs)
         self._as: Var | None = None
         if "as_" in fields:
             self._set_tag()
-        self._slot: Component | None = None
         if "as_child" in fields:
             self._set_slot()
         self._merge_styles()
@@ -395,7 +416,22 @@ class UIComponent(Component):
                 f"not {_describe(children)}."
             )
             raise StyleError(msg)
-        self._slot = children[0]
+        self._as_child = True
+        child = children[0]
+        if isinstance(child, UIComponent):
+            # This element declares the styles of both, the child's over its
+            # own: two sets of class names cannot say which one wins.
+            child._slotted = True
+
+    @property
+    def _slot(self) -> Component | None:
+        """Get the child the element is rendered as.
+
+        Returns:
+            The only child of an element with ``as_child``, as the tree has
+            it now: a compile works on copies.
+        """
+        return self.children[0] if self._as_child else None  # pyright: ignore[reportReturnType]
 
     def _get_tag_name(self) -> str:
         """Get the JS expression of the element's tag.
@@ -429,14 +465,11 @@ class UIComponent(Component):
         merged = self._merged = merge(
             name, cls.styles, props, styles or None, self._layout
         )
-        self._emitted_styles = None
+        # A compile gives a copy of the component its styles of the app and
+        # of `add_style` by assigning `style`: the merge follows it.
+        self._merged_for = self.style
         if merged.parts:
             _bind_parts(self.children, merged.parts, name)
-        slot = self._slot
-        if isinstance(slot, UIComponent):
-            # The child renders the styles of both, its own over these.
-            slot._under = merged
-            slot._emitted_styles = None
 
     def _add_style_recursive(self, style: Any, theme: Component | None = None):
         """Add the styles of the app to the component and its children.
@@ -449,7 +482,7 @@ class UIComponent(Component):
             The component with the additional style.
         """
         result = super()._add_style_recursive(style, theme)
-        if self.style:
+        if self.style is not self._merged_for:
             self._merge_styles()
         return result
 
@@ -459,23 +492,35 @@ class UIComponent(Component):
         Returns:
             What the module that renders the element declares for it.
         """
-        emitted = self._emitted_styles
-        if emitted is None:
-            emitted = self._emitted_styles = emit(self._element_styles())
-        return emitted
+        merged = self._element_styles()
+        if merged is not getattr(self, "_emitted_for", None):
+            self._emitted_for = merged
+            self._emitted_styles = emit(merged)
+        return self._emitted_styles
 
     def _element_styles(self) -> Merged:
-        """Get the merged styles of the element.
+        """Get the styles the element declares.
 
         Returns:
-            The style table merged with the styles of this element, over the
-            styles of a parent that renders as this element. Nothing for an
-            element that an rx.ui child of its own renders in its place.
+            The styles of the element, or nothing when a parent with
+            ``as_child`` declares them with its own.
         """
-        if isinstance(self._slot, UIComponent):
-            return _NO_STYLES
-        under = self._under
-        return self._merged if under is None else over(under, self._merged)
+        return _NO_STYLES if self._slotted else self._slot_styles()
+
+    def _slot_styles(self) -> Merged:
+        """Get the merged styles of the element and of what it renders as.
+
+        Returns:
+            The style table merged with the styles of this element, under
+            the styles of an rx.ui child that is rendered in its place.
+        """
+        if self.style is not self._merged_for:
+            self._merge_styles()
+        merged = self._merged
+        slot = self._slot
+        if isinstance(slot, UIComponent):
+            merged = over(merged, slot._slot_styles())
+        return merged
 
     def _get_vars(
         self, include_children: bool = False, ignore_ids: set[int] | None = None
@@ -675,7 +720,7 @@ class Part(UIComponent):
     def _merge_styles(self) -> None:
         """Wait for the component the part belongs to, which has its styles."""
         self._merged = getattr(self, "_merged", None)
-        self._emitted_styles = None
+        self._merged_for = self.style
 
     def _element_styles(self) -> Merged:
         """Get the styles the component of the part has for it.

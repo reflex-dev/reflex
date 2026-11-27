@@ -8,6 +8,7 @@ from typing import Any
 import reflex as rx
 from ui_parity.contract import HYDRATED, NO_JAVASCRIPT, SERVER, Contract, Run
 from ui_parity.matrix import DARK, Matrix
+from ui_parity.samples import tiles
 
 
 def _flex(namespace: Any, props: Mapping[str, Any]) -> Any:
@@ -21,14 +22,7 @@ def _flex(namespace: Any, props: Mapping[str, Any]) -> Any:
         The container.
     """
     return namespace.flex(
-        *(
-            rx.el.div(
-                word,
-                style={"border": "1px solid currentColor", "padding": "2px 6px"},
-            )
-            for word in ("The", "quick", "brown", "fox", "jumps", "over", "lazy")
-        ),
-        **props,
+*tiles(), **props
     )
 
 

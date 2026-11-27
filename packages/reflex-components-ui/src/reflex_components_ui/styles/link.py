@@ -59,6 +59,9 @@ LINK: ComponentStyles = {
         # Without a color of its own, inside an element that has one.
         "color": f"var({ACCENT_LINK}, {tokens.accent.a[11]})",
         "WebkitTapHighlightColor": "transparent",
+        # Radix Themes unsets everything on an anchor, the border a reset of
+        # the page gives every element included.
+        "border_style": "none",
         ":any-link": {"cursor": tokens.cursor.link},
         "[data-disabled]": {"cursor": tokens.cursor.disabled},
         "text_decoration_style": "solid",

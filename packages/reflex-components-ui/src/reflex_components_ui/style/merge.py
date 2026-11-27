@@ -265,7 +265,8 @@ class _Table:
         for key in source:
             if key not in _TABLE_KEYS:
                 msg = (
-XX
+                    f'{name}: unknown key "{key}" in a style table. Use "base", '
+                    '"variants", "defaults", "compound" or "parts".'
                 )
                 raise StyleError(msg)
         self.source = source

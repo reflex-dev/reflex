@@ -8,12 +8,7 @@ from typing import Any
 import reflex as rx
 from ui_parity.contract import HYDRATED, NO_JAVASCRIPT, SERVER, Contract, Run
 from ui_parity.matrix import DARK, Matrix
-
-PARAGRAPH = (
-    "The quick brown fox jumps over the lazy dog, then naps in the warm "
-    "afternoon sun."
-)
-
+from ui_parity.samples import ACCENTS, PARAGRAPH
 
 def _text(namespace: Any, props: Mapping[str, Any]) -> Any:
     """Create a paragraph that wraps over several lines.
@@ -41,6 +36,13 @@ def _text(namespace: Any, props: Mapping[str, Any]) -> Any:
             " jumps over the lazy dog.",
             **props,
         )
+    if nested in ("em", "strong", "quote", "span"):
+        return namespace.text(
+            "The quick ",
+            getattr(namespace.text, nested)("brown fox jumps"),
+            " over the lazy dog, then naps in the sun.",
+            **props,
+        )
     return namespace.text(PARAGRAPH, **props)
 
 
@@ -56,13 +58,9 @@ MATRIX = Matrix(
         "trim": ["normal", "start", "end", "both"],
         "as_": ["p", "label", "div", "span", "b", "i", "u", "abbr", "cite", "del",
                 "em", "ins", "kbd", "mark", "s", "samp", "sub", "sup"],
-        "color_scheme": ["tomato", "red", "ruby", "crimson", "pink", "plum",
-                         "purple", "violet", "iris", "indigo", "blue", "cyan",
-                         "teal", "jade", "green", "grass", "brown", "orange",
-                         "sky", "mint", "lime", "yellow", "amber", "gold",
-                         "bronze", "gray"],
+        "color_scheme": ACCENTS,
         "high_contrast": [True],
-        "nested": ["text", "high-contrast"],
+        "nested": ["text", "high-contrast", "em", "strong", "quote", "span"],
         "size": {
             "responsive": rx.breakpoints(initial="1", sm="5", lg="3"),
         },
@@ -74,6 +72,7 @@ MATRIX = Matrix(
          "appearance": ["light", DARK]},
         {"color_scheme": ["ruby"], "nested": ["text", "high-contrast"]},
         {"trim": ["both", "start"], "size": ["2", "6"]},
+        {"nested": ["em", "strong", "quote"], "size": ["1", "5", "9"]},
         {"size": {"responsive": rx.breakpoints(initial="1", sm="5", lg="3")},
          "trim": {"responsive": rx.breakpoints(initial="both", md="normal")},
          "viewport": [520, 800, 1100, 1280]},
