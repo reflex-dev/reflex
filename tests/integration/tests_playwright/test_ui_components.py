@@ -105,6 +105,22 @@ STYLED_PAGE_DECLARATIONS = [
     "const sx_e9f4c4c063_c = stylex.props(sx_e9f4c4c063.s).className;",
 ]
 
+# The one declaration of a flex container rendered as its child, a paragraph
+# bound to state: the styles of both, in the module the compiler moves the
+# pair into.
+WAVE_MEMO_DECLARATIONS = [
+    (
+        'const sx_d987dc85ff = stylex.create({ s: {"boxSizing": "border-box", '
+        '"display": "flex", "justifyContent": "flex-start", "flexDirection": '
+        '"column", "marginTop": "0", "marginRight": "0", "marginBottom": "0", '
+        '"marginLeft": "0", "lineHeight": "var(--line-height, var(--default-line-'
+        'height))", "letterSpacing": "var(--letter-spacing, inherit)", "fontSize": '
+        '"var(--font-size-5)", "--line-height": "var(--line-height-5)", "--letter-'
+        'spacing": "var(--letter-spacing-5)"} });'
+    ),
+    "const sx_d987dc85ff_c = stylex.props(sx_d987dc85ff.s).className;",
+]
+
 # The declarations of its elements that read state, which the compiler moves
 # into a module of their own: a custom property for the width, and the class
 # names of each value of the variant.
@@ -369,8 +385,39 @@ def UIComponentsApp(radix: bool = False):
     assets.mkdir(exist_ok=True)
     (assets / "unlayered.css").write_text(".unlayered { padding: 2px }")
 
-    app = rx.App(stylesheets=["unlayered.css"])
+    def wave():
+        return rx.el.main(
+            rx.ui.center(
+                rx.ui.text("middle", id="middle"),
+                id="center",
+                style={"height": "200px"},
+            ),
+            rx.ui.vstack(rx.ui.box("one"), rx.ui.box("two"), id="vstack"),
+            rx.ui.heading(
+                "Title", size=rx.breakpoints(initial="2", md="8"), id="heading"
+            ),
+            rx.ui.text(
+                "See ",
+                rx.ui.link("the styled page", href="/styled", id="link"),
+                color_scheme="ruby",
+                id="colored",
+            ),
+            # The child is bound to state, and stays the element all the same.
+            rx.ui.flex(
+                rx.ui.text(StyleState.tone, size="5", id="slot"),
+                as_child=True,
+                direction="column",
+            ),
+            rx.ui.separator(id="separator"),
+        )
+
+    # The style of the app for a component of the wave, as an app writes it.
+    app = rx.App(
+        stylesheets=["unlayered.css"],
+        style={rx.ui.heading: {"text_transform": "uppercase"}},
+    )
     app.add_page(index)
+    app.add_page(wave, route="/wave")
     app.add_page(literal, route="/literal")
     app.add_page(styled, route="/styled")
     app.add_page(theme, route="/theme")
@@ -608,9 +655,10 @@ def test_equal_styles_share_one_declaration(ui_app: AppHarness, page: Page):
     (route,) = (web / "app" / "routes").glob("*styled*.jsx")
     assert declarations(route) == STYLED_PAGE_DECLARATIONS
     name = ui_app.app_name
-    assert declarations(web / "app_components" / name / f"{name}.jsx") == (
-        STYLED_MEMO_DECLARATIONS
-    )
+    assert declarations(web / "app_components" / name / f"{name}.jsx") == [
+        *WAVE_MEMO_DECLARATIONS,
+        *STYLED_MEMO_DECLARATIONS,
+    ]
 
     page.goto(_styled_url(ui_app))
     rows = page.locator(".row")
@@ -1207,3 +1255,50 @@ def test_color_scheme_is_the_accent_of_one_element(ui_app: AppHarness, page: Pag
         "chip-red": ["rgb(229, 72, 77)", "rgb(235, 142, 144)"],
         "chip-gray": ["rgb(139, 141, 152)", "rgb(141, 164, 239)"],
     }
+
+
+# What the page of the layout and typography components computes to, by id.
+WAVE = {
+    # The style a class adds when an app is compiled.
+    "center": {
+        "display": "flex",
+        "align-items": "center",
+        "justify-content": "center",
+    },
+    # The defaults of the fields of a stack: its direction and its spacing.
+    "vstack": {"flex-direction": "column", "row-gap": "12px"},
+    # A size per breakpoint, and the style of the app for the component.
+    "heading": {"font-size": "14px", "text-transform": "uppercase"},
+    # A link inside colored text has the color of the text, at full contrast.
+    "link": {"color": "rgb(100, 23, 43)", "text-decoration-line": "underline"},
+    # A flex container rendered as its child, a paragraph.
+    "slot": {"display": "flex", "flex-direction": "column", "font-size": "20px"},
+    "separator": {"display": "block", "height": "1px"},
+}
+WAVE_WIDE = {**WAVE, "heading": {"font-size": "35px", "text-transform": "uppercase"}}
+
+
+def test_layout_and_typography_components_are_styled_and_navigate(
+    ui_app: AppHarness, page: Page
+):
+    """The first wave of components works in a real app, in dev and prod."""
+    assert ui_app.frontend_url is not None
+    page.set_viewport_size({"width": 400, "height": 600})
+    page.goto(ui_app.frontend_url.rstrip("/") + "/wave")
+    expect(page.locator("#center")).to_have_css("display", "flex")
+    assert _computed_styles(page, WAVE) == WAVE
+    slot = page.locator("#slot")
+    assert slot.evaluate("element => element.tagName") == "P"
+    expect(slot).to_have_text("calm")
+
+    # A prop follows the breakpoints of Radix Themes: md is 1024px.
+    page.set_viewport_size({"width": 1280, "height": 600})
+    expect(page.locator("#heading")).to_have_css("font-size", "35px")
+    assert _computed_styles(page, WAVE_WIDE) == WAVE_WIDE
+
+    # The link is the one of the router: the page is not loaded again.
+    page.evaluate("window.loadedOnce = true")
+    page.locator("#link").click()
+    styled = _styled_url(ui_app).rstrip("/")
+    page.wait_for_url(lambda url: url.rstrip("/") == styled)
+    assert page.evaluate("window.loadedOnce") is True

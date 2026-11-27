@@ -12,6 +12,8 @@ from reflex_components_ui.style.merge import (
     ComponentStyles,
     Merged,
     merge,
+    over,
+    unchecked,
 )
 
 import reflex as rx
@@ -480,7 +482,7 @@ def test_table_is_lowered_again_when_the_breakpoints_change():
             None,
             (
                 'rx.ui.card: unknown key "variant" in a style table. Use "base", '
-                '"variants", "compound" or "parts".'
+                '"variants", "defaults", "compound" or "parts".'
             ),
         ),
         (
@@ -546,3 +548,213 @@ def test_several_styles_are_merged_in_order():
     assert merge("rx.ui.button", {"base": {"color": "black"}}, style=[]) == merge(
         "rx.ui.button", {"base": {"color": "black"}}
     )
+
+
+# A table whose props can each be given a value per breakpoint.
+RESPONSIVE_TABLE: Any = {
+    "base": {"display": "block", "color": "black"},
+    "variants": {
+        "size": {
+            "1": {"height": "1px", "color": "red"},
+            "2": {"height": "2px"},
+            "3": {"height": "3px", "_hover": {"color": "blue"}},
+        },
+        "tone": {"true": {"opacity": "0.5"}},
+    },
+    "defaults": {"size": "2"},
+    "compound": [{"props": {"size": "3", "tone": "true"}, "style": {"width": "9px"}}],
+    "parts": {
+        "icon": {
+            "variants": {"size": {"1": {"width": "1em"}, "3": {"width": "3em"}}},
+        },
+    },
+}
+PROP_XS = "@media (min-width: 520px)"
+PROP_SM = "@media (min-width: 768px)"
+PROP_MD = "@media (min-width: 1024px)"
+PROP_LG = "@media (min-width: 1280px)"
+PROP_XL = "@media (min-width: 1640px)"
+HOVERED = {"default": "black", ":hover": "blue"}
+
+
+@pytest.mark.parametrize(
+    ("props", "expected", "icon"),
+    [
+        # A prop that is left out selects the default of the table.
+        (None, {"display": "block", "color": "black", "height": "2px"}, {}),
+        (
+            {"size": "1"},
+            {"display": "block", "color": "red", "height": "1px"},
+            {"width": "1em"},
+        ),
+        # Each property changes at the breakpoint its value changes at.
+        (
+            {"size": rx.breakpoints(initial="1", md="3")},
+            {
+                "display": "block",
+                "color": {"default": "red", PROP_MD: HOVERED},
+                "height": {"default": "1px", PROP_MD: "3px"},
+            },
+            {"width": {"default": "1em", PROP_MD: "3em"}},
+        ),
+        # Without a first value the default holds until the first breakpoint,
+        # and a compound style applies from where every prop has its value.
+        (
+            {"size": rx.breakpoints(sm="1", lg="3"), "tone": True},
+            {
+                "display": "block",
+                "color": {"default": "black", PROP_SM: "red", PROP_LG: HOVERED},
+                "height": {"default": "2px", PROP_SM: "1px", PROP_LG: "3px"},
+                "opacity": "0.5",
+                "width": {PROP_LG: "9px"},
+            },
+            {"width": {PROP_SM: "1em", PROP_LG: "3em"}},
+        ),
+        # What the values of a breakpoint no longer set is given back.
+        (
+            {
+                "size": rx.breakpoints(initial="3", xs="1", xl="3"),
+                "tone": rx.breakpoints(initial=True, sm=False),
+            },
+            {
+                "display": "block",
+                "color": {**HOVERED, PROP_XS: "red", PROP_XL: HOVERED},
+                "height": {"default": "3px", PROP_XS: "1px", PROP_XL: "3px"},
+                "opacity": {"default": "0.5", PROP_SM: "revert-layer"},
+                "width": {"default": "9px", PROP_XS: "revert-layer"},
+            },
+            {"width": {"default": "3em", PROP_XS: "1em", PROP_XL: "3em"}},
+        ),
+        # A value that does not change at a breakpoint adds no condition.
+        (
+            {"size": {"initial": "1", "md": "1"}},
+            {"display": "block", "color": "red", "height": "1px"},
+            {"width": "1em"},
+        ),
+        # As a component holds it: a literal Var.
+        (
+            {"size": LiteralVar.create(rx.breakpoints(initial="1", md="3"))},
+            {
+                "display": "block",
+                "color": {"default": "red", PROP_MD: HOVERED},
+                "height": {"default": "1px", PROP_MD: "3px"},
+            },
+            {"width": {"default": "1em", PROP_MD: "3em"}},
+        ),
+    ],
+)
+def test_prop_per_breakpoint_resolves_each_property_mobile_first(
+    props: Any, expected: dict[str, Any], icon: dict[str, Any]
+):
+    """A responsive prop is resolved on the breakpoints of Radix Themes.
+
+    Args:
+        props: The props of the element.
+        expected: The lowered properties of the element.
+        icon: The lowered properties of its part.
+    """
+    merged = merge("rx.ui.card", RESPONSIVE_TABLE, props)
+    assert merged.style.style == expected
+    assert merged.parts["icon"].style.style == icon
+    assert merged.dynamic == ()
+
+
+def test_prop_per_breakpoint_merges_under_the_layout_props_and_the_style():
+    merged = merge(
+        "rx.ui.card",
+        RESPONSIVE_TABLE,
+        {"size": rx.breakpoints(initial="1", md="3")},
+        {"height": "5px", "_hover": {"color": "green"}},
+        {"p": rx.breakpoints(md="2")},
+    )
+    padding = {PROP_MD: "var(--space-2)"}
+    assert merged.style.style == {
+        "display": "block",
+        "color": {"default": "red", PROP_MD: HOVERED, ":hover": "green"},
+        "height": "5px",
+        "paddingTop": padding,
+        "paddingRight": padding,
+        "paddingBottom": padding,
+        "paddingLeft": padding,
+    }
+
+
+def test_default_of_the_table_is_what_a_state_bound_prop_falls_back_to():
+    """A value the table does not list gets the style of the default."""
+    merged = merge("rx.ui.card", RESPONSIVE_TABLE, {"size": SIZE})
+    assert merged.style.style == {
+        "display": "block",
+        "color": "black",
+        "height": "2px",
+    }
+    (alternatives,) = merged.dynamic
+    assert alternatives.props == ("size",)
+    assert {combo: style.style for combo, style in alternatives.values.items()} == {
+        ("1",): {"color": "red", "height": "1px"},
+        ("3",): {"height": "3px", "color": HOVERED},
+    }
+
+
+@pytest.mark.parametrize(
+    ("props", "message"),
+    [
+        (
+            {"size": rx.breakpoints(custom={"640px": "1"})},
+            (
+                'rx.ui.card: prop "size" is given a value under "640px", which is not '
+                'a breakpoint. Use "initial", "xs", "sm", "md", "lg" or "xl", or set a '
+                "style, which takes any media query."
+            ),
+        ),
+        (
+            {"size": {"initial": "1", "md": SIZE}},
+            (
+                'rx.ui.card: prop "size" is given a value under "md" that is not '
+                "known at compile time. Give each breakpoint one of the values of the "
+                "prop."
+            ),
+        ),
+    ],
+)
+def test_prop_per_breakpoint_errors(props: Any, message: str):
+    with pytest.raises(StyleError) as error:
+        merge("rx.ui.card", RESPONSIVE_TABLE, props)
+    assert str(error.value) == message
+
+
+def test_over_lays_the_styles_of_a_child_on_those_of_its_parent():
+    """For as_child: the child wins by property, and keeps what it only adds to."""
+    parent = merge(
+        "rx.ui.flex",
+        {"base": {"color": "red", "top": "1px", "_hover": {"color": "blue"}}},
+        {},
+        # A whole style bound to state is carried along.
+        SIZE,
+    )
+    child = merge(
+        "rx.ui.link",
+        {
+            "base": {"top": "2px", "left": "0", "_hover": {"color": "green"}},
+            "parts": {"icon": {"base": {"width": "1em"}}},
+        },
+    )
+    merged = over(parent, child)
+    assert merged.style.style == {
+        "color": {"default": "red", ":hover": "green"},
+        "top": "2px",
+        "left": "0",
+    }
+    assert merged.style.inline is SIZE
+    assert merged.dynamic == ()
+    assert merged.parts == {"icon": Merged(Lowered({"width": "1em"}))}
+
+
+def test_unchecked_passes_a_style_a_type_checker_cannot_read():
+    """A style with a custom property is the same style, lowered like any other."""
+    style = {"--line-height": "1.5", "margin_top": "0"}
+    assert unchecked(style) is style
+    table: ComponentStyles = {"base": unchecked(style)}
+    assert merge("rx.ui.card", table).style.style == {
+        "--line-height": "1.5",
+        "marginTop": "0",
+    }

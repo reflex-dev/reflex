@@ -17,6 +17,7 @@ from reflex_base.breakpoints import breakpoints_values
 from reflex_base.vars.base import LiteralVar, Var
 
 from reflex_components_ui.style.lower import (
+    PROP_BREAKPOINTS,
     Layer,
     Lowered,
     LoweredValue,
@@ -25,6 +26,7 @@ from reflex_components_ui.style.lower import (
     finish,
     freeze,
     lower_layer,
+    prop_breakpoint,
 )
 
 if TYPE_CHECKING:
@@ -42,16 +44,19 @@ class ComponentStyles(TypedDict, total=False):
     """The look of a component: a table of styles selected by its props.
 
     A variant is keyed by the name of a prop and then by its values, written
-    as strings: ``"true"`` and ``"false"`` for a boolean prop.
+    as strings: ``"true"`` and ``"false"`` for a boolean prop. ``defaults``
+    gives the value a prop selects styles by when the element leaves it out,
+    for a default the component has in its look alone, not in its API.
     """
 
     base: StyleProps
     variants: dict[str, dict[str, StyleProps]]
+    defaults: dict[str, str]
     compound: list[CompoundStyle]
     parts: dict[str, ComponentStyles]
 
 
-_TABLE_KEYS = frozenset(("base", "variants", "compound", "parts"))
+_TABLE_KEYS = frozenset(("base", "variants", "defaults", "compound", "parts"))
 _NO_PROPS: Mapping[str, Any] = {}
 
 
@@ -222,6 +227,7 @@ class _Table:
         breakpoints: The breakpoints the table was lowered with.
         consulted: The props the table or one of its parts reads, in the order
             their values are keyed by.
+        defaults: The value each consulted prop has when it is not set.
         base: The lowered base style.
         variants: For each variant, the position of its prop in ``consulted``
             and the lowered style of each value.
@@ -237,6 +243,7 @@ class _Table:
         "breakpoints",
         "compound",
         "consulted",
+        "defaults",
         "merged",
         "parts",
         "resolved",
@@ -259,7 +266,7 @@ class _Table:
             if key not in _TABLE_KEYS:
                 msg = (
                     f'{name}: unknown key "{key}" in a style table. Use "base", '
-                    '"variants", "compound" or "parts".'
+                    '"variants", "defaults", "compound" or "parts".'
                 )
                 raise StyleError(msg)
         self.source = source
@@ -278,6 +285,10 @@ class _Table:
             positions.update(dict.fromkeys(part.consulted, 0))
         positions = {prop: position for position, prop in enumerate(positions)}
         self.consulted = tuple(positions)
+        defaults = source.get("defaults", _NO_PROPS)
+        self.defaults: tuple[str | None, ...] = tuple([
+            defaults.get(prop) for prop in positions
+        ])
         self.variants: tuple[tuple[int, dict[str | None, Layer]], ...] = tuple([
             (
                 positions[prop],
@@ -355,7 +366,8 @@ def _variant_key(value: Any) -> Any:
         value: The value of the prop, which is neither a string nor None.
 
     Returns:
-        The key, or the Var itself for a prop that is bound to state.
+        The key, the Var itself for a prop that is bound to state, or the
+        mapping of a prop that is given a value per breakpoint.
     """
     if value is True:
         return "true"
@@ -366,7 +378,91 @@ def _variant_key(value: Any) -> Any:
             literal = value._var_value
             return literal if literal.__class__ is str else _variant_key(literal)
         return value
+    if isinstance(value, Mapping):
+        return value
     return str(value)
+
+
+def _responsive_layer(
+    name: str,
+    table: _Table,
+    keys: tuple[str | None, ...],
+    responsive: dict[int, Mapping[str, Any]],
+) -> Layer:
+    """Lower the values a prop is given at the breakpoints after the first.
+
+    The breakpoints are those of Radix Themes and apply mobile first: a value
+    holds from its breakpoint up, until another one replaces it. At each
+    breakpoint the styles of the table are resolved for the values the props
+    then have, compound styles included, and what changes from the breakpoint
+    before goes under its media query. From there up the element looks as it
+    would with those values alone.
+
+    Args:
+        name: The display name of the component, for error messages.
+        table: The lowered style table.
+        keys: The value of each consulted prop before the first breakpoint.
+        responsive: The value per breakpoint of each responsive prop, by its
+            position in ``keys``.
+
+    Returns:
+        The properties that change, each under the media queries it changes at.
+
+    Raises:
+        StyleError: If a value is given under a key that is not a breakpoint,
+            or is bound to state.
+    """
+    at: dict[str, list[tuple[int, str]]] = {}
+    for position, values in responsive.items():
+        prop = table.consulted[position]
+        for breakpoint, value in values.items():
+            if value.__class__ is not str:
+                value = _variant_key(value)
+                if value.__class__ is not str:
+                    msg = (
+                        f'{name}: prop "{prop}" is given a value under '
+                        f'"{breakpoint}" that is not known at compile time. '
+                        "Give each breakpoint one of the values of the prop."
+                    )
+                    raise StyleError(msg)
+            query = prop_breakpoint(name, prop, breakpoint)
+            if query != "default":
+                at.setdefault(query, []).append((position, value))
+    out: dict[str, LoweredValue] = {}
+
+    def put(prop: str, query: str, value: LoweredValue) -> None:
+        """Give a property its value from a breakpoint up.
+
+        Args:
+            prop: The property.
+            query: The media query of the breakpoint.
+            value: The value.
+        """
+        conditions = out.get(prop)
+        if conditions is None:
+            out[prop] = {query: value}
+        else:
+            conditions[query] = value
+
+    current = list(keys)
+    before = table.resolve(keys)
+    for query in PROP_BREAKPOINTS.values():
+        changes = at.get(query)
+        if changes is None:
+            continue
+        for position, value in changes:
+            current[position] = value
+        after = table.resolve(tuple(current))
+        for prop, value in after.items():
+            if prop not in before or freeze(before[prop]) != freeze(value):
+                put(prop, query, value)
+        for prop in before:
+            if prop not in after:
+                # What the values of this breakpoint do not set is what it is
+                # without the styles of the component.
+                put(prop, query, "revert-layer")
+        before = after
+    return out, ()
 
 
 def _difference(
@@ -524,19 +620,31 @@ def _merge(
     """
     chosen = []
     bound = None
+    responsive = None
+    defaults = table.defaults
     for prop in table.consulted:
         value = props.get(prop)
         if value.__class__ is not str and value is not None:
             value = _variant_key(value)
             if value.__class__ is not str:
-                if bound is None:
-                    bound = {}
-                bound[len(chosen)] = value
-                value = None
+                if isinstance(value, Var):
+                    if bound is None:
+                        bound = {}
+                    bound[len(chosen)] = value
+                    value = None
+                else:
+                    if responsive is None:
+                        responsive = {}
+                    responsive[len(chosen)] = value
+                    value = value.get("initial")
+                    if value.__class__ is not str and value is not None:
+                        value = _variant_key(value)
+        if value is None:
+            value = defaults[len(chosen)]
         chosen.append(value)
     keys = tuple(chosen)
 
-    if bound is None:
+    if bound is None and responsive is None:
         merged = table.merged.get(keys)
         if merged is None:
             merged = table.merged[keys] = Merged(
@@ -555,7 +663,11 @@ def _merge(
             part: _merge(name, inner, props, None, None) for part, inner in table.parts
         }
 
-    layers = [lower_layer(name, None, layout)] if layout else []
+    layers = (
+        [] if responsive is None else [_responsive_layer(name, table, keys, responsive)]
+    )
+    if layout:
+        layers.append(lower_layer(name, None, layout))
     inline = None
     if isinstance(style, Var):
         inline = style
@@ -576,6 +688,46 @@ def _merge(
         return Merged(finish(merged_props, inline), (), parts)
     merged_props, dynamic = _merge_dynamic(table, keys, bound, layers)
     return Merged(finish(merged_props, inline), dynamic, parts)
+
+
+def unchecked(style: Mapping[str, Any]) -> Any:
+    """Mark the part of a style table that ``StyleProps`` cannot type.
+
+    A custom property and a condition such as ``@media (pointer: coarse)``
+    are no keys of a ``TypedDict``, and a design token is a plain string where
+    a property is typed by its keywords. A style that holds one is wrapped
+    whole, and is checked when the table is lowered instead:
+    ``unchecked({"--line-height": "1.5", "margin": "0"})``.
+
+    Args:
+        style: The style.
+
+    Returns:
+        The style, as a type checker lets pass.
+    """
+    return style
+
+
+def over(under: Merged, top: Merged) -> Merged:
+    """Lay the styles of one element over those of another.
+
+    For two components that render as one element: a parent with
+    ``as_child`` and its child.
+
+    Args:
+        under: The styles that are overridden.
+        top: The styles that win where both set a property.
+
+    Returns:
+        The styles of the one element.
+    """
+    props = dict(under.style.style)
+    apply_layer(props, (top.style.style, ()))
+    return Merged(
+        finish(props, top.style.inline or under.style.inline),
+        (*under.dynamic, *top.dynamic),
+        {**under.parts, **top.parts} if under.parts else top.parts,
+    )
 
 
 def merge(

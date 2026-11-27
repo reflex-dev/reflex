@@ -43,9 +43,10 @@ def pytest_command(
     if components:
         # A test id holds its component after the engine: "chromium-box]" for
         # a matrix, "chromium-box-rx.ui-..." for a step. The run time is
-        # recorded whatever ran.
+        # recorded whatever ran, and is named first: an expression that starts
+        # with "-center" would be read as the option "-c".
         selected = [f"-{name}] or -{name}-" for name in components]
-        command += ["-k", " or ".join([*selected, "test_run_time"])]
+        command += ["-k", " or ".join(["test_run_time", *selected])]
     return command + extra
 
 

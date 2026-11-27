@@ -16,6 +16,8 @@ from reflex_components_ui.style.merge import (
     CompoundStyle,
     Merged,
     merge,
+    over,
+    unchecked,
 )
 
 __all__ = [
@@ -30,4 +32,6 @@ __all__ = [
     "StyleProps",
     "lower",
     "merge",
+    "over",
+    "unchecked",
 ]

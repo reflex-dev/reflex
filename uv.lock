@@ -4514,10 +4514,16 @@ name = "reflex-components-ui"
 source = { editable = "packages/reflex-components-ui" }
 dependencies = [
     { name = "reflex-base" },
+    { name = "reflex-components-core" },
+    { name = "reflex-components-lucide" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "reflex-base", editable = "packages/reflex-base" }]
+requires-dist = [
+    { name = "reflex-base", editable = "packages/reflex-base" },
+    { name = "reflex-components-core", editable = "packages/reflex-components-core" },
+    { name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" },
+]
 
 [[package]]
 name = "reflex-docgen"

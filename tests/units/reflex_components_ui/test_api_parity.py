@@ -5,11 +5,13 @@ intended difference is an ``[[api]]`` entry of the parity allowlist, with the
 reason the migration guide gives for it.
 """
 
+import functools
 import types
 from typing import Any, Literal
 
+import pytest
 import reflex_components_ui
-from reflex_base.components.component import Component
+from reflex_base.components.component import Component, ComponentNamespace
 from reflex_base.event import EventHandler, no_args_event_spec
 from reflex_base.vars.base import Var
 from reflex_components_ui.base import UIComponent
@@ -26,13 +28,59 @@ from ui_parity.api import (
 
 import reflex as rx
 
-# The names of the namespace that create a component: a theme of the plugin
-# and the design tokens are no components.
-COMPONENTS = sorted(
-    name
-    for name in reflex_components_ui.__all__
-    if isinstance(getattr(reflex_components_ui, name), types.MethodType)
-)
+
+def members(namespace: ComponentNamespace) -> list[str]:
+    """List the components a namespace creates beside the one it is called for.
+
+    Args:
+        namespace: A namespace of components, such as ``rx.text``.
+
+    Returns:
+        The names of its members, sorted.
+    """
+    return sorted(
+        name
+        for name in dir(namespace)
+        if not name.startswith("_")
+        and isinstance(getattr(namespace, name), types.MethodType)
+    )
+
+
+def component_names() -> list[str]:
+    """List the names of rx.ui that create a component.
+
+    A theme of the plugin and the design tokens are no components. A
+    namespace is its own name, then each of its members: ``text``,
+    ``text.em``.
+
+    Returns:
+        The names, sorted.
+    """
+    names = []
+    for name in reflex_components_ui.__all__:
+        value = getattr(reflex_components_ui, name)
+        if isinstance(value, types.MethodType):
+            names.append(name)
+        elif isinstance(value, ComponentNamespace):
+            names.append(name)
+            names.extend(f"{name}.{member}" for member in members(value))
+    return sorted(names)
+
+
+COMPONENTS = component_names()
+
+
+def resolve(namespace: Any, component: str) -> Any:
+    """Find a component by its name in a namespace.
+
+    Args:
+        namespace: ``rx`` or ``rx.ui``.
+        component: The name, dotted for a member of a namespace.
+
+    Returns:
+        What creates the component.
+    """
+    return functools.reduce(getattr, component.split("."), namespace)
 
 
 def differences(component: str) -> list[ApiDifference]:
@@ -46,8 +94,52 @@ def differences(component: str) -> list[ApiDifference]:
     """
     return diff_api(
         component,
-        component_class(getattr(rx, component)),
-        component_class(getattr(reflex_components_ui, component)),
+        component_class(resolve(rx, component)),
+        component_class(resolve(reflex_components_ui, component)),
+    )
+
+
+def test_the_wave_of_layout_and_typography_is_in_the_namespace():
+    assert COMPONENTS == [
+        "aspect_ratio",
+        "blockquote",
+        "box",
+        "center",
+        "code",
+        "container",
+        "divider",
+        "flex",
+        "grid",
+        "heading",
+        "hstack",
+        "inset",
+        "link",
+        "list",
+        "list.item",
+        "list.ordered",
+        "list.unordered",
+        "list_item",
+        "ordered_list",
+        "section",
+        "separator",
+        "spacer",
+        "stack",
+        "text",
+        "text.em",
+        "text.kbd",
+        "text.quote",
+        "text.span",
+        "text.strong",
+        "theme",
+        "unordered_list",
+        "vstack",
+    ]
+
+
+@pytest.mark.parametrize("namespace", ["list", "text"])
+def test_namespace_has_the_members_of_its_radix_counterpart(namespace: str):
+    assert members(getattr(reflex_components_ui, namespace)) == members(
+        getattr(rx, namespace)
     )
 
 
@@ -105,13 +197,9 @@ def test_removing_a_prop_from_the_wrapper_is_a_difference():
     assert unexplained(found, Allowlist()) == (found, [])
 
 
-def test_box_differs_only_by_the_props_the_allowlist_gives_a_reason_for():
-    found = differences("box")
-    (entry,) = (item for item in allowlist.load().api if item.component == "box")
-    assert entry.kind == "prop"
-    assert [(item.kind, item.name, item.candidate) for item in found] == [
-        ("prop", name, None) for name in entry.names
-    ]
+def test_box_has_the_props_of_the_radix_box_and_nothing_is_allowlisted():
+    assert differences("box") == []
+    assert allowlist.load().api == ()
 
 
 class Reference(Component):

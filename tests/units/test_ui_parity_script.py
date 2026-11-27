@@ -38,7 +38,7 @@ def test_pytest_command_selects_components_and_engines():
         "--browser",
         "webkit",
         "-k",
-        "-box] or -box- or -button] or -button- or test_run_time",
+        "test_run_time or -box] or -box- or -button] or -button-",
         "-x",
     ]
 

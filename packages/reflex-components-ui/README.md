@@ -31,7 +31,10 @@ src/reflex_components_ui/   the python package: the rx.ui namespace
   style/lower.py, merge.py  the styles a user writes to the ones StyleX compiles
   style/emit.py             merged styles to the statements of a module
   styles/                   the look of each component, one table per module
-  layout/                   the components, rx.ui.theme among them
+  layout/                   the layout components, rx.ui.theme among them
+  typography/               text, heading, code, blockquote, link
+  components/               the other components: separator, inset, aspect_ratio
+  props.py                  the values of the props many components share
   _radix_tokens.py          generated: the modules below and what they define
 js/                         the javascript package, with its own tooling
   src/                      what ships: copied into an app at .web/reflex-ui/
@@ -82,7 +85,8 @@ runtime**:
 | A literal value | An atomic class in the module's constant |
 | A state `Var` value | `var(--v0)` in the declaration, and `style={{"--v0": state.width ?? "initial"}}` on the element |
 | A `_hover` or `:focus-visible` block | A condition on each property inside |
-| A responsive list or `rx.breakpoints(...)` | Media-query conditions on the app's breakpoints |
+| A responsive list or `rx.breakpoints(...)` in a style | Media-query conditions on the app's breakpoints |
+| A prop per breakpoint: `size=rx.breakpoints(initial="1", md="3")` | Media-query conditions on the breakpoints of Radix Themes: 520, 768, 1024, 1280 and 1640px |
 | `rx.color("ruby", 9)` or a token | `var(--ruby-9)`, and `import "$/reflex-ui/colors/ruby.stylex.js"` in the module |
 | Layout props (`gap`, `p`, `m`, `columns`, `direction`) | Styles, lowered like any other |
 | `variant=State.kind` | One style per value of that prop, folded into a table of class names the element indexes: `sx_…_c + " " + (sx_…_0[state.kind] ?? sx_…_0d)` |
@@ -154,7 +158,7 @@ BUTTON: ComponentStyles = {
 }
 
 
-class Button(UIComponent):
+class Button(UIComponent, elements.Button):
     """A button."""
 
     tag = "button"
@@ -178,17 +182,55 @@ class Button(UIComponent):
         return super().create(Part.create(part="icon", tag="span"), *children, **props)
 ```
 
+- **The element.** A component that renders one HTML element lists its class
+  of `reflex_components_core.el.elements` after `UIComponent`, as the Radix
+  wrapper it is forked from does. It gives the component the attributes of
+  its tag as props (`title`, `tab_index`, `href`...), and nothing else.
 - **Props** are fields, as on any component, and reach the element as
   attributes. A keyword argument that is not a field, an event trigger, or a
   `data_*` or `aria_*` attribute is a CSS property, and an unknown one is an
   error: `rx.ui.button: unknown CSS property "paddng". Did you mean "padding"?`
 - **Variants**: a field named in `variants` or in the `props` of a `compound`
   style selects styles and is not rendered as an attribute. Its default is the
-  default of the field. Bound to state, it is indexed in the browser.
+  default of the field, or the entry of `defaults` in the table for a default
+  that Radix Themes has and the Reflex wrapper does not pass, such as the
+  size of a heading. Bound to state, it is indexed in the browser. A variant
+  wins its name over a layout prop: the `align` of text is `text-align`.
 - **Layout props**: a field named after one of `LAYOUT_PROPS` (`p`, `m`, `gap`,
-  `columns`, `direction`…) is lowered to styles before the element's own, and
-  is not rendered either. Declare only those the component should take: on a
-  component without a `columns` field, `columns` is the CSS property.
+  `spacing`, `columns`, `direction`…) is lowered to styles before the
+  element's own, and is not rendered either. Declare only those the component
+  should take: on a component without a `columns` field, `columns` is the CSS
+  property.
+- **A value per breakpoint.** A variant or a layout prop typed `Responsive[...]`
+  takes `rx.breakpoints(initial="1", md="3")`. The breakpoints are those of
+  Radix Themes, whatever the breakpoints of the app, and apply mobile first.
+  At each one the table is resolved again for the values the props then have,
+  compound styles included, and each property that changes gets a media
+  query; a property those values no longer set is `revert-layer`. A table
+  needs nothing for it.
+- **A value a prop does not take** is an error where the component is
+  created, for every variant and layout prop whose type is a `Literal`:
+  `rx.ui.text: unknown size "12". Did you mean "2"? The values are "1", ...`.
+- **`as_`** names the tag. `_as_tags` lists the tags Radix Themes renders for
+  the component; any other value of the prop renders the default tag, as it
+  does there. `as_` can be read as a variant (`"as_": {"label": {...}}`).
+- **`as_child`** renders the only child in place of the element: the tag, the
+  props and the children are the child's, its props winning, with the class
+  names of both. When the child is an rx.ui component the styles of both are
+  merged into one declaration, the child's winning, since two sets of class
+  names cannot say which one does. It is read at compile time.
+- **`color_scheme`** is read by a table as `"true"` when the element has a
+  color: `"variants": {"color_scheme": {"true": {...}}}`. The tokens of the
+  accent resolve against that color, so a table never needs to know which.
+- **What Radix Themes selects by ancestor**, a class on an element cannot: a
+  link inside colored text, high-contrast text inside a colored element, code
+  inside a link. The ancestor hands the value down in a custom property and
+  the descendant reads it with a fallback, as `styles/typography.py` does.
+  Every component with a `color_scheme` spreads `ACCENT_SCOPE` into that
+  variant.
+- **Styles a class adds**: `add_style`, as in any component, applies after the
+  layout props and before the styles of the app. `rx.ui.center` centers that
+  way, so that `align` and `justify` lose to it as they do in `rx.center`.
 - **Parts**: an inner element is a `Part` named after an entry of `parts`,
   created as a child of the component or of another part. It reads the props
   of the component, takes no styles of its own, and is a `StyleError` anywhere
@@ -214,8 +256,9 @@ the style objects StyleX compiles. Nothing in it depends on a component.
   from the type definitions of the pinned StyleX by `js/scripts/css-props.js`.
   At runtime the name is a plain `dict`: only a type checker reads the table.
 - `ComponentStyles` types the look of a component: `base`, `variants` by prop
-  and value, `compound` styles for a combination of props, and `parts` for
-  inner elements.
+  and value, `defaults` for the value a prop selects styles by when it is left
+  out, `compound` styles for a combination of props, and `parts` for inner
+  elements.
 - `lower(name, style, layout)` returns a `Lowered`: `style` maps a camelCase
   CSS property to a literal, a `Var` or a condition map such as
   `{"default": v, ":hover": v, "@media ...": v}`; `imports` names the modules
@@ -246,7 +289,7 @@ What lowering does to each input:
 | `margin`, `padding`, `inset`, `gap`, `overflow`, `border_width`, `border_radius`... | Their longhands |
 | `border`, `border_top`..., `background` | Their longhands always: StyleX compiles neither |
 | `padding_x`, `margin_y`, `bg`, `bg_color` | The properties they stand for |
-| Layout props (`p`, `m`, `gap`, `columns`, `direction`...) | Styles, with steps of the space scale as `var(--space-N)` |
+| Layout props (`p`, `m`, `gap`, `columns`, `direction`...) | Styles, with steps of the space scale as `var(--space-N)`, and a value per breakpoint on the breakpoints of Radix Themes |
 | A shorthand bound to state, or holding `var(...)` | Kept whole; it removes its longhands from the styles before it |
 | `None` | The property is unset |
 | A nested selector, an unknown property, `animation` | `StyleError` |
@@ -262,6 +305,58 @@ and `animation`, which is why the first two are always split and the third is
 refused. A split needs the value while compiling, so `background=State.color`
 is an error that says to bind `background_color`, and a `background` with more
 than a color or an image is one that names its longhands.
+
+## Adding a component
+
+What a wave does for each component, in this order. `flex` (a layout), `text`
+(typography) and `separator` (neither) are the ones to copy.
+
+1. **Read the sources.** The Radix wrapper in
+   `reflex-components-radix/.../themes/` gives the API: the base classes, the
+   fields with their types, defaults and docstrings, and what `create` does.
+   The CSS in `js/node_modules/@radix-ui/themes/src/components/<name>.css`
+   gives the look, and `<name>.props.tsx` the defaults Radix applies when a
+   prop is left out and the values it falls back from.
+2. **The table**, `styles/<name>.py`: one `ComponentStyles` constant, grouped
+   as the CSS is (base, sizes, variants), with a one-line comment only where
+   the Radix rule is not obvious. Values are tokens (`tokens.space[4]`,
+   `tokens.accent.a[11]`), never a copy of what a token holds. A custom
+   property Radix sets on the element (`--line-height`) stays one, so that
+   what is inside the element follows it. `StyleProps` cannot type such a
+   key, a free condition such as `"@media (pointer: coarse)"`, or a token on a
+   property typed by its keywords (`font_style`, `cursor`): wrap a style that
+   holds one in `unchecked(...)`, and the lowering checks it instead. Radix's
+   default for a prop the wrapper does not default goes in `defaults`. What several tables share is
+   in `styles/typography.py`.
+3. **The wrapper**, `layout/`, `typography/` or `components/<name>.py`: a
+   class deriving from `UIComponent` and the element class the Radix wrapper
+   derives from, with `tag`, `styles` and the same fields, copied with their
+   `field(doc=...)` so that the documentation and the stubs stay complete.
+   Keep `create` as it is there. A second element is a `Part`.
+4. **The name**: an entry of `_SUBMOD_ATTRS` in `__init__.py`, a namespace
+   (`rx.ui.text`, `rx.ui.list`) under the name `rx` has it.
+5. **Unit tests**, `tests/units/reflex_components_ui/<package>/test_<name>.py`:
+   for a few uses, the whole rendered element and the whole style each
+   element declares (the `declared_styles` fixture). The API parity test
+   picks the name up by itself, members of a namespace included, and the list
+   of names in `test_api_parity.py` is extended by hand.
+6. **The matrix and the contract**, `parity/ui_parity/components/<name>.py`
+   (see [The parity harness](#the-parity-harness)): every value of every prop,
+   crossed where they interact and swept otherwise, the 26 accents as a
+   sweep, dark, each interactive state the component has, a prop per
+   breakpoint at the viewports around its breakpoints, and the nestings Radix
+   styles specially. Hold it to zero (`threshold=0, tolerance=0`) unless
+   something outside the component dithers, and say what in a comment.
+7. **Run** `uv run python scripts/ui_parity.py <name>` until nothing differs.
+   An intended difference is an entry of `parity/allowlist.toml` with a
+   reason a user can read; anything else is a bug.
+8. **The stubs**: `uv run python scripts/make_pyi.py`, and commit
+   `pyi_hashes.json`.
+9. **The shared app**: an element on the `/wave` page of
+   `tests/integration/tests_playwright/test_ui_components.py` for what only a
+   real app shows, such as a style the compile adds or a navigation.
+10. **The record**: the wave's row in the run-time table below, the gzipped
+    CSS and JavaScript it adds, and a news fragment in `news/`.
 
 ## Themes and tokens
 
@@ -486,7 +581,7 @@ CI uploads it as the `ui-parity-report` artifact of the `ui-parity` job.
 To look at the pages by hand, `cd packages/reflex-components-ui/parity` and
 `uv run reflex run`: `/parity/<component>` and `/contract/<component>/<rx|ui>`.
 
-### Adding a component
+### Declaring a matrix and a contract
 
 A component wave adds, beside the wrapper and its style table, one module:
 `parity/ui_parity/components/<name>.py`. It is found by its place; nothing
@@ -596,6 +691,7 @@ appearance) about 0.3 s. Keep interactive states to a sweep or a small group.
 | wave | components | cells | Chromium, build + matrices |
 | --- | --- | --- | --- |
 | harness | box | 8 | 5 s + 1.1 s |
+| 1: layout and typography | 19, and `text.kbd` | 1011, 44 of them interactive | 27 s + 61 s |
 
 ## Rules the tooling enforces
 

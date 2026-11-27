@@ -4,13 +4,15 @@ from __future__ import annotations
 
 from typing import ClassVar
 
+from reflex_components_core.el import elements
+
 from reflex_components_ui.base import UIComponent
 from reflex_components_ui.style import ComponentStyles
 from reflex_components_ui.styles.box import BOX
 
 
-class Box(UIComponent):
-    """A block element with no look of its own."""
+class Box(UIComponent, elements.Div):
+    """A fundamental layout building block, based on `div` element."""
 
     tag = "div"
 

@@ -907,6 +907,18 @@ def _space(value: Any) -> Any:
     return value
 
 
+def _as_written(value: Any) -> Any:
+    """Read a value of a layout prop that takes the keywords of CSS.
+
+    Args:
+        value: The value.
+
+    Returns:
+        The value as given.
+    """
+    return value
+
+
 def _tracks(value: Any) -> Any:
     """Read a number of grid tracks.
 
@@ -935,9 +947,49 @@ def _keywords(names: dict[str, str]) -> Callable[[Any], Any]:
 
 _ALIGN = {"start": "flex-start", "end": "flex-end"}
 
+# The breakpoints of a prop, which are those of Radix Themes whatever the
+# breakpoints of the app: a responsive prop of an rx component is resolved by
+# the Radix stylesheet. A responsive value in a style follows the app instead.
+PROP_BREAKPOINTS: dict[str, str] = {
+    "xs": "@media (min-width: 520px)",
+    "sm": "@media (min-width: 768px)",
+    "md": "@media (min-width: 1024px)",
+    "lg": "@media (min-width: 1280px)",
+    "xl": "@media (min-width: 1640px)",
+}
+_PROP_MEDIA = ("default", *PROP_BREAKPOINTS.values())
+
+
+def prop_breakpoint(name: str, prop: str, breakpoint: Any) -> str:
+    """Read a key of a responsive prop as the condition its value applies under.
+
+    Args:
+        name: The display name of the component, for error messages.
+        prop: The prop.
+        breakpoint: The key: ``initial`` or the name of a breakpoint.
+
+    Returns:
+        ``default``, or the media query of the breakpoint.
+
+    Raises:
+        StyleError: If the key is not a breakpoint of Radix Themes.
+    """
+    if breakpoint == "initial":
+        return "default"
+    try:
+        return PROP_BREAKPOINTS[breakpoint]
+    except (KeyError, TypeError):
+        msg = (
+            f'{name}: prop "{prop}" is given a value under "{breakpoint}", '
+            'which is not a breakpoint. Use "initial", "xs", "sm", "md", "lg" '
+            'or "xl", or set a style, which takes any media query.'
+        )
+        raise StyleError(msg) from None
+
+
 # The layout props: the style each one stands for, the longhands it sets, and
-# how its values are read. A prop with no reading takes CSS values as they are.
-_LAYOUT: dict[str, tuple[str, tuple[str, ...], Callable[[Any], Any] | None]] = {
+# how its values are read.
+_LAYOUT: dict[str, tuple[str, tuple[str, ...], Callable[[Any], Any]]] = {
     "p": ("padding", _sides("padding"), _space),
     "px": ("padding_x", ("paddingLeft", "paddingRight"), _space),
     "py": ("padding_y", ("paddingTop", "paddingBottom"), _space),
@@ -956,10 +1008,12 @@ _LAYOUT: dict[str, tuple[str, tuple[str, ...], Callable[[Any], Any] | None]] = {
     "spacing": ("gap", ("rowGap", "columnGap"), _space),
     "gap_x": ("column_gap", ("columnGap",), _space),
     "gap_y": ("row_gap", ("rowGap",), _space),
+    "spacing_x": ("column_gap", ("columnGap",), _space),
+    "spacing_y": ("row_gap", ("rowGap",), _space),
     "columns": ("grid_template_columns", ("gridTemplateColumns",), _tracks),
     "rows": ("grid_template_rows", ("gridTemplateRows",), _tracks),
-    "direction": ("flex_direction", ("flexDirection",), None),
-    "wrap": ("flex_wrap", ("flexWrap",), None),
+    "direction": ("flex_direction", ("flexDirection",), _as_written),
+    "wrap": ("flex_wrap", ("flexWrap",), _as_written),
     "align": ("align_items", ("alignItems",), _keywords(_ALIGN)),
     "justify": (
         "justify_content",
@@ -983,34 +1037,47 @@ def _read_layout(name: str, prop: str, value: Any, read: Callable[[Any], Any]) -
     Args:
         name: The display name of the component, for error messages.
         prop: The layout prop.
-        value: Its value: one, a list of them or a dict of them.
+        value: Its value: one, a list of them or a dict of them by breakpoint.
         read: How one value is read.
 
     Returns:
-        The same shape, holding CSS values.
+        A CSS value, or a dict of them by the media query of each breakpoint.
 
     Raises:
-        StyleError: If a value is bound to state.
+        StyleError: If a value that has to be read is bound to state, or a
+            value is given under a key that is not a breakpoint.
     """
     if value.__class__ is str:
         return read(value)
     if isinstance(value, Mapping):
-        read_items = {
-            key: _read_layout(name, prop, item, read) for key, item in value.items()
+        return {
+            prop_breakpoint(name, prop, key): _read_layout(name, prop, item, read)
+            for key, item in value.items()
         }
-        return Breakpoints(read_items) if isinstance(value, Breakpoints) else read_items
     if isinstance(value, (list, tuple)):
-        return [_read_layout(name, prop, item, read) for item in value]
+        if len(value) > len(_PROP_MEDIA):
+            msg = (
+                f'{name}: layout prop "{prop}" has {len(value)} responsive '
+                f"values, but there are only {len(_PROP_MEDIA)} breakpoints."
+            )
+            raise StyleError(msg)
+        return {
+            media: _read_layout(name, prop, item, read)
+            for media, item in zip(_PROP_MEDIA, value, strict=False)
+            if item is not None
+        }
     if isinstance(value, Var):
         if isinstance(value, LiteralVar) and value._get_all_var_data() is None:
             return _read_layout(name, prop, value._var_value, read)
+        if read is _as_written:
+            return value
         msg = (
             f'{name}: layout prop "{prop}" is bound to state, but its values '
             f'are read at compile time. Bind the "{_LAYOUT[prop][0]}" style '
             "instead, which takes any CSS value."
         )
         raise StyleError(msg)
-    return value
+    return read(value)
 
 
 def lower_layer(
@@ -1046,8 +1113,7 @@ def lower_layer(
                     f"{suggest(prop, sorted(_LAYOUT))}"
                 )
                 raise StyleError(msg) from None
-            if read is not None:
-                value = _read_layout(name, prop, value, read)
+            value = _read_layout(name, prop, value, read)
             _value(name, key, (key, targets, None, None), value, (), out, replaced)
     if style:
         _block(name, style, (), out, replaced)

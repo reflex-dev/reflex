@@ -37,6 +37,11 @@ SM = "@media screen and (min-width: 48em)"
 MD = "@media screen and (min-width: 62em)"
 LG = "@media screen and (min-width: 80em)"
 XL = "@media screen and (min-width: 96em)"
+# A responsive prop is on the breakpoints of Radix Themes instead.
+PROP_XS = "@media (min-width: 520px)"
+PROP_SM = "@media (min-width: 768px)"
+PROP_MD = "@media (min-width: 1024px)"
+PROP_LG = "@media (min-width: 1280px)"
 
 
 class StyleState(rx.State):
@@ -830,8 +835,8 @@ def test_shorthands_stylex_does_not_compile(
         (
             {"gap": ["1", "2"]},
             {
-                "rowGap": {"default": "var(--space-1)", XS: "var(--space-2)"},
-                "columnGap": {"default": "var(--space-1)", XS: "var(--space-2)"},
+                "rowGap": {"default": "var(--space-1)", PROP_XS: "var(--space-2)"},
+                "columnGap": {"default": "var(--space-1)", PROP_XS: "var(--space-2)"},
             },
         ),
         (
@@ -839,7 +844,7 @@ def test_shorthands_stylex_does_not_compile(
             _sides(
                 "padding",
                 "",
-                *[{"default": "var(--space-1)", MD: "var(--space-4)"}] * 4,
+                *[{"default": "var(--space-1)", PROP_MD: "var(--space-4)"}] * 4,
             ),
         ),
         (
@@ -854,7 +859,7 @@ def test_shorthands_stylex_does_not_compile(
             {
                 "gridTemplateColumns": {
                     "default": "repeat(1, minmax(0, 1fr))",
-                    SM: "repeat(2, 10em)",
+                    PROP_SM: "repeat(2, 10em)",
                 }
             },
         ),
@@ -869,7 +874,7 @@ def test_shorthands_stylex_does_not_compile(
         (
             {"direction": ["column", "row"], "align": "start", "justify": "between"},
             {
-                "flexDirection": {"default": "column", XS: "row"},
+                "flexDirection": {"default": "column", PROP_XS: "row"},
                 "alignItems": "flex-start",
                 "justifyContent": "space-between",
             },
@@ -877,8 +882,8 @@ def test_shorthands_stylex_does_not_compile(
         (
             {"align": ["end", "center"], "justify": {"initial": "end", "lg": "start"}},
             {
-                "alignItems": {"default": "flex-end", XS: "center"},
-                "justifyContent": {"default": "flex-end", LG: "flex-start"},
+                "alignItems": {"default": "flex-end", PROP_XS: "center"},
+                "justifyContent": {"default": "flex-end", PROP_LG: "flex-start"},
             },
         ),
         ({"direction": SCALE}, {"flexDirection": SCALE}),
@@ -939,6 +944,8 @@ def test_layout_props_are_merged_under_the_style():
             "spacing",
             "gap_x",
             "gap_y",
+            "spacing_x",
+            "spacing_y",
             "columns",
             "rows",
             "direction",
@@ -1454,3 +1461,48 @@ def test_design_tokens(style: Any, expected: dict[str, Any], imports: tuple[str,
     lowered = lower("rx.ui.card", style)
     assert lowered == Lowered(expected, imports)
     assert lowered.imports == imports
+
+
+@pytest.mark.parametrize(
+    ("layout", "message"),
+    [
+        (
+            {"p": {"tablet": "1"}},
+            (
+                'rx.ui.flex: prop "p" is given a value under "tablet", which is not a '
+                'breakpoint. Use "initial", "xs", "sm", "md", "lg" or "xl", or set a '
+                "style, which takes any media query."
+            ),
+        ),
+        (
+            {"gap": ["1"] * 7},
+            (
+                'rx.ui.flex: layout prop "gap" has 7 responsive values, but there are '
+                "only 6 breakpoints."
+            ),
+        ),
+    ],
+)
+def test_layout_prop_breakpoint_errors(layout: dict[str, Any], message: str):
+    with pytest.raises(StyleError) as error:
+        lower("rx.ui.flex", None, layout)
+    assert str(error.value) == message
+
+
+def test_layout_props_keep_the_breakpoints_of_radix_whatever_the_app_has():
+    """A prop is resolved as Radix Themes resolves it; a style follows the app."""
+    original = tuple(breakpoints_values)
+    set_breakpoints(("10px", "20px", "30px", "40px", "50px"))
+    try:
+        lowered = lower(
+            "rx.ui.flex",
+            {"width": rx.breakpoints(sm="2px")},
+            {"spacing_x": rx.breakpoints(sm="2"), "spacing_y": ["1", "3"]},
+        )
+    finally:
+        set_breakpoints(original)  # pyright: ignore [reportArgumentType]
+    assert lowered.style == {
+        "columnGap": {PROP_SM: "var(--space-2)"},
+        "rowGap": {"default": "var(--space-1)", PROP_XS: "var(--space-3)"},
+        "width": {"@media screen and (min-width: 20px)": "2px"},
+    }

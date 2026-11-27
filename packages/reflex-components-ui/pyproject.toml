@@ -15,7 +15,11 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3.15",
 ]
-dependencies = ["reflex-base >= 0.11.1.dev0"]
+dependencies = [
+    "reflex-base >= 0.11.1.dev0",
+    "reflex-components-core >= 0.11.1.dev0",
+    "reflex-components-lucide >= 1.1.0",
+]
 
 [tool.hatch.version]
 source = "uv-dynamic-versioning"
@@ -35,7 +39,13 @@ artifacts = ["/src/**/*.pyi"]
 include = ["/src", "/js/src", "/hatch_build.py"]
 
 [tool.hatch.build.hooks.reflex-pyi]
-dependencies = ["ruff", "reflex-base"]
+dependencies = [
+    "ruff",
+    "reflex-base",
+    "reflex-components-core",
+    "reflex-components-lucide",
+    "reflex-components-sonner",
+]
 
 # Embeds js/src, the javascript the components are compiled against, which the
 # plugin copies into a project's web directory.
