@@ -38,8 +38,10 @@ def _callout(namespace: Any, props: Mapping[str, Any]) -> Any:
     ]
     if holds == "more":
         # What is neither the icon nor the text is in the column of the text.
-        children.append(rx.el.div("Retry in a minute.", style={"font_size": "12px"}))
-        children.append(namespace.callout.text("And a second paragraph."))
+        children.extend((
+            rx.el.div("Retry in a minute.", style={"font_size": "12px"}),
+            namespace.callout.text("And a second paragraph."),
+        ))
     if holds == "text":
         children = children[1:]
     return namespace.callout.root(*children, **props)

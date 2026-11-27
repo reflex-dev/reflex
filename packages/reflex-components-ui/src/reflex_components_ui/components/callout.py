@@ -19,11 +19,7 @@ from reflex_components_lucide.icon import Icon
 
 from reflex_components_ui.base import UIComponent
 from reflex_components_ui.style import ComponentStyles
-from reflex_components_ui.styles.callout import (
-    CALLOUT_ICON,
-    CALLOUT_ROOT,
-    CALLOUT_TEXT,
-)
+from reflex_components_ui.styles.callout import CALLOUT_ICON, CALLOUT_ROOT, CALLOUT_TEXT
 from reflex_components_ui.themes import LiteralAccentColor
 
 CalloutVariant = Literal["soft", "surface", "outline"]
