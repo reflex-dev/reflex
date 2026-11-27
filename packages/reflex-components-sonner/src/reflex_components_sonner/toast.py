@@ -383,6 +383,7 @@ class Toaster(Component):
             dismiss = f"{toast_ref}.dismiss({id!s})"
             dismiss_var_data = id._get_all_var_data()
         elif isinstance(id, str):
+            # Escape marker syntax before the Var decoder sees the expression.
             serialized_id = json.dumps(id).replace("<", r"\u003c")
             dismiss = f"{toast_ref}.dismiss({serialized_id})"
         else:
