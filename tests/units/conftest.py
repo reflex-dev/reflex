@@ -8,7 +8,7 @@ import platform
 import sys
 import traceback
 import uuid
-from collections.abc import AsyncGenerator, Generator, Mapping
+from collections.abc import AsyncGenerator, Callable, Generator, Mapping
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -23,14 +23,17 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from reflex_base import otel
+from reflex_base.components.component import Component, ComponentStyle
 from reflex_base.components.memo import MEMOS
 from reflex_base.event import Event, EventSpec
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
+from reflex_base.plugins import CompileContext, CompilerHooks
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import log
 
 from reflex.app import App
+from reflex.compiler.plugins import default_page_plugins
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
@@ -715,3 +718,41 @@ def windows_text_io(monkeypatch: pytest.MonkeyPatch) -> None:
         return path_open(self, mode, buffering, encoding, errors, newline)
 
     monkeypatch.setattr(Path, "open", open_like_windows)
+
+
+@dataclasses.dataclass(slots=True)
+class _Page:
+    route: str
+    component: Callable[[], Component]
+    title: Any = None
+    description: Any = None
+    image: str = ""
+    meta: tuple[dict[str, Any], ...] = ()
+    _source_module: str | None = None
+
+
+@pytest.fixture
+def compile_page(preserve_memo_registries: None) -> Callable[..., CompileContext]:
+    """Compile a page the way an app compile does.
+
+    Args:
+        preserve_memo_registries: Restores the memos a compile registers.
+
+    Returns:
+        A function from a page, and the app style it is compiled with,
+        to its compile context: the source of the page is
+        ``compiled_pages["/"].output_code``.
+    """
+
+    def compile_page(
+        page: Callable[[], Component], style: ComponentStyle | None = None
+    ) -> CompileContext:
+        ctx = CompileContext(
+            pages=[_Page(route="/", component=page)],
+            hooks=CompilerHooks(plugins=default_page_plugins(style=style)),
+        )
+        with ctx:
+            ctx.compile()
+        return ctx
+
+    return compile_page

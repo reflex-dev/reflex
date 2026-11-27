@@ -8,6 +8,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
 from reflex_base import constants
+from reflex_base.constants.compiler import Imports
 from reflex_base.utils import memo_paths
 from reflex_base.utils.format import json_dumps
 from reflex_base.vars.base import VarData
@@ -66,6 +67,44 @@ def _merge_state_hooks(
         )
         first_hooks[first] = f"const {var_name} = useStateContext({args})"
     return {first_hooks.get(hook, hook): data for hook, data in merged.items()}
+
+
+# A ``css`` key of an object, as a prop is written and as code written by
+# hand may spell it.
+_CSS_KEY = re.compile(r"""(?<![\w$-])css["']?\]?\s*:""")
+
+(_REACT_JSX,) = (var.name for var in Imports.REACT_JSX["react"])
+(_EMOTION_JSX,) = (var.name for var in Imports.EMOTION_JSX["@emotion/react"])
+
+
+def _with_emotion_jsx(imports: list[_ImportDict]) -> list[_ImportDict]:
+    """Make ``jsx`` Emotion's in the imports of a module where it is React's.
+
+    Args:
+        imports: The imports of the module.
+
+    Returns:
+        The imports, unchanged for a module that does not import React's
+        ``createElement`` as ``jsx``.
+    """
+    if not any(
+        module["lib"] == "react" and _REACT_JSX in module["rest"] for module in imports
+    ):
+        return imports
+    emotion: _ImportDict = {"lib": "@emotion/react", "default": "", "rest": []}
+    swapped: list[_ImportDict] = []
+    for module in imports:
+        if module["lib"] == "react":
+            module = {
+                **module,
+                "rest": [name for name in module["rest"] if name != _REACT_JSX],
+            }
+        elif module["lib"] == "@emotion/react":
+            emotion = module
+            continue
+        swapped.append(module)
+    swapped.append({**emotion, "rest": [*emotion["rest"], _EMOTION_JSX]})
+    return swapped
 
 
 class _RenderUtils:
@@ -139,6 +178,27 @@ class _RenderUtils:
             return f'import {{{rest_imports_str}}} from "{module["lib"]}"'
         return f'import "{module["lib"]}"'
 
+    @staticmethod
+    def get_imports(imports: list[_ImportDict], *code: str) -> str:
+        """Render the imports of a module, settling what it calls ``jsx``.
+
+        Components ask for Emotion's ``jsx`` through their imports when they
+        render a ``css`` prop. Code that reaches the module without its imports
+        cannot, so a ``css`` key anywhere in the module asks for it too: Emotion
+        behaves as React does for an element without the prop, while React
+        would drop the style of an element with it.
+
+        Args:
+            imports: The imports of the module.
+            *code: The rest of the module.
+
+        Returns:
+            The import statements, one per line.
+        """
+        if any(map(_CSS_KEY.search, code)):
+            imports = _with_emotion_jsx(imports)
+        return "\n".join([_RenderUtils.get_import(module) for module in imports])
+
 
 def rxconfig_template(app_name: str):
     """Template for the Reflex config file.
@@ -171,12 +231,12 @@ def document_root_template(*, imports: list[_ImportDict], document: dict[str, An
     Returns:
         Rendered document root code as string.
     """
-    imports_rendered = "\n".join([_RenderUtils.get_import(mod) for mod in imports])
-    return f"""{imports_rendered}
+    rendered = _RenderUtils.render(document)
+    return f"""{_RenderUtils.get_imports(imports, rendered)}
 
 export function Layout({{children}}) {{
   return (
-    {_RenderUtils.render(document)}
+    {rendered}
   )
 }}"""
 
@@ -207,7 +267,6 @@ def app_root_template(
     Returns:
         Rendered App root component as string.
     """
-    imports_str = "\n".join([_RenderUtils.get_import(mod) for mod in imports])
     dynamic_imports_str = "\n".join(dynamic_imports)
 
     hydrate_fallback_str = ""
@@ -272,6 +331,12 @@ if (typeof window !== "undefined") {{
 }}
 """
 
+    hooks_str = _render_hooks(hooks)
+    rendered = _RenderUtils.render(render)
+    imports_str = _RenderUtils.get_imports(
+        imports, custom_code_str, hooks_str, rendered
+    )
+
     return f"""
 {imports_str}
 {dynamic_imports_str}
@@ -294,8 +359,8 @@ function ReflexProviders({{children}}) {{
 
 
 function AppWrap({{children}}) {{
-{_render_hooks(hooks)}
-return ({_RenderUtils.render(render)})
+{hooks_str}
+return ({rendered})
 }}
 
 export function Layout({{children}}) {{
@@ -715,11 +780,14 @@ def page_template(
     Returns:
         Rendered React page component as string.
     """
-    imports_str = "\n".join([_RenderUtils.get_import(imp) for imp in imports])
     custom_code_str = "\n".join(custom_codes)
     dynamic_imports_str = "\n".join(dynamic_imports)
 
     hooks_str = _render_hooks(hooks)
+    rendered = _RenderUtils.render(render)
+    imports_str = _RenderUtils.get_imports(
+        imports, custom_code_str, hooks_str, rendered
+    )
     display_name_str = (
         f"Component.displayName = {json.dumps(f'Component({route})')};\n"
         if route
@@ -740,7 +808,7 @@ function Component() {{
 {hooks_str}
 
   return (
-    {_RenderUtils.render(render)}
+    {rendered}
   )
 }}
 {display_name_str}
@@ -1197,7 +1265,6 @@ def memo_components_template(
     Returns:
         Rendered custom component code as string.
     """
-    imports_str = "\n".join([_RenderUtils.get_import(imp) for imp in imports])
     dynamic_imports_str = "\n".join(dynamic_imports)
     custom_code_str = "\n".join(custom_codes)
 
@@ -1208,6 +1275,10 @@ def memo_components_template(
         functions_code += (
             f"\nexport const {function['name']} = {function['function']};\n"
         )
+
+    imports_str = _RenderUtils.get_imports(
+        imports, custom_code_str, functions_code, components_code
+    )
 
     return f"""
 {imports_str}
@@ -1238,11 +1309,11 @@ def memo_single_component_template(
     Returns:
         The rendered standalone memo module code.
     """
-    imports_str = "\n".join([_RenderUtils.get_import(imp) for imp in imports])
     dynamic_imports_str = "\n".join(dynamic_imports)
     custom_code_str = "\n".join(custom_codes)
 
     component_code = _render_memo_component(component)
+    imports_str = _RenderUtils.get_imports(imports, custom_code_str, component_code)
 
     return f"""
 {imports_str}
@@ -1267,11 +1338,11 @@ def memo_single_function_template(
     Returns:
         The rendered standalone function memo module code.
     """
-    imports_str = "\n".join([_RenderUtils.get_import(imp) for imp in imports])
+    function_code = f"export const {function['name']} = {function['function']};"
     return f"""
-{imports_str}
+{_RenderUtils.get_imports(imports, function_code)}
 
-export const {function["name"]} = {function["function"]};
+{function_code}
 """
 
 

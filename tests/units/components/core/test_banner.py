@@ -5,6 +5,7 @@ from reflex_components_core.core.banner import (
     ConnectionPulser,
     ConnectionToaster,
     WebsocketTargetURL,
+    WifiOffPulse,
 )
 from reflex_components_radix.themes.typography.text import Text
 
@@ -81,3 +82,89 @@ def test_connection_toaster_does_not_ask_for_the_toaster():
         "const toast = refs['__toast'];",
     ]
     assert collect_subtree_app_wraps(toaster) == {}
+
+
+PULSER_CSS = (
+    "@keyframes rx-connection-pulse{from{opacity:0}to{opacity:1}}"
+    ".rx-connection-pulser{position:fixed;width:100vw;height:0}"
+    ".rx-connection-pulse{color:crimson;z-index:9999;position:fixed;bottom:33px;"
+    "right:33px;animation:rx-connection-pulse 1s infinite}"
+)
+
+
+def test_connection_pulser_is_styled_without_a_css_prop():
+    """The indicator every app with state renders does not need Emotion."""
+    pulser = ConnectionPulser.create()
+    assert sorted(pulser._get_all_imports(collapse=True)) == [
+        "$/utils/context",
+        "$/utils/state",
+        "lucide-react@1.26.0",
+        "react",
+    ]
+    assert pulser.render() == {
+        "name": '"div"',
+        "props": [
+            'className:"rx-connection-pulser"',
+            (
+                'title:("Connection Error: "+((connectErrors.length > 0) ? '
+                "connectErrors[connectErrors.length - 1].message : ''))"
+            ),
+        ],
+        "children": [
+            {
+                "name": '"style"',
+                "props": [
+                    'href:"rx-connection-pulser"',
+                    'precedence:"reflex"',
+                    "suppressHydrationWarning:true",
+                ],
+                "children": [{"contents": f'"{PULSER_CSS}"'}],
+            },
+            {
+                "name": "Fragment",
+                "props": [],
+                "children": [
+                    {
+                        "cond_state": "(connectErrors.length > 0)",
+                        "true_value": {
+                            "name": "Fragment",
+                            "props": [],
+                            "children": [
+                                {
+                                    "name": "LucideWifiOff",
+                                    "props": [
+                                        'className:"rx-connection-pulse"',
+                                        "size:32",
+                                    ],
+                                    "children": [],
+                                }
+                            ],
+                        },
+                        "false_value": {
+                            "name": "Fragment",
+                            "props": [],
+                            "children": [],
+                        },
+                    }
+                ],
+            },
+        ],
+    }
+
+
+def test_wifi_off_pulse_style_props_override_its_stylesheet():
+    """A style given to the icon is a ``css`` prop over the class it keeps."""
+    icon = WifiOffPulse.create(color="red", class_name="mine")
+    assert sorted(icon._get_all_imports(collapse=True)) == [
+        "@emotion/react",
+        "lucide-react@1.26.0",
+    ]
+    assert icon.render() == {
+        "name": "LucideWifiOff",
+        "props": [
+            'className:"rx-connection-pulse mine"',
+            'css:({ ["color"] : "red" })',
+            "size:32",
+        ],
+        "children": [],
+    }
