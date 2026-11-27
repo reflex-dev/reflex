@@ -62,6 +62,14 @@ html.dark {
   .reflex-ui-theme svg {
     opacity: var(--rx-icon-opacity, revert-layer);
   }
+
+  /*
+   * Everything in a callout but its icon is in the last column, whatever
+   * the element is: the icon places itself, in the column before.
+   */
+  [data-rx-callout] > * {
+    grid-column-start: -1;
+  }
 }
 
 /*

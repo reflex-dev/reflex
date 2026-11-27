@@ -11,6 +11,7 @@ _SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = {
     "components.avatar": ["avatar"],
     "components.badge": ["badge"],
     "components.button": ["button"],
+    "components.callout": ["callout"],
     "components.card": ["card"],
     "components.data_list": ["data_list"],
     "components.icon_button": ["icon_button"],
