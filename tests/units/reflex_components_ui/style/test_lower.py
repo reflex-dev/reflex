@@ -7,6 +7,7 @@ from reflex_base.breakpoints import breakpoints_values, set_breakpoints
 from reflex_base.constants.colors import Color
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_ui.style import _css_props
+from reflex_components_ui import tokens
 from reflex_components_ui._radix_tokens import VAR_GROUPS
 from reflex_components_ui.style.lower import (
     _BORDERS,
@@ -1348,3 +1349,103 @@ def test_var_values_are_vars():
     value = lower("rx.ui.card", {"width": WIDTH}).style["width"]
     assert isinstance(value, Var)
     assert value.equals(WIDTH)
+
+
+@pytest.mark.parametrize(
+    ("style", "expected", "imports"),
+    [
+        (
+            {"padding": tokens.space[3]},
+            _sides("padding", "", *["var(--space-3)"] * 4),
+            (SPACE,),
+        ),
+        (
+            {"padding": f"{tokens.space[2]} {tokens.space[4]}"},
+            _sides(
+                "padding",
+                "",
+                "var(--space-2)",
+                "var(--space-4)",
+                "var(--space-2)",
+                "var(--space-4)",
+            ),
+            (SPACE,),
+        ),
+        (
+            {"margin": f"0 auto {tokens.space[1]}"},
+            _sides("margin", "", "0", "auto", "var(--space-1)", "auto"),
+            (SPACE,),
+        ),
+        (
+            {"gap": f"{tokens.space[1]} {tokens.space[2]}"},
+            {"rowGap": "var(--space-1)", "columnGap": "var(--space-2)"},
+            (SPACE,),
+        ),
+        (
+            {"border_radius": tokens.radius[3]},
+            {
+                "borderTopLeftRadius": "var(--radius-3)",
+                "borderTopRightRadius": "var(--radius-3)",
+                "borderBottomRightRadius": "var(--radius-3)",
+                "borderBottomLeftRadius": "var(--radius-3)",
+            },
+            ("$/reflex-ui/tokens/radius.stylex.js",),
+        ),
+        (
+            {"border_color": tokens.gray.a[6]},
+            _sides("border", "Color", *["var(--gray-a6)"] * 4),
+            (GRAY,),
+        ),
+        (
+            {"border": f"1px solid {tokens.accent[7]}"},
+            _border(ALL_SIDES, "1px", "solid", "var(--accent-7)"),
+            (ACCENT,),
+        ),
+        (
+            {"background": tokens.color.panel},
+            {"backgroundColor": "var(--color-panel)", "backgroundImage": "none"},
+            ("$/reflex-ui/tokens/color.stylex.js",),
+        ),
+        # A shadow is a list of layers and a font family a list of fonts: a
+        # shorthand that holds one is kept whole, as with any other property.
+        (
+            {"padding": tokens.shadow[1]},
+            {"padding": "var(--shadow-1)"},
+            ("$/reflex-ui/tokens/shadow.stylex.js",),
+        ),
+        (
+            {"margin": f"{tokens.space[1]} {tokens.default.font_family}"},
+            {"margin": "var(--space-1) var(--default-font-family)"},
+            (SPACE, "$/reflex-ui/tokens/typography.stylex.js"),
+        ),
+        (
+            {"padding": f"{tokens.space[1]} var(--mine)"},
+            {"padding": "var(--space-1) var(--mine)"},
+            (SPACE,),
+        ),
+        (
+            {"padding": f"calc({tokens.space[1]} * 2) {tokens.space[2]}"},
+            {"padding": "calc(var(--space-1) * 2) var(--space-2)"},
+            (SPACE,),
+        ),
+        (
+            {"font_size": tokens.font_size[2], "box_shadow": tokens.shadow[3]},
+            {"fontSize": "var(--font-size-2)", "boxShadow": "var(--shadow-3)"},
+            (
+                "$/reflex-ui/tokens/shadow.stylex.js",
+                "$/reflex-ui/tokens/typography.stylex.js",
+            ),
+        ),
+    ],
+)
+def test_design_tokens(style: Any, expected: dict[str, Any], imports: tuple[str, ...]):
+    """A token is its custom property: a shorthand gives one to each longhand.
+
+    Args:
+        style: The style as written.
+        expected: The lowered properties.
+        imports: The modules the style needs.
+    """
+    lowered = lower("rx.ui.card", style)
+    assert lowered == Lowered(expected, imports)
+    assert lowered.imports == imports

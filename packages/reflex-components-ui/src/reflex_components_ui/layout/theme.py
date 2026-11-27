@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import Any, ClassVar
 
 from reflex_base.components.component import Component, field
@@ -22,6 +23,7 @@ from reflex_components_ui.plugin import UIPlugin
 from reflex_components_ui.style.emit import props_call
 from reflex_components_ui.styles.theme import APP_THEME
 from reflex_components_ui.themes import (
+    OPTIONS,
     LiteralAccentColor,
     LiteralAppearance,
     LiteralGrayColor,
@@ -33,6 +35,10 @@ from reflex_components_ui.themes import (
     app_theme_styles,
     theme_styles,
 )
+
+
+# The fields of the element that are options of its theme.
+_OPTIONS = (*OPTIONS, "has_background")
 
 
 class ThemeElement(UIComponent):
@@ -96,6 +102,28 @@ class ThemeElement(UIComponent):
         """
         return "rx.ui.theme"
 
+    def _get_vars(
+        self, include_children: bool = False, ignore_ids: set[int] | None = None
+    ) -> Iterator[Var]:
+        """Walk all Vars used in this component.
+
+        Args:
+            include_children: Whether to include Vars from children.
+            ignore_ids: The ids to ignore.
+
+        Yields:
+            The Vars of every component, then the options bound to state: they
+            are no props of the element, so nothing else reports the state
+            they read.
+        """
+        yield from super()._get_vars(
+            include_children=include_children, ignore_ids=ignore_ids
+        )
+        for option in _OPTIONS:
+            value = getattr(self, option)
+            if isinstance(value, Var):
+                yield value
+
     def _theme_styles(self) -> ThemeStyles:
         """Work out the StyleX themes of the element.
 
@@ -103,12 +131,9 @@ class ThemeElement(UIComponent):
             What the element needs to carry its theme.
 
         Raises:
-            ConfigError: If the plugin that compiles the styles is not configured.
             ThemeError: If the element is rendered from state.
+            ConfigError: If the plugin that compiles the styles is not configured.
         """
-        plugin = get_plugin(UIPlugin)
-        if plugin is None:
-            raise ConfigError(MISSING_PLUGIN_ERROR)
         if is_rendering_dynamic_component():
             msg = (
                 f"{self._display_name()}: a theme rendered from state cannot be "
@@ -117,6 +142,9 @@ class ThemeElement(UIComponent):
                 "what comes from state inside it."
             )
             raise ThemeError(msg)
+        plugin = get_plugin(UIPlugin)
+        if plugin is None:
+            raise ConfigError(MISSING_PLUGIN_ERROR)
         return self._resolve_theme_styles(plugin)
 
     def _resolve_theme_styles(self, plugin: UIPlugin) -> ThemeStyles:
@@ -140,22 +168,21 @@ class ThemeElement(UIComponent):
             app_theme=plugin.theme,
         )
 
-    def add_imports(self) -> list[ImportDict]:
-        """Import StyleX and the StyleX themes of the element.
+    def add_imports(self) -> ImportDict:
+        """Import the StyleX themes of the element.
 
         Returns:
-            The imports.
+            The imports, beside the ones every rx.ui component has.
         """
-        return [super().add_imports(), self._theme_styles().import_dict()]
+        return self._theme_styles().import_dict()
 
     def add_custom_code(self) -> list[str]:
-        """Declare what the element's style and its themes refer to.
+        """Declare the maps an option bound to state is looked up in.
 
         Returns:
-            The declaration of the style, then the maps an option bound to
-            state is looked up in.
+            The declarations, beside the one of the element's own style.
         """
-        return [*super().add_custom_code(), *self._theme_styles().declarations]
+        return list(self._theme_styles().declarations)
 
     def _render(self, props: dict[str, Any] | None = None) -> CommonTag:
         """Render the element with its themes and its style.

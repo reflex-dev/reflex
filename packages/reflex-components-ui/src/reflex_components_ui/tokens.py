@@ -112,16 +112,19 @@ class _Tokens:
                 f"{len(self._steps)}."
             )
         else:
-            msg = f"{self._path} has no steps. Its tokens are {self._names()}."
+            msg = (
+                f"{self._path} has no steps. Its tokens are "
+                f"{', '.join(self._names())}."
+            )
         raise TokenError(msg)
 
-    def _names(self) -> str:
+    def _names(self) -> list[str]:
         """List the named tokens of the group.
 
         Returns:
-            Their names, for an error message.
+            Their names, sorted.
         """
-        return ", ".join(sorted([name for name in vars(self) if name[0] != "_"]))
+        return sorted([name for name in vars(self) if name[0] != "_"])
 
     def __getitem__(self, step: int) -> str:
         """Get the token of a step.
@@ -148,9 +151,10 @@ class _Tokens:
         """
         if name[:1] == "_":
             raise AttributeError(name)
-        msg = f'{self._path} has no token "{name}".{_suggest(name, vars(self))}'
-        if names := self._names():
-            msg += f" Its tokens are {names}"
+        names = self._names()
+        msg = f'{self._path} has no token "{name}".{_suggest(name, names)}'
+        if names:
+            msg += f" Its tokens are {', '.join(names)}"
             if self._steps:
                 msg += f", and the steps [1] to [{len(self._steps)}]"
             msg += "."
@@ -538,13 +542,18 @@ def scale(name: LiteralColorScale) -> _Scale:
     found = _SCALES.get(name)
     if found is None:
         scales = LiteralColorScale.__args__
+        if name == "accent" or name == "gray":
+            msg = (
+                f'rx.ui.tokens.scale: "{name}" is not a color scale of its own, '
+                f"but the {name} of the theme: use rx.ui.tokens.{name}."
+            )
+            raise TokenError(msg)
         if name not in scales:
             shown = f'"{name}"' if isinstance(name, str) else repr(name)
             suggestion = _suggest(name, scales) if isinstance(name, str) else ""
             msg = (
                 f"rx.ui.tokens.scale: unknown color scale {shown}.{suggestion} "
-                f"The scales are {', '.join(sorted(scales))}. The accent and the "
-                "gray of the theme are rx.ui.tokens.accent and rx.ui.tokens.gray."
+                f"The scales are {', '.join(sorted(scales))}."
             )
             raise TokenError(msg)
         found = _SCALES[name] = _Scale(f'rx.ui.tokens.scale("{name}")', name)

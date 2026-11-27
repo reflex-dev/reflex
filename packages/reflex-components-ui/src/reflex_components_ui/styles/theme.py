@@ -8,6 +8,9 @@ APP_THEME: ComponentStyles = {
     "base": {
         "position": "relative",
         "zIndex": 0,
-        "minHeight": "100vh",
+        "minHeight": {
+            "default": "100vh",
+            "@supports (min-height: 100dvh)": "100dvh",
+        },
     },
 }

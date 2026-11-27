@@ -10,11 +10,185 @@
  */
 @layer __reflex_base, theme, base, reflex-ui, components, utilities;
 
-/* Reflex's color mode provider sets one of these classes on the root element. */
+/*
+ * Reflex's color mode provider sets one of these classes on the root element.
+ * Without either, as in a page read with JavaScript off, the color scheme is
+ * `normal`, under which `light-dark()` is the light color.
+ */
 html.light {
   color-scheme: light;
 }
 
 html.dark {
   color-scheme: dark;
+}
+
+/*
+ * What Radix Themes styles through a selector that a class on the element
+ * cannot express. A theme element carries the class `reflex-ui-theme`.
+ */
+@layer reflex-ui.base {
+  .reflex-ui-theme ::selection {
+    background-color: var(--focus-a5);
+  }
+}
+
+/*
+ * The system fonts Radix Themes adjusts the metrics of, which the font
+ * families of the typography tokens name. Copied from the `tokens.css` of
+ * @radix-ui/themes: `tests/base-css.test.js` fails when they differ.
+ */
+@font-face {
+  font-family: 'Segoe UI (Custom)';
+  font-weight: 300;
+  size-adjust: 103%;
+  descent-override: 35%;
+  ascent-override: 105%;
+  src: local('Segoe UI Semilight'), local('Segoe UI');
+}
+@font-face {
+  font-family: 'Segoe UI (Custom)';
+  font-weight: 300;
+  font-style: italic;
+  size-adjust: 103%;
+  descent-override: 35%;
+  ascent-override: 105%;
+  src: local('Segoe UI Semilight Italic'), local('Segoe UI Italic');
+}
+@font-face {
+  font-family: 'Segoe UI (Custom)';
+  font-weight: 400;
+  size-adjust: 103%;
+  descent-override: 35%;
+  ascent-override: 105%;
+  src: local('Segoe UI');
+}
+@font-face {
+  font-family: 'Segoe UI (Custom)';
+  font-weight: 400;
+  font-style: italic;
+  size-adjust: 103%;
+  descent-override: 35%;
+  ascent-override: 105%;
+  src: local('Segoe UI Italic');
+}
+@font-face {
+  font-family: 'Segoe UI (Custom)';
+  font-weight: 500;
+  size-adjust: 103%;
+  descent-override: 35%;
+  ascent-override: 105%;
+  src: local('Segoe UI Semibold'), local('Segoe UI');
+}
+@font-face {
+  font-family: 'Segoe UI (Custom)';
+  font-weight: 500;
+  font-style: italic;
+  size-adjust: 103%;
+  descent-override: 35%;
+  ascent-override: 105%;
+  src: local('Segoe UI Semibold Italic'), local('Segoe UI Italic');
+}
+@font-face {
+  font-family: 'Segoe UI (Custom)';
+  font-weight: 700;
+  size-adjust: 103%;
+  descent-override: 35%;
+  ascent-override: 105%;
+  src: local('Segoe UI Bold');
+}
+@font-face {
+  font-family: 'Segoe UI (Custom)';
+  font-weight: 700;
+  font-style: italic;
+  size-adjust: 103%;
+  descent-override: 35%;
+  ascent-override: 105%;
+  src: local('Segoe UI Bold Italic');
+}
+@font-face {
+  font-family: 'Open Sans (Custom)';
+  font-weight: 300;
+  descent-override: 35%;
+  src: local('Open Sans Light'), local('Open Sans Regular');
+}
+@font-face {
+  font-family: 'Open Sans (Custom)';
+  font-weight: 300;
+  font-style: italic;
+  descent-override: 35%;
+  src: local('Open Sans Light Italic'), local('Open Sans Italic');
+}
+@font-face {
+  font-family: 'Open Sans (Custom)';
+  font-weight: 400;
+  descent-override: 35%;
+  src: local('Open Sans Regular');
+}
+@font-face {
+  font-family: 'Open Sans (Custom)';
+  font-weight: 400;
+  font-style: italic;
+  descent-override: 35%;
+  src: local('Open Sans Italic');
+}
+@font-face {
+  font-family: 'Open Sans (Custom)';
+  font-weight: 500;
+  descent-override: 35%;
+  src: local('Open Sans Medium'), local('Open Sans Regular');
+}
+@font-face {
+  font-family: 'Open Sans (Custom)';
+  font-weight: 500;
+  font-style: italic;
+  descent-override: 35%;
+  src: local('Open Sans Medium Italic'), local('Open Sans Italic');
+}
+@font-face {
+  font-family: 'Open Sans (Custom)';
+  font-weight: 700;
+  descent-override: 35%;
+  src: local('Open Sans Bold');
+}
+@font-face {
+  font-family: 'Open Sans (Custom)';
+  font-weight: 700;
+  font-style: italic;
+  descent-override: 35%;
+  src: local('Open Sans Bold Italic');
+}
+@font-face {
+  font-family: 'Consolas (Custom)';
+  font-weight: 400;
+  size-adjust: 110%;
+  ascent-override: 85%;
+  descent-override: 22%;
+  src: local('Consolas');
+}
+@font-face {
+  font-family: 'Consolas (Custom)';
+  font-weight: 400;
+  font-style: italic;
+  size-adjust: 110%;
+  ascent-override: 85%;
+  descent-override: 22%;
+  src: local('Consolas Italic');
+}
+@font-face {
+  font-family: 'Consolas (Custom)';
+  font-weight: 700;
+  size-adjust: 110%;
+  ascent-override: 85%;
+  descent-override: 22%;
+  src: local('Consolas Bold');
+}
+@font-face {
+  font-family: 'Consolas (Custom)';
+  font-weight: 700;
+  font-style: italic;
+  size-adjust: 110%;
+  ascent-override: 85%;
+  descent-override: 22%;
+  src: local('Consolas Bold Italic');
 }

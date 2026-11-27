@@ -65,6 +65,9 @@ OPTIONS: dict[str, tuple[str, ...]] = {
     "panel_background": get_args(LiteralPanelBackground),
 }
 
+# The class of every theme element, which the base stylesheet selects on.
+THEME_CLASS = "reflex-ui-theme"
+
 # The name the styles of a theme element are imported under: `theme` is what
 # an app with Radix Themes imports its own theme as.
 _THEME_STYLES = "reflexUITheme"
@@ -82,18 +85,19 @@ class ThemeError(ReflexError, ValueError):
     """A theme option that cannot be applied."""
 
 
-def _check(name: str, option: str, value: object) -> None:
+def _check(name: str, option: str, value: object, accepts: str | None = None) -> None:
     """Fail on a value an option does not take.
 
     Args:
         name: What the option was given to, which starts the error message.
         option: The option.
         value: Its value.
+        accepts: The option whose values it takes, when it is another one.
 
     Raises:
         ThemeError: If the value is not one of the option's.
     """
-    values = OPTIONS[option]
+    values = OPTIONS[accepts or option]
     if value.__class__ is str and value in values:
         return
     if isinstance(value, Var):
@@ -171,7 +175,7 @@ class ThemeStyles:
             theme the arguments name.
         declarations: The module-level statements the arguments rely on.
         class_name: The class names the element carries beside the compiled
-            ones.
+            ones, if any.
         var_data: The state the arguments read.
     """
 
@@ -426,7 +430,8 @@ def theme_styles(
     module, export, _ = tokens.THEME_STYLES
     styles = builder.add((module, export), _THEME_STYLES)
     builder.refs.append(f"{styles}.root")
-    class_name = None
+    class_name = THEME_CLASS
+    explicit = False
     bound_appearance = None
     if isinstance(appearance, Var):
         bound_appearance = builder.bound(appearance)
@@ -435,7 +440,8 @@ def theme_styles(
         if appearance != "inherit":
             # Radix Themes and Tailwind select on the class: a component of
             # either inside this element follows the appearance too.
-            class_name = appearance
+            class_name = f"{THEME_CLASS} {appearance}"
+            explicit = True
     if isinstance(has_background, Var):
         builder.refs.append(f"({builder.bound(has_background)}) && {styles}.background")
     elif has_background is None:
@@ -443,7 +449,7 @@ def theme_styles(
             builder.refs.append(
                 f'({bound_appearance}) !== "inherit" && {styles}.background'
             )
-        elif class_name is not None:
+        elif explicit:
             builder.refs.append(f"{styles}.background")
     else:
         _check_flag(name, "has_background", has_background)
@@ -455,8 +461,8 @@ def theme_styles(
             f'({bound_appearance}) !== "inherit" && '
             f"{{ $$css: true, appearance: {bound_appearance} }}",
         ))
-    elif class_name is not None:
-        builder.refs.append(f"{styles}.{class_name}")
+    elif explicit:
+        builder.refs.append(f"{styles}.{appearance}")
     return builder.finish(class_name)
 
 
@@ -498,7 +504,7 @@ def color_scheme_styles(name: str, color_scheme: Any) -> ThemeStyles:
         focus = builder.add(tokens.FOCUS_THEME)
         builder.refs.append(f'({builder.bound(color_scheme)}) !== "gray" && {focus}')
     else:
-        _check(name, "color_scheme", color_scheme)
+        _check(name, "color_scheme", color_scheme, "accent_color")
         builder.refs.append(builder.add(tokens.ACCENT_THEMES[color_scheme]))
         if color_scheme != "gray":
             builder.refs.append(builder.add(tokens.FOCUS_THEME))
