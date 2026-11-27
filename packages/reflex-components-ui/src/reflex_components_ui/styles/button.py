@@ -335,7 +335,7 @@ def _over(under: dict[str, Any], top: dict[str, Any]) -> dict[str, Any]:
     """
     merged = dict(under)
     for key, value in top.items():
-        below = merged.get(key)
+        below: Any = merged.get(key)
         merged[key] = (
             _over(below, value)
             if value.__class__ is dict and below.__class__ is dict
@@ -378,7 +378,41 @@ _PARTS: dict[str, ComponentStyles] = {
     "leaf": {"base": LEAF},
 }
 
-_RADIUS = {"1": 1, "2": 2, "3": 3, "4": 4}
+# The height, the radius and the padding on each side of each size.
+_SIZES: dict[str, tuple[str, str, str]] = {
+    "1": (tokens.space[5], tokens.radius[1], tokens.space[2]),
+    "2": (tokens.space[6], tokens.radius[2], tokens.space[3]),
+    "3": (tokens.space[7], tokens.radius[3], tokens.space[4]),
+    "4": (tokens.space[8], tokens.radius[4], tokens.space[5]),
+}
+
+# The space between the children of a button of each size, and its text.
+_TEXT: dict[str, dict[str, str]] = {
+    "1": {
+        "gap": tokens.space[1],
+        "font_size": tokens.font_size[1],
+        "line_height": tokens.line_height[1],
+        "letter_spacing": tokens.letter_spacing[1],
+    },
+    "2": {
+        "gap": tokens.space[2],
+        "font_size": tokens.font_size[2],
+        "line_height": tokens.line_height[2],
+        "letter_spacing": tokens.letter_spacing[2],
+    },
+    "3": {
+        "gap": tokens.space[3],
+        "font_size": tokens.font_size[3],
+        "line_height": tokens.line_height[3],
+        "letter_spacing": tokens.letter_spacing[3],
+    },
+    "4": {
+        "gap": tokens.space[3],
+        "font_size": tokens.font_size[4],
+        "line_height": tokens.line_height[4],
+        "letter_spacing": tokens.letter_spacing[4],
+    },
+}
 
 # What everything a button does not set is, as Radix Themes unsets it all:
 # the look the browser gives a button, and what a reset of the page adds.
@@ -442,14 +476,15 @@ def button_styles(icon: bool) -> ComponentStyles:
     Returns:
         The table.
     """
-    sizes: dict[str, Any] = {}
     compound: list[CompoundStyle] = []
-    for size, step in _RADIUS.items():
-        sizes[size] = {
+    sizes: dict[str, Any] = {
+        size: {
             _PRESSED_PADDING: "1px" if size == "1" else "2px",
-            _HEIGHT: tokens.space[step + 4],
-            "border_radius": f"max({tokens.radius[step]}, {tokens.radius.full})",
+            _HEIGHT: height,
+            "border_radius": f"max({radius}, {tokens.radius.full})",
         }
+        for size, (height, radius, _) in _SIZES.items()
+    }
     if icon:
         ghost_padding = {
             "1": tokens.space[1],
@@ -466,13 +501,8 @@ def button_styles(icon: bool) -> ComponentStyles:
             for size in sizes
         }
     else:
-        for size, step in _RADIUS.items():
-            sizes[size].update({
-                "gap": tokens.space[min(step, 3)],
-                "font_size": tokens.font_size[step],
-                "line_height": tokens.line_height[step],
-                "letter_spacing": tokens.letter_spacing[step],
-            })
+        for size, text in _TEXT.items():
+            sizes[size].update(text)
         ghost_paddings = {
             "1": (tokens.space[1], tokens.space[2], tokens.space[1]),
             "2": (tokens.space[1], tokens.space[2], tokens.space[1]),
@@ -486,12 +516,12 @@ def button_styles(icon: bool) -> ComponentStyles:
         solid_size = {
             size: {
                 "height": f"var({_HEIGHT})",
-                "padding_left": tokens.space[step + 1],
-                "padding_right": tokens.space[step + 1],
+                "padding_left": padding,
+                "padding_right": padding,
                 "font_weight": tokens.font_weight.medium,
                 ICON_OPACITY: "0.9",
             }
-            for size, step in _RADIUS.items()
+            for size, (_, _, padding) in _SIZES.items()
         }
     for variant in _VARIANTS:
         by_size = ghost if variant == "ghost" else solid_size

@@ -1272,7 +1272,7 @@ def apply_layer(target: dict[str, LoweredValue], layer: Layer) -> None:
     for prop in replaced:
         target.pop(prop, None)
     for prop, value in props.items():
-        old = target.get(prop)
+        old: Any = target.get(prop)
         if value.__class__ is dict and "default" not in value:
             target[prop] = value if old is None else _overlay(old, value)
         elif old.__class__ is dict:

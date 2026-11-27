@@ -1084,7 +1084,7 @@ def test_button_rejects_a_value_a_prop_does_not_take(
 ):
     """The error names the component, the prop and the values it takes."""
     with pytest.raises(error) as raised:
-        rx.ui.button("Save", **props)
+        rx.ui.button("Save", **props)  # pyright: ignore[reportArgumentType]
     assert str(raised.value) == message
 
 

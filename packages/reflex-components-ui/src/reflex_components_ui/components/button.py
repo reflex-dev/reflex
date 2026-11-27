@@ -121,7 +121,7 @@ class BaseButton(UIComponent, elements.Button):
             in its place with ``as_child`` looks disabled as well.
         """
         tag = super()._render(props)
-        disabled = _either(self.disabled, self.loading)
+        disabled = _either(getattr(self, "disabled", None), self.loading)
         if disabled is None:
             return tag
         if isinstance(disabled, LiteralVar):

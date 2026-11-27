@@ -583,7 +583,7 @@ class UIComponent(Component):
         """
         dynamic = is_rendering_dynamic_component()
         if self.__dict__.get("_imports_for") is not dynamic:
-            self.__dict__.pop("_imports_cache", None)
+            self._imports_cache = None
             self._imports_for = dynamic
         return super()._get_imports()
 
