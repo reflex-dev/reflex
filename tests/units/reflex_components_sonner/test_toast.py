@@ -1,12 +1,26 @@
 """Sonner toast component tests."""
 
 import json
+from unittest.mock import call
 
-import pytest
 from pytest_mock import MockerFixture
 from reflex_base.style import Style
-from reflex_base.utils.exceptions import InvalidPropValueError
 from reflex_components_sonner.toast import Toaster, ToastProps
+
+_DEPRECATION_CALLS = [
+    call(
+        feature_name="The `action_button_styles` toast prop",
+        reason="Use `action_button_style` instead, which matches Sonner's option name",
+        deprecation_version="0.11.1",
+        removal_version="1.0",
+    ),
+    call(
+        feature_name="The `cancel_button_styles` toast prop",
+        reason="Use `cancel_button_style` instead, which matches Sonner's option name",
+        deprecation_version="0.11.1",
+        removal_version="1.0",
+    ),
+]
 
 
 def test_toaster_hotkey_accepts_key_list():
@@ -40,20 +54,7 @@ def test_toast_deprecated_button_styles(mocker: MockerFixture):
         cancel_button_styles=cancel_style,
     )  # pyright: ignore[reportCallIssue]
 
-    assert deprecate.call_args_list == [
-        mocker.call(
-            feature_name="The `action_button_styles` toast prop",
-            reason="Use `action_button_style` instead, which matches Sonner's option name",
-            deprecation_version="0.11.1",
-            removal_version="1.0",
-        ),
-        mocker.call(
-            feature_name="The `cancel_button_styles` toast prop",
-            reason="Use `cancel_button_style` instead, which matches Sonner's option name",
-            deprecation_version="0.11.1",
-            removal_version="1.0",
-        ),
-    ]
+    assert deprecate.call_args_list == _DEPRECATION_CALLS
     assert props.action_button_style is action_style
     assert props.cancel_button_style is cancel_style
     assert props.action_button_styles is None
@@ -64,29 +65,27 @@ def test_toast_deprecated_button_styles(mocker: MockerFixture):
     }
 
 
-def test_toast_button_style_and_deprecated_name_together():
-    """Passing a button style under both names is ambiguous, so it raises."""
-    with pytest.raises(InvalidPropValueError) as action_error:
-        Toaster.send_toast(
-            "Saved",
-            action_button_style=Style({"color": "red"}),
-            action_button_styles=Style({"color": "blue"}),
-        )
-    with pytest.raises(InvalidPropValueError) as cancel_error:
-        Toaster.send_toast(
-            "Saved",
-            cancel_button_style=Style({"color": "red"}),
-            cancel_button_styles=Style({"color": "blue"}),
-        )
+def test_toast_button_style_wins_over_deprecated_name(mocker: MockerFixture):
+    """With both names passed, the singular one is used and the plural one only warns."""
+    deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+    action_style = Style({"color": "red"})
+    cancel_style = Style({"color": "white"})
+    props = ToastProps(
+        action_button_style=action_style,
+        action_button_styles=Style({"color": "blue"}),
+        cancel_button_style=cancel_style,
+        cancel_button_styles=Style({"color": "black"}),
+    )  # pyright: ignore[reportCallIssue]
 
-    assert str(action_error.value) == (
-        "Pass only one of 'action_button_style' and the deprecated "
-        "'action_button_styles' to 'rx.toast'."
-    )
-    assert str(cancel_error.value) == (
-        "Pass only one of 'cancel_button_style' and the deprecated "
-        "'cancel_button_styles' to 'rx.toast'."
-    )
+    assert deprecate.call_args_list == _DEPRECATION_CALLS
+    assert props.action_button_style is action_style
+    assert props.cancel_button_style is cancel_style
+    assert props.action_button_styles is None
+    assert props.cancel_button_styles is None
+    assert json.loads(props.json()) == {
+        "actionButtonStyle": {"color": "red"},
+        "cancelButtonStyle": {"color": "white"},
+    }
 
 
 def test_toaster_toast_options_button_styles():

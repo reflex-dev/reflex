@@ -12,7 +12,6 @@ from reflex_base.constants.base import Dirs
 from reflex_base.event import EventSpec, run_script
 from reflex_base.style import Style, resolved_color_mode
 from reflex_base.utils import console, format
-from reflex_base.utils.exceptions import InvalidPropValueError
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.serializers import serializer
 from reflex_base.vars import VarData
@@ -153,29 +152,22 @@ class ToastProps(NoExtrasAllowedProps):
     def __init__(self, component_name: str | None = None, **kwargs: Any):
         """Initialize the toast props, moving deprecated prop names to their replacements.
 
+        If a deprecated name and its replacement are both passed, the replacement is used.
+
         Args:
             component_name: The custom name of the component.
             **kwargs: Kwargs to initialize the props.
-
-        Raises:
-            InvalidPropValueError: If a deprecated prop name is passed together with its replacement.
         """
         for deprecated_name, name in _DEPRECATED_BUTTON_STYLE_PROPS:
             if deprecated_name not in kwargs:
                 continue
-            if name in kwargs:
-                msg = (
-                    f"Pass only one of {name!r} and the deprecated {deprecated_name!r} "
-                    f"to {component_name or type(self).__name__!r}."
-                )
-                raise InvalidPropValueError(msg)
             console.deprecate(
                 feature_name=f"The `{deprecated_name}` toast prop",
                 reason=f"Use `{name}` instead, which matches Sonner's option name",
                 deprecation_version="0.11.1",
                 removal_version="1.0",
             )
-            kwargs[name] = kwargs.pop(deprecated_name)
+            kwargs.setdefault(name, kwargs.pop(deprecated_name))
         super().__init__(component_name=component_name, **kwargs)
 
     def dict(self, *args: Any, **kwargs: Any) -> builtins.dict[str, Any]:
