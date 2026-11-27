@@ -165,8 +165,43 @@ def _get_window_libraries() -> list[tuple[str, str]]:
     return window_libraries
 
 
+def _split_window_libraries(
+    dynamic_components: bool,
+) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
+    """Split the bundled libraries into those root.jsx imports and those it defers.
+
+    A deferred library costs a chunk of its whole namespace, so one the compiler
+    registered is only kept when the app renders a dynamic component. A library
+    the app registered itself is always kept.
+
+    Args:
+        dynamic_components: Whether the app renders a dynamic component.
+
+    Returns:
+        The eagerly imported libraries and the lazily loaded libraries, each
+        as aliases paired with module paths.
+    """
+    window_libraries = _get_window_libraries()
+    if not get_config().frontend_lazy_bundled_libraries:
+        return window_libraries, []
+    core_libraries = set(_default_bundled_libraries())
+    explicit_libraries = (
+        RegistrationContext.ensure_context()._explicit_bundled_libraries
+    )
+    eager: list[tuple[str, str]] = []
+    lazy: list[tuple[str, str]] = []
+    for library in window_libraries:
+        if library[1] in core_libraries:
+            eager.append(library)
+        elif dynamic_components or library[1] in explicit_libraries:
+            lazy.append(library)
+    return eager, lazy
+
+
 def _compile_app(
-    app_root: Component, hydrate_fallback_export: str | None = None
+    app_root: Component,
+    hydrate_fallback_export: str | None = None,
+    dynamic_components: bool = True,
 ) -> str:
     """Compile the app template component.
 
@@ -174,20 +209,14 @@ def _compile_app(
         app_root: The app root to compile.
         hydrate_fallback_export: The exported name of the hydrate-fallback memo
             component to re-export as ``HydrateFallback``, or None for no fallback.
+        dynamic_components: Whether the app renders a dynamic component.
 
     Returns:
         The compiled app.
     """
-    window_libraries = _get_window_libraries()
-    lazy_window_libraries = []
-    if get_config().frontend_lazy_bundled_libraries:
-        core_libraries = set(_default_bundled_libraries())
-        lazy_window_libraries = [
-            library for library in window_libraries if library[1] not in core_libraries
-        ]
-        window_libraries = [
-            library for library in window_libraries if library[1] in core_libraries
-        ]
+    window_libraries, lazy_window_libraries = _split_window_libraries(
+        dynamic_components
+    )
 
     app_root_imports = app_root._get_all_imports()
     _apply_common_imports(app_root_imports)
@@ -720,7 +749,10 @@ def compile_document_root(
 
 
 def compile_app_root(
-    app_root: Component, hydrate_fallback_export: str | None = None
+    app_root: Component,
+    hydrate_fallback_export: str | None = None,
+    *,
+    dynamic_components: bool = True,
 ) -> tuple[str, str]:
     """Compile the app root.
 
@@ -728,6 +760,9 @@ def compile_app_root(
         app_root: The app root component to compile.
         hydrate_fallback_export: The exported name of the hydrate-fallback memo
             component to re-export as ``HydrateFallback``, or None for no fallback.
+        dynamic_components: Whether the app renders a dynamic component. Without
+            one, only the libraries the app registered itself are made available
+            to load.
 
     Returns:
         The path and code of the compiled app wrapper.
@@ -738,8 +773,29 @@ def compile_app_root(
     )
 
     # Compile the document root.
-    code = _compile_app(app_root, hydrate_fallback_export)
+    code = _compile_app(app_root, hydrate_fallback_export, dynamic_components)
     return output_path, code
+
+
+def compile_dynamic_libraries(
+    *, dynamic_components: bool = True
+) -> list[tuple[str, str]]:
+    """Compile the modules the app root loads dynamic-component libraries from.
+
+    Args:
+        dynamic_components: Whether the app renders a dynamic component.
+
+    Returns:
+        The path and code of the module of each lazily loaded library.
+    """
+    output_dir = get_web_dir() / constants.Dirs.DYNAMIC_LIBRARIES_PATH
+    return [
+        (
+            str(output_dir / (alias + constants.Ext.JS)),
+            templates.dynamic_library_template(library),
+        )
+        for alias, library in _split_window_libraries(dynamic_components)[1]
+    ]
 
 
 def compile_theme(style: ComponentStyle) -> tuple[str, str]:
@@ -1592,7 +1648,19 @@ def compile_app(
     ])
     progress.advance(task)
 
-    compile_results.append(compile_app_root(app_root, hydrate_fallback_export))
+    # A dynamic component is evaluated by evalReactComponent, wherever it renders.
+    dynamic_components = any(
+        field.tag == "evalReactComponent"
+        for field in all_imports.get(f"$/{constants.Dirs.STATE_PATH}", ())
+    )
+    compile_results.extend(
+        compile_dynamic_libraries(dynamic_components=dynamic_components)
+    )
+    compile_results.append(
+        compile_app_root(
+            app_root, hydrate_fallback_export, dynamic_components=dynamic_components
+        )
+    )
     progress.advance(task)
 
     progress.stop()

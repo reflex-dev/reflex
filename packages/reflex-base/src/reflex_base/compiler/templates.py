@@ -201,7 +201,7 @@ def app_root_template(
         render: The dictionary of render functions.
         dynamic_imports: The set of dynamic imports.
         hydrate_fallback_export: The exported name of the hydrate-fallback memo module to re-export as ``HydrateFallback``, or None for no fallback.
-        lazy_window_libraries: Optional libraries loaded before evaluating a dynamic component.
+        lazy_window_libraries: Optional libraries loaded before evaluating a dynamic component, each from the module `dynamic_library_template` renders for it.
 
     Returns:
         Rendered App root component as string.
@@ -236,11 +236,15 @@ def app_root_template(
     lazy_imports_setup = ""
     if lazy_window_libraries:
         loaders = "\n".join(
-            f"    {json.dumps(lib_path)}: () => import({json.dumps(lib_path)}),"
-            for _, lib_path in lazy_window_libraries
+            f"    {json.dumps(lib_path)}: () => "
+            f'import("$/{constants.Dirs.DYNAMIC_LIBRARIES_PATH}/{lib_alias}")'
+            ".then((module) => module.default),"
+            for lib_alias, lib_path in lazy_window_libraries
         )
         # Register before child effects run, including an initially mounted
-        # dynamic component. Optional namespaces stay out of the initial graph.
+        # dynamic component. Each namespace is imported through a module of its
+        # own: importing the library here would pull every export into the
+        # chunks pages load, a separate module becomes a chunk fetched on demand.
         window_imports_effect = ""
         lazy_imports_setup = f"""
 if (typeof window !== "undefined") {{
@@ -308,6 +312,20 @@ export default function App() {{
   return jsx(Outlet, {{}});
 }}
 {hydrate_fallback_str}
+"""
+
+
+def dynamic_library_template(lib_path: str) -> str:
+    """Template for the module that exposes a library to dynamic components.
+
+    Args:
+        lib_path: The module path of the library.
+
+    Returns:
+        Rendered module code as string.
+    """
+    return f"""import * as library from {json.dumps(lib_path)};
+export default library;
 """
 
 

@@ -186,7 +186,7 @@ class BaseConfig:
         auto_memoize: Wrap stateful page components in generated memo components. Disable only together with react_compiler, which then memoizes whole pages; without it, every state change re-renders the whole page. Defaults to True.
         frontend_compression_formats: Pre-compressed frontend asset formats to generate for production builds. Supported values are "gzip", "brotli", and "zstd". Use an empty list to disable build-time pre-compression.
         frontend_packages: Additional frontend packages to install.
-        frontend_lazy_bundled_libraries: Load optional dynamic-component libraries when a dynamic component is first evaluated, rather than importing their full namespaces on every page. Defaults to False for compatibility with scripts that read window.__reflex directly.
+        frontend_lazy_bundled_libraries: Load optional dynamic-component libraries when a dynamic component is first evaluated, rather than importing their full namespaces on every page. Set to False for scripts that read these libraries from window.__reflex without awaiting window.__reflex_load().
         state_manager_mode: Indicate which type of state manager to use.
         redis_lock_expiration: Maximum expiration lock time for redis state manager.
         redis_lock_warning_threshold: Maximum lock time before warning for redis state manager.
@@ -264,7 +264,7 @@ class BaseConfig:
 
     frontend_packages: list[str] = dataclasses.field(default_factory=list)
 
-    frontend_lazy_bundled_libraries: bool = False
+    frontend_lazy_bundled_libraries: bool = True
 
     state_manager_mode: constants.StateManagerMode = constants.StateManagerMode.DISK
 
