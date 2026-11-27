@@ -65,3 +65,20 @@ def test_progress_aria_value_updates(progress_app: AppHarness, page: Page) -> No
 
     page.get_by_role("button", name="Advance").click()
     expect(progressbar).to_have_attribute("aria-valuenow", "50")
+
+
+def test_window_libraries_without_dynamic_components(
+    progress_app: AppHarness, page: Page
+) -> None:
+    """An app that evaluates no dynamic component exposes only the default libraries."""
+    assert progress_app.frontend_url is not None
+
+    page.goto(progress_app.frontend_url)
+    page.wait_for_function("() => window.__reflex")
+    assert page.evaluate("() => Object.keys(window.__reflex)") == [
+        "react",
+        "@emotion/react",
+        "$/utils/context",
+        "$/utils/context-registry",
+        "$/utils/state",
+    ]

@@ -97,6 +97,10 @@ def bundle_library(component: Union["Component", str]) -> None:
     state. Components present in the initial state have their imports bundled
     automatically.
 
+    Libraries the compiler registers on its own, such as a plugin's frontend
+    dependencies, are exposed on ``window.__reflex`` only when a page evaluates
+    a dynamic component. A library registered here is always exposed.
+
     Args:
         component: A library name string or a prototype component instance to bundle.
 

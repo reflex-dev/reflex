@@ -143,16 +143,24 @@ def _normalize_library_name(lib: str) -> str:
     )
 
 
-def _get_window_libraries() -> list[tuple[str, str]]:
+def _get_window_libraries(*, implicit: bool = True) -> list[tuple[str, str]]:
     """Build distinct JavaScript aliases for bundled libraries and subpaths.
+
+    Args:
+        implicit: Whether to include the libraries the compiler registered for
+            dynamic components, beyond the defaults and the app's own
+            registrations.
 
     Returns:
         Library aliases paired with their original module paths.
     """
+    context = RegistrationContext.ensure_context()
     used_aliases: set[str] = set()
     window_libraries: list[tuple[str, str]] = []
     for library in dict.fromkeys(
-        RegistrationContext.ensure_context().bundled_libraries
+        context.bundled_libraries
+        if implicit
+        else (*_default_bundled_libraries(), *context._explicit_bundled_libraries)
     ):
         base_alias = _normalize_library_name(library)
         alias = base_alias
@@ -166,7 +174,10 @@ def _get_window_libraries() -> list[tuple[str, str]]:
 
 
 def _compile_app(
-    app_root: Component, hydrate_fallback_export: str | None = None
+    app_root: Component,
+    hydrate_fallback_export: str | None = None,
+    *,
+    dynamic_components: bool = True,
 ) -> str:
     """Compile the app template component.
 
@@ -174,11 +185,14 @@ def _compile_app(
         app_root: The app root to compile.
         hydrate_fallback_export: The exported name of the hydrate-fallback memo
             component to re-export as ``HydrateFallback``, or None for no fallback.
+        dynamic_components: Whether the frontend evaluates dynamic components.
+            Without them, only the default libraries and the ones the app
+            registered with ``bundle_library`` are exposed on ``window.__reflex``.
 
     Returns:
         The compiled app.
     """
-    window_libraries = _get_window_libraries()
+    window_libraries = _get_window_libraries(implicit=dynamic_components)
     lazy_window_libraries = []
     if get_config().frontend_lazy_bundled_libraries:
         core_libraries = set(_default_bundled_libraries())
@@ -720,7 +734,10 @@ def compile_document_root(
 
 
 def compile_app_root(
-    app_root: Component, hydrate_fallback_export: str | None = None
+    app_root: Component,
+    hydrate_fallback_export: str | None = None,
+    *,
+    dynamic_components: bool = True,
 ) -> tuple[str, str]:
     """Compile the app root.
 
@@ -728,6 +745,9 @@ def compile_app_root(
         app_root: The app root component to compile.
         hydrate_fallback_export: The exported name of the hydrate-fallback memo
             component to re-export as ``HydrateFallback``, or None for no fallback.
+        dynamic_components: Whether the frontend evaluates dynamic components.
+            Without them, only the default libraries and the ones the app
+            registered with ``bundle_library`` are exposed on ``window.__reflex``.
 
     Returns:
         The path and code of the compiled app wrapper.
@@ -738,7 +758,9 @@ def compile_app_root(
     )
 
     # Compile the document root.
-    code = _compile_app(app_root, hydrate_fallback_export)
+    code = _compile_app(
+        app_root, hydrate_fallback_export, dynamic_components=dynamic_components
+    )
     return output_path, code
 
 
@@ -1592,7 +1614,18 @@ def compile_app(
     ])
     progress.advance(task)
 
-    compile_results.append(compile_app_root(app_root, hydrate_fallback_export))
+    # Only a module that imports the evaluator can read an optional library
+    # from window.__reflex, so the rest of the app need not carry them.
+    compile_results.append(
+        compile_app_root(
+            app_root,
+            hydrate_fallback_export,
+            dynamic_components=any(
+                import_var.tag == "evalReactComponent"
+                for import_var in all_imports.get(f"$/{constants.Dirs.STATE_PATH}", ())
+            ),
+        )
+    )
     progress.advance(task)
 
     progress.stop()

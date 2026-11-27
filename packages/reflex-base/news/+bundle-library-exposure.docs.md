@@ -1,0 +1,1 @@
+Document in `bundle_library` that libraries the compiler registers on its own are exposed on `window.__reflex` only when a page evaluates a dynamic component, while a library registered with `bundle_library` is always exposed.
