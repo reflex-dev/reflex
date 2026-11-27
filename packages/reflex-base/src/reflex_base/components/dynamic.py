@@ -1,5 +1,6 @@
 """Components that are dynamically generated on the backend."""
 
+import contextvars
 import dataclasses
 import json
 from typing import TYPE_CHECKING, Any, Union
@@ -16,6 +17,24 @@ from reflex_base.vars.base import VarData, transform
 
 if TYPE_CHECKING:
     from reflex_base.components.component import Component
+
+# Set while the code of a dynamic component is generated.
+_RENDERING_DYNAMIC_COMPONENT: contextvars.ContextVar[bool] = contextvars.ContextVar(
+    "rendering_dynamic_component", default=False
+)
+
+
+def is_rendering_dynamic_component() -> bool:
+    """Whether the code being generated is evaluated in the browser at runtime.
+
+    The code of a dynamic component never passes through the frontend build, so
+    a component whose output relies on a build step checks this to render
+    something that works without one.
+
+    Returns:
+        True while a dynamic component is being serialized.
+    """
+    return _RENDERING_DYNAMIC_COMPONENT.get()
 
 
 def __getattr__(name: str) -> Any:
@@ -165,6 +184,21 @@ def load_dynamic_serializer():
     @serializer
     def make_component(component: Component) -> str:
         """Generate the code for a dynamic component.
+
+        Args:
+            component: The component to generate code for.
+
+        Returns:
+            The generated code
+        """
+        token = _RENDERING_DYNAMIC_COMPONENT.set(True)
+        try:
+            return generate_component_code(component)
+        finally:
+            _RENDERING_DYNAMIC_COMPONENT.reset(token)
+
+    def generate_component_code(component: Component) -> str:
+        """Generate the module a dynamic component is evaluated from.
 
         Args:
             component: The component to generate code for.

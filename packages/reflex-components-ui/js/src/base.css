@@ -1,0 +1,20 @@
+/*
+ * The cascade order of an app that uses rx.ui, declared once so that it does
+ * not depend on which stylesheet loads first. Later layers win:
+ *
+ *   __reflex_base, theme, base   resets: Reflex's own, Tailwind's theme and preflight
+ *   reflex-ui                    the components, then the `style` of an element
+ *   components, utilities        Tailwind, so a `class_name` utility overrides a component
+ *
+ * Unlayered CSS (an app's stylesheets, Emotion, Radix Themes) beats every layer.
+ */
+@layer __reflex_base, theme, base, reflex-ui, components, utilities;
+
+/* Reflex's color mode provider sets one of these classes on the root element. */
+html.light {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}

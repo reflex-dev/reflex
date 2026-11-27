@@ -165,3 +165,26 @@ def test_unknown_attribute_raises(module_name: str):
     module = importlib.import_module(f"{module_name}.components.dynamic")
     with pytest.raises(AttributeError, match=f"{module.__name__!r}"):
         _ = module.definitely_not_an_attribute
+
+
+def test_is_rendering_dynamic_component_only_while_one_is_serialized():
+    """A component can tell that its code will be evaluated in the browser."""
+    from reflex_base.utils.serializers import serialize
+
+    seen = []
+
+    class Probe(Component):
+        tag = "div"
+
+        def add_custom_code(self) -> list[str]:
+            seen.append(dynamic.is_rendering_dynamic_component())
+            return []
+
+    assert dynamic.is_rendering_dynamic_component() is False
+    serialize(Probe.create())
+    assert seen
+    assert set(seen) == {True}
+    assert dynamic.is_rendering_dynamic_component() is False
+    seen.clear()
+    Probe.create()._get_all_custom_code()
+    assert seen == [False]

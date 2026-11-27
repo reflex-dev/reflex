@@ -3,11 +3,13 @@
 import json
 from pathlib import Path
 
+from reflex_components_ui.constants import STYLEX_VERSION
+
 JS_PACKAGE = Path(__file__).parents[3] / "packages/reflex-components-ui/js"
 
 # StyleX is 0.x and has broken its output between patch releases, so every
-# package of it moves together and by an exact pin.
-STYLEX_VERSION = "0.19.2"
+# package of it moves together and by an exact pin: the version an app
+# installs is the version the javascript package is developed against.
 
 
 def test_stylex_packages_are_pinned_to_one_exact_version():
