@@ -488,7 +488,6 @@ if (typeof window !== "undefined") {
     return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ useContext, useMemo, useState, createElement, useEffect }} from "react"
 {state_imports_str}
 import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext, registerApp, eventLoop }} from "$/utils/context-registry"
-import {{ jsx }} from "@emotion/react";
 {disable_owner_stacks_str}
 export {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext }};
 export const initialState = {initial_state_json}
@@ -553,7 +552,7 @@ export function ClientSide(component, name) {{
       }}
       load();
     }}, []);
-    return Component ? jsx(Component, props, children) : null;
+    return Component ? createElement(Component, props, children) : null;
   }}
   ClientSideComponent.displayName = name ? `ClientSide(${{name}})` : "ClientSide";
   return ClientSideComponent;

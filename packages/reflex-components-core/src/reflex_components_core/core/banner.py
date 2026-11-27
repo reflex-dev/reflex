@@ -20,6 +20,7 @@ from reflex_components_sonner.toast import ToastProps
 
 from reflex_components_core import el
 from reflex_components_core.base.fragment import Fragment
+from reflex_components_core.base.static_style import static_style
 from reflex_components_core.core.cond import cond
 from reflex_components_core.el.elements.typography import Div
 
@@ -267,6 +268,16 @@ class ConnectionModal(Component):
         )
 
 
+# The look of the connection indicator. Plain rules, not ``css`` props: every
+# app with state renders it, and an app should not need Emotion to draw it.
+_PULSER_CSS = (
+    "@keyframes rx-connection-pulse{from{opacity:0}to{opacity:1}}"
+    ".rx-connection-pulser{position:fixed;width:100vw;height:0}"
+    ".rx-connection-pulse{color:crimson;z-index:9999;position:fixed;bottom:33px;"
+    "right:33px;animation:rx-connection-pulse 1s infinite}"
+)
+
+
 class WifiOffPulse(Icon):
     """A wifi_off icon with an animated opacity pulse."""
 
@@ -276,33 +287,23 @@ class WifiOffPulse(Icon):
 
         Args:
             *children: The children of the component.
-            **props: The properties of the component.
+            **props: The properties of the component. A style prop overrides
+                the look the icon has by default.
 
         Returns:
             The icon component with default props applied.
         """
-        pulse_var = Var(r"keyframes({ from: { opacity: 0 }, to: { opacity: 1 } })").to(
-            str
-        )
+        class_name = props.pop("class_name", None)
         return super().create(
             "wifi_off",
-            color=props.pop("color", "crimson"),
             size=props.pop("size", 32),
-            z_index=props.pop("z_index", 9999),
-            position=props.pop("position", "fixed"),
-            bottom=props.pop("bottom", "33px"),
-            right=props.pop("right", "33px"),
-            animation=LiteralVar.create(f"{pulse_var} 1s infinite"),
+            class_name=(
+                "rx-connection-pulse"
+                if class_name is None
+                else ["rx-connection-pulse", class_name]
+            ),
             **props,
         )
-
-    def add_imports(self) -> dict[str, str | ImportVar | list[str | ImportVar]]:
-        """Add imports for the WifiOffPulse component.
-
-        Returns:
-            The import dict.
-        """
-        return {"@emotion/react": [ImportVar(tag="keyframes")]}
 
 
 class ConnectionPulser(Div):
@@ -319,14 +320,13 @@ class ConnectionPulser(Div):
             The connection pulser component.
         """
         return super().create(
+            static_style("rx-connection-pulser", _PULSER_CSS),
             cond(
                 has_connection_errors,
                 WifiOffPulse.create(**props),
             ),
             title=f"Connection Error: {connection_error}",
-            position="fixed",
-            width="100vw",
-            height="0",
+            class_name="rx-connection-pulser",
         )
 
 

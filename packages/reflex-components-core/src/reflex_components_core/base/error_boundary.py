@@ -8,6 +8,7 @@ from reflex_base.vars.base import Var
 from reflex_base.vars.function import ArgsFunctionOperation
 from reflex_base.vars.object import ObjectVar
 
+from reflex_components_core.base.static_style import static_style
 from reflex_components_core.datadisplay.logo import svg_logo
 from reflex_components_core.el import a, button, div, h2, hr, p, pre, svg
 
@@ -29,6 +30,38 @@ def on_error_spec(
         info.componentStack,
     )
 
+
+# The look of the default fallback. Plain rules, not ``css`` props: the
+# boundary wraps every app, and an app should not need Emotion to draw it.
+_FALLBACK_CSS = (
+    ".rx-error-boundary{height:100%;width:100%;position:absolute;"
+    "background-color:#fff;color:#000;display:flex;align-items:center;"
+    "justify-content:center}"
+    ".rx-error-boundary-content{display:flex;flex-direction:column;gap:0.5rem;"
+    "max-width:min(80ch, 90vw);border-radius:0.25rem;padding:1rem}"
+    ".rx-error-boundary-heading{opacity:0.5;display:flex;gap:4vmin;"
+    "align-items:center}"
+    ".rx-error-boundary-title{font-size:5vmin;font-weight:bold}"
+    ".rx-error-boundary-hint{opacity:0.75;margin-block:1rem}"
+    ".rx-error-boundary-details{width:100%;"
+    "background:color-mix(in srgb, currentColor 5%, transparent);"
+    "max-height:15rem;overflow:auto;border-radius:0.4rem}"
+    ".rx-error-boundary-details-body{padding:0.5rem}"
+    ".rx-error-boundary-trace{word-break:break-word;white-space:pre-wrap}"
+    ".rx-error-boundary-copy{padding:0.35rem 1.35rem;margin-block:0.5rem;"
+    "margin-inline-start:auto;"
+    "background:color-mix(in srgb, currentColor 15%, transparent);"
+    "border-radius:0.4rem;width:fit-content}"
+    ".rx-error-boundary-copy:hover"
+    "{background:color-mix(in srgb, currentColor 25%, transparent)}"
+    ".rx-error-boundary-copy:active"
+    "{background:color-mix(in srgb, currentColor 35%, transparent)}"
+    ".rx-error-boundary-rule{border-color:currentColor;opacity:0.25}"
+    ".rx-error-boundary-credit{display:flex;align-items:baseline;"
+    "justify-content:center;font-family:monospace;"
+    "--default-font-family:monospace;gap:0.5rem}"
+    ".rx-error-boundary-logo{fill:currentColor}"
+)
 
 _ERROR_DISPLAY: str = r"""event_args.error.name + ': ' + event_args.error.message + '\n' + event_args.error.stack"""
 
@@ -67,6 +100,7 @@ class ErrorBoundary(Component):
                 ("event_args",),
                 Var.create(
                     div(
+                        static_style("rx-error-boundary", _FALLBACK_CSS),
                         div(
                             div(
                                 svg(
@@ -88,81 +122,43 @@ class ErrorBoundary(Component):
                                 ),
                                 h2(
                                     "An error occurred while rendering this page.",
-                                    font_size="5vmin",
-                                    font_weight="bold",
+                                    class_name="rx-error-boundary-title",
                                 ),
-                                opacity="0.5",
-                                display="flex",
-                                gap="4vmin",
-                                align_items="center",
+                                class_name="rx-error-boundary-heading",
                             ),
                             p(
                                 "This is an error with the application itself. Refreshing the page might help.",
-                                opacity="0.75",
-                                margin_block="1rem",
+                                class_name="rx-error-boundary-hint",
                             ),
                             div(
                                 div(
                                     pre(
                                         Var(_js_expr=_ERROR_DISPLAY),
-                                        word_break="break-word",
-                                        white_space="pre-wrap",
+                                        class_name="rx-error-boundary-trace",
                                     ),
-                                    padding="0.5rem",
+                                    class_name="rx-error-boundary-details-body",
                                 ),
-                                width="100%",
-                                background="color-mix(in srgb, currentColor 5%, transparent)",
-                                max_height="15rem",
-                                overflow="auto",
-                                border_radius="0.4rem",
+                                class_name="rx-error-boundary-details",
                             ),
                             button(
                                 "Copy",
                                 on_click=set_clipboard(Var(_js_expr=_ERROR_DISPLAY)),
-                                padding="0.35rem 1.35rem",
-                                margin_block="0.5rem",
-                                margin_inline_start="auto",
-                                background="color-mix(in srgb, currentColor 15%, transparent)",
-                                border_radius="0.4rem",
-                                width="fit-content",
-                                _hover={
-                                    "background": "color-mix(in srgb, currentColor 25%, transparent)"
-                                },
-                                _active={
-                                    "background": "color-mix(in srgb, currentColor 35%, transparent)"
-                                },
+                                class_name="rx-error-boundary-copy",
                             ),
-                            hr(
-                                border_color="currentColor",
-                                opacity="0.25",
-                            ),
+                            hr(class_name="rx-error-boundary-rule"),
                             a(
                                 div(
                                     "Built with ",
-                                    svg_logo("currentColor"),
-                                    display="flex",
-                                    align_items="baseline",
-                                    justify_content="center",
-                                    font_family="monospace",
-                                    gap="0.5rem",
+                                    svg_logo(
+                                        None, class_name="rx-error-boundary-logo"
+                                    ),
+                                    class_name="rx-error-boundary-credit",
                                 ),
                                 href="https://reflex.dev",
                             ),
-                            display="flex",
-                            flex_direction="column",
-                            gap="0.5rem",
-                            max_width="min(80ch, 90vw)",
-                            border_radius="0.25rem",
-                            padding="1rem",
+                            class_name="rx-error-boundary-content",
                         ),
-                        height="100%",
-                        width="100%",
-                        position="absolute",
-                        background_color="#fff",
-                        color="#000",
-                        display="flex",
-                        align_items="center",
-                        justify_content="center",
+                        class_name="rx-error-boundary",
                     )
                 ),
                 _var_type=Component,

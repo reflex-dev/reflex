@@ -31,6 +31,7 @@ from reflex_base.components.memo import (
     MemoFunctionDefinition,
     MemoParamKind,
 )
+from reflex_base.constants.compiler import Imports
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
@@ -132,6 +133,27 @@ class _ImportDict(TypedDict):
     rest: list[str]
 
 
+(_EMOTION_JSX,) = Imports.EMOTION_JSX["@emotion/react"]
+(_REACT_JSX,) = Imports.REACT_JSX["react"]
+
+
+def _resolve_jsx_import(import_dict: ParsedImportDict) -> None:
+    """Settle which element factory a module calls ``jsx``.
+
+    Every module is given React's ``createElement`` under that name. Emotion's
+    is requested by whatever renders a ``css`` prop in the module, and wins:
+    it is the only one that applies the prop, and it behaves as React's does
+    for an element without one.
+
+    Args:
+        import_dict: The collapsed imports of one module, updated in place.
+    """
+    if _EMOTION_JSX in import_dict.get("@emotion/react", ()) and _REACT_JSX in (
+        react_imports := import_dict.get("react", ())
+    ):
+        react_imports.remove(_REACT_JSX)
+
+
 def compile_imports(import_dict: ParsedImportDict) -> list[_ImportDict]:
     """Compile an import dict.
 
@@ -145,6 +167,7 @@ def compile_imports(import_dict: ParsedImportDict) -> list[_ImportDict]:
         ValueError: If an import in the dict is invalid.
     """
     collapsed_import_dict: ParsedImportDict = imports.collapse_imports(import_dict)
+    _resolve_jsx_import(collapsed_import_dict)
     validate_imports(collapsed_import_dict)
     import_dicts: list[_ImportDict] = []
     for lib, fields in collapsed_import_dict.items():
@@ -654,7 +677,7 @@ def compile_experimental_component_memo(
         lib: fields for lib, fields in all_imports.items() if lib != self_module
     }
 
-    imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
+    imports.setdefault("react", []).extend(Imports.REACT_JSX["react"])
 
     # The wrapper import (``memo`` from React by default) rides on the wrapper
     # var itself, so a custom wrapper brings its own imports and ``None``
