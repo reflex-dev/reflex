@@ -125,6 +125,7 @@ const PUBLIC_API = {
   "$/utils/helpers/upload": ["uploadFiles"],
   "$/utils/scripts": [
     "FIRST_PAINT_TIMEOUT_MS",
+    "HOLD_CLICK_TIMEOUT_MS",
     "START_AFTER_FIRST_PAINT",
     "Scripts",
     "takeEarlyClick",

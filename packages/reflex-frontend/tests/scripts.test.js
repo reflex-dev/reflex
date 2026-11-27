@@ -14,6 +14,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import {
   FIRST_PAINT_TIMEOUT_MS,
+  HOLD_CLICK_TIMEOUT_MS,
   START_AFTER_FIRST_PAINT,
   Scripts,
 } from "$/utils/scripts";
@@ -304,16 +305,21 @@ describe("START_AFTER_FIRST_PAINT", () => {
      * hydrated page runs its effects.
      * @param {object} [options] How the page is hydrated.
      * @param {boolean} [options.take] Whether the entry point takes the click over.
+     * @param {(scripts: object, react: typeof import("react")) => object} [options.wrap] Builds the page around the scripts element.
      */
-    const hydrate = async ({ take = true } = {}) => {
+    const hydrate = async ({
+      take = true,
+      wrap = (scripts) => scripts,
+    } = {}) => {
       vi.resetModules();
-      const { act, createElement } = await import("react");
+      const react = await import("react");
+      const { act, createElement } = react;
       const { createRoot } = await import("react-dom/client");
       const { createRoutesStub } = await import("react-router");
       const { Scripts, takeEarlyClick } = await import("$/utils/scripts");
       if (take) takeEarlyClick();
       const Stub = createRoutesStub([
-        { path: "/", Component: () => createElement(Scripts) },
+        { path: "/", Component: () => wrap(createElement(Scripts), react) },
       ]);
       const container = document.body.appendChild(
         document.createElement("div"),
@@ -353,6 +359,40 @@ describe("START_AFTER_FIRST_PAINT", () => {
       click(target);
       await hydrate();
       expect(clicks.length).toBe(3);
+    });
+
+    test("is handled after the mount effects of the whole page", async () => {
+      // A provider that restores its value in a mount effect, as the theme
+      // provider does from storage, must not overwrite what the click set.
+      const { target } = addToPage('<button id="target"></button>');
+      const page = { set: null, values: [] };
+      target.addEventListener("click", () => page.set?.("clicked"));
+      run();
+      click(target);
+
+      const provider = (scripts, { createElement, useEffect, useState }) =>
+        createElement(function Provider() {
+          const [value, setValue] = useState("default");
+          const [restored, setRestored] = useState(false);
+          page.set = setValue;
+          page.values.push(value);
+          useEffect(() => {
+            setValue("stored");
+            setRestored(true);
+          }, []);
+          // A second round: an effect that only runs once the first applied.
+          useEffect(() => {
+            if (restored) setValue((current) => current + "+restored");
+          }, [restored]);
+          return scripts;
+        });
+      await hydrate({ wrap: provider });
+      expect(page.values).toEqual([
+        "default",
+        "stored",
+        "stored+restored",
+        "clicked",
+      ]);
     });
 
     test("only the last one is dispatched again", async () => {
@@ -397,15 +437,68 @@ describe("START_AFTER_FIRST_PAINT", () => {
       expect(clicks.length).toBe(1);
     });
 
-    test("is not recorded once the entry point took it over", async () => {
+    test("during hydration is held back from React and dispatched once", async () => {
       const { target, clicks } = addToPage('<button id="target"></button>');
       run();
       const { record } = window.__reflex_early;
       const removed = vi.spyOn(document, "removeEventListener");
-      await hydrate();
+      const page = { values: [] };
+      // The entry point has taken the clicks over when the page renders.
+      const clickWhileRendering = (scripts, { createElement, useState }) =>
+        createElement(function Page() {
+          const [clicked] = useState(() => click(target));
+          page.values.push(clicked, clicks.length);
+          return scripts;
+        });
+      await hydrate({ wrap: clickWhileRendering });
       expect(removed.mock.calls).toEqual([["click", record, true]]);
+      // Dispatching returned true, and no listener of the page ran then.
+      expect(page.values.slice(0, 2)).toEqual([true, 0]);
+      expect(clicks.length).toBe(1);
+      expect(clicks[0].isTrusted).toBe(false);
+
+      // The page handles its own clicks from here on.
       click(target);
-      await hydrate();
+      expect(clicks.length).toBe(2);
+      vi.advanceTimersByTime(HOLD_CLICK_TIMEOUT_MS);
+      expect(clicks.length).toBe(2);
+    });
+
+    test("during hydration is left to React where the browser acts on it", async () => {
+      addToPage('<form><button id="target"></button></form>');
+      const target = document.getElementById("target");
+      const seen = [];
+      document.addEventListener(
+        "click",
+        (event) => {
+          event.preventDefault();
+          seen.push(event);
+        },
+        { once: true },
+      );
+      run();
+      const clickWhileRendering = (scripts, { createElement, useState }) =>
+        createElement(function Page() {
+          useState(() => click(target));
+          return scripts;
+        });
+      await hydrate({ wrap: clickWhileRendering });
+      expect(seen.length).toBe(1);
+    });
+
+    test("is let through again when hydration never completes", async () => {
+      const { target, clicks } = addToPage('<button id="target"></button>');
+      run();
+      vi.resetModules();
+      const { takeEarlyClick } = await import("$/utils/scripts");
+      takeEarlyClick();
+      click(target);
+      expect(clicks.length).toBe(0);
+      vi.advanceTimersByTime(HOLD_CLICK_TIMEOUT_MS - 1);
+      click(target);
+      expect(clicks.length).toBe(0);
+      vi.advanceTimersByTime(1);
+      click(target);
       expect(clicks.length).toBe(1);
     });
 
