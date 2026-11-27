@@ -9,12 +9,14 @@ its value. A value is one of:
   whose values are again literals, Vars or condition maps. ``"default"`` is
   left out when the style gives the property no unconditional value;
 - ``None``, which unsets the property. It only appears as the ``"default"`` of a
-  condition map and in the alternatives of a state-bound variant.
+  condition map and in the alternatives of a state-bound variant;
+- a ``Keyframes``, the value of ``animationName`` alone.
 
 Every shorthand that can be split is expanded to its longhands, so that two
 styles that set the same thing set the same keys and the last one wins. The
 ``border`` and ``background`` shorthands are always split, because StyleX drops
-them; ``animation``, which cannot be split here, is refused. A shorthand that
+them; ``animation``, which cannot be split here, is refused: an animation is
+its longhands, with ``keyframes(...)`` as its ``animation_name``. A shorthand that
 is kept whole, such as ``padding`` bound to state, removes its longhands from
 the styles merged before it, since StyleX lets a longhand win over a shorthand
 whatever their order.
@@ -26,6 +28,7 @@ Logical and physical longhands, such as ``marginInlineStart`` and
 from __future__ import annotations
 
 import difflib
+import json
 import re
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any
@@ -632,6 +635,110 @@ _ENTRIES, _BY_CAMEL = _entries()
 _SNAKE_KEYS = tuple(_ENTRIES)
 
 
+class Keyframes:
+    """The keyframes of an animation, declared with the style that plays them.
+
+    Two of them are equal, and hash the same, when they hold the same
+    declarations, so one animation is declared once per module however many
+    styles play it.
+
+    Attributes:
+        source: The frames as the object ``stylex.keyframes`` takes.
+        imports: The modules that define the custom properties the frames
+            use, sorted.
+    """
+
+    __slots__ = ("imports", "source")
+
+    def __init__(self, source: str, imports: tuple[str, ...]):
+        """Hold lowered keyframes.
+
+        Args:
+            source: The frames as the object ``stylex.keyframes`` takes.
+            imports: The modules the frames need, sorted.
+        """
+        self.source = source
+        self.imports = imports
+
+    def __eq__(self, other: object) -> bool:
+        """Compare with other keyframes.
+
+        Args:
+            other: What to compare with.
+
+        Returns:
+            Whether both declare the same animation.
+        """
+        return isinstance(other, Keyframes) and self.source == other.source
+
+    def __hash__(self) -> int:
+        """Hash consistently with equality.
+
+        Returns:
+            The hash of the source.
+        """
+        return hash(self.source)
+
+    def __repr__(self) -> str:
+        """Show what the keyframes hold.
+
+        Returns:
+            The constructor call that would rebuild them.
+        """
+        return f"Keyframes({self.source!r}, {self.imports!r})"
+
+
+def keyframes(frames: Mapping[str, StyleProps | Mapping[str, Any]]) -> Any:
+    """Declare the keyframes of an animation, for a style to play.
+
+    The result is the value of ``animation_name``, in a style table or in the
+    style of an element. StyleX names the animation after its content and
+    drops the ``animation`` shorthand, so the rest of an animation is its
+    longhands::
+
+        {
+            "animation_name": keyframes({"from": {"opacity": 1}, "to": {"opacity": 0}}),
+            "animation_duration": "800ms",
+            "animation_iteration_count": "infinite",
+        }
+
+    Args:
+        frames: The styles of each frame, by ``from``, ``to`` or a percentage.
+            Every value is a literal: a frame has no conditions and nothing
+            bound to state.
+
+    Returns:
+        The keyframes.
+
+    Raises:
+        StyleError: If a frame is not a dict of literal styles.
+    """
+    name = "rx.ui keyframes"
+    lowered: dict[str, dict[str, Any]] = {}
+    found: set[str] = set()
+    for frame, style in frames.items():
+        if not isinstance(style, Mapping):
+            msg = (
+                f'{name}: the frame "{frame}" must be a dict of styles, not '
+                f"{type(style).__name__}."
+            )
+            raise StyleError(msg)
+        props, _ = lower_layer(name, style)
+        for prop, value in props.items():
+            cls = value.__class__
+            if cls is str:
+                _modules(value, found)
+            elif cls is not int and cls is not float:
+                msg = (
+                    f'{name}: the style "{prop}" of the frame "{frame}" must be '
+                    "a literal: a frame takes no condition and nothing bound "
+                    "to state."
+                )
+                raise StyleError(msg)
+        lowered[frame] = props
+    return Keyframes(json.dumps(lowered, ensure_ascii=False), tuple(sorted(found)))
+
+
 def _put(
     out: dict[str, LoweredValue], prop: str, path: tuple[str, ...], value: Any
 ) -> None:
@@ -793,6 +900,15 @@ def _value(
                     else path
                 )
                 _value(name, key, entry, item, inner, out, replaced)
+        return
+    elif cls is Keyframes:
+        if entry[0] != "animationName":
+            msg = (
+                f'{name}: style "{key}" is given keyframes, which are the '
+                "value of animation_name."
+            )
+            raise StyleError(msg)
+        _put(out, "animationName", path, value)
         return
     elif not isinstance(value, Var):
         msg = (
@@ -1179,6 +1295,8 @@ def freeze(value: LoweredValue) -> Any:
         return tuple([(key, freeze(item)) for key, item in value.items()])
     if cls is Lowered:
         return value.key
+    if cls is Keyframes:
+        return value
     return (Var, value._hash_key())
 
 
@@ -1198,6 +1316,8 @@ def _modules(value: LoweredValue, found: set[str]) -> None:
     elif value.__class__ is dict:
         for item in value.values():
             _modules(item, found)
+    elif value.__class__ is Keyframes:
+        found.update(value.imports)
 
 
 class Lowered:
@@ -1304,7 +1424,7 @@ def finish(
         if cls is str:
             if "var(--" in value:
                 _modules(value, found)
-        elif cls is dict:
+        elif cls is dict or cls is Keyframes:
             _modules(value, found)
         elif value is None:
             dropped = True

@@ -28,12 +28,39 @@ html.dark {
 }
 
 /*
+ * `light-dark()` only chooses between colors. A value of another kind that
+ * differs between the appearances, such as a filter or the geometry of a
+ * shadow, is written `var(--rx-if-light, <light>) var(--rx-if-dark, <dark>)`:
+ * the property of the current appearance is invalid, so its fallback is used,
+ * and the other one is empty. The classes are those of the color mode, and of
+ * the element around a theme with an appearance of its own.
+ */
+:where(html),
+.light {
+  --rx-if-light: initial;
+  --rx-if-dark: ;
+}
+
+.dark {
+  --rx-if-light: ;
+  --rx-if-dark: initial;
+}
+
+/*
  * What Radix Themes styles through a selector that a class on the element
  * cannot express. A theme element carries the class `reflex-ui-theme`.
  */
 @layer reflex-ui.base {
   .reflex-ui-theme ::selection {
     background-color: var(--focus-a5);
+  }
+
+  /*
+   * A button dims the icons inside it: it hands the opacity down, and
+   * everything else is left as it is.
+   */
+  .reflex-ui-theme svg {
+    opacity: var(--rx-icon-opacity, revert-layer);
   }
 }
 

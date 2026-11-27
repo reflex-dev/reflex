@@ -72,6 +72,9 @@ class ThemeElement(UIComponent):
 
     tag = "div"
 
+    # The radius is an option of the theme, for what is inside the element.
+    _own_radius: ClassVar[bool] = False
+
     accent_color: Var[LiteralAccentColor] = field(
         is_javascript_property=False,
         doc="The color of the components that stand out.",
