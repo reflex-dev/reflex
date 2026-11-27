@@ -24,3 +24,14 @@ def _js_src_dir(root_dir: Path) -> Path:
 
 # The javascript package's source, copied into the web directory of a project.
 JS_SRC = _js_src_dir(Path(__file__).parent)
+
+# The directory of the web directory that JS_SRC is copied into.
+WEB_DIR = "reflex-ui"
+
+# StyleX is 0.x and has broken its output between patch releases, so an app
+# installs the exact version the javascript package is developed against.
+STYLEX_VERSION = "0.19.2"
+
+# The CSS compiler behind StyleX and Vite. The Vite configuration imports it to
+# name the feature it must leave alone.
+LIGHTNINGCSS_VERSION = "1.33.0"

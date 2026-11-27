@@ -6,7 +6,9 @@ from reflex_base.utils import lazy_loader
 
 _SUBMODULES: set[str] = set()
 
-_SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = {}
+_SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = {
+    "layout.box": ["box"],
+}
 
 __getattr__, __dir__, __all__ = lazy_loader.attach(
     __name__,
