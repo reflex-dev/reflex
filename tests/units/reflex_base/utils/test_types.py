@@ -786,15 +786,15 @@ def test_unserialized_property_on_sqlalchemy_model():
     assert not is_unserialized_property(User, "first")
 
 
-def test_unserialized_hybrid_property_on_sqlalchemy_model():
+def test_unserialized_hybrid_property_on_sqlalchemy_dataclass():
     """Flag SQLAlchemy hybrid properties that are absent from serialized state."""
     pytest.importorskip("sqlalchemy")
     from reflex_base.utils.exceptions import VarAttributeError
     from reflex_base.vars.object import ObjectVar
     from sqlalchemy.ext.hybrid import hybrid_property
-    from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+    from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
-    class Base(DeclarativeBase):
+    class Base(MappedAsDataclass, DeclarativeBase):
         pass
 
     class User(Base):
@@ -809,7 +809,7 @@ def test_unserialized_hybrid_property_on_sqlalchemy_model():
 
     assert is_unserialized_property(User, "upper_name")
     with pytest.raises(VarAttributeError) as exc_info:
-        ObjectVar[User]("user", _var_type=User).upper_name
+        ObjectVar[User]("user", _var_type=User | None).upper_name
     assert str(exc_info.value) == (
         "The property 'upper_name' on SQLAlchemy model 'User' is not included in "
         "serialized state. Register an `rx.serializer` for the model to include the "

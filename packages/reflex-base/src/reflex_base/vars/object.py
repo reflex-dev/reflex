@@ -84,12 +84,6 @@ def _unserialized_property_error(var_type: GenericType, name: str) -> VarAttribu
     """
     if types.is_union(var_type):
         detail = f"union type '{var_type}' may not be included in serialized state."
-    elif isinstance(var_type, type) and dataclasses.is_dataclass(var_type):
-        detail = (
-            f"dataclass '{var_type.__name__}' is not included in serialized state. "
-            "Only declared dataclass fields are serialized; register an "
-            "`rx.serializer` for the dataclass to include it."
-        )
     else:
         from reflex_base.utils import serializers
 
@@ -102,6 +96,12 @@ def _unserialized_property_error(var_type: GenericType, name: str) -> VarAttribu
                 f"SQLAlchemy model '{var_type.__name__}' is not included in serialized "
                 "state. Register an `rx.serializer` for the model to include the "
                 "value, or access a mapped attribute instead."
+            )
+        elif isinstance(var_type, type) and dataclasses.is_dataclass(var_type):
+            detail = (
+                f"dataclass '{var_type.__name__}' is not included in serialized state. "
+                "Only declared dataclass fields are serialized; register an "
+                "`rx.serializer` for the dataclass to include it."
             )
         else:
             detail = (

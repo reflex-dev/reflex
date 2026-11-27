@@ -5,6 +5,7 @@ import json
 import subprocess
 import sys
 import weakref
+from collections import Counter
 
 import pytest
 from reflex_base.utils import serializers
@@ -27,6 +28,7 @@ from sqlalchemy.orm import (
     selectinload,
     synonym,
 )
+from sqlalchemy.orm.attributes import instance_state
 
 
 def test_declarative_base_serializer_handles_loaded_and_unloaded_attributes():
@@ -117,7 +119,28 @@ def test_declarative_base_serializer_handles_loaded_and_unloaded_attributes():
 def test_serialize_expired_sqlalchemy_model_warns_only_in_dev(
     caplog, monkeypatch, mode: str, warns: bool
 ) -> None:
-    """Warn once in dev when a committed model has no loaded mapped columns."""
+    """Scan expired columns and warn once in development.
+
+    Args:
+        caplog: Fixture for inspecting serialization warnings.
+        monkeypatch: Fixture for selecting the mode and recording expiration checks.
+        mode: The Reflex environment mode.
+        warns: Whether the serializer should check expiration and emit a warning.
+    """
+    checked_columns: list[object] = []
+
+    class TrackedExpiration(set[str]):
+        def __contains__(self, column: object) -> bool:
+            """Record a membership check while preserving the set's behavior.
+
+            Args:
+                column: The column being checked.
+
+            Returns:
+                Whether the column is expired.
+            """
+            checked_columns.append(column)
+            return super().__contains__(column)
 
     class ExpiredBase(DeclarativeBase):
         pass
@@ -134,6 +157,10 @@ def test_serialize_expired_sqlalchemy_model_warns_only_in_dev(
         user = ExpiredUser(name="Ada")
         session.add(user)
         session.commit()
+        state = instance_state(user)
+        monkeypatch.setattr(
+            state, "expired_attributes", TrackedExpiration(state.expired_attributes)
+        )
 
         monkeypatch.setenv("REFLEX_ENV_MODE", mode)
         with caplog.at_level("WARNING", logger=serializers.__name__):
@@ -142,14 +169,18 @@ def test_serialize_expired_sqlalchemy_model_warns_only_in_dev(
         assert set(user.__dict__) == {"_sa_instance_state"}
     engine.dispose()
 
-    warnings = [record for record in caplog.records if "ExpiredUser" in record.message]
-    assert len(warnings) == int(warns)
-    if warns:
-        assert warnings[0].message == (
-            "SQLAlchemy model ExpiredUser has all mapped columns expired and will "
-            "serialize without them. Set expire_on_commit=False or reload the model "
-            "in an open session before serializing it."
-        )
+    assert Counter(checked_columns) == ({"id": 1, "name": 1} if warns else {})
+    warnings = [
+        record.message
+        for record in caplog.records
+        if record.name == serializers.__name__
+    ]
+    warning = (
+        "SQLAlchemy model ExpiredUser has all mapped columns expired and will "
+        "serialize without them. Set expire_on_commit=False or reload the model "
+        "in an open session before serializing it."
+    )
+    assert warnings == ([warning] if warns else [])
 
 
 @pytest.mark.parametrize("expired_attribute", [None, "name"], ids=["loaded", "partial"])

@@ -739,12 +739,12 @@ def _serialize_sqlalchemy_model(
     has_identity_key = state.key is not None
 
     if (
-        state.expired_attributes
+        (expired_attributes := state.expired_attributes)
         and has_identity_key
         and layout.columns
         and type(m) not in _WARNED_EXPIRED_SQLALCHEMY_MODELS
-        and all(key in state.expired_attributes for key in layout.columns)
         and environment.REFLEX_ENV_MODE.get() == constants.Env.DEV
+        and all(key in expired_attributes for key in layout.columns)
     ):
         logger.warning(
             "SQLAlchemy model %s has all mapped columns expired and will serialize "
