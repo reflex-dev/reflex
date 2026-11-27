@@ -13,7 +13,9 @@ from reflex_base.utils.serializers import serialize
 from reflex_base.vars.base import Var
 from reflex_components_ui.base import Part, UIComponent
 from reflex_components_ui.plugin import UIPlugin
+from reflex_components_ui import tokens
 from reflex_components_ui.style import ComponentStyles, StyleError
+from reflex_components_ui.themes import LiteralAccentColor, ThemeError
 
 import reflex as rx
 from reflex.compiler import compiler
@@ -742,3 +744,156 @@ def test_dynamic_component_cannot_have_a_style_that_needs_the_compiler(
     with pytest.raises(StyleError) as raised:
         serialize(create())
     assert str(raised.value) == message
+
+
+class Chip(UIComponent):
+    """An element with a color of its own."""
+
+    tag = "span"
+
+    styles: ClassVar[ComponentStyles] = {
+        "base": {"background_color": tokens.accent[9], "color": tokens.accent.contrast},
+    }
+
+    # The accent color of the element.
+    color_scheme: Var[LiteralAccentColor]
+
+
+CHIP_PAGE = """import * as stylex from "@stylexjs/stylex"
+import "$/reflex-ui/tokens/accent.stylex.js"
+import {className as reflexUIClassName} from "$/reflex-ui/class-name.js"
+import {accentRed} from "$/reflex-ui/themes/accent/red.js"
+import {focusScope} from "$/reflex-ui/themes/focus.js"
+import {useRegisteredRef} from "$/utils/state"
+import {accentGray} from "$/reflex-ui/themes/accent/gray.js"
+import {Chip_span_a1f191971c1d0b090104807deb864e69} from "$/utils/components/Chip_span_a1f191971c1d0b090104807deb864e69"
+import {Fragment,useEffect} from "react"
+import {jsx} from "@emotion/react"
+
+
+
+const sx_8f99169642 = stylex.create({ s: {"backgroundColor": "var(--accent-9)", "color": "var(--accent-contrast)"} });
+const sx_8f99169642_c = stylex.props(sx_8f99169642.s).className;
+const reflexUIClasses_01ac7ed29f = reflexUIClassName(accentRed, focusScope);
+const reflexUIClasses_fe8edd03f8 = reflexUIClassName(accentGray);
+
+function Component() {
+const ref_gray = useRegisteredRef("ref_gray");
+
+  return (
+    jsx(Fragment,{},jsx("main",{},jsx("span",{className:sx_8f99169642_c},"theme"),jsx("span",{className:"p-8 " + sx_8f99169642_c + " " + reflexUIClasses_01ac7ed29f},"red"),jsx("span",{className:sx_8f99169642_c + " " + reflexUIClasses_01ac7ed29f},"red again"),jsx("span",{className:sx_8f99169642_c + " " + reflexUIClasses_fe8edd03f8,id:"gray",ref:ref_gray},"gray"),jsx(Chip_span_a1f191971c1d0b090104807deb864e69,{},"bound")),jsx("title",{}," | Index"),jsx("meta",{content:"",property:"og:image"},))
+  )
+}
+Component.displayName = "Component(/)";
+
+export default Component;
+"""
+
+BOUND_CHIP = """
+import {isTrue,mergeSlotProps} from "$/utils/state"
+import {useStateContext} from "$/utils/context-registry"
+import * as stylex from "@stylexjs/stylex"
+import "$/reflex-ui/tokens/accent.stylex.js"
+import {className as reflexUIClassName} from "$/reflex-ui/class-name.js"
+import {accentAmber} from "$/reflex-ui/themes/accent/amber.js"
+import {accentBlue} from "$/reflex-ui/themes/accent/blue.js"
+import {accentBronze} from "$/reflex-ui/themes/accent/bronze.js"
+import {accentBrown} from "$/reflex-ui/themes/accent/brown.js"
+import {accentCrimson} from "$/reflex-ui/themes/accent/crimson.js"
+import {accentCyan} from "$/reflex-ui/themes/accent/cyan.js"
+import {accentGold} from "$/reflex-ui/themes/accent/gold.js"
+import {accentGrass} from "$/reflex-ui/themes/accent/grass.js"
+import {accentGray} from "$/reflex-ui/themes/accent/gray.js"
+import {accentGreen} from "$/reflex-ui/themes/accent/green.js"
+import {accentIndigo} from "$/reflex-ui/themes/accent/indigo.js"
+import {accentIris} from "$/reflex-ui/themes/accent/iris.js"
+import {accentJade} from "$/reflex-ui/themes/accent/jade.js"
+import {accentLime} from "$/reflex-ui/themes/accent/lime.js"
+import {accentMint} from "$/reflex-ui/themes/accent/mint.js"
+import {accentOrange} from "$/reflex-ui/themes/accent/orange.js"
+import {accentPink} from "$/reflex-ui/themes/accent/pink.js"
+import {accentPlum} from "$/reflex-ui/themes/accent/plum.js"
+import {accentPurple} from "$/reflex-ui/themes/accent/purple.js"
+import {accentRed} from "$/reflex-ui/themes/accent/red.js"
+import {accentRuby} from "$/reflex-ui/themes/accent/ruby.js"
+import {accentSky} from "$/reflex-ui/themes/accent/sky.js"
+import {accentTeal} from "$/reflex-ui/themes/accent/teal.js"
+import {accentTomato} from "$/reflex-ui/themes/accent/tomato.js"
+import {accentViolet} from "$/reflex-ui/themes/accent/violet.js"
+import {accentYellow} from "$/reflex-ui/themes/accent/yellow.js"
+import {focusScope} from "$/reflex-ui/themes/focus.js"
+import {jsx} from "@emotion/react"
+import {Fragment,memo,useEffect} from "react"
+
+
+
+const sx_8f99169642 = stylex.create({ s: {"backgroundColor": "var(--accent-9)", "color": "var(--accent-contrast)"} });
+const sx_8f99169642_c = stylex.props(sx_8f99169642.s).className;
+const reflexUIColorSchemes = { __proto__: null, "amber": reflexUIClassName(accentAmber, focusScope), "blue": reflexUIClassName(accentBlue, focusScope), "bronze": reflexUIClassName(accentBronze, focusScope), "brown": reflexUIClassName(accentBrown, focusScope), "crimson": reflexUIClassName(accentCrimson, focusScope), "cyan": reflexUIClassName(accentCyan, focusScope), "gold": reflexUIClassName(accentGold, focusScope), "grass": reflexUIClassName(accentGrass, focusScope), "gray": reflexUIClassName(accentGray), "green": reflexUIClassName(accentGreen, focusScope), "indigo": reflexUIClassName(accentIndigo, focusScope), "iris": reflexUIClassName(accentIris, focusScope), "jade": reflexUIClassName(accentJade, focusScope), "lime": reflexUIClassName(accentLime, focusScope), "mint": reflexUIClassName(accentMint, focusScope), "orange": reflexUIClassName(accentOrange, focusScope), "pink": reflexUIClassName(accentPink, focusScope), "plum": reflexUIClassName(accentPlum, focusScope), "purple": reflexUIClassName(accentPurple, focusScope), "red": reflexUIClassName(accentRed, focusScope), "ruby": reflexUIClassName(accentRuby, focusScope), "sky": reflexUIClassName(accentSky, focusScope), "teal": reflexUIClassName(accentTeal, focusScope), "tomato": reflexUIClassName(accentTomato, focusScope), "violet": reflexUIClassName(accentViolet, focusScope), "yellow": reflexUIClassName(accentYellow, focusScope) };
+
+
+export const Chip_span_a1f191971c1d0b090104807deb864e69 = /*#__PURE__*/ (() => {
+const Chip_span_a1f191971c1d0b090104807deb864e69 = memo(({children, ...rest}) => {
+    const reflex___state____state__tests___units___reflex_components_ui___test_base____base_test_state = useStateContext("reflex___state____state.tests___units___reflex_components_ui___test_base____base_test_state", ["color_rx_state_"])
+    return(
+        jsx("span",{...mergeSlotProps(rest, ({ className:sx_8f99169642_c + " " + reflexUIColorSchemes[reflex___state____state__tests___units___reflex_components_ui___test_base____base_test_state.color_rx_state_] }))},children)
+    )
+});
+Chip_span_a1f191971c1d0b090104807deb864e69.displayName = "Chip";
+return Chip_span_a1f191971c1d0b090104807deb864e69;
+})();
+"""
+
+
+def test_color_scheme_is_the_accent_of_the_element(
+    ui_plugin: UIPlugin, compile_page: Callable[..., CompileContext]
+):
+    """A literal color imports its accent; one bound to state imports them all."""
+
+    def page():
+        return rx.el.main(
+            Chip.create("theme"),
+            Chip.create("red", color_scheme="red", class_name="p-8"),
+            Chip.create("red again", color_scheme="red"),
+            Chip.create("gray", color_scheme="gray", id="gray"),
+            Chip.create("bound", color_scheme=S.color),  # pyright: ignore [reportArgumentType]
+        )
+
+    ctx = compile_page(page)
+    assert ctx.compiled_pages["/"].output_code == CHIP_PAGE
+    files, _ = compiler.compile_memo_components(ctx.auto_memo_components.values())
+    assert [code for path, code in files if "Chip_span_" in path] == [BOUND_CHIP]
+
+
+def test_color_scheme_must_be_an_accent_color():
+    with pytest.raises(ThemeError) as raised:
+        Chip.create("hello", color_scheme="slate")  # pyright: ignore [reportArgumentType]
+    assert str(raised.value) == (
+        'rx.ui.chip: unknown color_scheme "slate". The values are "tomato", '
+        '"red", "ruby", "crimson", "pink", "plum", "purple", "violet", "iris", '
+        '"indigo", "blue", "cyan", "teal", "jade", "green", "grass", "brown", '
+        '"orange", "sky", "mint", "lime", "yellow", "amber", "gold", "bronze", '
+        '"gray".'
+    )
+
+
+def test_color_scheme_is_a_css_property_of_a_component_without_the_prop(
+    ui_plugin: UIPlugin,
+):
+    """Only a component that declares the prop reads it as an accent."""
+    component = Plain.create("hello", color_scheme="dark")
+    assert component._get_all_custom_code() == {
+        'const sx_b7c693ea0b = stylex.create({ s: {"colorScheme": "dark"} });\n'
+        "const sx_b7c693ea0b_c = stylex.props(sx_b7c693ea0b.s).className;": None
+    }
+
+
+def test_dynamic_component_cannot_have_a_color_scheme():
+    with pytest.raises(StyleError) as raised:
+        serialize(Chip.create("hello", color_scheme="red"))
+    assert str(raised.value) == (
+        "rx.ui.chip: color_scheme cannot be applied to a component rendered "
+        "from state: its code is evaluated in the browser and never reaches "
+        "the StyleX compiler. Render the component in a page and show it with "
+        "rx.cond."
+    )

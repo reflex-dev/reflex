@@ -5,6 +5,7 @@ intended difference is an ``[[api]]`` entry of the parity allowlist, with the
 reason the migration guide gives for it.
 """
 
+import types
 from typing import Any, Literal
 
 import reflex_components_ui
@@ -25,7 +26,13 @@ from ui_parity.api import (
 
 import reflex as rx
 
-COMPONENTS = sorted(reflex_components_ui.__all__)
+# The names of the namespace that create a component: a theme of the plugin
+# and the design tokens are no components.
+COMPONENTS = sorted(
+    name
+    for name in reflex_components_ui.__all__
+    if isinstance(getattr(reflex_components_ui, name), types.MethodType)
+)
 
 
 def differences(component: str) -> list[ApiDifference]:

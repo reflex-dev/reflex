@@ -1,6 +1,7 @@
 """Tests for reflex_components_ui.themes."""
 
 import dataclasses
+import hashlib
 from typing import Any, get_args
 
 import pytest
@@ -36,14 +37,6 @@ ACCENT_VALUES = (
     '"bronze", "gray"'
 )
 
-ACCENT_MAP = (
-    "const reflexUIAccents = { "
-    + ", ".join(
-        f'"{name}": accent{name.capitalize()}'
-        for name in sorted(_radix_tokens.ACCENT_THEMES)
-    )
-    + " };"
-)
 ACCENT_IMPORTS = tuple(
     (f"themes/accent/{name}.js", f"accent{name.capitalize()}", None)
     for name in sorted(_radix_tokens.ACCENT_THEMES)
@@ -202,23 +195,51 @@ def test_theme_refuses_a_value_an_option_does_not_take(
     assert str(error.value) == message
 
 
+HELPER_IMPORT = ("class-name.js", "className", "reflexUIClassName")
+
+
+def _theme(
+    refs: tuple[str, ...],
+    imports: tuple[tuple[str, str, str | None], ...],
+) -> ThemeStyles:
+    """Build what a theme element with literal options is expected to need.
+
+    Args:
+        refs: The compiled styles after the scopes and the focus.
+        imports: The imports beside the ones every theme element has.
+
+    Returns:
+        The expected styles: the class names are joined once, in a constant
+        named after the call that joins them.
+    """
+    call = (
+        '"reflex-ui-theme " + reflexUIClassName('
+        + ", ".join((*SCOPES, "focusScope", *refs))
+        + ")"
+    )
+    name = "reflexUIClasses_" + hashlib.sha256(call.encode()).hexdigest()[:10]
+    return ThemeStyles(
+        classes=name,
+        imports=tuple(
+            sorted([
+                *imports,
+                HELPER_IMPORT,
+                FOCUS_IMPORT,
+                *SCOPE_IMPORTS,
+                STYLES_IMPORT,
+            ])
+        ),
+        declarations=(f"const {name} = {call};",),
+    )
+
+
 def test_app_theme_sets_every_option():
     """The element around an app depends on nothing outside it."""
-    assert app_theme_styles(
-        Theme(accent_color="indigo", radius="large")
-    ) == ThemeStyles(
-        refs=(
-            *SCOPES,
-            "focusScope",
-            "accentIndigo",
-            "graySlate",
-            "radiusLarge",
-            "scaling100",
-            "panelTranslucent",
-            "reflexUITheme.root",
-            "reflexUITheme.background",
-        ),
+    styles = app_theme_styles(Theme(accent_color="indigo", radius="large"))
+    assert styles == ThemeStyles(
+        classes="reflexUIClasses_35e01a8868",
         imports=(
+            HELPER_IMPORT,
             ("themes/accent/indigo.js", "accentIndigo", None),
             FOCUS_IMPORT,
             ("themes/gray/slate.js", "graySlate", None),
@@ -228,7 +249,15 @@ def test_app_theme_sets_every_option():
             *SCOPE_IMPORTS,
             STYLES_IMPORT,
         ),
-        class_name="reflex-ui-theme",
+        declarations=(
+            (
+                'const reflexUIClasses_35e01a8868 = "reflex-ui-theme " + '
+                "reflexUIClassName(spaceScope, radiusScope, typographyScope, "
+                "shadowScope, colorScope, focusScope, accentIndigo, graySlate, "
+                "radiusLarge, scaling100, panelTranslucent, reflexUITheme.root, "
+                "reflexUITheme.background);"
+            ),
+        ),
     )
     assert app_theme_styles(
         Theme(
@@ -239,11 +268,10 @@ def test_app_theme_sets_every_option():
             appearance="dark",
             panel_background="solid",
             has_background=False,
-        )
-    ) == ThemeStyles(
-        refs=(
-            *SCOPES,
-            "focusScope",
+        ),
+        "sx_0123456789_o",
+    ) == _theme(
+        (
             "accentGray",
             "grayOlive",
             "radiusNone",
@@ -251,18 +279,16 @@ def test_app_theme_sets_every_option():
             "panelSolid",
             "reflexUITheme.root",
             "reflexUITheme.dark",
+            # The style of the element itself is last: it wins a property.
+            "sx_0123456789_o",
         ),
-        imports=(
+        (
             ("themes/accent/gray.js", "accentGray", None),
-            FOCUS_IMPORT,
             ("themes/gray/olive.js", "grayOlive", None),
             ("themes/panel.js", "panelSolid", None),
             ("themes/radius.js", "radiusNone", None),
             ("themes/scaling.js", "scaling110", None),
-            *SCOPE_IMPORTS,
-            STYLES_IMPORT,
         ),
-        class_name="reflex-ui-theme",
     )
 
 
@@ -270,14 +296,23 @@ def test_every_accent_has_the_gray_that_matches_it():
     """``auto`` is resolved when the app is compiled."""
     for accent, gray in _radix_tokens.MATCHING_GRAY.items():
         styles = app_theme_styles(Theme(accent_color=accent))  # pyright: ignore [reportArgumentType]
-        assert styles.refs[6:8] == (
-            f"accent{accent.capitalize()}",
-            f"gray{gray.capitalize()}",
-        )
-        assert styles.imports[:3] == (
-            (f"themes/accent/{accent}.js", f"accent{accent.capitalize()}", None),
-            FOCUS_IMPORT,
-            (f"themes/gray/{gray}.js", f"gray{gray.capitalize()}", None),
+        assert styles == _theme(
+            (
+                f"accent{accent.capitalize()}",
+                f"gray{gray.capitalize()}",
+                "radiusMedium",
+                "scaling100",
+                "panelTranslucent",
+                "reflexUITheme.root",
+                "reflexUITheme.background",
+            ),
+            (
+                (f"themes/accent/{accent}.js", f"accent{accent.capitalize()}", None),
+                (f"themes/gray/{gray}.js", f"gray{gray.capitalize()}", None),
+                ("themes/panel.js", "panelTranslucent", None),
+                ("themes/radius.js", "radiusMedium", None),
+                ("themes/scaling.js", "scaling100", None),
+            ),
         )
 
 
@@ -287,7 +322,8 @@ def _nested(
     """Build what a nested theme is expected to need.
 
     Args:
-        refs: The arguments after the scopes, the focus and before the root style.
+        refs: The compiled styles of its options, then the ones of the
+            element after its root style.
         imports: The imports beside the ones every theme element has.
 
     Returns:
@@ -295,11 +331,7 @@ def _nested(
     """
     after = tuple(ref for ref in refs if ref.startswith("reflexUITheme"))
     before = refs[: len(refs) - len(after)]
-    return ThemeStyles(
-        refs=(*SCOPES, "focusScope", *before, "reflexUITheme.root", *after),
-        imports=tuple(sorted([*imports, FOCUS_IMPORT, *SCOPE_IMPORTS, STYLES_IMPORT])),
-        class_name="reflex-ui-theme",
-    )
+    return _theme((*before, "reflexUITheme.root", *after), imports)
 
 
 RED = ("themes/accent/red.js", "accentRed", None)
@@ -392,24 +424,69 @@ def test_nested_theme_sets_what_it_is_given(
     assert theme_styles("rx.ui.theme", **options, app_theme=app_theme) == expected
 
 
+def _map(name: str, entries: dict[str, str]) -> str:
+    """Write the map an option bound to state is looked up in.
+
+    Args:
+        name: The name of the map.
+        entries: The compiled style of each value.
+
+    Returns:
+        The expected declaration.
+    """
+    body = ", ".join(f'"{key}": {value}' for key, value in entries.items())
+    return f"const {name} = {{ __proto__: null, {body} }};"
+
+
+ACCENT_MAP = _map(
+    "reflexUIAccents",
+    {
+        name: f"accent{name.capitalize()}"
+        for name in sorted(_radix_tokens.ACCENT_THEMES)
+    },
+)
+
+
 def test_accent_bound_to_state_imports_every_accent():
-    """The page chooses among all of them, and the gray that matches each."""
+    """The page chooses among all of them when it renders."""
     accent = str(ThemeState.accent)
+    styles = theme_styles(
+        "rx.ui.theme", accent_color=ThemeState.accent, app_theme=Theme()
+    )
+    assert styles.classes == (
+        '"reflex-ui-theme " + reflexUIClassName(spaceScope, radiusScope, '
+        "typographyScope, shadowScope, colorScope, focusScope, "
+        f"reflexUIAccents[{accent}], reflexUITheme.root)"
+    )
+    assert styles.imports == tuple(
+        sorted([
+            HELPER_IMPORT,
+            *ACCENT_IMPORTS,
+            FOCUS_IMPORT,
+            *SCOPE_IMPORTS,
+            STYLES_IMPORT,
+        ])
+    )
+    assert styles.declarations == (ACCENT_MAP,)
+    assert [var.equals(ThemeState.accent) for var in styles.vars] == [True]
+
+    # The gray that matches each accent is chosen the same way.
     styles = theme_styles(
         "rx.ui.theme",
         accent_color=ThemeState.accent,
         gray_color="auto",
         app_theme=Theme(),
+        style="sx_0123456789_o",
     )
-    assert styles.refs == (
-        *SCOPES,
-        "focusScope",
-        f"reflexUIAccents[{accent}]",
-        f"reflexUIMatchingGrays[{accent}]",
-        "reflexUITheme.root",
+    assert styles.classes == (
+        '"reflex-ui-theme " + reflexUIClassName(spaceScope, radiusScope, '
+        "typographyScope, shadowScope, colorScope, focusScope, "
+        f"reflexUIAccents[{accent}], reflexUIMatchingGrays[{accent}], "
+        "reflexUITheme.root, sx_0123456789_o)"
     )
     assert styles.imports == tuple(
         sorted([
+            HELPER_IMPORT,
             *ACCENT_IMPORTS,
             *GRAY_IMPORTS,
             FOCUS_IMPORT,
@@ -419,50 +496,14 @@ def test_accent_bound_to_state_imports_every_accent():
     )
     assert styles.declarations == (
         ACCENT_MAP,
-        "const reflexUIMatchingGrays = { "
-        + ", ".join(
-            f'"{name}": gray{gray.capitalize()}'
-            for name, gray in sorted(_radix_tokens.MATCHING_GRAY.items())
-        )
-        + " };",
+        _map(
+            "reflexUIMatchingGrays",
+            {
+                name: f"gray{gray.capitalize()}"
+                for name, gray in sorted(_radix_tokens.MATCHING_GRAY.items())
+            },
+        ),
     )
-    assert styles.class_name == "reflex-ui-theme"
-    assert styles.var_data == ThemeState.accent._get_all_var_data()
-
-    # With a gray of its own, or the one around it, only the accents are.
-    inherited = theme_styles(
-        "rx.ui.theme", accent_color=ThemeState.accent, app_theme=Theme()
-    )
-    assert inherited.refs == (
-        *SCOPES,
-        "focusScope",
-        f"reflexUIAccents[{accent}]",
-        "reflexUITheme.root",
-    )
-    assert inherited.declarations == (ACCENT_MAP,)
-    styles = theme_styles(
-        "rx.ui.theme",
-        accent_color=ThemeState.accent,
-        gray_color="sand",
-        app_theme=Theme(),
-    )
-    assert styles.refs == (
-        *SCOPES,
-        "focusScope",
-        f"reflexUIAccents[{accent}]",
-        "graySand",
-        "reflexUITheme.root",
-    )
-    assert styles.imports == tuple(
-        sorted([
-            *ACCENT_IMPORTS,
-            ("themes/gray/sand.js", "graySand", None),
-            FOCUS_IMPORT,
-            *SCOPE_IMPORTS,
-            STYLES_IMPORT,
-        ])
-    )
-    assert styles.declarations == (ACCENT_MAP,)
 
 
 def test_every_option_can_be_bound_to_state():
@@ -478,38 +519,40 @@ def test_every_option_can_be_bound_to_state():
         app_theme=Theme(),
     )
     appearance = str(state.appearance)
-    assert styles.refs == (
-        *SCOPES,
-        "focusScope",
-        f"reflexUIGrays[{state.gray!s}]",
-        f"reflexUIRadii[{state.radius!s}]",
-        f"reflexUIScalings[{state.scaling!s}]",
-        f"reflexUIPanels[{state.panel!s}]",
-        "reflexUITheme.root",
-        f"({state.background!s}) && reflexUITheme.background",
-        f"reflexUITheme[{appearance}]",
+    assert styles.classes == (
+        '"reflex-ui-theme " + reflexUIClassName(spaceScope, radiusScope, '
+        "typographyScope, shadowScope, colorScope, focusScope, "
+        f"reflexUIGrays[{state.gray!s}], reflexUIRadii[{state.radius!s}], "
+        f"reflexUIScalings[{state.scaling!s}], reflexUIPanels[{state.panel!s}], "
+        f"reflexUITheme.root, ({state.background!s}) && reflexUITheme.background, "
+        f"reflexUITheme[{appearance}])"
     )
     assert styles.declarations == (
-        (
-            'const reflexUIGrays = { "gray": grayGray, "mauve": grayMauve, '
-            '"olive": grayOlive, "sage": graySage, "sand": graySand, '
-            '"slate": graySlate };'
+        _map(
+            "reflexUIGrays",
+            {
+                name: f"gray{name.capitalize()}"
+                for name in sorted(_radix_tokens.GRAY_THEMES)
+            },
         ),
         (
-            'const reflexUIRadii = { "full": radiusFull, "large": radiusLarge, '
-            '"medium": radiusMedium, "none": radiusNone, "small": radiusSmall };'
+            'const reflexUIRadii = { __proto__: null, "full": radiusFull, '
+            '"large": radiusLarge, "medium": radiusMedium, "none": radiusNone, '
+            '"small": radiusSmall };'
         ),
         (
-            'const reflexUIScalings = { "100%": scaling100, "105%": scaling105, '
-            '"110%": scaling110, "90%": scaling90, "95%": scaling95 };'
+            'const reflexUIScalings = { __proto__: null, "100%": scaling100, '
+            '"105%": scaling105, "110%": scaling110, "90%": scaling90, '
+            '"95%": scaling95 };'
         ),
         (
-            'const reflexUIPanels = { "solid": panelSolid, '
+            'const reflexUIPanels = { __proto__: null, "solid": panelSolid, '
             '"translucent": panelTranslucent };'
         ),
     )
     assert styles.imports == tuple(
         sorted([
+            HELPER_IMPORT,
             *GRAY_IMPORTS,
             FOCUS_IMPORT,
             *(
@@ -528,23 +571,22 @@ def test_every_option_can_be_bound_to_state():
             STYLES_IMPORT,
         ])
     )
-    assert styles.var_data == rx.vars.VarData.merge(
-        state.gray._get_all_var_data(),
-        state.radius._get_all_var_data(),
-        state.scaling._get_all_var_data(),
-        state.panel._get_all_var_data(),
-        state.appearance._get_all_var_data(),
-        state.background._get_all_var_data(),
-    )
+    assert [str(var) for var in styles.vars] == [
+        str(state.gray),
+        str(state.radius),
+        str(state.scaling),
+        str(state.panel),
+        appearance,
+        str(state.background),
+    ]
 
     # An appearance bound to state paints the background when it is one.
     styles = theme_styles("rx.ui.theme", appearance=state.appearance, app_theme=Theme())
-    assert styles.refs == (
-        *SCOPES,
-        "focusScope",
-        "reflexUITheme.root",
-        f'({appearance}) !== "inherit" && reflexUITheme.background',
-        f"reflexUITheme[{appearance}]",
+    assert styles.classes == (
+        '"reflex-ui-theme " + reflexUIClassName(spaceScope, radiusScope, '
+        "typographyScope, shadowScope, colorScope, focusScope, "
+        f'reflexUITheme.root, ({appearance}) !== "inherit" && '
+        f"reflexUITheme.background, reflexUITheme[{appearance}])"
     )
 
 
@@ -615,22 +657,25 @@ def test_nested_theme_refuses_a_value_an_option_does_not_take(
 
 def test_color_scheme_is_an_accent_on_one_element():
     """A component with a color imports its accent, and the focus that follows."""
-    assert color_scheme_styles("rx.ui.button", "red") == ThemeStyles(
-        refs=("accentRed", "focusScope"), imports=(RED, FOCUS_IMPORT)
+    red = ThemeStyles(
+        classes="reflexUIClasses_01ac7ed29f",
+        imports=(HELPER_IMPORT, RED, FOCUS_IMPORT),
+        declarations=(
+            (
+                "const reflexUIClasses_01ac7ed29f = "
+                "reflexUIClassName(accentRed, focusScope);"
+            ),
+        ),
     )
-    assert color_scheme_styles("rx.ui.button", LiteralVar.create("red")) == ThemeStyles(
-        refs=("accentRed", "focusScope"), imports=(RED, FOCUS_IMPORT)
-    )
+    assert color_scheme_styles("rx.ui.button", "red") == red
+    assert color_scheme_styles("rx.ui.button", LiteralVar.create("red")) == red
     # A gray component keeps the focus colors of the theme, as in Radix Themes.
     assert color_scheme_styles("rx.ui.button", "gray") == ThemeStyles(
-        refs=("accentGray",), imports=(GRAY_ACCENT,)
-    )
-    accent = str(ThemeState.accent)
-    assert color_scheme_styles("rx.ui.button", ThemeState.accent) == ThemeStyles(
-        refs=(f"reflexUIAccents[{accent}]", f'({accent}) !== "gray" && focusScope'),
-        imports=(*ACCENT_IMPORTS, FOCUS_IMPORT),
-        declarations=(ACCENT_MAP,),
-        var_data=ThemeState.accent._get_all_var_data(),
+        classes="reflexUIClasses_fe8edd03f8",
+        imports=(HELPER_IMPORT, GRAY_ACCENT),
+        declarations=(
+            "const reflexUIClasses_fe8edd03f8 = reflexUIClassName(accentGray);",
+        ),
     )
     with pytest.raises(ThemeError) as error:
         color_scheme_styles("rx.ui.button", "slate")
@@ -639,12 +684,39 @@ def test_color_scheme_is_an_accent_on_one_element():
     )
 
 
+def test_color_scheme_bound_to_state_indexes_a_table_of_class_names():
+    """Every accent is imported, and joined with its focus when the module loads."""
+    styles = color_scheme_styles("rx.ui.button", ThemeState.accent)
+    assert styles.classes == f"reflexUIColorSchemes[{ThemeState.accent!s}]"
+    assert styles.imports == tuple(
+        sorted([HELPER_IMPORT, *ACCENT_IMPORTS, FOCUS_IMPORT])
+    )
+    assert styles.declarations == (
+        _map(
+            "reflexUIColorSchemes",
+            {
+                name: "reflexUIClassName(accentGray)"
+                if name == "gray"
+                else f"reflexUIClassName(accent{name.capitalize()}, focusScope)"
+                for name in sorted(_radix_tokens.ACCENT_THEMES)
+            },
+        ),
+    )
+    assert [var.equals(ThemeState.accent) for var in styles.vars] == [True]
+
+
 def test_import_dict_names_the_modules_as_an_app_imports_them():
     assert color_scheme_styles("rx.ui.button", "red").import_dict() == {
+        "$/reflex-ui/class-name.js": [
+            ImportVar(tag="className", alias="reflexUIClassName")
+        ],
         "$/reflex-ui/themes/accent/red.js": [ImportVar(tag="accentRed")],
         "$/reflex-ui/themes/focus.js": [ImportVar(tag="focusScope")],
     }
     assert theme_styles("rx.ui.theme", app_theme=Theme()).import_dict() == {
+        "$/reflex-ui/class-name.js": [
+            ImportVar(tag="className", alias="reflexUIClassName")
+        ],
         "$/reflex-ui/themes/focus.js": [ImportVar(tag="focusScope")],
         "$/reflex-ui/themes/scope.js": [
             ImportVar(tag="colorScope"),

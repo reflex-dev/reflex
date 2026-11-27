@@ -211,16 +211,16 @@ class UIComponent(Component):
             if layout_props
             else None
         )
-        super()._post_init(*args, **kwargs)
-        self._merge_styles()
-        color_scheme = (
-            getattr(self, "color_scheme", None) if "color_scheme" in fields else None
-        )
+        # Before the props are checked against their types: the error of an
+        # unknown color lists the accent colors and suggests the closest.
+        color_scheme = kwargs.get("color_scheme") if "color_scheme" in fields else None
         self._accent = (
             None
             if color_scheme is None
             else color_scheme_styles(self._display_name(), color_scheme)
         )
+        super()._post_init(*args, **kwargs)
+        self._merge_styles()
 
     def _merge_styles(self) -> None:
         """Merge the style table with the styles of this element.

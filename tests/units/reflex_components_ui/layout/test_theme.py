@@ -19,6 +19,7 @@ from reflex.compiler import compiler
 
 APP_ROOT = (
     """
+import {className as reflexUIClassName} from "$/reflex-ui/class-name.js"
 import {accentIndigo} from "$/reflex-ui/themes/accent/indigo.js"
 import {focusScope} from "$/reflex-ui/themes/focus.js"
 import {graySlate} from "$/reflex-ui/themes/gray/slate.js"
@@ -39,6 +40,9 @@ import { Outlet } from 'react-router';
 
 
 const sx_c1c0436182 = stylex.create({ s: {"position": "relative", "zIndex": 0, "minHeight": {"default": "100vh", "@supports (min-height: 100dvh)": "100dvh"}} });
+const sx_c1c0436182_c = stylex.props(sx_c1c0436182.s).className;
+const sx_c1c0436182_o = sx_c1c0436182.s;
+const reflexUIClasses_48dbd5f3d5 = "reflex-ui-theme " + reflexUIClassName(spaceScope, radiusScope, typographyScope, shadowScope, colorScope, focusScope, accentIndigo, graySlate, radiusLarge, scaling100, panelTranslucent, reflexUITheme.root, reflexUITheme.background, sx_c1c0436182_o);
 
 function ReflexProviders({children}) {
   useEffect(() => {
@@ -58,7 +62,7 @@ function ReflexProviders({children}) {
 
 function AppWrap({children}) {
 
-return (jsx("div",{...stylex.props(spaceScope, radiusScope, typographyScope, shadowScope, colorScope, focusScope, accentIndigo, graySlate, radiusLarge, scaling100, panelTranslucent, reflexUITheme.root, reflexUITheme.background, sx_c1c0436182.s, { $$css: true, className: "reflex-ui-theme" })},jsx(Fragment,{},children)))
+return (jsx("div",{className:reflexUIClasses_48dbd5f3d5},jsx(Fragment,{},children)))
 }
 
 export function Layout({children}) {
@@ -80,6 +84,8 @@ export default function App() {
 )
 
 NESTED_PAGE = """import * as stylex from "@stylexjs/stylex"
+import "$/reflex-ui/tokens/accent.stylex.js"
+import {className as reflexUIClassName} from "$/reflex-ui/class-name.js"
 import {accentRed} from "$/reflex-ui/themes/accent/red.js"
 import {focusScope} from "$/reflex-ui/themes/focus.js"
 import {colorScope,radiusScope,shadowScope,spaceScope,typographyScope} from "$/reflex-ui/themes/scope.js"
@@ -92,14 +98,21 @@ import {jsx} from "@emotion/react"
 
 
 const sx_e0e666cdfc = stylex.create({ s: {"boxSizing": "border-box", "display": "block", "color": "var(--accent-9)"} });
-const sx_ffb9e340d1 = stylex.create({ s: {"padding": "4px"} });
+const sx_e0e666cdfc_c = stylex.props(sx_e0e666cdfc.s).className;
+const reflexUIClasses_22039616de = "reflex-ui-theme " + reflexUIClassName(spaceScope, radiusScope, typographyScope, shadowScope, colorScope, focusScope, accentRed, reflexUITheme.root);
+const sx_2ccd5239f0 = stylex.create({ s: {"paddingTop": "4px", "paddingRight": "4px", "paddingBottom": "4px", "paddingLeft": "4px"} });
+const sx_2ccd5239f0_c = stylex.props(sx_2ccd5239f0.s).className;
+const sx_2ccd5239f0_o = sx_2ccd5239f0.s;
+const reflexUIClasses_fd8fdcb49a = "reflex-ui-theme " + reflexUIClassName(spaceScope, radiusScope, typographyScope, shadowScope, colorScope, focusScope, radiusFull, reflexUITheme.root, reflexUITheme.background, reflexUITheme.dark, sx_2ccd5239f0_o);
 const sx_71b84cd269 = stylex.create({ s: {"display": "contents"} });
+const sx_71b84cd269_c = stylex.props(sx_71b84cd269.s).className;
+const reflexUIClasses_7830a5bcf7 = "reflex-ui-theme " + reflexUIClassName(spaceScope, radiusScope, typographyScope, shadowScope, colorScope, focusScope, reflexUITheme.root);
 
 function Component() {
 const ref_dark = useRegisteredRef("ref_dark");
 
   return (
-    jsx(Fragment,{},jsx("main",{},jsx("div",{...stylex.props(spaceScope, radiusScope, typographyScope, shadowScope, colorScope, focusScope, accentRed, reflexUITheme.root, { $$css: true, className: "reflex-ui-theme" })},jsx("div",{...stylex.props(sx_e0e666cdfc.s)},"red")),jsx("div",{...stylex.props(sx_71b84cd269.s, { $$css: true, className: "dark" })},jsx("div",{id:"dark",ref:ref_dark,...stylex.props(spaceScope, radiusScope, typographyScope, shadowScope, colorScope, focusScope, radiusFull, reflexUITheme.root, reflexUITheme.background, reflexUITheme.dark, sx_ffb9e340d1.s, { $$css: true, className: "reflex-ui-theme p-8" })},"dark")),jsx("div",{...stylex.props(spaceScope, radiusScope, typographyScope, shadowScope, colorScope, focusScope, reflexUITheme.root, { $$css: true, className: "reflex-ui-theme" })},"plain")),jsx("title",{}," | Index"),jsx("meta",{content:"",property:"og:image"},))
+    jsx(Fragment,{},jsx("main",{},jsx("div",{className:reflexUIClasses_22039616de},jsx("div",{className:sx_e0e666cdfc_c},"red")),jsx("div",{className:"dark " + sx_71b84cd269_c},jsx("div",{className:"p-8 " + reflexUIClasses_fd8fdcb49a,id:"dark",ref:ref_dark},"dark")),jsx("div",{className:reflexUIClasses_7830a5bcf7},"plain")),jsx("title",{}," | Index"),jsx("meta",{content:"",property:"og:image"},))
   )
 }
 Component.displayName = "Component(/)";
@@ -107,8 +120,8 @@ Component.displayName = "Component(/)";
 export default Component;
 """
 
-BOUND_PAGE = """import {Themeelement_div_f7d2b7c33308674eb3685852f6be4c25} from "$/utils/components/Themeelement_div_f7d2b7c33308674eb3685852f6be4c25"
-import {Themeelement_div_7ff1171060456d23f7870cfa8fe2dfcf} from "$/utils/components/Themeelement_div_7ff1171060456d23f7870cfa8fe2dfcf"
+BOUND_PAGE = """import {Themeelement_div_45c9f04fbd77a86b901df8ec7c9186f5} from "$/utils/components/Themeelement_div_45c9f04fbd77a86b901df8ec7c9186f5"
+import {Themeelement_div_110e113e071e5dc30028d2a466586629} from "$/utils/components/Themeelement_div_110e113e071e5dc30028d2a466586629"
 import {Fragment,useEffect} from "react"
 import {jsx} from "@emotion/react"
 
@@ -120,7 +133,7 @@ function Component() {
 
 
   return (
-    jsx(Fragment,{},jsx("main",{},jsx(Themeelement_div_f7d2b7c33308674eb3685852f6be4c25,{},"accent"),jsx(Themeelement_div_7ff1171060456d23f7870cfa8fe2dfcf,{},"names")),jsx("title",{}," | Index"),jsx("meta",{content:"",property:"og:image"},))
+    jsx(Fragment,{},jsx("main",{},jsx(Themeelement_div_45c9f04fbd77a86b901df8ec7c9186f5,{},"accent"),jsx(Themeelement_div_110e113e071e5dc30028d2a466586629,{},"names")),jsx("title",{}," | Index"),jsx("meta",{content:"",property:"og:image"},))
   )
 }
 Component.displayName = "Component(/)";
@@ -131,6 +144,7 @@ export default Component;
 BOUND_ACCENT_THEME = """
 import {isTrue,mergeSlotProps} from "$/utils/state"
 import {useStateContext} from "$/utils/context-registry"
+import {className as reflexUIClassName} from "$/reflex-ui/class-name.js"
 import {accentAmber} from "$/reflex-ui/themes/accent/amber.js"
 import {accentBlue} from "$/reflex-ui/themes/accent/blue.js"
 import {accentBronze} from "$/reflex-ui/themes/accent/bronze.js"
@@ -160,30 +174,30 @@ import {accentYellow} from "$/reflex-ui/themes/accent/yellow.js"
 import {focusScope} from "$/reflex-ui/themes/focus.js"
 import {colorScope,radiusScope,shadowScope,spaceScope,typographyScope} from "$/reflex-ui/themes/scope.js"
 import {theme as reflexUITheme} from "$/reflex-ui/themes/theme.js"
-import * as stylex from "@stylexjs/stylex"
 import {jsx} from "@emotion/react"
 import {Fragment,memo,useEffect} from "react"
 
 
 
-const reflexUIAccents = { "amber": accentAmber, "blue": accentBlue, "bronze": accentBronze, "brown": accentBrown, "crimson": accentCrimson, "cyan": accentCyan, "gold": accentGold, "grass": accentGrass, "gray": accentGray, "green": accentGreen, "indigo": accentIndigo, "iris": accentIris, "jade": accentJade, "lime": accentLime, "mint": accentMint, "orange": accentOrange, "pink": accentPink, "plum": accentPlum, "purple": accentPurple, "red": accentRed, "ruby": accentRuby, "sky": accentSky, "teal": accentTeal, "tomato": accentTomato, "violet": accentViolet, "yellow": accentYellow };
+const reflexUIAccents = { __proto__: null, "amber": accentAmber, "blue": accentBlue, "bronze": accentBronze, "brown": accentBrown, "crimson": accentCrimson, "cyan": accentCyan, "gold": accentGold, "grass": accentGrass, "gray": accentGray, "green": accentGreen, "indigo": accentIndigo, "iris": accentIris, "jade": accentJade, "lime": accentLime, "mint": accentMint, "orange": accentOrange, "pink": accentPink, "plum": accentPlum, "purple": accentPurple, "red": accentRed, "ruby": accentRuby, "sky": accentSky, "teal": accentTeal, "tomato": accentTomato, "violet": accentViolet, "yellow": accentYellow };
 
 
-export const Themeelement_div_f7d2b7c33308674eb3685852f6be4c25 = /*#__PURE__*/ (() => {
-const Themeelement_div_f7d2b7c33308674eb3685852f6be4c25 = memo(({children, ...rest}) => {
+export const Themeelement_div_45c9f04fbd77a86b901df8ec7c9186f5 = /*#__PURE__*/ (() => {
+const Themeelement_div_45c9f04fbd77a86b901df8ec7c9186f5 = memo(({children, ...rest}) => {
     const reflex___state____state__tests___units___reflex_components_ui___layout___test_theme____theme_state = useStateContext("reflex___state____state.tests___units___reflex_components_ui___layout___test_theme____theme_state", ["accent_rx_state_"])
     return(
-        jsx("div",{...mergeSlotProps(rest, ({ ...stylex.props(spaceScope, radiusScope, typographyScope, shadowScope, colorScope, focusScope, reflexUIAccents[reflex___state____state__tests___units___reflex_components_ui___layout___test_theme____theme_state.accent_rx_state_], reflexUITheme.root, { $$css: true, className: "reflex-ui-theme" }) }))},children)
+        jsx("div",{...mergeSlotProps(rest, ({ className:"reflex-ui-theme " + reflexUIClassName(spaceScope, radiusScope, typographyScope, shadowScope, colorScope, focusScope, reflexUIAccents[reflex___state____state__tests___units___reflex_components_ui___layout___test_theme____theme_state.accent_rx_state_], reflexUITheme.root) }))},children)
     )
 });
-Themeelement_div_f7d2b7c33308674eb3685852f6be4c25.displayName = "ThemeElement";
-return Themeelement_div_f7d2b7c33308674eb3685852f6be4c25;
+Themeelement_div_45c9f04fbd77a86b901df8ec7c9186f5.displayName = "ThemeElement";
+return Themeelement_div_45c9f04fbd77a86b901df8ec7c9186f5;
 })();
 """
 
 BOUND_NAMES_THEME = """
 import {isTrue,mergeSlotProps} from "$/utils/state"
 import {useStateContext} from "$/utils/context-registry"
+import {className as reflexUIClassName} from "$/reflex-ui/class-name.js"
 import {accentAmber} from "$/reflex-ui/themes/accent/amber.js"
 import {accentBlue} from "$/reflex-ui/themes/accent/blue.js"
 import {accentBronze} from "$/reflex-ui/themes/accent/bronze.js"
@@ -214,24 +228,23 @@ import {focusScope} from "$/reflex-ui/themes/focus.js"
 import {graySand} from "$/reflex-ui/themes/gray/sand.js"
 import {colorScope,radiusScope,shadowScope,spaceScope,typographyScope} from "$/reflex-ui/themes/scope.js"
 import {theme as reflexUITheme} from "$/reflex-ui/themes/theme.js"
-import * as stylex from "@stylexjs/stylex"
 import {jsx} from "@emotion/react"
 import {Fragment,memo,useEffect} from "react"
 
 
 
-const reflexUIAccents = { "amber": accentAmber, "blue": accentBlue, "bronze": accentBronze, "brown": accentBrown, "crimson": accentCrimson, "cyan": accentCyan, "gold": accentGold, "grass": accentGrass, "gray": accentGray, "green": accentGreen, "indigo": accentIndigo, "iris": accentIris, "jade": accentJade, "lime": accentLime, "mint": accentMint, "orange": accentOrange, "pink": accentPink, "plum": accentPlum, "purple": accentPurple, "red": accentRed, "ruby": accentRuby, "sky": accentSky, "teal": accentTeal, "tomato": accentTomato, "violet": accentViolet, "yellow": accentYellow };
+const reflexUIAccents = { __proto__: null, "amber": accentAmber, "blue": accentBlue, "bronze": accentBronze, "brown": accentBrown, "crimson": accentCrimson, "cyan": accentCyan, "gold": accentGold, "grass": accentGrass, "gray": accentGray, "green": accentGreen, "indigo": accentIndigo, "iris": accentIris, "jade": accentJade, "lime": accentLime, "mint": accentMint, "orange": accentOrange, "pink": accentPink, "plum": accentPlum, "purple": accentPurple, "red": accentRed, "ruby": accentRuby, "sky": accentSky, "teal": accentTeal, "tomato": accentTomato, "violet": accentViolet, "yellow": accentYellow };
 
 
-export const Themeelement_div_7ff1171060456d23f7870cfa8fe2dfcf = /*#__PURE__*/ (() => {
-const Themeelement_div_7ff1171060456d23f7870cfa8fe2dfcf = memo(({children, ...rest}) => {
+export const Themeelement_div_110e113e071e5dc30028d2a466586629 = /*#__PURE__*/ (() => {
+const Themeelement_div_110e113e071e5dc30028d2a466586629 = memo(({children, ...rest}) => {
     const reflex___state____state__tests___units___reflex_components_ui___layout___test_theme____theme_state = useStateContext("reflex___state____state.tests___units___reflex_components_ui___layout___test_theme____theme_state", ["names_rx_state_", "accent_rx_state_"])
     return(
-        jsx("div",{...mergeSlotProps(rest, ({ className:(reflex___state____state__tests___units___reflex_components_ui___layout___test_theme____theme_state.names_rx_state_) + " " + stylex.props(spaceScope, radiusScope, typographyScope, shadowScope, colorScope, focusScope, reflexUIAccents[reflex___state____state__tests___units___reflex_components_ui___layout___test_theme____theme_state.accent_rx_state_], graySand, reflexUITheme.root, { $$css: true, className: "reflex-ui-theme" }).className }))},children)
+        jsx("div",{...mergeSlotProps(rest, ({ className:(reflex___state____state__tests___units___reflex_components_ui___layout___test_theme____theme_state.names_rx_state_) + " " + "reflex-ui-theme " + reflexUIClassName(spaceScope, radiusScope, typographyScope, shadowScope, colorScope, focusScope, reflexUIAccents[reflex___state____state__tests___units___reflex_components_ui___layout___test_theme____theme_state.accent_rx_state_], graySand, reflexUITheme.root) }))},children)
     )
 });
-Themeelement_div_7ff1171060456d23f7870cfa8fe2dfcf.displayName = "ThemeElement";
-return Themeelement_div_7ff1171060456d23f7870cfa8fe2dfcf;
+Themeelement_div_110e113e071e5dc30028d2a466586629.displayName = "ThemeElement";
+return Themeelement_div_110e113e071e5dc30028d2a466586629;
 })();
 """
 
@@ -288,23 +301,26 @@ def test_plugin_wraps_an_app_with_an_appearance_in_its_class(
     }
     assert wraps[16, "ReflexUIAppearance"].render() == {
         "name": '"div"',
-        "props": [
-            '...stylex.props(sx_71b84cd269.s, { $$css: true, className: "dark" })'
-        ],
+        "props": ['className:"dark " + sx_71b84cd269_c'],
         "children": [],
     }
-    assert wraps[15, "ReflexUITheme"].render() == {
+    theme = wraps[15, "ReflexUITheme"]
+    assert theme.render() == {
         "name": '"div"',
-        "props": [
-            (
-                "...stylex.props(spaceScope, radiusScope, typographyScope, "
-                "shadowScope, colorScope, focusScope, accentBlue, graySlate, "
-                "radiusMedium, scaling100, panelTranslucent, reflexUITheme.root, "
-                "reflexUITheme.background, reflexUITheme.dark, sx_c1c0436182.s, "
-                '{ $$css: true, className: "reflex-ui-theme" })'
-            )
-        ],
+        "props": ["className:reflexUIClasses_ac4861b877"],
         "children": [],
+    }
+    assert theme._get_all_custom_code() == {
+        'const sx_c1c0436182 = stylex.create({ s: {"position": "relative", '
+        '"zIndex": 0, "minHeight": {"default": "100vh", "@supports '
+        '(min-height: 100dvh)": "100dvh"}} });\n'
+        "const sx_c1c0436182_c = stylex.props(sx_c1c0436182.s).className;": None,
+        "const sx_c1c0436182_o = sx_c1c0436182.s;": None,
+        'const reflexUIClasses_ac4861b877 = "reflex-ui-theme " + '
+        "reflexUIClassName(spaceScope, radiusScope, typographyScope, "
+        "shadowScope, colorScope, focusScope, accentBlue, graySlate, "
+        "radiusMedium, scaling100, panelTranslucent, reflexUITheme.root, "
+        "reflexUITheme.background, reflexUITheme.dark, sx_c1c0436182_o);": None,
     }
 
 
@@ -321,19 +337,13 @@ def test_theme_with_an_appearance_is_inside_the_element_of_its_class(
         appearance=ThemeState.appearance,  # pyright: ignore [reportArgumentType]
     )
     assert bound.render()["props"] == [
-        (
-            f'className:({ThemeState.appearance!s}) + " " + '
-            "stylex.props(sx_71b84cd269.s).className"
-        )
+        f'className:({ThemeState.appearance!s}) + " " + sx_71b84cd269_c'
     ]
     assert bound.children[0].render()["props"] == [
-        (
-            "...stylex.props(spaceScope, radiusScope, typographyScope, shadowScope, "
-            "colorScope, focusScope, reflexUITheme.root, "
-            f'({ThemeState.appearance!s}) !== "inherit" && reflexUITheme.background, '
-            f"reflexUITheme[{ThemeState.appearance!s}], "
-            '{ $$css: true, className: "reflex-ui-theme" })'
-        )
+        'className:"reflex-ui-theme " + reflexUIClassName(spaceScope, '
+        "radiusScope, typographyScope, shadowScope, colorScope, focusScope, "
+        f'reflexUITheme.root, ({ThemeState.appearance!s}) !== "inherit" && '
+        f"reflexUITheme.background, reflexUITheme[{ThemeState.appearance!s}])"
     ]
 
 

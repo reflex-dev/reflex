@@ -72,44 +72,37 @@ class ThemeElement(UIComponent):
 
     tag = "div"
 
-    accent_color: Var[LiteralAccentColor] | None = field(
-        default=None,
+    accent_color: Var[LiteralAccentColor] = field(
         is_javascript_property=False,
         doc="The color of the components that stand out.",
     )
 
-    gray_color: Var[LiteralGrayColor] | None = field(
-        default=None,
+    gray_color: Var[LiteralGrayColor] = field(
         is_javascript_property=False,
         doc='The gray of text, borders and surfaces. "auto" is the gray that matches the accent color.',
     )
 
-    radius: Var[LiteralRadius] | None = field(
-        default=None,
+    radius: Var[LiteralRadius] = field(
         is_javascript_property=False,
         doc='How round corners are: "none" | "small" | "medium" | "large" | "full".',
     )
 
-    scaling: Var[LiteralScaling] | None = field(
-        default=None,
+    scaling: Var[LiteralScaling] = field(
         is_javascript_property=False,
         doc='The size of everything: "90%" | "95%" | "100%" | "105%" | "110%".',
     )
 
-    appearance: Var[LiteralAppearance] | None = field(
-        default=None,
+    appearance: Var[LiteralAppearance] = field(
         is_javascript_property=False,
         doc='"light" or "dark" to keep one whatever the color mode, "inherit" to follow it.',
     )
 
-    panel_background: Var[LiteralPanelBackground] | None = field(
-        default=None,
+    panel_background: Var[LiteralPanelBackground] = field(
         is_javascript_property=False,
         doc='Whether panels such as cards are see-through: "solid" | "translucent".',
     )
 
-    has_background: Var[bool] | None = field(
-        default=None,
+    has_background: Var[bool] = field(
         is_javascript_property=False,
         doc="Whether the element paints the background of the theme. Defaults to True when it sets an appearance.",
     )

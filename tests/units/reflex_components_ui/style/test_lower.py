@@ -470,11 +470,11 @@ def test_var_modules_name_the_module_of_every_custom_property():
     """Each custom property Radix defines is found by its whole name."""
     assert VAR_MODULES["--ruby-9"] == RUBY
     assert VAR_MODULES["--gray-9"] == GRAY
-    assert VAR_MODULES == {
+    assert {
         name: f"$/reflex-ui/{module}"
         for module, names in VAR_GROUPS.values()
         for name in names
-    }
+    } == VAR_MODULES
     assert len(VAR_MODULES) == 1070
     assert lower(
         "rx.ui.card",
