@@ -204,7 +204,19 @@ def UIComponentsApp(radix: bool = False):
             ),
         )
 
+    assets = Path.cwd() / "assets"
+    assets.mkdir(exist_ok=True)
+    (assets / "unlayered.css").write_text(".unlayered { padding: 2px }")
+
+    # Only the app beside Radix Themes has state: the other one shows what a
+    # page costs without it.
+    app = rx.App(stylesheets=["unlayered.css"], enable_state=radix)
+    app.add_page(index)
+    app.add_page(literal, route="/literal")
+    app.add_page(theme, route="/theme")
+    app.add_page(sweep, route="/sweep")
     if radix:
+        app.add_page(mixed, route="/mixed")
 
         class ThemeState(rx.State):
             accent: str = "red"
@@ -219,27 +231,14 @@ def UIComponentsApp(radix: bool = False):
             return rx.el.main(
                 rx.ui.theme(
                     probe("bound-probe"),
-                    accent_color=ThemeState.accent,
+                    accent_color=ThemeState.accent,  # pyright: ignore [reportArgumentType]
                     gray_color="slate",
-                    appearance=ThemeState.appearance,
+                    appearance=ThemeState.appearance,  # pyright: ignore [reportArgumentType]
                     id="bound",
                 ),
                 rx.el.button("change", id="change", on_click=ThemeState.change),
             )
 
-    assets = Path.cwd() / "assets"
-    assets.mkdir(exist_ok=True)
-    (assets / "unlayered.css").write_text(".unlayered { padding: 2px }")
-
-    # Only the app beside Radix Themes has state: the other one shows what a
-    # page costs without it.
-    app = rx.App(stylesheets=["unlayered.css"], enable_state=radix)
-    app.add_page(index)
-    app.add_page(literal, route="/literal")
-    app.add_page(theme, route="/theme")
-    app.add_page(sweep, route="/sweep")
-    if radix:
-        app.add_page(mixed, route="/mixed")
         app.add_page(bound, route="/bound")
 
     config = rx.config.get_config()
