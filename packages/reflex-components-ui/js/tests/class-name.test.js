@@ -27,8 +27,10 @@ test("the classes are the ones the StyleX runtime gives", () => {
   const cases = [[red], [red, blue], [blue, red], [red, false, unset]];
   for (const styles of cases) {
     const expected = stylex.props(...styles).className ?? "";
-    expect(className(...styles).split(" ").sort()).toEqual(
-      expected.split(" ").filter(Boolean).sort(),
-    );
+    expect(
+      className(...styles)
+        .split(" ")
+        .sort(),
+    ).toEqual(expected.split(" ").filter(Boolean).sort());
   }
 });

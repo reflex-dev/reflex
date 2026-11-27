@@ -17,7 +17,7 @@ from reflex_base.vars.base import Var
 from reflex_components_ui.base import MISSING_PLUGIN_ERROR, UIComponent, add_styles
 from reflex_components_ui.plugin import UIPlugin
 from reflex_components_ui.style import ComponentStyles
-from reflex_components_ui.style.emit import style_object
+from reflex_components_ui.style.emit import Emitted, style_object
 from reflex_components_ui.styles.theme import APP_THEME, APPEARANCE
 from reflex_components_ui.themes import (
     OPTIONS,
@@ -160,6 +160,15 @@ class ThemeElement(UIComponent):
             if isinstance(value, Var):
                 yield value
 
+    def _own_styles(self) -> Emitted:
+        """Get the StyleX source of the element's own styles.
+
+        Returns:
+            What the module that renders the element declares for them.
+        """
+        # The generated stub of the base class leaves its private methods out.
+        return self._emit()  # pyright: ignore [reportAttributeAccessIssue]
+
     def _theme_styles(self) -> ThemeStyles:
         """Work out the StyleX themes of the element.
 
@@ -181,7 +190,7 @@ class ThemeElement(UIComponent):
         plugin = get_plugin(UIPlugin)
         if plugin is None:
             raise ConfigError(MISSING_PLUGIN_ERROR)
-        style = style_object(self._emit())
+        style = style_object(self._own_styles())
         if style is None:
             return self._resolve_theme_styles(plugin, None)
         statement, name = style
@@ -226,7 +235,7 @@ class ThemeElement(UIComponent):
             The declaration of the element's own style, which the others
             name, then the ones of its theme.
         """
-        declaration = self._emit().declaration
+        declaration = self._own_styles().declaration
         declarations = self._theme_styles().declarations
         return [*declarations] if declaration is None else [declaration, *declarations]
 
@@ -242,7 +251,9 @@ class ThemeElement(UIComponent):
         """
         tag = Component._render(self, props)
         theme = self._theme_styles()
-        return add_styles(tag, dataclasses.replace(self._emit(), classes=theme.classes))
+        return add_styles(
+            tag, dataclasses.replace(self._own_styles(), classes=theme.classes)
+        )
 
 
 class AppTheme(ThemeElement):

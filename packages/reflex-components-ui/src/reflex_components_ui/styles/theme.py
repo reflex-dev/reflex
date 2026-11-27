@@ -7,8 +7,8 @@ from reflex_components_ui.style import ComponentStyles
 APP_THEME: ComponentStyles = {
     "base": {
         "position": "relative",
-        "zIndex": 0,
-        "minHeight": {
+        "z_index": 0,
+        "min_height": {
             "default": "100vh",
             "@supports (min-height: 100dvh)": "100dvh",
         },

@@ -36,6 +36,7 @@ src/reflex_components_ui/   the python package: the rx.ui namespace
 js/                         the javascript package, with its own tooling
   src/                      what ships: copied into an app at .web/reflex-ui/
     base.css                the cascade layer order and the color scheme switch
+    class-name.js           joins the class names of compiled styles: a theme's
     vite-plugin-stylex.js   the StyleX Vite plugin, fitted to the Reflex build
     colors/                 generated: one module for each Radix color scale
     tokens/                 generated: space, radius, typography, shadow, ...
@@ -298,16 +299,28 @@ both follows this one. It is a `div` with the class of a StyleX theme for each
 option, and the only thing imported for an accent is the module of that accent:
 
 ```js
+import {className as reflexUIClassName} from "$/reflex-ui/class-name.js"
 import {accentIndigo} from "$/reflex-ui/themes/accent/indigo.js"
 import {focusScope} from "$/reflex-ui/themes/focus.js"
 import {graySlate} from "$/reflex-ui/themes/gray/slate.js"
 ...
-jsx("div",{...stylex.props(spaceScope, radiusScope, typographyScope, shadowScope, colorScope, focusScope, accentIndigo, graySlate, radiusLarge, scaling100, panelTranslucent, reflexUITheme.root, reflexUITheme.background, sx_c1c0436182.s, { $$css: true, className: "reflex-ui-theme" })}, ...)
+const sx_c1c0436182 = stylex.create({ s: {"position": "relative", "zIndex": 0, "minHeight": {...}} });
+const sx_c1c0436182_c = stylex.props(sx_c1c0436182.s).className;
+const sx_c1c0436182_o = sx_c1c0436182.s;
+const reflexUIClasses_48dbd5f3d5 = "reflex-ui-theme " + reflexUIClassName(spaceScope, radiusScope, typographyScope, shadowScope, colorScope, focusScope, accentIndigo, graySlate, radiusLarge, scaling100, panelTranslucent, reflexUITheme.root, reflexUITheme.background, sx_c1c0436182_o);
+
+jsx("div",{className:reflexUIClasses_48dbd5f3d5}, ...)
 ```
 
-A theme imported from another module is not folded into a string: the call
-stays, and with it the 1.2 kB of the StyleX runtime, in the chunk every page
-already loads.
+StyleX folds `stylex.props(...)` into a string only when every argument is
+declared in the module that makes the call, and a theme is declared in a
+module of its own. So the classes of a theme are joined when the module
+loads, by `class-name.js`: what `stylex.props(...).className` does, a later
+style winning a property, without the rest of the StyleX runtime, which no
+page ships. The theme of the app adds 0.6 kB of gzipped javascript to the
+chunk every page already loads, and no chunk. The element's own style is last,
+through `sx_..._o`, the style before it is folded: it wins where a theme
+element sets the same property, such as the text color.
 
 `rx.ui.theme(...)` is the same element around part of a page. It takes the
 same options, each one optional: what it leaves out is inherited.
@@ -370,8 +383,10 @@ A step or a name that does not exist is an error to a type checker, and a
 steps are 1 to 9.`
 
 `lower` reads a token like any other string. It names the module that defines
-the custom property in `Lowered.imports` (`VAR_MODULES`, which is built from
-the generated list), and a shorthand gives a token that holds one value to its
+the custom property in `Lowered.imports`: `VAR_MODULES` has the module of each
+of the 1,070 custom properties by its whole name, built from the generated
+list, and a `var()` of any other custom property, such as one an app defines,
+is left alone and imports nothing. A shorthand gives a token that holds one value to its
 longhands, as it does with `rx.color(...)`: `{"padding": f"{tokens.space[2]}
 {tokens.space[4]}"}` becomes four paddings. A shadow and a font family are
 lists, and keep the shorthand whole.
@@ -381,18 +396,21 @@ For a component:
 - Write the style table with tokens, never with the color of a named scale:
   `"background_color": tokens.accent[9]`, `"color": tokens.accent.contrast`,
   `"border_radius": tokens.radius[2]`, `"height": tokens.space[6]`.
-- `color_scheme` is an accent on the element itself.
-  `themes.color_scheme_styles(name, value)` returns what the element needs:
-  the arguments to add to its `stylex.props` call (`accentRed` and
-  `focusScope`; `accentGray` alone for gray), the imports
-  (`import_dict()`), and for a value bound to state the map of all 26 accents
-  to declare in the module. The tokens of the table then resolve against the
-  accent of the element.
+- `color_scheme` is an accent on the element itself. Declare the field,
+  `color_scheme: Var[LiteralAccentColor]` from `reflex_components_ui.themes`,
+  and `UIComponent` does the rest: the tokens of the table resolve against
+  the accent of the element. A literal color imports its accent and
+  `focusScope` and joins their classes in a constant; `"gray"` imports
+  `accentGray` alone, and keeps the focus colors of the theme; a color bound
+  to state imports all 26 and indexes a table of their class names, built
+  when the module loads. On a component without the field, `color_scheme` is
+  the CSS property. `themes.color_scheme_styles(name, value)` is what
+  `UIComponent` calls.
 - The space, radius, typography, shadow and `--color-*` tokens, the accent, the
   gray and the focus colors are defined wherever a theme is, which in an app is
-  everywhere. A cursor, a black or a white, and a scale named with
-  `tokens.scale` or `rx.color` are defined by the module `Lowered.imports`
-  names, once the element that uses them imports it.
+  everywhere. A cursor, a white, and a scale named with `tokens.scale` or
+  `rx.color` are defined by the module `Lowered.imports` names, which the
+  module that renders the element imports.
 - A color is one `light-dark()` value: `getPropertyValue("--accent-9")` in the
   browser returns the pair, and a computed `color` the one in use.
 
