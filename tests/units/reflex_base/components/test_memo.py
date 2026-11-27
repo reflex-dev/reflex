@@ -1,18 +1,25 @@
 """Tests for compiler-generated memo definitions."""
 
 import dataclasses
+import inspect
+import re
 from unittest.mock import patch
 
 import pytest
+from reflex_base import constants
 from reflex_base.components import memo
-from reflex_base.components.component import Component
+from reflex_base.components.component import PROHIBITED_LIBRARY_IMPORTS, Component
+from reflex_base.components.component import field as component_field
 from reflex_base.constants.compiler import MemoizationMode
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils import memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import Var, VarData
 from reflex_components_core.base.bare import Bare
+from reflex_components_core.el.elements.forms import Form, Input
 from reflex_components_core.el.elements.typography import Div
 
+import reflex as rx
 from reflex.compiler import utils
 
 
@@ -175,3 +182,301 @@ def test_memo_analysis_does_not_bypass_custom_copy():
         _, definition = memo.create_passthrough_component_memo(CopyDiv.create("child"))
         compiled, _ = utils.compile_experimental_component_memo(definition)
         assert any('"data-copy":2' in prop for prop in compiled["render"]["props"])
+
+
+def test_passthrough_memo_excludes_descendant_imports_and_keeps_prop_imports():
+    """Passthrough memos keep root and prop imports while dropping descendants'."""
+
+    class PropSlot(Component):
+        tag = "PropSlot"
+        library = "prop-slot-lib"
+
+    class ParentWithSlot(Component):
+        tag = "ParentWithSlot"
+        library = "parent-lib"
+        slot: Component | None = component_field(default=None)
+
+    class DescendantLib(Component):
+        tag = "DescendantLib"
+        library = "descendant-lib"
+
+    with RegistrationContext.ensure_context().fork():
+        hole = Bare.create(Var(_js_expr="children", _var_type=Component))
+        child_state = rx.client_state(0)
+        child_memo_specifier = memo_paths.unmirrored_library_specifier("ChildMemo")
+        child_wrapper = Div.create(
+            child_state.value,
+            custom_attrs={
+                "data-memo": Var(
+                    "ChildMemo",
+                    _var_data=VarData(
+                        imports={child_memo_specifier: [ImportVar(tag="ChildMemo")]}
+                    ),
+                )
+            },
+            on_mount=rx.console_log("descendant"),
+        )
+        descendant = DescendantLib.create(
+            child_wrapper,
+            Var(
+                "descVar",
+                _var_data=VarData(imports={"desc-var-lib": [ImportVar(tag="descVar")]}),
+            ),
+        )
+        parent = ParentWithSlot.create(descendant, slot=PropSlot.create())
+        definition = memo.MemoComponentDefinition(
+            fn=lambda children: parent,
+            python_name="parent_with_slot",
+            params=(
+                memo.MemoParam(
+                    name="children",
+                    kind=memo.MemoParamKind.CHILDREN,
+                    annotation=Component,
+                    parameter_kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    js_prop_name="children",
+                    placeholder_name="children",
+                ),
+            ),
+            export_name="ParentMemo",
+            _component=memo._LazyBody.ready(parent),
+            passthrough_hole_child=hole,
+            forward_root_props=True,
+            is_instance_boundary=True,
+        )
+        compiled, imports = utils.compile_experimental_component_memo(definition)
+
+    assert imports == {
+        "parent-lib": [ImportVar(tag="ParentWithSlot")],
+        "prop-slot-lib": [ImportVar(tag="PropSlot")],
+        "@emotion/react": [ImportVar(tag="jsx")],
+        "react": [ImportVar(tag="memo")],
+        f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="mergeSlotProps")],
+    }
+    assert compiled["wrapper"] == "memo"
+    assert compiled["render"] == {
+        "name": "ParentWithSlot",
+        "props": ["...mergeSlotProps(rest, ({ slot:(jsx(PropSlot, ({}))) }))"],
+        "children": [{"contents": "children"}],
+    }
+
+
+def test_passthrough_memo_root_client_state_retains_instance_boundary_scope():
+    """Root client state on a passthrough boundary still emits a state scope."""
+
+    class DescendantLib(Component):
+        tag = "DescendantLib"
+        library = "descendant-lib"
+
+    with RegistrationContext.ensure_context().fork():
+        hole = Bare.create(Var(_js_expr="children", _var_type=Component))
+        root_state = rx.client_state(0)
+        parent = Div.create(
+            DescendantLib.create("child"),
+            custom_attrs={"data-cs": root_state.value},
+        )
+        definition = memo.MemoComponentDefinition(
+            fn=lambda children: parent,
+            python_name="root_cs_div",
+            params=(
+                memo.MemoParam(
+                    name="children",
+                    kind=memo.MemoParamKind.CHILDREN,
+                    annotation=Component,
+                    parameter_kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    js_prop_name="children",
+                    placeholder_name="children",
+                ),
+            ),
+            export_name="RootCsDiv",
+            _component=memo._LazyBody.ready(parent),
+            passthrough_hole_child=hole,
+            is_instance_boundary=True,
+        )
+        compiled, imports = utils.compile_experimental_component_memo(definition)
+
+    assert (
+        re.sub(r"cs\$\d+", "cs$0", compiled["wrapper"])
+        == '((Component) => withClientStateScope(memo(Component), ["cs$0"]))'
+    )
+    assert imports == {
+        f"$/{constants.Dirs.CLIENT_STATE_PATH}": [
+            ImportVar(tag="useClientState"),
+            ImportVar(tag="withClientStateScope"),
+        ],
+        "@emotion/react": [ImportVar(tag="jsx")],
+        "react": [ImportVar(tag="memo")],
+    }
+
+
+def test_passthrough_memo_retains_root_add_hooks_and_form_refs():
+    """Root ``add_hooks`` and form ref imports survive omitting descendants."""
+
+    class DescendantLib(Component):
+        tag = "DescendantLib"
+        library = "descendant-lib"
+
+    class RootWithChildHook(Div):
+        def add_imports(self):
+            return (
+                {"root-added-lib": [ImportVar(tag="rootAddedHelper")]}
+                if self.children
+                else {}
+            )
+
+        def add_hooks(self):
+            return [
+                "useRootAdded(rootAddedHelper)" if self.children else "",
+                Var(
+                    "rootHookCall",
+                    _var_data=VarData(
+                        imports={"root-hook-var-lib": [ImportVar(tag="useRootHook")]}
+                    ),
+                ),
+            ]
+
+    with RegistrationContext.ensure_context().fork():
+        hole = Bare.create(Var(_js_expr="children", _var_type=Component))
+        form_comp = Form.create(
+            Input.create(id="field_a"),
+            DescendantLib.create("child"),
+            id="f",
+        )
+        form_def = memo.MemoComponentDefinition(
+            fn=lambda children: form_comp,
+            python_name="form_wrapper",
+            params=(
+                memo.MemoParam(
+                    name="children",
+                    kind=memo.MemoParamKind.CHILDREN,
+                    annotation=Component,
+                    parameter_kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    js_prop_name="children",
+                    placeholder_name="children",
+                ),
+            ),
+            export_name="FormWrapper",
+            _component=memo._LazyBody.ready(form_comp),
+            passthrough_hole_child=hole,
+        )
+        _, form_imports = utils.compile_experimental_component_memo(form_def)
+
+        root_hook_comp = RootWithChildHook.create(DescendantLib.create("child"))
+        root_hook_def = memo.MemoComponentDefinition(
+            fn=lambda children: root_hook_comp,
+            python_name="root_hook_comp",
+            params=(
+                memo.MemoParam(
+                    name="children",
+                    kind=memo.MemoParamKind.CHILDREN,
+                    annotation=Component,
+                    parameter_kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    js_prop_name="children",
+                    placeholder_name="children",
+                ),
+            ),
+            export_name="RootHookMemo",
+            _component=memo._LazyBody.ready(root_hook_comp),
+            passthrough_hole_child=hole,
+        )
+        root_hook_compiled, root_hook_imports = (
+            utils.compile_experimental_component_memo(root_hook_def)
+        )
+
+    assert form_imports == {
+        f"$/{constants.Dirs.STATE_PATH}": [
+            ImportVar(tag="useRegisteredRef"),
+            ImportVar(tag="ReflexEvent"),
+            ImportVar(tag="applyEventActions"),
+            ImportVar(tag="refs"),
+            ImportVar(tag="getFormData"),
+            ImportVar(tag="getRefValue"),
+            ImportVar(tag="getRefValues"),
+        ],
+        f"$/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="addEvents")],
+        "react": [ImportVar(tag="useCallback"), ImportVar(tag="memo")],
+        "@emotion/react": [ImportVar(tag="jsx")],
+    }
+    assert root_hook_compiled["hooks"] == {
+        "useRootAdded(rootAddedHelper)": None,
+        "rootHookCall": VarData(
+            imports={"root-hook-var-lib": [ImportVar(tag="useRootHook")]}
+        ),
+    }
+    assert root_hook_imports == {
+        "root-hook-var-lib": [ImportVar(tag="useRootHook")],
+        "root-added-lib": [ImportVar(tag="rootAddedHelper")],
+        "@emotion/react": [ImportVar(tag="jsx")],
+        "react": [ImportVar(tag="memo")],
+    }
+
+
+def test_passthrough_memo_analysis_reuse_keeps_cached_imports_isolated():
+    """Compiling a passthrough memo must not mutate cached analysis imports."""
+    with RegistrationContext.ensure_context().fork() as context:
+        _, definition = memo.create_passthrough_component_memo(Div.create("child"))
+        analysis = context._memo_body_analyses[
+            definition.component.__dict__["_memo_analysis_key"]
+        ]
+        assert analysis.imports == {}
+        _, compiled_imports = utils.compile_experimental_component_memo(definition)
+        assert analysis.imports == {}
+        assert compiled_imports == {
+            "@emotion/react": [ImportVar(tag="jsx")],
+            "react": [ImportVar(tag="memo")],
+            f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="mergeSlotProps")],
+        }
+
+
+@pytest.mark.parametrize(
+    "bad_package",
+    ["react-router-dom", "react-router-dom/server", "react-router-dom@7.18.2"],
+)
+def test_passthrough_memo_rejects_prohibited_pre_swap_root_imports(bad_package: str):
+    """Pre-swap child-conditional ``add_imports`` and hook imports are validated."""
+
+    class BadConditionalAddImports(Div):
+        def add_imports(self):
+            return {bad_package: [ImportVar(tag="Link")]} if self.children else {}
+
+    class BadConditionalHookImports(Div):
+        def add_hooks(self):
+            return (
+                [
+                    Var(
+                        "badHook",
+                        _var_data=VarData(
+                            imports={bad_package: [ImportVar(tag="useBad")]}
+                        ),
+                    )
+                ]
+                if self.children
+                else []
+            )
+
+    with RegistrationContext.ensure_context().fork():
+        hole = Bare.create(Var(_js_expr="children", _var_type=Component))
+        for bad_cls in (BadConditionalAddImports, BadConditionalHookImports):
+            comp = bad_cls.create(Div.create("child"))
+            definition = memo.MemoComponentDefinition(
+                fn=lambda children, comp=comp: comp,
+                python_name=bad_cls.__name__,
+                params=(
+                    memo.MemoParam(
+                        name="children",
+                        kind=memo.MemoParamKind.CHILDREN,
+                        annotation=Component,
+                        parameter_kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                        js_prop_name="children",
+                        placeholder_name="children",
+                    ),
+                ),
+                export_name=bad_cls.__name__,
+                _component=memo._LazyBody.ready(comp),
+                passthrough_hole_child=hole,
+            )
+            with pytest.raises(ValueError) as exc_info:
+                utils.compile_experimental_component_memo(definition)
+            assert str(exc_info.value) == (
+                f"The component `{bad_cls.__name__}` references `{bad_package}`, "
+                f"but {PROHIBITED_LIBRARY_IMPORTS['react-router-dom']}"
+            )

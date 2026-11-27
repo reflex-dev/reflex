@@ -1,0 +1,1 @@
+Passthrough auto-memoized wrapper components no longer import modules or nested wrappers used only by the children passed into them at the call site, while still preserving imports needed by the wrapper itself such as form submission refs.

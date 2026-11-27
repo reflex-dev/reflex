@@ -4173,3 +4173,152 @@ def test_memo_body_foreach_item_with_hooks_keyed_by_index_warns(
         " key=item for a list of unique strings."
         " See https://reflex.dev/docs/library/dynamic-rendering/foreach/"
     )
+
+
+def test_auto_memo_passthrough_does_not_import_memoized_descendant() -> None:
+    """Passthrough auto-memo modules exclude descendant memo wrapper imports."""
+    from reflex.compiler.compiler import compile_memo_components
+
+    ctx, page_ctx = _compile_single_page(
+        lambda: Plain.create(
+            WithProp.create(label=STATE_VAR, on_mount=rx.console_log("child")),
+            on_mount=rx.console_log("parent"),
+        )
+    )
+    memo_files, _ = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values())
+    )
+    files_by_stem = {Path(path).stem: code for path, code in memo_files}
+    plain_tag = next(
+        tag
+        for (tag, _), definition in ctx.auto_memo_components.items()
+        if isinstance(definition.component, Plain)
+    )
+    with_prop_tag = next(
+        tag
+        for (tag, _), definition in ctx.auto_memo_components.items()
+        if isinstance(definition.component, WithProp)
+    )
+
+    normalized_page = (
+        (page_ctx.output_code or "")
+        .replace(plain_tag, "PLAIN")
+        .replace(with_prop_tag, "WITH_PROP")
+    )
+    assert normalized_page == (
+        'import {WITH_PROP} from "$/utils/components/WITH_PROP"\n'
+        'import {PLAIN} from "$/utils/components/PLAIN"\n'
+        'import {Fragment,useEffect} from "react"\n'
+        'import {jsx} from "@emotion/react"\n'
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "function Component() {\n"
+        "\n"
+        "\n"
+        "  return (\n"
+        '    jsx(Fragment,{},jsx(PLAIN,{},jsx(WITH_PROP,{},)),jsx("title",{}," | P"),jsx("meta",{content:"",property:"og:image"},))\n'
+        "  )\n"
+        "}\n"
+        'Component.displayName = "Component(/p)";\n'
+        "\n"
+        "export default Component;\n"
+    )
+    assert files_by_stem[plain_tag].replace(plain_tag, "PLAIN") == (
+        "\n"
+        'import {ReflexEvent,applyEventActions,isTrue,mergeSlotProps} from "$/utils/state"\n'
+        'import {Fragment,memo,useEffect} from "react"\n'
+        "import {" + 'Plain} from "plain-lib"\n'
+        'import {addEvents} from "$/utils/context"\n'
+        'import {jsx} from "@emotion/react"\n'
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "export const PLAIN = /*#__PURE__*/ (() => {\n"
+        "const PLAIN = memo(({children, ...rest}) => {\n"
+        "    \n"
+        "                useEffect(() => {\n"
+        '                    ((...args) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : (() => (console?.["log"]("parent"))), ["callback"] : null }), ({  })))], args, ({  }))))()\n'
+        "                    return () => {\n"
+        "                        \n"
+        "                    }\n"
+        "                }, []);\n"
+        "    return(\n"
+        "        jsx(Plain,{...mergeSlotProps(rest, ({  }))},children)\n"
+        "    )\n"
+        "});\n"
+        'PLAIN.displayName = "Plain";\n'
+        "return PLAIN;\n"
+        "})();\n"
+    )
+
+
+def test_auto_memo_form_passthrough_keeps_refs_without_descendant_imports() -> None:
+    """Form passthrough auto-memo keeps form ref imports without descendant libs."""
+    from reflex_components_core.el.elements.forms import Form
+
+    from reflex.compiler.compiler import compile_memo_components
+
+    ctx, _ = _compile_single_page(
+        lambda: rx.el.form(
+            rx.input(id="field_a"),
+            WithProp.create(label=STATE_VAR, on_mount=rx.console_log("child")),
+            id="f",
+        )
+    )
+    memo_files, _ = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values())
+    )
+    files_by_stem = {Path(path).stem: code for path, code in memo_files}
+    form_tag = next(
+        tag
+        for (tag, _), definition in ctx.auto_memo_components.items()
+        if isinstance(definition.component, Form)
+    )
+
+    normalized_form = re.sub(
+        r"handleSubmit_[0-9a-f]{32}",
+        "handleSubmit_HASH",
+        files_by_stem[form_tag].replace(form_tag, "FORM"),
+    )
+    assert normalized_form == (
+        "\n"
+        'import {ReflexEvent,applyEventActions,getFormData,getRefValue,getRefValues,isTrue,mergeSlotProps,refs,useRegisteredRef} from "$/utils/state"\n'
+        'import {addEvents} from "$/utils/context"\n'
+        'import {Fragment,memo,useCallback,useEffect} from "react"\n'
+        'import {jsx} from "@emotion/react"\n'
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "export const FORM = /*#__PURE__*/ (() => {\n"
+        "const FORM = memo(({children, ...rest}) => {\n"
+        '    const ref_f = useRegisteredRef("ref_f");\n'
+        "\n"
+        "    const handleSubmit_HASH = useCallback((ev) => {\n"
+        "        const $form = ev.target\n"
+        "        ev.preventDefault()\n"
+        '        const form_data = getFormData($form, ({ ["field_a"] : getRefValue(refs["ref_field_a"]) }));\n'
+        "\n"
+        '        (((...args) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : (() => null), ["callback"] : null }), ({ ["preventDefault"] : true })))], args, ({  }))))(ev));\n'
+        "\n"
+        "        if (false) {\n"
+        "            $form.reset()\n"
+        "        }\n"
+        "    })\n"
+        "    \n"
+        "    return(\n"
+        '        jsx("form",{...mergeSlotProps(rest, ({ id:"f", onSubmit:handleSubmit_HASH, ref:ref_f }))},children)\n'
+        "    )\n"
+        "});\n"
+        'FORM.displayName = "Form";\n'
+        "return FORM;\n"
+        "})();\n"
+    )
