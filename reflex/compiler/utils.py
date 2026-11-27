@@ -148,8 +148,11 @@ def _resolve_jsx_import(import_dict: ParsedImportDict) -> None:
     Args:
         import_dict: The collapsed imports of one module, updated in place.
     """
-    if _EMOTION_JSX in import_dict.get("@emotion/react", ()) and _REACT_JSX in (
-        react_imports := import_dict.get("react", ())
+    react_imports = import_dict.get("react")
+    if (
+        react_imports
+        and _REACT_JSX in react_imports
+        and _EMOTION_JSX in import_dict.get("@emotion/react", ())
     ):
         react_imports.remove(_REACT_JSX)
 

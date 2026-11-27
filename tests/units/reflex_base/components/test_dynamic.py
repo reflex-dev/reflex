@@ -201,7 +201,9 @@ def _dynamic_module_head(component: Component) -> list[str]:
     Returns:
         The lines of its module up to the component function.
     """
-    lines = serialize(component).splitlines()
+    code = serialize(component)
+    assert isinstance(code, str)
+    lines = code.splitlines()
     return [
         line
         for line in lines[: lines.index("export default function MySSRComponent () {")]

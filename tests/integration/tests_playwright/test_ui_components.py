@@ -460,6 +460,31 @@ def test_no_page_ships_the_stylex_runtime(prod_app: AppHarness):
     ), table
 
 
+def test_no_script_ships_emotion(prod_app: AppHarness, page: Page):
+    """An app built from rx.ui has no ``css`` prop, so nothing imports Emotion.
+
+    Neither do the parts every app with state gets from Reflex itself: the
+    connection indicator and the error boundary are styled by a stylesheet
+    React keeps in the document head.
+    """
+    scripts = _scripts(prod_app)
+    assert [
+        name
+        for name, code in scripts.items()
+        if re.search(r"emotion", name + code, re.IGNORECASE)
+    ] == []
+
+    page.goto(_styled_url(prod_app))
+    expect(page.locator("#var")).to_have_css("width", "100px")
+    assert page.locator(".rx-connection-pulser").evaluate(
+        """(pulser) => {
+            const style = getComputedStyle(pulser);
+            return [style.position, style.height];
+        }"""
+    ) == ["fixed", "0px"]
+    assert page.locator("style[data-emotion]").count() == 0
+
+
 def _digests(files: dict[str, bytes]) -> dict[str, str]:
     """Reduce files to what tells two versions of one apart.
 

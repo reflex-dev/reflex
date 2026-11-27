@@ -77,7 +77,7 @@ _CSS_KEY = re.compile(r"""(?<![\w$-])css["']?\]?\s*:""")
 (_EMOTION_JSX,) = (var.name for var in Imports.EMOTION_JSX["@emotion/react"])
 
 
-def _with_emotion_jsx(imports: list[_ImportDict]) -> list[_ImportDict]:
+def _with_emotion_jsx(imports: Iterable[_ImportDict]) -> list[_ImportDict]:
     """Make ``jsx`` Emotion's in the imports of a module where it is React's.
 
     Args:
@@ -87,23 +87,31 @@ def _with_emotion_jsx(imports: list[_ImportDict]) -> list[_ImportDict]:
         The imports, unchanged for a module that does not import React's
         ``createElement`` as ``jsx``.
     """
-    if not any(
-        module["lib"] == "react" and _REACT_JSX in module["rest"] for module in imports
-    ):
-        return imports
-    emotion: _ImportDict = {"lib": "@emotion/react", "default": "", "rest": []}
     swapped: list[_ImportDict] = []
+    emotion: int | None = None
+    is_react_jsx = False
     for module in imports:
-        if module["lib"] == "react":
-            module = {
-                **module,
+        if module["lib"] == "react" and _REACT_JSX in module["rest"]:
+            is_react_jsx = True
+            module: _ImportDict = {
+                "lib": "react",
+                "default": module["default"],
                 "rest": [name for name in module["rest"] if name != _REACT_JSX],
             }
         elif module["lib"] == "@emotion/react":
-            emotion = module
-            continue
+            emotion = len(swapped)
         swapped.append(module)
-    swapped.append({**emotion, "rest": [*emotion["rest"], _EMOTION_JSX]})
+    if not is_react_jsx:
+        return swapped
+    if emotion is None:
+        swapped.append({"lib": "@emotion/react", "default": "", "rest": [_EMOTION_JSX]})
+    else:
+        module = swapped[emotion]
+        swapped[emotion] = {
+            "lib": "@emotion/react",
+            "default": module["default"],
+            "rest": [*module["rest"], _EMOTION_JSX],
+        }
     return swapped
 
 
@@ -179,7 +187,7 @@ class _RenderUtils:
         return f'import "{module["lib"]}"'
 
     @staticmethod
-    def get_imports(imports: list[_ImportDict], *code: str) -> str:
+    def get_imports(imports: Iterable[_ImportDict], *code: str) -> str:
         """Render the imports of a module, settling what it calls ``jsx``.
 
         Components ask for Emotion's ``jsx`` through their imports when they

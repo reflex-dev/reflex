@@ -1,0 +1,1 @@
+A component asks for Emotion's `jsx` through its imports only when the element it renders has a `css` prop, and generated modules otherwise import React's `createElement` as `jsx`. Code that generates a module of its own from `Component._get_all_imports()` keeps working unchanged; `Imports.EMOTION_JSX` and `Imports.REACT_JSX` name the two imports.

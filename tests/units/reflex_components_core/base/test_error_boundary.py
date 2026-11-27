@@ -70,4 +70,5 @@ def test_default_fallback_is_styled_without_a_css_prop():
         "react-error-boundary@6.1.6",
         "react-router",
     ]
-    assert str(boundary.fallback_render) == FALLBACK
+    fallback, _on_error = boundary.render()["props"]
+    assert fallback == f"fallbackRender:{FALLBACK}"
