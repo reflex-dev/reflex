@@ -268,12 +268,46 @@ class ConnectionModal(Component):
         """
         if not comp:
             comp = el.span(*default_connection_error())
+        has_modal_error = (
+            has_too_many_connection_errors
+            | has_storage_blocked_error
+            | has_hydration_payload_error
+        )
+        modal_dismissed_var_data = VarData.merge(
+            has_modal_error._get_all_var_data(),
+            VarData(
+                imports={"react": ("useEffect", "useState")},
+                hooks={
+                    "const [modalDismissed, setModalDismissed] = useState(false);": None,
+                    f"useEffect(() => {{ if (!({has_modal_error!s})) {{ setModalDismissed(false); }} }}, [connectErrors]);": None,
+                },
+            ),
+        )
+        modal_dismissed = Var(
+            "modalDismissed",
+            _var_type=bool,
+            _var_data=modal_dismissed_var_data,
+        ).to(BooleanVar)
+        show_modal = has_modal_error & ~modal_dismissed
         return cond(
-            has_too_many_connection_errors,
+            show_modal,
             el.dialog(
                 el.h2("Connection Error"),
                 comp,
-                open=has_too_many_connection_errors,
+                el.div(
+                    el.button(
+                        "Close",
+                        type="button",
+                        custom_attrs={
+                            "on_click": Var(
+                                _js_expr="() => setModalDismissed(true)",
+                                _var_data=modal_dismissed_var_data,
+                            ),
+                        },
+                    ),
+                    margin_top="0.75rem",
+                ),
+                open=show_modal,
                 z_index=9999,
             ),
         )

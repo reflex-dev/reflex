@@ -165,12 +165,29 @@ def test_connection_banner_and_modal_handle_storage_blocked_errors():
             }
         ],
     }
-    assert ConnectionModal.create().render() == {
+    modal = ConnectionModal.create()
+    expected_modal_cond = (
+        "pyAnd(pyOr(pyOr((connectErrors.length >= 2), "
+        "() => (((connectErrors.length > 0) && (connectErrors[connectErrors.length - 1].code === 'storage_blocked')))), "
+        "() => (connectErrors.some((error) => error.code === 'hydration_payload_too_large'))), "
+        "() => (!(modalDismissed)))"
+    )
+    assert [str(hook) for hook in modal._get_all_hooks()] == [
+        "const connectErrors = useContext(EventLoopContext)[1];",
+        "const [modalDismissed, setModalDismissed] = useState(false);",
+        (
+            "useEffect(() => { if (!(pyOr(pyOr((connectErrors.length >= 2), "
+            "() => (((connectErrors.length > 0) && (connectErrors[connectErrors.length - 1].code === 'storage_blocked')))), "
+            "() => (connectErrors.some((error) => error.code === 'hydration_payload_too_large'))))) "
+            "{ setModalDismissed(false); } }, [connectErrors]);"
+        ),
+    ]
+    assert modal.render() == {
         "name": "Fragment",
         "props": [],
         "children": [
             {
-                "cond_state": "(connectErrors.length >= 2)",
+                "cond_state": expected_modal_cond,
                 "true_value": {
                     "name": "Fragment",
                     "props": [],
@@ -179,7 +196,7 @@ def test_connection_banner_and_modal_handle_storage_blocked_errors():
                             "name": '"dialog"',
                             "props": [
                                 'css:({ ["zIndex"] : 9999 })',
-                                "open:(connectErrors.length >= 2)",
+                                f"open:{expected_modal_cond}",
                             ],
                             "children": [
                                 {
@@ -191,6 +208,20 @@ def test_connection_banner_and_modal_handle_storage_blocked_errors():
                                     "name": '"span"',
                                     "props": [],
                                     "children": [expected_message],
+                                },
+                                {
+                                    "name": '"div"',
+                                    "props": ['css:({ ["marginTop"] : "0.75rem" })'],
+                                    "children": [
+                                        {
+                                            "name": '"button"',
+                                            "props": [
+                                                "onClick:() => setModalDismissed(true)",
+                                                'type:"button"',
+                                            ],
+                                            "children": [{"contents": '"Close"'}],
+                                        }
+                                    ],
                                 },
                             ],
                         }
