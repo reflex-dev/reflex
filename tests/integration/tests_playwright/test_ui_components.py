@@ -191,6 +191,19 @@ def UIComponentsApp(radix: bool = False):
         # Which look the element has.
         tone: rx.Var[Literal["calm", "loud"]]
 
+    class Chip(UIComponent):
+        """An element with a color of its own."""
+
+        styles: ClassVar[ComponentStyles] = {
+            "base": {
+                "background_color": tokens.accent[9],
+                "outline_color": tokens.focus[8],
+            },
+        }
+
+        # The accent color of the element.
+        color_scheme: rx.Var[str]
+
     def index():
         return rx.el.main(
             rx.ui.box("plain", id="plain"),
@@ -240,6 +253,9 @@ def UIComponentsApp(radix: bool = False):
                 id="nested",
             ),
             probe("after-probe"),
+            Chip.create("theme", id="chip-theme"),
+            Chip.create("red", id="chip-red", color_scheme="red"),
+            Chip.create("gray", id="chip-gray", color_scheme="gray"),
             rx.el.button("toggle", id="toggle", on_click=rx.toggle_color_mode),
         )
 
@@ -293,7 +309,9 @@ def UIComponentsApp(radix: bool = False):
                 themes.append(
                     rx.theme(id=f"radix-{index}", custom_attrs=label, **options)
                 )
-        return rx.el.main(*themes)
+        # The tokens no theme defines are on a page through what uses them.
+        uses = rx.ui.box(cursor=tokens.cursor.button, color=tokens.white.a[1])
+        return rx.el.main(*themes, uses)
 
     def buttons():
         return rx.fragment(
@@ -378,6 +396,7 @@ def UIComponentsApp(radix: bool = False):
                     appearance=ThemeState.appearance,  # pyright: ignore [reportArgumentType]
                     id="bound",
                 ),
+                Chip.create("bound", id="chip-bound", color_scheme=ThemeState.accent),
                 rx.el.button("change", id="change", on_click=ThemeState.change),
             )
 
@@ -649,20 +668,33 @@ def test_no_page_ships_the_stylex_runtime(prod_app: AppHarness):
 
     A value bound to state is a custom property, and a variant bound to state
     indexes a table of folded class names, so no script holds a call into
-    StyleX or a style object it reads at runtime: neither the literal page nor
-    the styled one, whose chunk holds the table.
+    StyleX: neither the literal page nor the styled one, whose element holds
+    the table.
     """
     scripts = _scripts(prod_app)
+    # No script holds the StyleX runtime, whose name minifying leaves alone.
     assert [
-        name for name, code in scripts.items() if re.search(r"stylex|\$\$css", code)
+        name for name, code in scripts.items() if re.search(r"stylex|styleq", code)
     ] == []
-    styled_chunks = [name for name in scripts if name.startswith("assets/_styled_")]
-    assert len(styled_chunks) == 1, sorted(scripts)
+    # A compiled style is only kept where a theme reads it: a theme is
+    # declared in a module of its own, so its classes are joined when the
+    # page loads. The pages without a theme of their own hold none.
+    assert [
+        name
+        for name, code in scripts.items()
+        if name.startswith(("assets/_literal_", "assets/_styled_", "assets/_index"))
+        and "$$css" in code
+    ] == []
     # The table of the variant, in the chunk that renders the element: the
-    # class names of each value.
-    (table,) = re.findall(
-        r"\{__proto__:null,calm:.*?,loud:.*?\}[^}]*\}", scripts[styled_chunks[0]]
-    )
+    # class names of each value. The element is in the module of the
+    # components the app keeps apart from their pages, which two pages load.
+    tables = [
+        (name.split("-")[0], table)
+        for name, code in scripts.items()
+        for table in re.findall(r"\{__proto__:null,calm:.*?,loud:.*?\}[^}]*\}", code)
+    ]
+    ((chunk, table),) = tables
+    assert chunk == f"assets/{prod_app.app_name}"
     assert re.fullmatch(
         r"\{__proto__:null,calm:\{className:`x\w+ x\w+`\}\.className,"
         r"loud:\{className:`x\w+ x\w+`\}\.className\}",
@@ -954,9 +986,6 @@ SWEEP_NAMES = [
     if name not in ("--panel-solid", "--color-panel-if-solid")
 ]
 
-# The custom properties of the modules the sweep page does not import.
-NOT_ON_THE_PAGE = ("--cursor-", "--white-")
-
 READ_SWEEP = """async ([scripts, names, prefix]) => {
     const { labels, mount, read } = await import(scripts + "probe.js");
     const container = document.createElement("div");
@@ -1057,19 +1086,7 @@ def test_tokens_resolve_as_under_radix_themes(
         if value.startswith("INVALID")
     ] == []
     assert _sweep_differences(radix, mixed) == []
-    # On its own, an app only has the custom properties of the modules it
-    # imports: nothing on the page uses a cursor or a white.
-    assert [
-        difference
-        for difference in _sweep_differences(radix, alone)
-        if not difference[1].startswith(NOT_ON_THE_PAGE)
-    ] == []
-    assert sorted({
-        label
-        for _, _, values in alone["themes"]
-        for label, value in zip(alone["labels"], values, strict=True)
-        if value.startswith("INVALID")
-    }) == sorted(name for name in SWEEP_NAMES if name.startswith(NOT_ON_THE_PAGE))
+    assert _sweep_differences(radix, alone) == []
 
 
 def test_radix_components_follow_the_rx_ui_theme(mixed_app: AppHarness, page: Page):
@@ -1137,6 +1154,31 @@ def test_theme_bound_to_state_follows_it(mixed_app: AppHarness, page: Page):
         "inherit",
         "contents",
     ]
+    # A component with a color bound to the same state: red 9.
+    chip = page.locator("#chip-bound")
+    expect(chip).to_have_css("background-color", "rgb(229, 72, 77)")
     page.locator("#change").click()
     expect(probe).to_have_css("color", "rgb(61, 214, 140)")
+    # Green 9, and step 8 of the focus ring that follows it.
+    expect(chip).to_have_css("background-color", "rgb(48, 164, 108)")
+    expect(chip).to_have_css("outline-color", "rgb(91, 185, 139)")
     assert read() == [SLATE_2["dark"], "dark", "rgb(17, 17, 19)", "dark", "contents"]
+
+
+def test_color_scheme_is_the_accent_of_one_element(ui_app: AppHarness, page: Page):
+    """A component with a color follows it, and the focus ring with it."""
+    _goto_theme_page(ui_app, page)
+    # Step 9 of the accent, then step 8 of the focus ring. The theme is
+    # indigo, and its gray is slate: a gray component keeps the indigo focus.
+    assert page.evaluate(
+        """() => Object.fromEntries(
+            [...document.querySelectorAll('[id^="chip-"]')].map((chip) => {
+                const style = getComputedStyle(chip);
+                return [chip.id, [style.backgroundColor, style.outlineColor]];
+            }),
+        )"""
+    ) == {
+        "chip-theme": ["rgb(62, 99, 221)", "rgb(141, 164, 239)"],
+        "chip-red": ["rgb(229, 72, 77)", "rgb(235, 142, 144)"],
+        "chip-gray": ["rgb(139, 141, 152)", "rgb(141, 164, 239)"],
+    }

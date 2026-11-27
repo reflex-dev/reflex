@@ -11,9 +11,9 @@ from reflex_base.plugins import CompileContext
 from reflex_base.utils.exceptions import ConfigError
 from reflex_base.utils.serializers import serialize
 from reflex_base.vars.base import Var
+from reflex_components_ui import tokens
 from reflex_components_ui.base import Part, UIComponent
 from reflex_components_ui.plugin import UIPlugin
-from reflex_components_ui import tokens
 from reflex_components_ui.style import ComponentStyles, StyleError
 from reflex_components_ui.themes import LiteralAccentColor, ThemeError
 

@@ -340,10 +340,12 @@ def test_theme_with_an_appearance_is_inside_the_element_of_its_class(
         f'className:({ThemeState.appearance!s}) + " " + sx_71b84cd269_c'
     ]
     assert bound.children[0].render()["props"] == [
-        'className:"reflex-ui-theme " + reflexUIClassName(spaceScope, '
-        "radiusScope, typographyScope, shadowScope, colorScope, focusScope, "
-        f'reflexUITheme.root, ({ThemeState.appearance!s}) !== "inherit" && '
-        f"reflexUITheme.background, reflexUITheme[{ThemeState.appearance!s}])"
+        (
+            'className:"reflex-ui-theme " + reflexUIClassName(spaceScope, '
+            "radiusScope, typographyScope, shadowScope, colorScope, focusScope, "
+            f'reflexUITheme.root, ({ThemeState.appearance!s}) !== "inherit" && '
+            f"reflexUITheme.background, reflexUITheme[{ThemeState.appearance!s}])"
+        )
     ]
 
 
