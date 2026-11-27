@@ -123,7 +123,7 @@ def test_code_solid(
     )
     assert component.render() == {
         "name": '"code"',
-        "props": ["className:sx_d6bd7d723a_c", '"data-variant":"solid"'],
+        "props": ["className:sx_16de2ef521_c", '"data-variant":"solid"'],
         "children": [{"contents": '"a"'}],
     }
     assert declared_styles(component) == [
@@ -149,6 +149,9 @@ def test_code_solid(
                 "::selection": "var(--accent-a11)",
             },
             "color": {"default": "var(--accent-1)", "::selection": "var(--accent-1)"},
+            "filter": {
+                "@media (hover: hover)": {":hover": "var(--rx-link-code-filter, none)"}
+            },
         }
     ]
 

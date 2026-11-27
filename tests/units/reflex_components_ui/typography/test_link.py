@@ -15,7 +15,7 @@ def test_link_internal(
     component = rx.ui.link("a", href="/docs")
     assert component.render() == {
         "name": "ReactRouterLink",
-        "props": ["className:sx_10205cfca6_c", 'to:"/docs"'],
+        "props": ["className:sx_b8b1ea03e8_c", 'to:"/docs"'],
         "children": [{"contents": '"a"'}],
     }
     assert declared_styles(component) == [
@@ -75,6 +75,10 @@ def test_link_internal(
             "--rx-link-code-solid": "var(--accent-10)",
             "--rx-link-code-soft": "var(--accent-a4)",
             "--rx-link-code-outline": "var(--accent-a2)",
+            "--rx-link-code-filter": (
+                "var(--rx-if-light, contrast(0.88) saturate(1.1) brightness(1.1)) "
+                "var(--rx-if-dark, contrast(0.88) saturate(1.3) brightness(1.18))"
+            ),
             "textDecorationLine": {
                 "default": "var(--rx-accent-link-line, none)",
                 ":focus-visible": "none",
@@ -96,7 +100,7 @@ def test_link_no_href(
     )
     assert component.render() == {
         "name": '"a"',
-        "props": ["className:sx_3534c54b5a_c", 'href:"#"'],
+        "props": ["className:sx_ee879616af_c", 'href:"#"'],
         "children": [{"contents": '"a"'}],
     }
     assert declared_styles(component) == [
@@ -166,6 +170,10 @@ def test_link_no_href(
             "--rx-link-code-solid": "var(--accent-10)",
             "--rx-link-code-soft": "var(--accent-a4)",
             "--rx-link-code-outline": "var(--accent-a2)",
+            "--rx-link-code-filter": (
+                "var(--rx-if-light, contrast(0.88) saturate(1.1) brightness(1.1)) "
+                "var(--rx-if-dark, contrast(0.88) saturate(1.3) brightness(1.18))"
+            ),
             "fontSize": "var(--font-size-2)",
             "--line-height": "var(--line-height-2)",
             "--letter-spacing": "var(--letter-spacing-2)",
@@ -201,7 +209,7 @@ def test_link_external(
     assert component.render() == {
         "name": "ReactRouterLink",
         "props": [
-            'className:sx_fb32bcfecb_c + " " + reflexUIClasses_e201574881',
+            'className:sx_271b4725e7_c + " " + reflexUIClasses_e201574881',
             'id:"home"',
             "ref:ref_home",
             "reloadDocument:true",
@@ -263,6 +271,10 @@ def test_link_external(
             "--rx-link-code-solid": "var(--accent-10)",
             "--rx-link-code-soft": "var(--accent-a4)",
             "--rx-link-code-outline": "var(--accent-a2)",
+            "--rx-link-code-filter": (
+                "var(--rx-if-light, contrast(0.88) saturate(1.1) brightness(1.1)) "
+                "var(--rx-if-dark, contrast(0.88) saturate(1.3) brightness(1.18))"
+            ),
             "textDecorationLine": {
                 "default": "none",
                 ":focus-visible": "none",
@@ -289,7 +301,7 @@ def test_link_as_child(
     )
     assert component.render() == {
         "name": '"button"',
-        "props": ["className:sx_27b53d9e29_c", 'href:"#"'],
+        "props": ["className:sx_8321e25311_c", 'href:"#"'],
         "children": [{"contents": '"a"'}],
     }
     assert declared_styles(component) == [
@@ -348,6 +360,10 @@ def test_link_as_child(
             "--rx-link-code-solid": "var(--accent-10)",
             "--rx-link-code-soft": "var(--accent-a4)",
             "--rx-link-code-outline": "var(--accent-a2)",
+            "--rx-link-code-filter": (
+                "var(--rx-if-light, contrast(0.88) saturate(1.1) brightness(1.1)) "
+                "var(--rx-if-dark, contrast(0.88) saturate(1.3) brightness(1.18))"
+            ),
             "textDecorationLine": "none",
         }
     ]

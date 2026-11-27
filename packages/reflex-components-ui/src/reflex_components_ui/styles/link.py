@@ -4,12 +4,14 @@ from typing import Any
 
 from reflex_components_ui import tokens
 from reflex_components_ui.style import ComponentStyles, unchecked
+from reflex_components_ui.styles.button import SOLID_HIGH_CONTRAST_HOVER_FILTER
 from reflex_components_ui.styles.text import TEXT_BASE
 from reflex_components_ui.styles.typography import (
     ACCENT_LINK,
     ACCENT_LINK_LINE,
     ACCENT_LINK_LINE_COLOR,
     ACCENT_SCOPE,
+    LINK_CODE_FILTER,
     LINK_CODE_OUTLINE,
     LINK_CODE_SOFT,
     LINK_CODE_SOLID,
@@ -86,6 +88,7 @@ LINK: ComponentStyles = {
         LINK_CODE_SOLID: tokens.accent[10],
         LINK_CODE_SOFT: tokens.accent.a[4],
         LINK_CODE_OUTLINE: tokens.accent.a[2],
+        LINK_CODE_FILTER: SOLID_HIGH_CONTRAST_HOVER_FILTER,
     }),
     "variants": {
         "size": SIZE,

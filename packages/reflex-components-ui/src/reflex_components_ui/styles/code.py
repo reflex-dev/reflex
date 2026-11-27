@@ -8,6 +8,7 @@ from reflex_components_ui.styles.typography import (
     ACCENT_SCOPE,
     ACCENT_SCOPE_HIGH_CONTRAST,
     ACCENT_TEXT,
+    LINK_CODE_FILTER,
     LINK_CODE_OUTLINE,
     LINK_CODE_SOFT,
     LINK_CODE_SOLID,
@@ -130,6 +131,12 @@ CODE: ComponentStyles = {
             "props": {"variant": "solid", "high_contrast": "true"},
             "style": {
                 "background_color": tokens.accent[12],
+                # Inside a link, the filter of a high-contrast solid button.
+                "filter": {
+                    "@media (hover: hover)": {
+                        ":hover": f"var({LINK_CODE_FILTER}, none)"
+                    },
+                },
                 "color": tokens.accent[1],
                 "_selection": {
                     "background_color": tokens.accent.a[11],
