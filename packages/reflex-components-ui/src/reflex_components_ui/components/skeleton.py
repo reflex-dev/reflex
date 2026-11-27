@@ -14,7 +14,7 @@ from reflex_components_core.core.breakpoints import Responsive
 from reflex_components_ui.base import UIComponent
 from reflex_components_ui.components.spinner import while_loading
 from reflex_components_ui.props import style_props
-from reflex_components_ui.style import ComponentStyles, Merged
+from reflex_components_ui.style import ComponentStyles
 from reflex_components_ui.styles.skeleton import SKELETON
 
 # The props that are the CSS property of the same name.
@@ -52,6 +52,10 @@ class Skeleton(UIComponent):
     max_height: Var[Responsive[str]] = field(doc="The maximum height of the skeleton")
 
     _memoization_mode = MemoizationMode(recursive=False)
+
+    # The element a skeleton is rendered as keeps its own styles: it is also
+    # what shows once it is no longer loading.
+    _merges_slot: ClassVar[bool] = False
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -120,17 +124,6 @@ class Skeleton(UIComponent):
                 self._memoization_mode, recursive=False
             )
 
-    def _slot_styles(self) -> Merged:
-        """Get the styles of the skeleton alone.
-
-        Returns:
-            The styles the skeleton declares: the element it is rendered as
-            declares its own, and has the class names of both.
-        """
-        if self.style is not self._merged_for:
-            self._merge_styles()
-        return self._merged
-
     def _exclude_props(self) -> list[str]:
         """Keep the props that are not attributes off the element.
 
@@ -168,9 +161,10 @@ def _has_radius(child: Any) -> bool:
     Returns:
         True if the styles of the element set its radius.
     """
-    if not isinstance(child, UIComponent):
+    element_styles = getattr(child, "_element_styles", None)
+    if element_styles is None:
         return False
-    style = child._element_styles().style.style
+    style = element_styles().style.style
     return "borderRadius" in style or "borderTopLeftRadius" in style
 
 

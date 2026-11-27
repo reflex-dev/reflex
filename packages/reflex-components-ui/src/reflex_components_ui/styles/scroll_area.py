@@ -51,23 +51,38 @@ _ALWAYS: list[CompoundStyle] = [
 
 # The area scrolls natively: the scrollbars are the ones of the browser, thin
 # and in the grays Radix Themes draws its own with.
-SCROLL_AREA: ComponentStyles = {
-    "base": unchecked({
+# The box of an area, without the way it scrolls.
+SCROLL_BOX: Any = unchecked({
+    "box_sizing": "border-box",
+    "display": "flex",
+    "flex_direction": "column",
+    "position": "relative",
+    "width": "100%",
+    "height": "100%",
+    "scrollbar_width": "thin",
+    "scrollbar_color": f"{gray.a[8]} {gray.a[3]}",
+    ":focus-visible": {
+        "outline_width": "2px",
+        "outline_style": "solid",
+        "outline_color": tokens.focus[8],
+        "outline_offset": "-2px",
+    },
+})
+
+# What is inside is laid out as in any block, as wide as it needs and at
+# least as wide as the area.
+SCROLL_CONTENT: ComponentStyles = {
+    "base": {
         "box_sizing": "border-box",
-        "display": "flex",
-        "flex_direction": "column",
-        "position": "relative",
-        "width": "100%",
-        "height": "100%",
-        "scrollbar_width": "thin",
-        "scrollbar_color": f"{gray.a[8]} {gray.a[3]}",
-        ":focus-visible": {
-            "outline_width": "2px",
-            "outline_style": "solid",
-            "outline_color": tokens.focus[8],
-            "outline_offset": "-2px",
-        },
-    }),
+        "display": "block",
+        "width": "fit-content",
+        "min_width": "100%",
+        "flex_grow": 1,
+    }
+}
+
+SCROLL_AREA: ComponentStyles = {
+    "base": SCROLL_BOX,
     "variants": {
         "scrollbars": {
             scrollbars: unchecked(_overflow(scrollbars, always=False))
@@ -76,17 +91,5 @@ SCROLL_AREA: ComponentStyles = {
     },
     "defaults": {"scrollbars": "both"},
     "compound": _ALWAYS,
-    "parts": {
-        # What is inside is laid out as in any block, as wide as it needs
-        # and at least as wide as the area.
-        "content": {
-            "base": {
-                "box_sizing": "border-box",
-                "display": "block",
-                "width": "fit-content",
-                "min_width": "100%",
-                "flex_grow": 1,
-            }
-        },
-    },
+    "parts": {"content": SCROLL_CONTENT},
 }

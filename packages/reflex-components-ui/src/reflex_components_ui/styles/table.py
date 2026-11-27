@@ -6,7 +6,7 @@ from typing import Any
 
 from reflex_components_ui import tokens
 from reflex_components_ui.style import ComponentStyles, unchecked
-from reflex_components_ui.styles.scroll_area import SCROLL_AREA
+from reflex_components_ui.styles.scroll_area import SCROLL_BOX, SCROLL_CONTENT
 
 gray = tokens.gray
 
@@ -51,8 +51,6 @@ _SIZES: dict[str, tuple[str, str, str, str, str]] = {
     ),
 }
 
-_scroll_parts: Any = SCROLL_AREA["parts"]
-
 TABLE_ROOT: ComponentStyles = {
     "variants": {
         "size": {
@@ -86,13 +84,13 @@ TABLE_ROOT: ComponentStyles = {
         # box of a scroll area, which scrolls natively.
         "scroll": {
             "base": {
-                **SCROLL_AREA["base"],
+                **SCROLL_BOX,
                 "overflow_x": "auto",
                 "overflow_y": "auto",
                 "overscroll_behavior_x": "contain",
             },
         },
-        "content": _scroll_parts["content"],
+        "content": SCROLL_CONTENT,
         "table": {
             "base": unchecked({
                 _ROW_BACKGROUND: "transparent",

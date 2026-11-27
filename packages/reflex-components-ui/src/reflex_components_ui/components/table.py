@@ -135,7 +135,7 @@ class BaseCell(UIComponent):
         Returns:
             The cell.
         """
-        style_props(cls._display_name(), props, _WIDTH_PROPS)
+        style_props("rx.ui.table cell", props, _WIDTH_PROPS)
         return super().create(*children, **props)
 
 

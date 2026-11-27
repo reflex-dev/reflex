@@ -181,7 +181,14 @@ _PANEL: dict[str, Any] = {
     "backdrop_filter": tokens.panel.backdrop_filter,
 }
 
-_SIZES = {"1": (3, 4), "2": (4, 4), "3": (5, 5), "4": (6, 5), "5": (8, 6)}
+# The padding and the radius of each size.
+_SIZES: dict[str, tuple[str, str]] = {
+    "1": (tokens.space[3], tokens.radius[4]),
+    "2": (tokens.space[4], tokens.radius[4]),
+    "3": (tokens.space[5], tokens.radius[5]),
+    "4": (tokens.space[6], tokens.radius[5]),
+    "5": (tokens.space[8], tokens.radius[6]),
+}
 
 _INSET_PADDING = f"calc(var({_PADDING}) - var({_BORDER}))"
 _GHOST_MARGIN = f"calc(0px - var({_PADDING}))"
@@ -269,10 +276,10 @@ CARD: ComponentStyles = {
     "variants": {
         "size": {
             size: unchecked({
-                _PADDING: tokens.space[space],
-                _RADIUS: tokens.radius[radius],
+                _PADDING: padding,
+                _RADIUS: radius,
             })
-            for size, (space, radius) in _SIZES.items()
+            for size, (padding, radius) in _SIZES.items()
         },
         "variant": {
             "surface": unchecked({
