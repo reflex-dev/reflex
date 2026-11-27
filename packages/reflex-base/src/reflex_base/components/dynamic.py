@@ -6,7 +6,11 @@ import json
 from typing import TYPE_CHECKING, Any, Union
 
 from reflex_base import constants
-from reflex_base.registry import RegistrationContext, _default_bundled_libraries
+from reflex_base.registry import (
+    RegistrationContext,
+    _default_bundled_libraries,
+    _eager_bundled_libraries,
+)
 from reflex_base.utils import console, imports
 from reflex_base.utils.exceptions import DynamicComponentMissingLibraryError
 from reflex_base.utils.format import format_library_name
@@ -302,9 +306,9 @@ def load_dynamic_serializer():
 
         module_code_lines.insert(0, "const React = window.__reflex.react;")
         # evalReactComponent loads these optional libraries before the import;
-        # the default libraries are always in window.__reflex.
+        # the other default libraries are always in window.__reflex.
         optional_libraries = sorted(
-            bundled_library_paths.difference(_default_bundled_libraries())
+            bundled_library_paths.difference(_eager_bundled_libraries())
         )
 
         function_line = next(

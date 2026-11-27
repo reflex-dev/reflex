@@ -3367,13 +3367,11 @@ ERROR_BOUNDARY_MEMO_HASH = re.compile(r"(?<=Errorboundary_errorboundary_)[0-9a-f
 
 # What every app root imports after the imports of its app wraps.
 APP_ROOT_TEMPLATE_IMPORTS = [
-    'import {jsx} from "@emotion/react"',
     'import { defaultColorMode } from "$/utils/context";',
     "import { ThemeProvider } from '$/utils/react-theme';",
     "import { Layout as AppLayout } from './_document';",
     "import { Outlet } from 'react-router';",
     'import * as React from "react";',
-    'import * as emotion_react from "@emotion/react";',
     'import * as utils_context from "$/utils/context";',
     'import * as utils_context_registry from "$/utils/context-registry";',
     'import * as utils_state from "$/utils/state";',
@@ -3407,7 +3405,7 @@ def test_stateless_app_imports_no_backend_connection(mocker: MockerFixture) -> N
     mocker.patch("reflex.compiler.compiler.is_prod_mode", return_value=True)
     app = App(theme=None, enable_state=False)
     app_wrap_imports = [
-        'import {Fragment,StrictMode,useEffect} from "react"',
+        'import {Fragment,StrictMode,createElement as jsx,useEffect} from "react"',
         'import {EventLoopProvider,StateProvider} from "$/utils/context"',
         (
             "import {Errorboundary_errorboundary_<hash>} "
@@ -3427,7 +3425,6 @@ def test_stateless_app_imports_no_backend_connection(mocker: MockerFixture) -> N
             "EventLoopContext, StateStoreContext, registerApp, eventLoop } "
             'from "$/utils/context-registry"'
         ),
-        'import { jsx } from "@emotion/react";',
     ]
 
     toast_page = rx.el.button("Notify", on_click=rx.toast("Hello"))
@@ -3463,7 +3460,7 @@ def test_stateful_app_imports_the_backend_connection(mocker: MockerFixture) -> N
 
     app = App(theme=None)
     app_wrap_imports = [
-        'import {Fragment,StrictMode,useEffect} from "react"',
+        'import {Fragment,StrictMode,createElement as jsx,useEffect} from "react"',
         'import {EventLoopProvider,StateProvider} from "$/utils/context"',
         (
             "import {Errorboundary_errorboundary_<hash>} "
@@ -3491,7 +3488,6 @@ def test_stateful_app_imports_the_backend_connection(mocker: MockerFixture) -> N
             "EventLoopContext, StateStoreContext, registerApp, eventLoop } "
             'from "$/utils/context-registry"'
         ),
-        'import { jsx } from "@emotion/react";',
     ]
 
     app.toaster = rx.toast.provider()

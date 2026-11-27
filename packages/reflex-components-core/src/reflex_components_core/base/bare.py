@@ -180,6 +180,15 @@ class Bare(Component):
                 refs |= component._get_all_refs()
         return refs
 
+    def _renders_css_prop(self) -> bool:
+        """Whether the component renders an element with a ``css`` prop.
+
+        Returns:
+            False: a bare value renders no element of its own, and its children
+            answer for theirs.
+        """
+        return False
+
     def _render(self) -> CommonTag:
         contents = (
             Var.create(self.contents)

@@ -5,6 +5,7 @@ from typing import Any, ClassVar, Literal
 
 import pytest
 from reflex_base.components.component import Component
+from reflex_base.components.dynamic import _RENDERING_DYNAMIC_COMPONENT
 from reflex_base.components.memo import MEMOS
 from reflex_base.config import get_config
 from reflex_base.plugins import CompileContext
@@ -24,8 +25,7 @@ from reflex.compiler import compiler
 PAGE = """import * as stylex from "@stylexjs/stylex"
 import "$/reflex-ui/colors/jade.stylex.js"
 import "$/reflex-ui/colors/ruby.stylex.js"
-import {Fragment,useEffect} from "react"
-import {jsx} from "@emotion/react"
+import {Fragment,createElement as jsx,useEffect} from "react"
 
 
 
@@ -48,8 +48,7 @@ export default Component;
 
 # A page whose only element was moved into a module of its own.
 MEMO_PAGE = """import {Button_button_f1bbe1600e526de2c75f843fcd30a1d1} from "$/utils/components/Button_button_f1bbe1600e526de2c75f843fcd30a1d1"
-import {Fragment,useEffect} from "react"
-import {jsx} from "@emotion/react"
+import {Fragment,createElement as jsx,useEffect} from "react"
 
 
 
@@ -74,8 +73,7 @@ import {isTrue,mergeSlotProps} from "$/utils/state"
 import {useStateContext} from "$/utils/context-registry"
 import * as stylex from "@stylexjs/stylex"
 import "$/reflex-ui/colors/ruby.stylex.js"
-import {jsx} from "@emotion/react"
-import {Fragment,memo,useEffect} from "react"
+import {Fragment,createElement as jsx,memo,useEffect} from "react"
 
 
 
@@ -102,8 +100,7 @@ RX_MEMO_MODULE = """
 import {isTrue} from "$/utils/state"
 import * as stylex from "@stylexjs/stylex"
 import "$/reflex-ui/colors/ruby.stylex.js"
-import {jsx} from "@emotion/react"
-import {Fragment,memo,useEffect} from "react"
+import {Fragment,createElement as jsx,memo,useEffect} from "react"
 
 
 
@@ -130,8 +127,7 @@ DYNAMIC_MODULE = (
     "//__reflex_evaluate:[]\n"
     "const React = window.__reflex.react;\n"
     "\n"
-    "const {jsx} = window.__reflex['@emotion/react']\n"
-    "const {Fragment,useEffect} = window.__reflex['react']\n"
+    "const {Fragment,createElement: jsx,useEffect} = window.__reflex['react']\n"
     "const {pyOr} = window.__reflex['$/utils/state']\n"
     "\n"
     "export default function MySSRComponent () {\n"
@@ -767,8 +763,7 @@ import {focusScope} from "$/reflex-ui/themes/focus.js"
 import {useRegisteredRef} from "$/utils/state"
 import {accentGray} from "$/reflex-ui/themes/accent/gray.js"
 import {Chip_span_a1f191971c1d0b090104807deb864e69} from "$/utils/components/Chip_span_a1f191971c1d0b090104807deb864e69"
-import {Fragment,useEffect} from "react"
-import {jsx} from "@emotion/react"
+import {Fragment,createElement as jsx,useEffect} from "react"
 
 
 
@@ -822,8 +817,7 @@ import {accentTomato} from "$/reflex-ui/themes/accent/tomato.js"
 import {accentViolet} from "$/reflex-ui/themes/accent/violet.js"
 import {accentYellow} from "$/reflex-ui/themes/accent/yellow.js"
 import {focusScope} from "$/reflex-ui/themes/focus.js"
-import {jsx} from "@emotion/react"
-import {Fragment,memo,useEffect} from "react"
+import {Fragment,createElement as jsx,memo,useEffect} from "react"
 
 
 
@@ -897,3 +891,20 @@ def test_dynamic_component_cannot_have_a_color_scheme():
         "the StyleX compiler. Render the component in a page and show it with "
         "rx.cond."
     )
+
+
+def test_element_never_asks_for_emotion(mocker):
+    """An rx.ui element has no ``css`` prop, and is not rendered to find out.
+
+    Its imports are also read where it cannot be rendered: for a component
+    held in state, before it is serialized as a dynamic component.
+    """
+    component = Button.create("hello", kind="soft", style={"padding": "4px"})
+    render = mocker.spy(Button, "_render")
+    token = _RENDERING_DYNAMIC_COMPONENT.set(True)
+    try:
+        imports = component._get_all_imports()
+    finally:
+        _RENDERING_DYNAMIC_COMPONENT.reset(token)
+    assert imports == {}
+    assert render.call_count == 0

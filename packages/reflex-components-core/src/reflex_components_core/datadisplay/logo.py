@@ -8,11 +8,11 @@ from reflex_components_core.core import color_mode_cond
 SVG_COLOR = color_mode_cond("#110F1F", "white")
 
 
-def svg_logo(color: str | Var[str] = SVG_COLOR, **props):
+def svg_logo(color: str | Var[str] | None = SVG_COLOR, **props):
     """A Reflex logo SVG.
 
     Args:
-        color: The color of the logo.
+        color: The color of the logo, or None to leave it to a stylesheet.
         props: Extra props to pass to the svg component.
 
     Returns:
@@ -31,6 +31,8 @@ def svg_logo(color: str | Var[str] = SVG_COLOR, **props):
         "M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z",
     ]
 
+    if color is not None:
+        props["fill"] = color
     return el.svg(
         *[logo_path(d) for d in paths],
         el.title("Reflex"),
@@ -38,7 +40,6 @@ def svg_logo(color: str | Var[str] = SVG_COLOR, **props):
         role="img",
         width=props.pop("width", "56"),
         height=props.pop("height", "12"),
-        fill=color,
         xmlns="http://www.w3.org/2000/svg",
         **props,
     )

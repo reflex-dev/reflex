@@ -37,6 +37,22 @@ def _default_bundled_libraries() -> list[str]:
     ]
 
 
+def _eager_bundled_libraries() -> list[str]:
+    """Return the default libraries every dynamic component can rely on.
+
+    Emotion is left out: only a dynamic component that renders a ``css`` prop
+    calls it, so it is loaded when one is evaluated.
+
+    Returns:
+        The default libraries an app loads before any dynamic component.
+    """
+    return [
+        library
+        for library in _default_bundled_libraries()
+        if library != "@emotion/react"
+    ]
+
+
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class RegisteredEventHandler:
     """A registered event handler, which includes the handler and its full name."""

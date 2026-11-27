@@ -6,6 +6,8 @@ from collections.abc import Generator
 
 import pytest
 from playwright.sync_api import Page, expect
+from reflex_components_core.core.banner import _PULSER_CSS
+from reflex_components_core.core.sticky import _BADGE_CSS
 
 import reflex.constants as constants
 import reflex.utils.prerequisites as prerequisites
@@ -108,9 +110,17 @@ def test_prerendered_head_preloads_no_script(scripts_app: AppHarness):
         preload_color_theme("system").render()["children"][0]["contents"]
     )
     stylesheet = "/assets/__reflex_global_styles-HASH.css"
+    # The rules of the connection indicator and the badge, which React hoists
+    # from where they are rendered into one element ahead of the stylesheet.
+    own_styles = (
+        '<style data-precedence="reflex" '
+        'data-href="rx-connection-pulser rx-sticky-badge">'
+        f"{_PULSER_CSS}{_BADGE_CSS}</style>"
+    )
     assert re.sub(r"-[\w-]{8}\.css", "-HASH.css", head) == (
         '<head><meta charSet="utf-8"/>'
         '<meta content="width=device-width, initial-scale=1" name="viewport"/>'
+        f"{own_styles}"
         f'<link as="style" href="{stylesheet}" rel="preload"/>'
         "<title>Index</title>"
         '<meta content="favicon.ico" property="og:image"/>'

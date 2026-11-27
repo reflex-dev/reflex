@@ -1,8 +1,10 @@
 """Tests for reflex_base.compiler.templates."""
 
+import pytest
 from reflex_base.compiler.templates import (
     _merge_state_hooks,
     _render_hooks,
+    _RenderUtils,
     vite_config_template,
 )
 from reflex_base.constants.state import FIELD_MARKER
@@ -189,3 +191,67 @@ def test_vite_config_template_two_vite_plugins():
         after_imports='import reactCompiler from "./vite-plugin-react-compiler.js";\n',
         react_compiler=True,
     )
+
+
+REACT_IMPORTS: list = [
+    {"lib": "react", "default": "", "rest": ["Fragment", "createElement as jsx"]},
+]
+
+
+@pytest.mark.parametrize(
+    ("imports", "code", "expected"),
+    [
+        pytest.param(
+            REACT_IMPORTS,
+            'jsx("div",{className:"css",style:{"--css":1}},"scss")',
+            'import {Fragment,createElement as jsx} from "react"',
+            id="no_css_key",
+        ),
+        pytest.param(
+            # Text that reads like the key is taken for one: Emotion renders
+            # the element as React would.
+            REACT_IMPORTS,
+            'jsx("p",{},"css: the language of style")',
+            'import {Fragment} from "react"\nimport {jsx} from "@emotion/react"',
+            id="css_key_in_text",
+        ),
+        pytest.param(
+            REACT_IMPORTS,
+            'jsx("div",{css:({ ["color"] : "red" })},)',
+            'import {Fragment} from "react"\nimport {jsx} from "@emotion/react"',
+            id="css_prop",
+        ),
+        pytest.param(
+            REACT_IMPORTS,
+            'const props = {"css": style};',
+            'import {Fragment} from "react"\nimport {jsx} from "@emotion/react"',
+            id="quoted_css_key",
+        ),
+        pytest.param(
+            REACT_IMPORTS,
+            'const props = {["css"] : style};',
+            'import {Fragment} from "react"\nimport {jsx} from "@emotion/react"',
+            id="computed_css_key",
+        ),
+        pytest.param(
+            [
+                *REACT_IMPORTS,
+                {"lib": "@emotion/react", "default": "", "rest": ["keyframes"]},
+            ],
+            "jsx(Icon,{css:style},)",
+            'import {Fragment} from "react"\nimport {jsx,keyframes} from "@emotion/react"',
+            id="css_prop_beside_another_emotion_import",
+        ),
+        pytest.param(
+            [{"lib": "react", "default": "", "rest": ["memo"]}],
+            "const style = {css: 1};",
+            'import {memo} from "react"',
+            id="module_without_jsx",
+        ),
+    ],
+)
+def test_css_key_in_a_module_makes_its_jsx_emotion(
+    imports: list, code: str, expected: str
+):
+    """Code that carries no imports still gets the ``jsx`` that applies ``css``."""
+    assert _RenderUtils.get_imports(imports, "", code) == expected

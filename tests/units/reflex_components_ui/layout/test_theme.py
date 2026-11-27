@@ -29,8 +29,7 @@ import {scaling100} from "$/reflex-ui/themes/scaling.js"
 import {colorScope,radiusScope,shadowScope,spaceScope,typographyScope} from "$/reflex-ui/themes/scope.js"
 import {theme as reflexUITheme} from "$/reflex-ui/themes/theme.js"
 import * as stylex from "@stylexjs/stylex"
-import {Fragment,useEffect} from "react"
-import {jsx} from "@emotion/react"
+import {Fragment,createElement as jsx,useEffect} from "react"
 
 import { defaultColorMode } from "$/utils/context";
 import { ThemeProvider } from '$/utils/react-theme';
@@ -92,8 +91,7 @@ import {colorScope,radiusScope,shadowScope,spaceScope,typographyScope} from "$/r
 import {theme as reflexUITheme} from "$/reflex-ui/themes/theme.js"
 import {useRegisteredRef} from "$/utils/state"
 import {radiusFull} from "$/reflex-ui/themes/radius.js"
-import {Fragment,useEffect} from "react"
-import {jsx} from "@emotion/react"
+import {Fragment,createElement as jsx,useEffect} from "react"
 
 
 
@@ -122,8 +120,7 @@ export default Component;
 
 BOUND_PAGE = """import {Themeelement_div_45c9f04fbd77a86b901df8ec7c9186f5} from "$/utils/components/Themeelement_div_45c9f04fbd77a86b901df8ec7c9186f5"
 import {Themeelement_div_110e113e071e5dc30028d2a466586629} from "$/utils/components/Themeelement_div_110e113e071e5dc30028d2a466586629"
-import {Fragment,useEffect} from "react"
-import {jsx} from "@emotion/react"
+import {Fragment,createElement as jsx,useEffect} from "react"
 
 
 
@@ -174,8 +171,7 @@ import {accentYellow} from "$/reflex-ui/themes/accent/yellow.js"
 import {focusScope} from "$/reflex-ui/themes/focus.js"
 import {colorScope,radiusScope,shadowScope,spaceScope,typographyScope} from "$/reflex-ui/themes/scope.js"
 import {theme as reflexUITheme} from "$/reflex-ui/themes/theme.js"
-import {jsx} from "@emotion/react"
-import {Fragment,memo,useEffect} from "react"
+import {Fragment,createElement as jsx,memo,useEffect} from "react"
 
 
 
@@ -228,8 +224,7 @@ import {focusScope} from "$/reflex-ui/themes/focus.js"
 import {graySand} from "$/reflex-ui/themes/gray/sand.js"
 import {colorScope,radiusScope,shadowScope,spaceScope,typographyScope} from "$/reflex-ui/themes/scope.js"
 import {theme as reflexUITheme} from "$/reflex-ui/themes/theme.js"
-import {jsx} from "@emotion/react"
-import {Fragment,memo,useEffect} from "react"
+import {Fragment,createElement as jsx,memo,useEffect} from "react"
 
 
 

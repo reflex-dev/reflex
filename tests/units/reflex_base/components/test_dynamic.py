@@ -10,7 +10,9 @@ from reflex_base.components.component import Component
 from reflex_base.registry import RegistrationContext, _default_bundled_libraries
 from reflex_base.utils.exceptions import DynamicComponentMissingLibraryError
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
+from reflex_base.utils.serializers import serialize
 
+import reflex as rx
 from reflex.components import dynamic as reflex_dynamic
 
 
@@ -188,3 +190,39 @@ def test_is_rendering_dynamic_component_only_while_one_is_serialized():
     seen.clear()
     Probe.create()._get_all_custom_code()
     assert seen == [False]
+
+
+def _dynamic_module_head(component: Component) -> list[str]:
+    """Get what a dynamic component loads before it renders.
+
+    Args:
+        component: The component to serialize.
+
+    Returns:
+        The lines of its module up to the component function.
+    """
+    code = serialize(component)
+    assert isinstance(code, str)
+    lines = code.splitlines()
+    return [
+        line
+        for line in lines[: lines.index("export default function MySSRComponent () {")]
+        if line
+    ]
+
+
+def test_dynamic_component_loads_emotion_only_for_a_css_prop():
+    """Emotion is one of the libraries a dynamic component loads on demand."""
+    assert _dynamic_module_head(rx.el.div("x")) == [
+        "//__reflex_evaluate:[]",
+        "const React = window.__reflex.react;",
+        "const {Fragment,createElement: jsx,useEffect} = window.__reflex['react']",
+        "const {pyOr} = window.__reflex['$/utils/state']",
+    ]
+    assert _dynamic_module_head(rx.el.div("x", style={"color": "red"})) == [
+        '//__reflex_evaluate:["@emotion/react"]',
+        "const React = window.__reflex.react;",
+        "const {Fragment,useEffect} = window.__reflex['react']",
+        "const {jsx} = window.__reflex['@emotion/react']",
+        "const {pyOr} = window.__reflex['$/utils/state']",
+    ]
