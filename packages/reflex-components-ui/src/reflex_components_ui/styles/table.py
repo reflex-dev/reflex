@@ -83,12 +83,12 @@ TABLE_ROOT: ComponentStyles = {
         # The table scrolls sideways when it is wider than its place: the
         # box of a scroll area, which scrolls natively.
         "scroll": {
-            "base": {
+            "base": unchecked({
                 **SCROLL_BOX,
                 "overflow_x": "auto",
                 "overflow_y": "auto",
                 "overscroll_behavior_x": "contain",
-            },
+            }),
         },
         "content": SCROLL_CONTENT,
         "table": {
