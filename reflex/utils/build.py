@@ -150,7 +150,7 @@ def _zip(
             files_to_zip += [
                 file
                 for file in root_directory.glob(glob)
-                if file.name not in files_to_exclude
+                if not _is_excluded_archive_path(file, excluded_file_ids)
             ]
     # Create a progress bar for zipping the component.
     progress = console.progress()
@@ -185,11 +185,13 @@ def zip_app(
         include_db_file: Whether to include the database file.
         backend_excluded_dirs: A tuple of files or directories to exclude from the backend zip.  Defaults to ().
     """
-    zip_dest_dir = zip_dest_dir or Path.cwd()
-    zip_dest_dir = Path(zip_dest_dir)
+    zip_dest_dir = Path(zip_dest_dir or Path.cwd())
+    zip_dest_dir.mkdir(parents=True, exist_ok=True)
+    # The backend zip archives the app directory, which may hold zip_dest_dir.
     files_to_exclude = {
-        Path(constants.ComponentName.FRONTEND.zip()).resolve(),
-        Path(constants.ComponentName.BACKEND.zip()).resolve(),
+        (directory / component_name.zip()).resolve()
+        for directory in (Path.cwd(), zip_dest_dir)
+        for component_name in constants.ComponentName
     }
 
     if frontend:

@@ -96,6 +96,98 @@ def test_zip_excludes_directory_symlink_aliases(tmp_path: Path):
         assert archive.namelist() == []
 
 
+def _make_exportable_app(root: Path):
+    """Create the smallest app directory that zip_app can export.
+
+    Args:
+        root: The app directory to populate.
+    """
+    (root / "app.py").write_text("print('app')")
+    static_dir = root / constants.Dirs.WEB / constants.Dirs.STATIC
+    static_dir.mkdir(parents=True)
+    (static_dir / "index.html").write_text("<html></html>")
+
+
+@pytest.mark.parametrize("leftover_zips", [False, True])
+@pytest.mark.parametrize("zip_dest_dir", ["dist", "dist/nested", ".web/backend"])
+def test_zip_app_leaves_its_zips_out_of_backend_zip(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    zip_dest_dir: str,
+    leftover_zips: bool,
+):
+    """Zips written to a zip_dest_dir inside the app must not be archived again."""
+    monkeypatch.chdir(tmp_path)
+    _make_exportable_app(tmp_path)
+    dest = tmp_path / zip_dest_dir
+    dest.mkdir(parents=True)
+    if leftover_zips:
+        # From an earlier export to the same directory.
+        (dest / "frontend.zip").write_bytes(b"old frontend")
+        (dest / "backend.zip").write_bytes(b"old backend")
+
+    build.zip_app(zip_dest_dir=zip_dest_dir)
+
+    with zipfile.ZipFile(dest / "backend.zip") as archive:
+        assert archive.namelist() == ["app.py"]
+    with zipfile.ZipFile(dest / "frontend.zip") as archive:
+        assert archive.namelist() == ["index.html"]
+
+
+def test_zip_app_leaves_zips_in_app_out_when_exporting_elsewhere(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Zips from an export to the app directory stay out of an export elsewhere."""
+    app_dir = tmp_path / "app"
+    app_dir.mkdir()
+    monkeypatch.chdir(app_dir)
+    _make_exportable_app(app_dir)
+    (app_dir / "frontend.zip").write_bytes(b"old frontend")
+    (app_dir / "backend.zip").write_bytes(b"old backend")
+    dest = tmp_path / "dist"
+    dest.mkdir()
+
+    build.zip_app(zip_dest_dir=dest)
+
+    with zipfile.ZipFile(dest / "backend.zip") as archive:
+        assert archive.namelist() == ["app.py"]
+
+
+def test_zip_app_excludes_backend_excluded_files_under_web_backend(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """--exclude-from-backend also applies to files under .web/backend."""
+    monkeypatch.chdir(tmp_path)
+    _make_exportable_app(tmp_path)
+    web_backend = tmp_path / constants.Dirs.WEB / constants.Dirs.BACKEND
+    web_backend.mkdir(parents=True)
+    (web_backend / "keep.txt").write_text("keep")
+    (web_backend / "secret.txt").write_text("secret")
+
+    build.zip_app(
+        frontend=False,
+        backend_excluded_dirs=((web_backend / "secret.txt").resolve(),),
+    )
+
+    with zipfile.ZipFile(tmp_path / "backend.zip") as archive:
+        assert sorted(archive.namelist()) == [".web/backend/keep.txt", "app.py"]
+
+
+def test_zip_app_creates_missing_zip_dest_dir(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """A zip_dest_dir that does not exist yet is created instead of crashing."""
+    monkeypatch.chdir(tmp_path)
+    _make_exportable_app(tmp_path)
+
+    build.zip_app(zip_dest_dir="out/nested")
+
+    with zipfile.ZipFile(tmp_path / "out" / "nested" / "backend.zip") as archive:
+        assert archive.namelist() == ["app.py"]
+    with zipfile.ZipFile(tmp_path / "out" / "nested" / "frontend.zip") as archive:
+        assert archive.namelist() == ["index.html"]
+
+
 def test_compress_static_output_overwrites_stale_sidecars(
     tmp_path: Path, mocker: MockerFixture
 ):
