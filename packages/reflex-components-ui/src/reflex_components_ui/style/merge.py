@@ -395,7 +395,8 @@ def _responsive_layer(
     holds from its breakpoint up, until another one replaces it. At each
     breakpoint the styles of the table are resolved for the values the props
     then have, compound styles included, and what changes from the breakpoint
-    before goes under its media query.
+    before goes under its media query. From there up the element looks as it
+    would with those values alone.
 
     Args:
         name: The display name of the component, for error messages.
@@ -428,6 +429,21 @@ def _responsive_layer(
             if query != "default":
                 at.setdefault(query, []).append((position, value))
     out: dict[str, LoweredValue] = {}
+
+    def put(prop: str, query: str, value: LoweredValue) -> None:
+        """Give a property its value from a breakpoint up.
+
+        Args:
+            prop: The property.
+            query: The media query of the breakpoint.
+            value: The value.
+        """
+        conditions = out.get(prop)
+        if conditions is None:
+            out[prop] = {query: value}
+        else:
+            conditions[query] = value
+
     current = list(keys)
     before = table.resolve(keys)
     for query in PROP_BREAKPOINTS.values():
@@ -439,11 +455,12 @@ def _responsive_layer(
         after = table.resolve(tuple(current))
         for prop, value in after.items():
             if prop not in before or freeze(before[prop]) != freeze(value):
-                conditions = out.get(prop)
-                if conditions is None:
-                    out[prop] = {query: value}
-                else:
-                    conditions[query] = value
+                put(prop, query, value)
+        for prop in before:
+            if prop not in after:
+                # What the values of this breakpoint do not set is what it is
+                # without the styles of the component.
+                put(prop, query, "revert-layer")
         before = after
     return out, ()
 
@@ -647,9 +664,7 @@ def _merge(
         }
 
     layers = (
-        []
-        if responsive is None
-        else [_responsive_layer(name, table, keys, responsive)]
+        [] if responsive is None else [_responsive_layer(name, table, keys, responsive)]
     )
     if layout:
         layers.append(lower_layer(name, None, layout))

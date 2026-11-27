@@ -80,3 +80,61 @@ _BOXED: dict[str, Any] = {
 EM: ComponentStyles = _inline(tokens.em, **_BOXED)
 STRONG: ComponentStyles = _inline(tokens.strong)
 QUOTE: ComponentStyles = _inline(tokens.quote, **_BOXED)
+
+# The layers of the shadow of a key in both appearances: where one appearance
+# has a layer of another size, the layer is transparent in the other.
+_NONE = "transparent"
+_KEY_SHADOW = ", ".join([
+    f"{layer} light-dark({light}, {dark})"
+    for layer, light, dark in (
+        ("inset 0 -0.05em 0.5em", tokens.gray.a[2], tokens.gray.a[3]),
+        ("inset 0 0.05em", tokens.white.a[12], tokens.gray.a[11]),
+        ("inset 0 0.25em 0.5em", tokens.gray.a[2], tokens.gray.a[2]),
+        ("inset 0 -0.05em", tokens.gray.a[6], _NONE),
+        ("inset 0 -0.1em", _NONE, tokens.black.a[11]),
+        ("0 0 0 0.05em", tokens.gray.a[5], _NONE),
+        ("0 0 0 0.075em", _NONE, tokens.gray.a[7]),
+        ("0 0.08em 0.17em", tokens.gray.a[7], tokens.black.a[12]),
+    )
+])
+
+KBD: ComponentStyles = {
+    "base": {
+        "display": "inline-flex",
+        "align_items": "center",
+        "justify_content": "center",
+        "flex_shrink": "0",
+        "font_family": tokens.default.font_family,
+        "font_weight": "normal",
+        "vertical_align": "text-top",
+        "white_space": "nowrap",
+        "user_select": "none",
+        "position": "relative",
+        "top": "-0.03em",
+        "font_size": "0.75em",
+        "min_width": "1.75em",
+        "line_height": "1.7em",
+        "box_sizing": "border-box",
+        "padding_left": "0.5em",
+        "padding_right": "0.5em",
+        "padding_bottom": "0.05em",
+        "word_spacing": "-0.1em",
+        "border_radius": f"calc({tokens.radius.factor} * 0.35em)",
+        "letter_spacing": f"var(--letter-spacing, {tokens.default.letter_spacing})",
+        # Not stretched by a flex or grid container.
+        "height": "fit-content",
+        "color": tokens.gray[12],
+        # The classic variant, the one a key has.
+        "background_color": tokens.gray[1],
+        "box_shadow": _KEY_SHADOW,
+    },
+    "variants": {
+        "size": {
+            str(step): {
+                "font_size": f"calc({tokens.font_size[step]} * 0.8)",
+                "--letter-spacing": tokens.letter_spacing[step],
+            }
+            for step in (1, 2, 3, 4, 5, 6, 7, 8, 9)
+        },
+    },
+}

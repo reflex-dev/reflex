@@ -114,3 +114,40 @@ def pyright(tmp_path: Path) -> Callable[[str], list[tuple[int, str, str]]]:
         ]
 
     return pyright
+
+
+@pytest.fixture
+def compiled() -> Callable[[Component], Component]:
+    """Give a component the styles a compile adds to it.
+
+    Returns:
+        A function from a component to itself, with the styles of its
+        ``add_style``.
+    """
+
+    def compiled(component: Component) -> Component:
+        component._add_style_recursive({})
+        return component
+
+    return compiled
+
+
+@pytest.fixture
+def declared_styles() -> Callable[[Any], list[dict[str, Any]]]:
+    """Collect the style each rx.ui element of a tree declares.
+
+    Returns:
+        A function from the root of a tree to the lowered style of each of
+        its rx.ui elements, parents before children.
+    """
+
+    def declared_styles(component: Any) -> list[dict[str, Any]]:
+        found = []
+        element_styles = getattr(component, "_element_styles", None)
+        if element_styles is not None:
+            found.append(element_styles().style.style)
+        for child in getattr(component, "children", ()):
+            found.extend(declared_styles(child))
+        return found
+
+    return declared_styles

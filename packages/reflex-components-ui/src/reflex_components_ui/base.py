@@ -125,9 +125,7 @@ def _join_class_names(first: Any, second: Any) -> Any:
     return Var(
         f'({first!s}) + " " + ({second!s})',
         _var_type=str,
-        _var_data=VarData.merge(
-            first._get_all_var_data(), second._get_all_var_data()
-        ),
+        _var_data=VarData.merge(first._get_all_var_data(), second._get_all_var_data()),
     )
 
 
@@ -393,8 +391,6 @@ class UIComponent(Component):
                 does not have exactly one child that renders an element.
         """
         as_child = _literal(getattr(self, "as_child", None))
-        if not as_child:
-            return
         name = self._display_name()
         if isinstance(as_child, Var):
             msg = (
@@ -403,12 +399,13 @@ class UIComponent(Component):
                 "between two components with rx.cond."
             )
             raise StyleError(msg)
+        if not as_child:
+            return
         children = self.children
         if (
             len(children) != 1
             or not isinstance(children[0], Component)
-            or type(children[0]).render
-            not in (Component.render, UIComponent.render)
+            or type(children[0]).render not in (Component.render, UIComponent.render)
         ):
             msg = (
                 f"{name}: as_child renders the only child in place of the "
@@ -425,7 +422,7 @@ class UIComponent(Component):
 
     @property
     def _slot(self) -> Component | None:
-        """Get the child the element is rendered as.
+        """The child the element is rendered as.
 
         Returns:
             The only child of an element with ``as_child``, as the tree has
@@ -654,7 +651,6 @@ class UIComponent(Component):
                 emitted, lookups=(*emitted.lookups, accent.classes)
             )
         return add_styles(tag, emitted)
-
 
     def render(self) -> dict:
         """Render the component, or the child that stands in its place.

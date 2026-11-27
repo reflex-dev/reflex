@@ -53,7 +53,10 @@ MATRIX = Matrix(
         "state": STATES,
     },
     sweep={
-        "size": ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+        "size": {
+            **{size: size for size in "123456789"},
+            "responsive": rx.breakpoints(initial="1", sm="6", lg="3"),
+        },
         "weight": ["light", "regular", "medium", "bold"],
         "trim": ["normal", "start", "end", "both"],
         "color_scheme": ACCENTS,
@@ -62,7 +65,6 @@ MATRIX = Matrix(
         "holds": ["code", "code-and-words"],
         "is_external": [True],
         "href": {"none": None, "external": "https://reflex.dev"},
-        "size": {"responsive": rx.breakpoints(initial="1", sm="6", lg="3")},
         "appearance": [DARK],
         "viewport": [520],
     },

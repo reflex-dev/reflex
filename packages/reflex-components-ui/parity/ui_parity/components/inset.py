@@ -100,7 +100,9 @@ def _server_render(run: Run) -> None:
     assert (inset.tag, inset.text) == ("div", "content")
 
 
-@CONTRACT.step("reaches the edges of the card with JavaScript disabled", on=NO_JAVASCRIPT)
+@CONTRACT.step(
+    "reaches the edges of the card with JavaScript disabled", on=NO_JAVASCRIPT
+)
 def _without_javascript(run: Run) -> None:
     _reaches_the_edges(run)
 

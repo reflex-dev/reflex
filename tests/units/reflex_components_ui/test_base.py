@@ -11,6 +11,7 @@ from reflex_base.plugins import CompileContext
 from reflex_base.utils.exceptions import ConfigError
 from reflex_base.utils.serializers import serialize
 from reflex_base.vars.base import Var
+from reflex_components_core.core.breakpoints import Responsive
 from reflex_components_ui import tokens
 from reflex_components_ui.base import Part, UIComponent
 from reflex_components_ui.plugin import UIPlugin
@@ -19,6 +20,7 @@ from reflex_components_ui.themes import LiteralAccentColor, ThemeError
 
 import reflex as rx
 from reflex.compiler import compiler
+from reflex.compiler.plugins.builtin import ApplyStylePlugin
 
 # A page whose elements use the tokens of two modules, two of them equally.
 PAGE = """import * as stylex from "@stylexjs/stylex"
@@ -897,3 +899,287 @@ def test_dynamic_component_cannot_have_a_color_scheme():
         "the StyleX compiler. Render the component in a page and show it with "
         "rx.cond."
     )
+
+
+class Tag(UIComponent, rx.el.elements.Span):
+    """A component with every kind of prop that changes its element."""
+
+    tag = "span"
+
+    styles: ClassVar[ComponentStyles] = {
+        "base": {"display": "inline-flex"},
+        "variants": {
+            "size": {"1": {"height": "1em"}, "2": {"height": "2em"}},
+            # A variant wins the name over the layout prop `align`.
+            "align": {"left": {"text_align": "left"}},
+        },
+    }
+
+    _as_tags: ClassVar[frozenset[str]] = frozenset(("span", "label"))
+
+    as_child: Var[bool]
+
+    as_: Var[Literal["span", "label", "kbd"]]
+
+    size: Var[Responsive[Literal["1", "2"]]]
+
+    align: Var[Literal["left"]]
+
+    spacing: Var[Literal["1", "2", "3"]] = Var.create("2")
+
+
+TAG_STYLE = {
+    "display": "inline-flex",
+    "rowGap": "var(--space-2)",
+    "columnGap": "var(--space-2)",
+}
+
+
+def test_element_class_gives_a_component_the_attributes_of_its_tag(
+    ui_plugin: UIPlugin, declared_styles: Callable[[Any], list[dict[str, Any]]]
+):
+    """The element's props are attributes, never styles."""
+    component = Tag.create("new", title="New", tab_index=0, hidden=True)
+    assert component.render() == {
+        "name": '"span"',
+        "props": [
+            "className:sx_b2180e046d_c",
+            "hidden:true",
+            "tabIndex:0",
+            'title:"New"',
+        ],
+        "children": [{"contents": '"new"'}],
+    }
+    assert declared_styles(component)[0] == TAG_STYLE
+
+
+def test_default_of_a_layout_prop_applies_until_the_element_sets_it(
+    ui_plugin: UIPlugin, declared_styles: Callable[[Any], list[dict[str, Any]]]
+):
+    assert declared_styles(Tag.create(spacing="1"))[0] == {
+        "display": "inline-flex",
+        "rowGap": "var(--space-1)",
+        "columnGap": "var(--space-1)",
+    }
+
+
+def test_prop_a_table_reads_is_a_variant_whatever_its_name(
+    ui_plugin: UIPlugin, declared_styles: Callable[[Any], list[dict[str, Any]]]
+):
+    assert declared_styles(Tag.create(align="left"))[0] == {
+        **TAG_STYLE,
+        "textAlign": "left",
+    }
+
+
+@pytest.mark.parametrize(
+    ("props", "message"),
+    [
+        (
+            {"size": "12"},
+            'rx.ui.tag: unknown size "12". Did you mean "2"? The values are "1", "2".',
+        ),
+        (
+            {"size": rx.breakpoints(initial="1", md="large")},
+            'rx.ui.tag: unknown size "large". The values are "1", "2".',
+        ),
+        (
+            {"spacing": "5"},
+            'rx.ui.tag: unknown spacing "5". The values are "1", "2", "3".',
+        ),
+        (
+            {"as_": "labl"},
+            (
+                'rx.ui.tag: unknown as_ "labl". Did you mean "label"? The values '
+                'are "span", "label", "kbd".'
+            ),
+        ),
+    ],
+)
+def test_value_a_prop_does_not_take_names_the_component_and_the_values(
+    props: dict[str, Any], message: str
+):
+    with pytest.raises(StyleError) as error:
+        Tag.create(**props)
+    assert str(error.value) == message
+
+
+@pytest.mark.parametrize(
+    ("as_", "tag"),
+    [
+        (None, '"span"'),
+        ("label", '"label"'),
+        # A tag Radix Themes does not render falls back to the component's.
+        ("kbd", '"span"'),
+        # Bound to state, the tag is an expression.
+        (Var("kind", _var_type=str), "kind"),
+    ],
+)
+def test_as_names_the_tag_of_the_element(ui_plugin: UIPlugin, as_: Any, tag: str):
+    component = Tag.create("new", as_=as_)
+    assert component.render() == {
+        "name": tag,
+        "props": ["className:sx_b2180e046d_c"],
+        "children": [{"contents": '"new"'}],
+    }
+
+
+def test_as_child_renders_the_child_with_the_props_and_styles_of_both(
+    ui_plugin: UIPlugin,
+):
+    """The props of the child win; the class names of both stand together."""
+    component = Tag.create(
+        rx.el.a("docs", href="/docs", title="Docs", class_name="mine"),
+        as_child=True,
+        title="A tag",
+        id="tag",
+        class_name="yours",
+        size="1",
+    )
+    assert component.render() == {
+        "name": "ReactRouterLink",
+        "props": [
+            'className:"yours mine " + sx_df8e5c49fb_c',
+            'id:"tag"',
+            "ref:ref_tag",
+            'title:"Docs"',
+            'to:"/docs"',
+        ],
+        "children": [{"contents": '"docs"'}],
+    }
+
+
+def test_as_child_merges_the_styles_of_an_rx_ui_child_over_its_own(
+    ui_plugin: UIPlugin, declared_styles: Callable[[Any], list[dict[str, Any]]]
+):
+    """One declaration holds the styles of both, the child's winning."""
+    child = Plain.create("inner", color="red", display="grid")
+    component = Tag.create(child, as_child=True, size="2", spacing="1")
+    assert declared_styles(component)[0] == {
+        "display": "grid",
+        "height": "2em",
+        "rowGap": "var(--space-1)",
+        "columnGap": "var(--space-1)",
+        "color": "red",
+    }
+    # The child declares nothing of its own.
+    assert declared_styles(child)[0] == {}
+    assert child.add_custom_code() == []
+    assert component.render() == {
+        "name": '"div"',
+        "props": ["className:sx_e7a15007dc_c"],
+        "children": [{"contents": '"inner"'}],
+    }
+
+
+def test_as_child_reaches_through_a_child_that_has_it_too(
+    ui_plugin: UIPlugin, declared_styles: Callable[[Any], list[dict[str, Any]]]
+):
+    component = Tag.create(
+        Tag.create(rx.el.a("docs", href="/docs"), as_child=True, size="1"),
+        as_child=True,
+        size="2",
+        id="outer",
+    )
+    assert declared_styles(component)[0] == {**TAG_STYLE, "height": "1em"}
+    assert component.render() == {
+        "name": "ReactRouterLink",
+        "props": [
+            "className:sx_df8e5c49fb_c",
+            'id:"outer"',
+            "ref:ref_outer",
+            'to:"/docs"',
+        ],
+        "children": [{"contents": '"docs"'}],
+    }
+
+
+@pytest.mark.parametrize(
+    ("children", "as_child", "message"),
+    [
+        (
+            (),
+            True,
+            (
+                "rx.ui.tag: as_child renders the only child in place of the element, "
+                "so it needs exactly one child that is an element, not none."
+            ),
+        ),
+        (
+            ("one", "two"),
+            True,
+            (
+                "rx.ui.tag: as_child renders the only child in place of the element, "
+                "so it needs exactly one child that is an element, not 2 children."
+            ),
+        ),
+        (
+            ("text",),
+            True,
+            (
+                "rx.ui.tag: as_child renders the only child in place of the element, "
+                "so it needs exactly one child that is an element, not a Bare."
+            ),
+        ),
+        (
+            ("text",),
+            Var("open", _var_type=bool),
+            (
+                "rx.ui.tag: as_child is bound to state, but the element is chosen at "
+                "compile time. Give it True or False, and choose between two "
+                "components with rx.cond."
+            ),
+        ),
+    ],
+)
+def test_as_child_needs_one_element_known_at_compile_time(
+    children: tuple[Any, ...], as_child: Any, message: str
+):
+    with pytest.raises(StyleError) as error:
+        Tag.create(*children, as_child=as_child)
+    assert str(error.value) == message
+
+
+class Centered(Tag):
+    """A component whose class adds a style when an app is compiled."""
+
+    def add_style(self) -> dict[str, Any] | None:
+        """Add the style of the class.
+
+        Returns:
+            The style.
+        """
+        return {"justify_content": "center", "display": "flex"}
+
+
+CENTERED_PAGE = """import * as stylex from "@stylexjs/stylex"
+import "$/reflex-ui/tokens/space.stylex.js"
+import {Fragment,useEffect} from "react"
+import {jsx} from "@emotion/react"
+
+
+
+const sx_95585a7173 = stylex.create({ s: {"display": "flex", "rowGap": "var(--space-2)", "columnGap": "var(--space-2)", "justifyContent": "center", "color": "red"} });
+const sx_95585a7173_c = stylex.props(sx_95585a7173.s).className;
+
+function Component() {
+
+
+  return (
+    jsx(Fragment,{},jsx("span",{className:sx_95585a7173_c},"new"),jsx("title",{}," | Index"),jsx("meta",{content:"",property:"og:image"},))
+  )
+}
+Component.displayName = "Component(/)";
+
+export default Component;
+"""
+
+
+def test_compile_merges_the_styles_it_gives_a_copy_of_the_component(
+    ui_plugin: UIPlugin, compile_page: Callable[..., CompileContext]
+):
+    """The style of ``add_style`` reaches the declaration of a compiled page."""
+    page = compile_page(
+        lambda: Centered.create("new", color="red"), ApplyStylePlugin(style={})
+    )
+    assert page.compiled_pages["/"].output_code == CENTERED_PAGE

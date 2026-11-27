@@ -986,6 +986,7 @@ def prop_breakpoint(name: str, prop: str, breakpoint: Any) -> str:
         )
         raise StyleError(msg) from None
 
+
 # The layout props: the style each one stands for, the longhands it sets, and
 # how its values are read.
 _LAYOUT: dict[str, tuple[str, tuple[str, ...], Callable[[Any], Any]]] = {

@@ -10,6 +10,7 @@ from ui_parity.contract import HYDRATED, NO_JAVASCRIPT, SERVER, Contract, Run
 from ui_parity.matrix import DARK, Matrix
 from ui_parity.samples import ACCENTS, PARAGRAPH
 
+
 def _text(namespace: Any, props: Mapping[str, Any]) -> Any:
     """Create a paragraph that wraps over several lines.
 
@@ -43,6 +44,13 @@ def _text(namespace: Any, props: Mapping[str, Any]) -> Any:
             " over the lazy dog, then naps in the sun.",
             **props,
         )
+    if nested == "kbd":
+        return namespace.text(
+            "Press ",
+            namespace.text.kbd("Shift + Tab"),
+            " to go back to the field before.",
+            **props,
+        )
     return namespace.text(PARAGRAPH, **props)
 
 
@@ -56,11 +64,29 @@ MATRIX = Matrix(
     sweep={
         "align": ["left", "center", "right"],
         "trim": ["normal", "start", "end", "both"],
-        "as_": ["p", "label", "div", "span", "b", "i", "u", "abbr", "cite", "del",
-                "em", "ins", "kbd", "mark", "s", "samp", "sub", "sup"],
+        "as_": [
+            "p",
+            "label",
+            "div",
+            "span",
+            "b",
+            "i",
+            "u",
+            "abbr",
+            "cite",
+            "del",
+            "em",
+            "ins",
+            "kbd",
+            "mark",
+            "s",
+            "samp",
+            "sub",
+            "sup",
+        ],
         "color_scheme": ACCENTS,
         "high_contrast": [True],
-        "nested": ["text", "high-contrast", "em", "strong", "quote", "span"],
+        "nested": ["text", "high-contrast", "em", "strong", "quote", "span", "kbd"],
         "size": {
             "responsive": rx.breakpoints(initial="1", sm="5", lg="3"),
         },
@@ -68,14 +94,19 @@ MATRIX = Matrix(
         "viewport": [520],
     },
     groups=[
-        {"color_scheme": ["ruby", "gray"], "high_contrast": [True],
-         "appearance": ["light", DARK]},
+        {
+            "color_scheme": ["ruby", "gray"],
+            "high_contrast": [True],
+            "appearance": ["light", DARK],
+        },
         {"color_scheme": ["ruby"], "nested": ["text", "high-contrast"]},
         {"trim": ["both", "start"], "size": ["2", "6"]},
-        {"nested": ["em", "strong", "quote"], "size": ["1", "5", "9"]},
-        {"size": {"responsive": rx.breakpoints(initial="1", sm="5", lg="3")},
-         "trim": {"responsive": rx.breakpoints(initial="both", md="normal")},
-         "viewport": [520, 800, 1100, 1280]},
+        {"nested": ["em", "strong", "quote", "kbd"], "size": ["1", "5", "9"]},
+        {
+            "size": {"responsive": rx.breakpoints(initial="1", sm="5", lg="3")},
+            "trim": {"responsive": rx.breakpoints(initial="both", md="normal")},
+            "viewport": [520, 800, 1100, 1280],
+        },
     ],
     stage=(260, 200),
     threshold=0,

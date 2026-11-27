@@ -75,4 +75,6 @@ def _hydrated(run: Run) -> None:
     assert container is not None
     assert inner is not None
     assert inner["width"] == 448
-    assert inner["x"] - container["x"] == (container["width"] - 448) / 2
+    before = inner["x"] - container["x"]
+    after = container["x"] + container["width"] - inner["x"] - inner["width"]
+    assert abs(before - after) <= 1

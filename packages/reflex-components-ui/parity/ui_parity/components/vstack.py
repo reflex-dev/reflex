@@ -46,7 +46,9 @@ MATRIX = Matrix(
         },
         {
             "direction": {
-                "responsive": rx.breakpoints(initial="column", sm="row", lg="column-reverse")
+                "responsive": rx.breakpoints(
+                    initial="column", sm="row", lg="column-reverse"
+                )
             },
             "spacing": {"responsive": rx.breakpoints(initial="1", xs="5", md="2")},
             "align": {"responsive": rx.breakpoints(initial="end", md="center")},

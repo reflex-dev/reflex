@@ -102,7 +102,8 @@ CONTRACT = Contract(
     render=lambda namespace: namespace.box(
         namespace.list.unordered(items=["one", "two"], id="unordered"),
         namespace.list.ordered(
-            namespace.list.item("first", id="first"), namespace.list.item("second"),
+            namespace.list.item("first", id="first"),
+            namespace.list.item("second"),
             id="ordered",
         ),
     ),

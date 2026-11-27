@@ -23,3 +23,9 @@
 #   cells       a shell pattern over the cell id; every cell when left out
 #   properties  the computed properties that differ, for "style"
 #   engines     as above
+
+[[look]]
+component = "kbd"
+check = "style"
+properties = ["box-shadow"]
+reason = "The shadow of rx.ui.text.kbd lists the layers of the light and the dark appearance, and the ones of the other appearance are transparent, so one value serves both. It paints the same."

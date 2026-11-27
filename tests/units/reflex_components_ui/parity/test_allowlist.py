@@ -2,6 +2,7 @@
 
 import pytest
 import reflex_components_ui
+from reflex_base.components.component import ComponentNamespace
 from ui_parity import allowlist
 from ui_parity.allowlist import (
     Allowlist,
@@ -214,6 +215,13 @@ def test_differences_markdown_lists_every_entry_by_component():
 
 def test_committed_allowlist_names_only_rx_ui_components():
     components = set(reflex_components_ui.__all__)
+    # A member of a namespace is listed by its own name: "kbd" is text.kbd.
+    for name in reflex_components_ui.__all__:
+        value = getattr(reflex_components_ui, name)
+        if isinstance(value, ComponentNamespace):
+            components.update(
+                member for member in dir(value) if not member.startswith("_")
+            )
     entries = allowlist.load()
     listed = {
         entry.component for entry in (*entries.api, *entries.contract, *entries.look)

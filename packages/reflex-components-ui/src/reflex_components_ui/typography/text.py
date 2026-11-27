@@ -12,7 +12,7 @@ from reflex_components_core.el import elements
 
 from reflex_components_ui.base import UIComponent
 from reflex_components_ui.style import ComponentStyles
-from reflex_components_ui.styles.text import EM, QUOTE, STRONG, TEXT
+from reflex_components_ui.styles.text import EM, KBD, QUOTE, STRONG, TEXT
 from reflex_components_ui.themes import LiteralAccentColor
 from reflex_components_ui.typography.base import (
     LiteralTextAlign,
@@ -98,6 +98,16 @@ class Em(UIComponent, elements.Em):
     styles: ClassVar[ComponentStyles] = EM
 
 
+class Kbd(UIComponent, elements.Kbd):
+    """Represents keyboard input or a hotkey."""
+
+    tag = "kbd"
+
+    styles: ClassVar[ComponentStyles] = KBD
+
+    size: Var[LiteralTextSize] = field(doc='Text size: "1" - "9"')
+
+
 class Quote(UIComponent, elements.Q):
     """A short inline quotation."""
 
@@ -119,6 +129,7 @@ class TextNamespace(ComponentNamespace):
 
     __call__ = staticmethod(Text.create)
     em = staticmethod(Em.create)
+    kbd = staticmethod(Kbd.create)
     quote = staticmethod(Quote.create)
     strong = staticmethod(Strong.create)
     span = staticmethod(Span.create)

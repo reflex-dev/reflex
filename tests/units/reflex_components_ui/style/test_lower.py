@@ -1461,3 +1461,48 @@ def test_design_tokens(style: Any, expected: dict[str, Any], imports: tuple[str,
     lowered = lower("rx.ui.card", style)
     assert lowered == Lowered(expected, imports)
     assert lowered.imports == imports
+
+
+@pytest.mark.parametrize(
+    ("layout", "message"),
+    [
+        (
+            {"p": {"tablet": "1"}},
+            (
+                'rx.ui.flex: prop "p" is given a value under "tablet", which is not a '
+                'breakpoint. Use "initial", "xs", "sm", "md", "lg" or "xl", or set a '
+                "style, which takes any media query."
+            ),
+        ),
+        (
+            {"gap": ["1"] * 7},
+            (
+                'rx.ui.flex: layout prop "gap" has 7 responsive values, but there are '
+                "only 6 breakpoints."
+            ),
+        ),
+    ],
+)
+def test_layout_prop_breakpoint_errors(layout: dict[str, Any], message: str):
+    with pytest.raises(StyleError) as error:
+        lower("rx.ui.flex", None, layout)
+    assert str(error.value) == message
+
+
+def test_layout_props_keep_the_breakpoints_of_radix_whatever_the_app_has():
+    """A prop is resolved as Radix Themes resolves it; a style follows the app."""
+    original = tuple(breakpoints_values)
+    set_breakpoints(("10px", "20px", "30px", "40px", "50px"))
+    try:
+        lowered = lower(
+            "rx.ui.flex",
+            {"width": rx.breakpoints(sm="2px")},
+            {"spacing_x": rx.breakpoints(sm="2"), "spacing_y": ["1", "3"]},
+        )
+    finally:
+        set_breakpoints(original)  # pyright: ignore [reportArgumentType]
+    assert lowered.style == {
+        "columnGap": {PROP_SM: "var(--space-2)"},
+        "rowGap": {"default": "var(--space-1)", PROP_XS: "var(--space-3)"},
+        "width": {"@media screen and (min-width: 20px)": "2px"},
+    }

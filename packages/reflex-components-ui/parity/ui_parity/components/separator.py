@@ -51,7 +51,9 @@ def _server_render(run: Run) -> None:
     assert run.server.element("semantic").attributes["role"] == "separator"
 
 
-@CONTRACT.step("is a line across its container with JavaScript disabled", on=NO_JAVASCRIPT)
+@CONTRACT.step(
+    "is a line across its container with JavaScript disabled", on=NO_JAVASCRIPT
+)
 def _without_javascript(run: Run) -> None:
     box = run.page.locator("#decorative").bounding_box()
     assert box is not None

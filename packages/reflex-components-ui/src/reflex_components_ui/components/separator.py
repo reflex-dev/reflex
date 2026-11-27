@@ -63,7 +63,9 @@ class Separator(UIComponent):
         if isinstance(decorative, LiteralVar):
             return tag if decorative._var_value else tag.add_props(role="separator")
         role = Var(f'({decorative!s} ? undefined : "separator")')
-        return tag.add_props(role=role._replace(merge_var_data=decorative._get_all_var_data()))
+        return tag.add_props(
+            role=role._replace(merge_var_data=decorative._get_all_var_data())
+        )
 
 
 # Alias to divider.

@@ -38,8 +38,7 @@ ACCENTS: tuple[str, ...] = (
 
 # Long enough to wrap over several lines in a frame.
 PARAGRAPH = (
-    "The quick brown fox jumps over the lazy dog, then naps in the warm "
-    "afternoon sun."
+    "The quick brown fox jumps over the lazy dog, then naps in the warm afternoon sun."
 )
 
 WORDS = ("The", "quick", "brown", "fox", "jumps", "over", "lazy")

@@ -21,9 +21,7 @@ def _flex(namespace: Any, props: Mapping[str, Any]) -> Any:
     Returns:
         The container.
     """
-    return namespace.flex(
-*tiles(), **props
-    )
+    return namespace.flex(*tiles(), **props)
 
 
 MATRIX = Matrix(
