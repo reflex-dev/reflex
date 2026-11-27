@@ -1,0 +1,48 @@
+# The intended differences between rx.ui and the Radix components it replaces.
+#
+# Every check of the parity harness reads this file. A difference listed here
+# passes; an entry that no longer matches a difference fails, so the file stays
+# the complete list, and the migration guide is generated from it
+# (`uv run python scripts/ui_parity.py differences`). Every entry needs a `reason`
+# written for a user of the components.
+#
+# [[api]]       a prop or an event trigger differs (tests/units/reflex_components_ui/test_api_parity.py)
+#   component   the name in both namespaces: "box" is rx.box and rx.ui.box
+#   kind        "prop" (one system lacks it), "type" (it takes other values) or "event"
+#   names       the props or event triggers
+#
+# [[contract]]  a step of a behaviour contract does not pass
+#   component
+#   step        the name of the step, as the contract declares it
+#   system      "rx.ui" (the default) or "rx": the system that does not pass
+#   engines     ["chromium", "firefox", "webkit"]; every engine when left out
+#
+# [[look]]      pixels, computed style or accessibility tree differ
+#   component
+#   check       "pixels", "style" or "a11y"
+#   cells       a shell pattern over the cell id; every cell when left out
+#   properties  the computed properties that differ, for "style"
+#   engines     as above
+
+[[api]]
+component = "box"
+kind = "prop"
+names = [
+  "access_key",
+  "auto_capitalize",
+  "content_editable",
+  "context_menu",
+  "dir",
+  "draggable",
+  "enter_key_hint",
+  "hidden",
+  "input_mode",
+  "item_prop",
+  "lang",
+  "role",
+  "slot",
+  "spell_check",
+  "tab_index",
+  "title",
+]
+reason = "rx.ui.box does not take the global HTML attributes as props yet. Pass them through custom_attrs until it does."
