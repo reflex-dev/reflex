@@ -9,6 +9,7 @@ import pytest
 from packaging import version
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.config import get_config
 from reflex_base.event import EventHandler
 from reflex_base.utils.exceptions import ReflexError, SystemPackageMissingError
 from reflex_base.vars.base import Var
@@ -646,17 +647,17 @@ def test_initialize_requirements_txt_preserves_existing_requirements(tmp_path):
     assert not pyproject_file.exists()
 
 
-def test_validate_app_name(tmp_path, mocker: MockerFixture):
+def test_validate_app_name(tmp_path, monkeypatch: pytest.MonkeyPatch):
     """Test that an error is raised if the app name is reflex or if the name is not according to python package naming conventions.
 
     Args:
         tmp_path: Test working dir.
-        mocker: Pytest mocker object.
+        monkeypatch: Pytest monkeypatch fixture.
     """
     reflex = tmp_path / "reflex"
     reflex.mkdir()
 
-    mocker.patch("os.getcwd", return_value=str(reflex))
+    monkeypatch.chdir(reflex)
 
     with pytest.raises(SystemExit):
         prerequisites.validate_app_name()
@@ -903,7 +904,7 @@ def test_compile_vite_config_reads_minify_env(
 ) -> None:
     """_compile_vite_config threads the VITE_MINIFY env var into the template."""
     monkeypatch.setenv(environment.VITE_MINIFY.name, "true" if minify else "false")
-    config = frontend_skeleton._compile_vite_config(prerequisites.get_config())
+    config = frontend_skeleton._compile_vite_config(get_config())
     assert f"minify: {'true' if minify else 'false'}," in config
 
 
