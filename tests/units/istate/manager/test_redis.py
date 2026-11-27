@@ -726,6 +726,15 @@ async def test_oplock_contention_queue(
     async def track_lock_waiter(
         manager: StateManagerRedis, key: bytes
     ) -> AsyncIterator[asyncio.Event]:
+        """Signal once both contenders have joined the lock queue.
+
+        Args:
+            manager: The state manager waiting for the lock.
+            key: The Redis lock key.
+
+        Yields:
+            The event signaled when the lock is released.
+        """
         nonlocal queued_waiters
         async with original_lock_waiter(manager, key) as lock_released_event:
             if manager is state_manager_2 and key == lock_key:

@@ -206,6 +206,11 @@ class _LinkedStatePatchShared(_LinkedStatePatchRoot):
 
     @rx.var
     def root_value(self) -> int:
+        """Read the inherited field from the current root state.
+
+        Returns:
+            The current root field value.
+        """
         return self.value
 
 
@@ -222,14 +227,29 @@ class _LinkedStatePatchIntervalShared(_LinkedStatePatchIntervalRoot):
 
     @rx.var(interval=60)
     def interval_value(self) -> int:
+        """Read the inherited field through an interval-cached computation.
+
+        Returns:
+            The current root field value.
+        """
         return self.value
 
     @rx.var(interval=60)
     def router_interval_value(self) -> str:
+        """Read the current router token through an interval-cached computation.
+
+        Returns:
+            The token from the router session.
+        """
         return self.router.session.client_token
 
     @rx.var
     def router_interval_dependent_value(self) -> str:
+        """Read a value derived from the interval-cached token.
+
+        Returns:
+            The token with the dependent value suffix.
+        """
         return self.router_interval_value + "-dependent"
 
 
@@ -238,10 +258,20 @@ class _LinkedStatePatchRouterRoot(BaseState):
 
     @rx.var
     def router_client_token(self) -> str:
+        """Read the token from the current router session.
+
+        Returns:
+            The router session's client token.
+        """
         return self.router.session.client_token
 
     @rx.var
     def unrelated_values(self) -> list[int]:
+        """Build a cached value independent of the router.
+
+        Returns:
+            The integers from zero through 999.
+        """
         return list(range(1000))
 
 
@@ -327,7 +357,11 @@ async def test_linked_state_patch_does_not_emit_unchanged_router_computed_var():
 async def test_linked_state_patch_skips_unrelated_computed_value_keys(
     monkeypatch: pytest.MonkeyPatch,
 ):
-    """Only router-dependent computed values need a cache comparison key."""
+    """Only router-dependent computed values need a cache comparison key.
+
+    Args:
+        monkeypatch: Fixture for observing cache key generation.
+    """
     private_tree = _LinkedStatePatchRouterRoot()
     linked_tree = _LinkedStatePatchRouterRoot()
     shared_state_name = _LinkedStatePatchRouterShared.get_name()
@@ -340,6 +374,14 @@ async def test_linked_state_patch_skips_unrelated_computed_value_keys(
     unrelated_key_calls = []
 
     def track_unrelated_value_key(value):
+        """Record comparisons of the value unrelated to the router.
+
+        Args:
+            value: The value being compared.
+
+        Returns:
+            The original comparison key.
+        """
         if value is unrelated_values:
             unrelated_key_calls.append(value)
         return delta_value_key(value)
@@ -371,16 +413,22 @@ async def test_linked_state_patch_restores_root_dirty_state_on_resolve_error():
     original_dirty_substates = set(private_tree.dirty_substates)
 
     async def raise_resolve_error():
+        """Simulate a failure during the temporary delta resolution.
+
+        Raises:
+            RuntimeError: The simulated resolution error.
+        """
         await asyncio.sleep(0)
         msg = "delta resolution failed"
         raise RuntimeError(msg)
 
     object.__setattr__(private_tree, "_get_resolved_delta", raise_resolve_error)
 
-    with pytest.raises(RuntimeError, match="delta resolution failed"):
+    with pytest.raises(RuntimeError) as exc_info:
         async with _patch_state(private_state, linked_state, full_delta=False):
             pass
 
+    assert str(exc_info.value) == "delta resolution failed"
     assert private_tree.dirty_vars == original_dirty_vars
     assert private_tree.dirty_substates == original_dirty_substates
     assert private_tree.substates[shared_state_name] is private_state
@@ -398,6 +446,11 @@ async def test_linked_state_patch_restores_descendant_dirty_state_on_resolve_err
     linked_state = linked_tree.substates[shared_state_name]
 
     async def raise_resolve_error():
+        """Fail the temporary resolution after marking the linked state dirty.
+
+        Raises:
+            RuntimeError: The simulated descendant resolution error.
+        """
         await asyncio.sleep(0)
         linked_state.dirty_vars.add(_PATCH_TEMPORARY_VAR)
         linked_state._mark_dirty()
@@ -406,10 +459,11 @@ async def test_linked_state_patch_restores_descendant_dirty_state_on_resolve_err
 
     object.__setattr__(private_tree, "_get_resolved_delta", raise_resolve_error)
 
-    with pytest.raises(RuntimeError, match="descendant delta resolution failed"):
+    with pytest.raises(RuntimeError) as exc_info:
         async with _patch_state(private_state, linked_state, full_delta=False):
             pass
 
+    assert str(exc_info.value) == "descendant delta resolution failed"
     assert linked_state.dirty_vars == set()
     assert linked_state.dirty_substates == set()
     assert private_tree.dirty_substates == set()
@@ -426,6 +480,11 @@ async def test_linked_state_patch_restores_descendant_dirty_state_after_resolve(
     linked_state = linked_tree.substates[shared_state_name]
 
     async def resolve_with_temporary_dirty_state():
+        """Mark the linked state dirty during the temporary resolution.
+
+        Returns:
+            An empty delta.
+        """
         await asyncio.sleep(0)
         linked_state.dirty_vars.add(_PATCH_TEMPORARY_VAR)
         linked_state._mark_dirty()
@@ -447,17 +506,32 @@ async def test_linked_state_patch_restores_descendant_dirty_state_after_resolve(
 async def test_linked_state_patch_preserves_synced_field_updates(
     clean_registration_context: RegistrationContext,
 ):
-    """Fields synchronized during refresh must remain dirty for the final delta."""
+    """Fields synchronized during refresh must remain dirty for the final delta.
+
+    Args:
+        clean_registration_context: Isolate the storage state classes for this test.
+    """
 
     class _StoragePatchRoot(BaseState):
+        """A router-dependent state that triggers temporary delta resolution."""
+
         @rx.var
         def router_value(self) -> str:
+            """Read the token from the current router session.
+
+            Returns:
+                The router session's client token.
+            """
             return self.router.session.client_token
 
     class _StoragePatchSource(_StoragePatchRoot):
+        """The linked state writing to the shared storage key."""
+
         value: str = rx.LocalStorage("", name="shared", sync=True)
 
     class _StoragePatchSibling(_StoragePatchRoot):
+        """The sibling receiving the synchronized storage value."""
+
         value: str = rx.LocalStorage("", name="shared", sync=True)
 
     private_tree = _StoragePatchRoot()
@@ -483,7 +557,10 @@ async def test_linked_state_patch_preserves_synced_field_updates(
     assert sibling_state.value == "updated"
     assert sibling_state.dirty_vars == {"value"}
     assert sibling_state.get_name() in private_tree.dirty_substates
-    assert delta[sibling_state.get_full_name()]["value" + FIELD_MARKER] == "updated"
+    assert delta == {
+        private_tree.get_full_name(): {"router_value" + FIELD_MARKER: ""},
+        sibling_state.get_full_name(): {"value" + FIELD_MARKER: "updated"},
+    }
 
 
 @pytest.mark.asyncio
@@ -501,6 +578,11 @@ async def test_linked_state_patch_preserves_interval_computed_refresh():
     resolve_delta = private_tree._get_resolved_delta
 
     async def resolve_with_dirty_child():
+        """Mark the linked child dirty before resolving the delta.
+
+        Returns:
+            The resolved delta.
+        """
         linked_state._mark_dirty()
         return await resolve_delta()
 
@@ -512,10 +594,13 @@ async def test_linked_state_patch_preserves_interval_computed_refresh():
 
     assert _PATCH_INTERVAL_VALUE_VAR in linked_state.dirty_vars
     assert private_tree.dirty_substates == {linked_state.get_name()}
-    assert (
-        _PATCH_INTERVAL_VALUE_VAR + FIELD_MARKER
-        in interval_delta[linked_state.get_full_name()]
-    )
+    assert interval_delta == {
+        linked_state.get_full_name(): {
+            _PATCH_INTERVAL_VALUE_VAR + FIELD_MARKER: 0,
+            _PATCH_ROUTER_INTERVAL_VALUE_VAR + FIELD_MARKER: "",
+            _PATCH_ROUTER_INTERVAL_DEPENDENT_VAR + FIELD_MARKER: "-dependent",
+        }
+    }
 
 
 @pytest.mark.asyncio
@@ -537,6 +622,11 @@ async def test_linked_state_patch_preserves_interval_refresh_during_async_router
     resolve_delta = private_tree._get_resolved_delta
 
     async def resolve_after_async_router_computation():
+        """Expire and refresh an interval value during asynchronous resolution.
+
+        Returns:
+            The resolved delta.
+        """
         await asyncio.sleep(0)
         object.__setattr__(linked_state, "value", 1)
         interval_var = _LinkedStatePatchIntervalShared.computed_vars[
@@ -556,10 +646,13 @@ async def test_linked_state_patch_preserves_interval_refresh_during_async_router
         interval_delta = private_tree.get_delta()
 
     assert _PATCH_INTERVAL_VALUE_VAR in linked_state.dirty_vars
-    assert (
-        _PATCH_INTERVAL_VALUE_VAR + FIELD_MARKER
-        in interval_delta[linked_state.get_full_name()]
-    )
+    assert interval_delta == {
+        linked_state.get_full_name(): {
+            _PATCH_INTERVAL_VALUE_VAR + FIELD_MARKER: 1,
+            _PATCH_ROUTER_INTERVAL_VALUE_VAR + FIELD_MARKER: "",
+            _PATCH_ROUTER_INTERVAL_DEPENDENT_VAR + FIELD_MARKER: "-dependent",
+        }
+    }
 
 
 @pytest.mark.asyncio
@@ -583,6 +676,11 @@ async def test_linked_state_patch_preserves_downstream_of_refreshed_interval_var
     resolve_delta = private_tree._get_resolved_delta
 
     async def resolve_after_router_computation():
+        """Change the router and refresh its dependent interval value.
+
+        Returns:
+            The resolved delta.
+        """
         await asyncio.sleep(0)
         private_tree.router = RouterData(session=SessionData(client_token="after"))
         interval_var = _LinkedStatePatchIntervalShared.computed_vars[
@@ -602,10 +700,13 @@ async def test_linked_state_patch_preserves_downstream_of_refreshed_interval_var
         interval_delta = private_tree.get_delta()
 
     assert _PATCH_ROUTER_INTERVAL_DEPENDENT_VAR in linked_state.dirty_vars
-    assert (
-        _PATCH_ROUTER_INTERVAL_DEPENDENT_VAR + FIELD_MARKER
-        in interval_delta[linked_state.get_full_name()]
-    )
+    assert interval_delta == {
+        linked_state.get_full_name(): {
+            _PATCH_INTERVAL_VALUE_VAR + FIELD_MARKER: 0,
+            _PATCH_ROUTER_INTERVAL_VALUE_VAR + FIELD_MARKER: "after",
+            _PATCH_ROUTER_INTERVAL_DEPENDENT_VAR + FIELD_MARKER: "after-dependent",
+        }
+    }
 
 
 @pytest.mark.asyncio
@@ -623,6 +724,11 @@ async def test_linked_state_patch_preserves_root_dependent_computed_refresh():
     resolve_delta = private_tree._get_resolved_delta
 
     async def resolve_with_root_change():
+        """Change the root field during temporary delta resolution.
+
+        Returns:
+            The resolved delta.
+        """
         private_tree.value = 1
         return await resolve_delta()
 
@@ -634,10 +740,9 @@ async def test_linked_state_patch_preserves_root_dependent_computed_refresh():
 
     assert _PATCH_ROOT_VALUE_VAR in linked_state.dirty_vars
     assert private_tree.dirty_substates == {linked_state.get_name()}
-    assert (
-        _PATCH_ROOT_VALUE_VAR + FIELD_MARKER
-        in root_dependent_delta[linked_state.get_full_name()]
-    )
+    assert root_dependent_delta == {
+        linked_state.get_full_name(): {_PATCH_ROOT_VALUE_VAR + FIELD_MARKER: 1}
+    }
 
 
 @pytest.mark.asyncio
@@ -665,6 +770,11 @@ async def test_linked_state_patch_restores_computed_cache_on_resolve_error():
     resolve_delta = private_tree._get_resolved_delta
 
     async def resolve_then_fail():
+        """Resolve the delta before simulating a failure.
+
+        Raises:
+            RuntimeError: The simulated error after the computed refresh.
+        """
         linked_state._mark_dirty()
         linked_state._was_touched = True
         await resolve_delta()
@@ -673,10 +783,11 @@ async def test_linked_state_patch_restores_computed_cache_on_resolve_error():
 
     object.__setattr__(private_tree, "_get_resolved_delta", resolve_then_fail)
 
-    with pytest.raises(RuntimeError, match="computed refresh failed"):
+    with pytest.raises(RuntimeError) as exc_info:
         async with _patch_state(private_state, linked_state, full_delta=False):
             assert private_tree.substates[shared_state_name] is linked_state
 
+    assert str(exc_info.value) == "computed refresh failed"
     assert linked_state.dirty_vars == set()
     assert linked_state._was_touched is was_touched_before
     assert (
