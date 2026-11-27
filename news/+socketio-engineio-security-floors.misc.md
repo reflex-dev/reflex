@@ -1,0 +1,1 @@
+Raise the minimum `python-engineio` to 4.13.2 and `python-socketio` to 5.16.2, the first releases without known security advisories, so installs that resolve the lowest allowed versions no longer pick up vulnerable ones.
