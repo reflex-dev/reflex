@@ -45,23 +45,33 @@ so there is still no compile step between this directory and an app.
 Several of the bugs found in this code came from state a function reads or writes
 without it appearing in its arguments. What there is, and where it is pinned:
 
-- **Module-level state in `utils/state.js`**: the event queue, the session
-  token, the socket warmed up before React mounts, the record of sent
-  localStorage values. Every mounted event loop and every drain shares them.
-  A test that needs a clean copy reloads the module (`vi.resetModules()`, as
-  `tests/state_connection.test.js` does). Code that awaits must not assume the
-  queue or the socket is as it left them.
-- **Work done on import**: `utils/state.js` creates the cookie reader, always;
-  publishes the client state store on `refs`, when there is a `document`; and
-  starts a socket transport, when there is a `window`. A production build
-  evaluates every module in node to prerender pages, so anything added here has
-  to load without either. `tests/public_api.test.js` imports each module in
-  node to keep it that way.
+- **Module-level state**: the event queue (`utils/event_loop.js`), and in
+  `utils/socket.js` the session token, the socket warmed up before React
+  mounts and the record of sent localStorage values. Every mounted event loop
+  and every drain shares them. A test that needs a clean copy reloads the
+  modules (`vi.resetModules()`, as `tests/state_connection.test.js` does).
+  Code that awaits must not assume the queue or the socket is as it left them.
+- **Work done on import**: `utils/state.js` publishes the client state store
+  on `refs`, when there is a `document`. `utils/socket.js` creates the cookie
+  reader, always; starts a socket transport, when there is a `window`; and
+  registers itself with `utils/state.js`. A production build evaluates every
+  module in node to prerender pages, so anything added here has to load
+  without either. `tests/public_api.test.js` imports each module in node to
+  keep it that way.
+- **Whether the app has state**: only the compiled context module of an app
+  with state imports `utils/socket.js`, so an app without state bundles
+  neither it nor socket.io and the cookie library. `utils/state.js` must
+  therefore never import it: it reaches the connection through the `backend`
+  registry in `utils/event_loop.js`, which stays empty in an app without
+  state. Its exports that need the connection (`connect`,
+  `hydrateClientStorage`) fail with a message there, and `useEventLoop` runs
+  the events the browser handles by itself.
+  `tests/state_without_backend.test.js` covers that side.
 - **Script scope**: event code sent by the backend (`rx.call_script`, event
   callbacks) runs through `runScript` in `utils/state.js`, which compiles it
   with the Function constructor and passes in every export of that module, the
   late-bound `addEvents`, the `socket`, `navigate` and `params` of the event
-  being applied, and the session `token`. A direct `eval` would see every
+  being applied, and the session `token` (undefined in an app without state). A direct `eval` would see every
   module local, but it stops the minifier from mangling the chunk that holds
   it. So a script sees those names and the globals, and nothing else. Renaming
   an export changes what compiled callbacks can call.

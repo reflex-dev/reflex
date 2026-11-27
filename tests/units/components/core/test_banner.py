@@ -1,3 +1,4 @@
+from reflex_base.components.app_wraps import collect_subtree_app_wraps
 from reflex_components_core.core.banner import (
     ConnectionBanner,
     ConnectionModal,
@@ -63,3 +64,16 @@ def test_connection_toaster_shows_hydration_errors_at_once():
     assert hydration_check < hooks.index("(connectErrors.length >= 2)")
     assert 'id: "hydration-payload-error"' in hooks
     assert "duration: Infinity" in hooks
+
+
+def test_connection_toaster_does_not_ask_for_the_toaster():
+    """A connection error alone is no reason to bundle the toaster."""
+    toaster = ConnectionToaster.create()
+    hooks = toaster._get_all_hooks()
+
+    # It shows through whichever toast function the app installed.
+    assert list(hooks)[:2] == [
+        "const connectErrors = useContext(EventLoopContext)[1];",
+        "const toast = refs['__toast'];",
+    ]
+    assert collect_subtree_app_wraps(toaster) == {}

@@ -6,10 +6,12 @@ import re
 import shutil
 import sys
 from pathlib import Path, PureWindowsPath
+from typing import Any
 
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.components.app_wraps import collect_subtree_app_wraps
 from reflex_base.components.component import BaseComponent, Component
 from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
 from reflex_base.components.memo import MEMOS
@@ -19,6 +21,7 @@ from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.plugins.sitemap import SitemapPlugin
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils import memo_paths
 from reflex_base.utils.console import PoorProgress
 from reflex_base.utils.exceptions import (
     DynamicRouteArgShadowsStateVarError,
@@ -34,6 +37,7 @@ from reflex_components_core.el.elements.metadata import Head, Link, Meta
 from reflex_components_core.el.elements.other import Html
 
 import reflex as rx
+from reflex.app import default_backend_exception_handler
 from reflex.compiler import compiler, utils
 from reflex.compiler.plugins import default_page_plugins
 from reflex.state import BaseState
@@ -2402,3 +2406,310 @@ def test_custom_code_may_declare_refs(auto_memoize: bool):
     assert any("const refs = {};" in code for _, code in memo_files)
     for code in modules:
         assert not _IMPORTS_REFS.search(code), code
+
+
+def _notify(message: str) -> rx.event.EventSpec:
+    """Send a toast, as a helper an event handler calls.
+
+    Args:
+        message: The text of the toast.
+
+    Returns:
+        The toast event.
+    """
+    return rx.toast.info(message)
+
+
+def _log(message: str) -> None:
+    """Do something other than sending a toast.
+
+    Args:
+        message: The text to print.
+    """
+    print(message)
+
+
+class _Notifier:
+    """A class whose method sends a toast."""
+
+    @staticmethod
+    def warn(message: str) -> rx.event.EventSpec:
+        """Send a warning toast.
+
+        Args:
+            message: The text of the toast.
+
+        Returns:
+            The toast event.
+        """
+        return rx.toast.warning(message)
+
+
+def _closing_over(send: Any) -> Any:
+    """Build a function that reaches ``send`` through its closure only.
+
+    Args:
+        send: The function to close over.
+
+    Returns:
+        A function calling ``send``.
+    """
+
+    def inner() -> Any:
+        return send("closed over")
+
+    return inner
+
+
+_send_error = rx.toast.error
+_notifier = _Notifier()
+_this_module = sys.modules[__name__]
+_closes_over_a_toast = _closing_over(rx.toast.success)
+_closes_over_print = _closing_over(print)
+
+
+@pytest.mark.parametrize(
+    ("root", "expected"),
+    [
+        (lambda: rx.toast("direct"), True),
+        (lambda: rx.toast.error("a level"), True),
+        (lambda: [(lambda text: rx.toast(text))(text) for text in "ab"], True),
+        (lambda: _send_error("an alias of a toast function"), True),
+        (lambda: _notify("a helper function"), True),
+        (lambda: _Notifier.warn("a helper class"), True),
+        (lambda: _notifier.warn("an instance of a helper class"), True),
+        (lambda: _this_module._notify("a helper reached through its module"), True),
+        (_closes_over_a_toast, True),
+        (_Notifier, True),
+        (staticmethod(_notify), True),
+        (rx.event.EventHandler(fn=_notify), True),
+        (lambda: _log("no toast"), False),
+        (lambda: rx.redirect("/elsewhere"), False),
+        (lambda: json.dumps({"module": "of the standard library"}), False),
+        (lambda: pytest.fail("an installed distribution is not followed"), False),
+        (_closes_over_print, False),
+        (dataclasses.dataclass, False),
+        ("not code", False),
+    ],
+)
+def test_references_toast(root: Any, expected: bool):
+    """A toast is found through the names code refers to, in the app's modules.
+
+    Args:
+        root: The function, handler or class to start from.
+        expected: Whether it reaches ``rx.toast``.
+    """
+    assert compiler._references_toast([root]) is expected
+
+
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        (__name__, True),
+        ("json", False),
+        ("reflex.app", False),
+        ("reflex_base.event", False),
+        ("reflex_components_sonner.toast", False),
+        ("pytest", False),
+        ("a_module_nothing_imported", False),
+    ],
+)
+def test_is_app_module(name: str, expected: bool):
+    """The app's modules are what is neither Reflex, standard nor installed.
+
+    Args:
+        name: The dotted name of a module.
+        expected: Whether it is the app's own code.
+    """
+    assert compiler._is_app_module(name) is expected
+
+
+def _toast_wrap(app: rx.App, page: Component | None = None) -> str | None:
+    """Resolve what an app puts in its app wrap to show toasts.
+
+    Args:
+        app: The app to resolve the app wraps of.
+        page: A page of the app, or None for an app with no toast call in a page.
+
+    Returns:
+        "toaster" for the toaster, "plain" for plain notices, None for neither.
+    """
+    wraps = compiler._resolve_app_wrap_components(
+        app, collect_subtree_app_wraps(page) if page is not None else {}
+    )
+    wrap = wraps.get((44, "ToasterProvider"))
+    if wrap is None:
+        return None
+    if isinstance(wrap, compiler._PlainToast):
+        return "plain"
+    assert [child.tag for child in wrap.children if isinstance(child, Component)] == [
+        memo_paths.mirrored_symbol("MemoizedToastProvider", compiler.__name__)
+    ]
+    return "toaster"
+
+
+def _toast_button() -> Component:
+    """Build a page that sends a toast from the frontend.
+
+    Returns:
+        A button whose click sends a toast.
+    """
+    return rx.el.button("Notify", on_click=rx.toast("Hello"))
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_toaster_of_an_app_without_state(mocker: MockerFixture):
+    """Without state, only a toast call in the frontend can send a toast."""
+    mocker.patch(
+        "reflex_base.config._get_config", return_value=rx.Config(app_name="testing")
+    )
+    app = rx.App(enable_state=False)
+
+    assert _toast_wrap(app) is None
+    assert _toast_wrap(app, rx.el.div("Static")) is None
+    assert _toast_wrap(app, _toast_button()) == "toaster"
+
+    app.extra_app_wraps[1, "Notify"] = lambda _stateful: _toast_button()
+    assert _toast_wrap(app) == "toaster"
+    del app.extra_app_wraps[1, "Notify"]
+
+    app.add_page(lambda: rx.el.div("Static"), route="/", on_load=rx.toast("Hi"))
+    assert _toast_wrap(app) == "toaster"
+    app._load_events["index"] = [lambda: _notify("From a function")]
+    assert _toast_wrap(app) == "toaster"
+    app._load_events["index"] = [lambda: rx.redirect("/elsewhere")]
+    assert _toast_wrap(app) is None
+    app._load_events.clear()
+
+    app.toaster = rx.toast.provider()
+    assert _toast_wrap(app) == "toaster"
+
+    app.toaster = None
+    assert _toast_wrap(app) is None
+    assert _toast_wrap(app, _toast_button()) is None
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_toaster_of_an_app_whose_handlers_send_no_toast(mocker: MockerFixture):
+    """With state and no toast found, toasts and connection errors show plainly."""
+    mocker.patch(
+        "reflex_base.config._get_config", return_value=rx.Config(app_name="testing")
+    )
+
+    class QuietState(rx.State):
+        """A state whose handlers send no toast."""
+
+        count: int = 0
+
+        @rx.event
+        def increment(self):
+            """Count up, then go elsewhere.
+
+            Returns:
+                The redirect event.
+            """
+            self.count += 1
+            return rx.redirect("/elsewhere")
+
+    app = rx.App()
+
+    assert _toast_wrap(app) == "plain"
+    assert _toast_wrap(app, rx.el.div(QuietState.count)) == "plain"
+    assert _toast_wrap(app, _toast_button()) == "toaster"
+
+    app.backend_exception_handler = lambda exception: _notify(str(exception))
+    assert _toast_wrap(app) == "toaster"
+    app.backend_exception_handler = default_backend_exception_handler
+
+    app.toaster = rx.toast.provider()
+    assert _toast_wrap(app) == "toaster"
+
+    app.toaster = None
+    assert _toast_wrap(app) is None
+
+
+@pytest.mark.parametrize("where", ["handler", "helper", "mixin", "substate"])
+@pytest.mark.usefixtures("clean_registration_context")
+def test_toaster_of_an_app_whose_backend_sends_a_toast(
+    where: str, mocker: MockerFixture
+):
+    """A toast an event handler can send bundles the toaster.
+
+    Args:
+        where: The code of the state tree that refers to the toast.
+        mocker: Fixture for configuring the test app.
+    """
+    mocker.patch(
+        "reflex_base.config._get_config", return_value=rx.Config(app_name="testing")
+    )
+
+    if where == "handler":
+
+        class HandlerState(rx.State):
+            """A state whose handler sends a toast."""
+
+            @rx.event
+            def notify(self):
+                """Send a toast.
+
+                Returns:
+                    The toast event.
+                """
+                return rx.toast("From the handler")
+
+    elif where == "helper":
+
+        class HelperState(rx.State):
+            """A state whose handler sends a toast through a method."""
+
+            @rx.event
+            def notify(self):
+                """Send what the helper method builds.
+
+                Returns:
+                    The toast event.
+                """
+                return self._build()
+
+            def _build(self):
+                return _notify("From a helper")
+
+    elif where == "mixin":
+
+        class Mixin(rx.State, mixin=True):
+            """A mixin whose handler sends a toast."""
+
+            @rx.event
+            def notify(self):
+                """Send a toast.
+
+                Returns:
+                    The toast event.
+                """
+                return rx.toast.success("From a mixin")
+
+        class MixedState(Mixin, rx.State):
+            """A state that takes its handler from the mixin."""
+
+    else:
+
+        class ParentState(rx.State):
+            """A state that sends no toast."""
+
+            @rx.event
+            def quiet(self):
+                """Do nothing."""
+
+        class ChildState(ParentState):
+            """A substate that sends a toast."""
+
+            @rx.event
+            def notify(self):
+                """Send a toast.
+
+                Returns:
+                    The toast event.
+                """
+                return rx.toast("From a substate")
+
+    assert _toast_wrap(rx.App()) == "toaster"

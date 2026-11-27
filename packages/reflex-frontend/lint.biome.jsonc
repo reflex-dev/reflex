@@ -71,6 +71,20 @@
       }
     },
     {
+      // The event loop over the socket was part of state.js, and its effects
+      // leave dependencies out for the same reason.
+      "includes": ["src/utils/socket.js"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnusedVariables": "off",
+            "noUnusedFunctionParameters": "off",
+            "useExhaustiveDependencies": "off"
+          }
+        }
+      }
+    },
+    {
       // The cookie tests write `document.cookie` to set up what the code reads.
       "includes": ["tests/**"],
       "linter": {

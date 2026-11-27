@@ -3,6 +3,9 @@
 Regression coverage for the frontend ``ReferenceError: queueEvents is not
 defined`` that fired when clicking a toast action/cancel button whose
 ``on_click`` was queued via a toast triggered directly from a frontend event.
+
+Also covers when the toaster is bundled at all: an app that sends a toast gets
+it, and an app that sends none shows a toast it did not expect as a plain notice.
 """
 
 from collections.abc import Generator
@@ -10,7 +13,8 @@ from collections.abc import Generator
 import pytest
 from playwright.sync_api import Page, expect
 
-from reflex.testing import AppHarness
+from reflex.testing import AppHarness, AppHarnessProd
+from tests.integration.utils import built_scripts, libraries_in_scripts, record_scripts
 
 
 def ToastApp():
@@ -309,3 +313,112 @@ def test_upload_callbacks(
     expect(page.locator("#upload-count")).to_have_text("2")
     expect(page.locator("#uploaded")).to_have_text("[]")
     assert not page_errors, f"Frontend raised unexpected errors: {page_errors}"
+
+
+def test_app_that_sends_toasts_bundles_the_toaster(toast_app: AppHarness, page: Page):
+    """An app with a toast call loads the toaster with the page.
+
+    Args:
+        toast_app: AppHarness running the test app.
+        page: Playwright page.
+    """
+    assert toast_app.frontend_url is not None
+    scripts = record_scripts(page)
+    page.goto(toast_app.frontend_url)
+    expect(page.locator("#token")).not_to_have_value("")
+
+    with_toaster = {"socket.io": True, "universal-cookie": True, "sonner": True}
+    assert libraries_in_scripts(scripts) == with_toaster
+    if isinstance(toast_app, AppHarnessProd):
+        assert libraries_in_scripts(built_scripts(toast_app)) == with_toaster
+
+
+def NoToastApp():
+    """App with state whose code names no toast, and sends one all the same."""
+    import reflex as rx
+
+    class NoToastState(rx.State):
+        count: int = 0
+
+        @rx.event
+        def increment(self):
+            self.count += 1
+
+        @rx.event
+        def surprise(self):
+            """Send a toast through a name the compiler cannot read.
+
+            Returns:
+                A warning toast.
+            """
+            send = getattr(rx, "to" + "ast")
+            return send.warning("Surprise", description="Sent anyway", duration=30000)
+
+    def index():
+        return rx.el.div(
+            rx.el.input(
+                value=NoToastState.router.session.client_token,
+                read_only=True,
+                id="token",
+            ),
+            rx.el.button(
+                NoToastState.count, id="count", on_click=NoToastState.increment
+            ),
+            rx.el.button("Surprise", id="surprise", on_click=NoToastState.surprise),
+        )
+
+    app = rx.App()
+    app.add_page(index)
+
+
+@pytest.fixture(scope="module")
+def no_toast_app(
+    app_harness_env: type[AppHarness], tmp_path_factory
+) -> Generator[AppHarness, None, None]:
+    """Start NoToastApp in dev or prod mode via AppHarness.
+
+    Args:
+        app_harness_env: AppHarness (dev) or AppHarnessProd (prod).
+        tmp_path_factory: pytest fixture for creating temporary directories.
+
+    Yields:
+        Running AppHarness instance.
+    """
+    with app_harness_env.create(
+        root=tmp_path_factory.mktemp("no_toast_app"),
+        app_source=NoToastApp,
+    ) as harness:
+        assert harness.app_instance is not None, "app is not running"
+        yield harness
+
+
+def test_app_that_sends_no_toast_leaves_the_toaster_out(
+    no_toast_app: AppHarness, page: Page
+):
+    """Handlers work without the toaster, and an unexpected toast shows plainly.
+
+    Args:
+        no_toast_app: AppHarness running the test app.
+        page: Playwright page.
+    """
+    assert no_toast_app.frontend_url is not None
+    page_errors: list[str] = []
+    page.on("pageerror", lambda exc: page_errors.append(str(exc)))
+    scripts = record_scripts(page)
+
+    page.goto(no_toast_app.frontend_url)
+    expect(page.locator("#token")).not_to_have_value("")
+    page.locator("#count").click()
+    expect(page.locator("#count")).to_have_text("1")
+
+    # The state runtime is loaded, the toaster is not.
+    without_toaster = {"socket.io": True, "universal-cookie": True, "sonner": False}
+    assert libraries_in_scripts(scripts) == without_toaster
+    if isinstance(no_toast_app, AppHarnessProd):
+        assert libraries_in_scripts(built_scripts(no_toast_app)) == without_toaster
+
+    page.locator("#surprise").click()
+    notice = page.locator("#reflex-plain-toasts-bottom-right > [role=status]")
+    expect(notice.locator("div")).to_have_text(["Surprise", "Sent anyway"])
+    expect(page.locator("[data-sonner-toast]")).to_have_count(0)
+    assert page_errors == []

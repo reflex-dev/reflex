@@ -114,5 +114,11 @@ Using the `rx.toast` function require to have a toast provider in your app.
 `rx.toast.provider` is a component that provides a context for displaying toasts. It should be placed at the root of your app.
 
 ```md alert warning
-# In most case you will not need to include this component directly, as it is already included in `rx.app` as the `overlay_component` for displaying connections errors.
+# In most case you will not need to include this component directly, as `rx.App` puts one at the root of the app.
+```
+
+The toaster is only bundled with an app that sends a toast: a page that calls `rx.toast`, an event handler that refers to it, or an `on_load` toast. An app with state that sends none shows connection errors, and any toast the compiler could not foresee, as plain notices. To bundle the toaster in every case, or to configure it, pass one to the app:
+
+```python
+app = rx.App(toaster=rx.toast.provider(position="top-center"))
 ```

@@ -1,0 +1,1 @@
+The connection to the backend moved out of `utils/state.js` into `utils/socket.js`, which only the compiled context of an app with state imports, so an app without state bundles neither it nor Socket.io and the cookie library. Every name `$/utils/state` exported is still exported from there.

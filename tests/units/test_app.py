@@ -33,6 +33,7 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pytest_mock import MockerFixture
 from reflex_base import otel
+from reflex_base.components.app_wraps import collect_subtree_app_wraps
 from reflex_base.components.component import Component
 from reflex_base.constants import Templates
 from reflex_base.constants.state import FIELD_MARKER
@@ -84,6 +85,7 @@ from reflex.app import (
 )
 from reflex.compiler.compiler import (
     _compile_app,
+    _compile_contexts,
     _memoize_stateful_app_wraps,
     _read_stateful_pages_marker,
     _resolve_app_wrap_components,
@@ -2703,6 +2705,8 @@ def test_app_wrap_compile_theme(
     app, web_dir = compilable_app
     mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
     app.theme = rx.theme(accent_color="plum")
+    # A toaster the app configures is in the chain whether or not a toast is sent.
+    app.toaster = rx.toast.provider()
     app._compile()
     app_js_contents = (
         web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
@@ -3141,6 +3145,8 @@ def test_compile_writes_app_wrap_memo_components(
     app, web_dir = compilable_app
 
     app.add_page(rx.box("Index"), route="/")
+    # A toaster the app configures is in the chain whether or not a toast is sent.
+    app.toaster = rx.toast.provider()
     app._compile()
 
     # The overlay/toast app wraps are framework ``@memo`` functions, so they
@@ -3355,6 +3361,149 @@ def test_event_provider_app_wrap_order(mocker: MockerFixture) -> None:
     event_loop_index = chain.index("jsx(EventLoopProvider")
     children_index = chain.rindex("children")
     assert state_index < event_loop_index < children_index
+
+
+ERROR_BOUNDARY_MEMO_HASH = re.compile(r"(?<=Errorboundary_errorboundary_)[0-9a-f]{32}")
+
+# What every app root imports after the imports of its app wraps.
+APP_ROOT_TEMPLATE_IMPORTS = [
+    'import {jsx} from "@emotion/react"',
+    'import { defaultColorMode } from "$/utils/context";',
+    "import { ThemeProvider } from '$/utils/react-theme';",
+    "import { Layout as AppLayout } from './_document';",
+    "import { Outlet } from 'react-router';",
+    'import * as React from "react";',
+    'import * as emotion_react from "@emotion/react";',
+    'import * as utils_context from "$/utils/context";',
+    'import * as utils_context_registry from "$/utils/context-registry";',
+    'import * as utils_state from "$/utils/state";',
+]
+
+
+def _imports(code: str) -> list[str]:
+    """Get the import statements of a compiled module.
+
+    Args:
+        code: The source of the module.
+
+    Returns:
+        Its import statements in order, with the hash that names the error
+        boundary memo replaced by a placeholder.
+    """
+    return [
+        ERROR_BOUNDARY_MEMO_HASH.sub("<hash>", line)
+        for line in code.splitlines()
+        if line.startswith("import ")
+    ]
+
+
+def test_stateless_app_imports_no_backend_connection(mocker: MockerFixture) -> None:
+    """An app without state imports neither the socket nor the toaster.
+
+    A toast call in a page adds the toaster, and nothing else.
+    """
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    mocker.patch("reflex.compiler.compiler.is_prod_mode", return_value=True)
+    app = App(theme=None, enable_state=False)
+    app_wrap_imports = [
+        'import {Fragment,StrictMode,useEffect} from "react"',
+        'import {EventLoopProvider,StateProvider} from "$/utils/context"',
+        (
+            "import {Errorboundary_errorboundary_<hash>} "
+            'from "$/utils/components/Errorboundary_errorboundary_<hash>"'
+        ),
+    ]
+
+    assert _imports(compile_app_root_from_page_wraps(app, {})) == [
+        *app_wrap_imports,
+        *APP_ROOT_TEMPLATE_IMPORTS,
+    ]
+    assert _imports(_compile_contexts(None, None)) == [
+        'import { useContext, useMemo, useState, createElement, useEffect } from "react"',
+        'import { applyDelta, useEventLoop, refs } from "$/utils/state"',
+        (
+            "import { ColorModeContext, UploadFilesContext, DispatchContext, "
+            "EventLoopContext, StateStoreContext, registerApp, eventLoop } "
+            'from "$/utils/context-registry"'
+        ),
+        'import { jsx } from "@emotion/react";',
+    ]
+
+    toast_page = rx.el.button("Notify", on_click=rx.toast("Hello"))
+    toast_symbol = memo_paths.mirrored_symbol(
+        "MemoizedToastProvider", _compile_app.__module__
+    )
+    assert _imports(
+        compile_app_root_from_page_wraps(app, collect_subtree_app_wraps(toast_page))
+    ) == [
+        *app_wrap_imports,
+        f'import {{{toast_symbol}}} from "$/app_components/reflex/compiler/compiler"',
+        *APP_ROOT_TEMPLATE_IMPORTS,
+    ]
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_stateful_app_imports_the_backend_connection(mocker: MockerFixture) -> None:
+    """An app with state imports the socket, and plain notices for the toaster.
+
+    A toaster the app configures takes the place of the plain notices.
+    """
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    mocker.patch("reflex.compiler.compiler.is_prod_mode", return_value=True)
+
+    # The only state of the app, so that no handler sends a toast.
+    class CountState(rx.State):
+        count: int = 0
+
+        @rx.event
+        def increment(self):
+            self.count += 1
+
+    app = App(theme=None)
+    app_wrap_imports = [
+        'import {Fragment,StrictMode,useEffect} from "react"',
+        'import {EventLoopProvider,StateProvider} from "$/utils/context"',
+        (
+            "import {Errorboundary_errorboundary_<hash>} "
+            'from "$/utils/components/Errorboundary_errorboundary_<hash>"'
+        ),
+    ]
+    overlay_symbol = memo_paths.mirrored_symbol(
+        "DefaultOverlayComponents", default_overlay_component.__module__
+    )
+    overlay_import = f'import {{{overlay_symbol}}} from "$/app_components/reflex/app"'
+
+    assert _imports(compile_app_root_from_page_wraps(app, {})) == [
+        *app_wrap_imports,
+        'import {refs} from "$/utils/state"',
+        'import plainToast from "$/utils/helpers/plain_toast"',
+        overlay_import,
+        *APP_ROOT_TEMPLATE_IMPORTS,
+    ]
+    assert _imports(_compile_contexts(app._state, None)) == [
+        'import { useContext, useMemo, useState, createElement, useEffect } from "react"',
+        'import { applyDelta, ReflexEvent, refs } from "$/utils/state"',
+        'import { hydrateClientStorage, useEventLoop } from "$/utils/socket"',
+        (
+            "import { ColorModeContext, UploadFilesContext, DispatchContext, "
+            "EventLoopContext, StateStoreContext, registerApp, eventLoop } "
+            'from "$/utils/context-registry"'
+        ),
+        'import { jsx } from "@emotion/react";',
+    ]
+
+    app.toaster = rx.toast.provider()
+    toast_symbol = memo_paths.mirrored_symbol(
+        "MemoizedToastProvider", _compile_app.__module__
+    )
+    assert _imports(compile_app_root_from_page_wraps(app, {})) == [
+        *app_wrap_imports,
+        f'import {{{toast_symbol}}} from "$/app_components/reflex/compiler/compiler"',
+        overlay_import,
+        *APP_ROOT_TEMPLATE_IMPORTS,
+    ]
 
 
 def test_minimal_static_app_wrap_omits_state_providers(
@@ -3619,6 +3768,8 @@ def test_app_wrap_priority(
         return Fragment1.create(Fragment3.create())
 
     app.add_page(page)
+    # A toaster the app configures is in the chain whether or not a toast is sent.
+    app.toaster = rx.toast.provider()
     app._compile()
     app_js_contents = (
         web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
@@ -5631,11 +5782,11 @@ def test_client_error_event_name_matches_handler():
 
 
 def test_client_error_constants_match_frontend():
-    """The socket event and error types are duplicated as literals in state.js.
+    """The socket event and error types are duplicated as literals in socket.js.
 
     Nothing at runtime keeps the two definitions in sync, so pin them here.
     """
-    state_js = (Templates.Dirs.WEB_TEMPLATE / "utils/state.js").read_text()
+    state_js = (Templates.Dirs.WEB_TEMPLATE / "utils/socket.js").read_text()
     assert (
         f'const CLIENT_ERROR_EVENT = "{constants.SocketEvent.CLIENT_ERROR}"' in state_js
     )
