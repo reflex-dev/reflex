@@ -2272,6 +2272,55 @@ export const pyRstrip = (s, chars) => {
 export const pyStrip = (s, chars) =>
   chars == null ? s.trim() : pyRstrip(pyLstrip(s, chars), chars);
 
+const CASED_RE = /\p{Cased}/u;
+const CASE_IGNORABLE_RE = /\p{Case_Ignorable}/u;
+
+/***
+ * Whether the nearest character before (step -1) or after (step 1) a position
+ * that is not case-ignorable is cased.
+ * @param {string[]} chars The string's code points.
+ * @param {number} index The position.
+ * @param {number} step The direction to look in.
+ * @returns {boolean} Whether that character exists and is cased.
+ */
+const casedBeside = (chars, index, step) => {
+  for (let i = index + step; i >= 0 && i < chars.length; i += step) {
+    if (!CASE_IGNORABLE_RE.test(chars[i])) {
+      return CASED_RE.test(chars[i]);
+    }
+  }
+  return false;
+};
+
+/***
+ * Python-semantics str.title(): a character is upper-cased after a character
+ * that is not cased and lower-cased after one that is, so a word starts after
+ * a hyphen, an apostrophe, a digit or any whitespace.
+ * A capital sigma lower-cases to the final form by the rule Python's lower()
+ * uses, which looks past case-ignorable characters on both sides.
+ * @param {string} s The string.
+ * @returns {string} The title-cased string.
+ */
+export const pyTitle = (s) => {
+  const chars = Array.from(s);
+  let previousIsCased = false;
+  return chars
+    .map((char, i) => {
+      let mapped;
+      if (!previousIsCased) {
+        mapped = char.toUpperCase();
+      } else if (char === "\u03a3") {
+        const final = casedBeside(chars, i, -1) && !casedBeside(chars, i, 1);
+        mapped = final ? "\u03c2" : "\u03c3";
+      } else {
+        mapped = char.toLowerCase();
+      }
+      previousIsCased = CASED_RE.test(char);
+      return mapped;
+    })
+    .join("");
+};
+
 const SURROGATE_RE = /[\uD800-\uDFFF]/;
 
 /***

@@ -38,6 +38,7 @@ import {
   pyStrLength,
   pyStrSlice,
   pyStrSplit,
+  pyTitle,
   ReflexEvent,
   spreadArraysOrObjects,
 } from "$/utils/state";
@@ -154,6 +155,29 @@ describe("python string operations", () => {
     expect(pyStrChars("")).toEqual([]);
     expect(pyStrSplit("a😀b", "")).toEqual(["a", "😀", "b"]);
     expect(pyStrSplit("a b", " ")).toEqual(["a", "b"]);
+  });
+
+  test("title starts a word after any character that is not cased, like str.title", () => {
+    expect(pyTitle("jean-luc picard")).toBe("Jean-Luc Picard");
+    expect(pyTitle("hello\nworld\tagain")).toBe("Hello\nWorld\tAgain");
+    expect(pyTitle("HELLO wORLD")).toBe("Hello World");
+    expect(pyTitle("they're bill's")).toBe("They'Re Bill'S");
+    expect(pyTitle("1st place")).toBe("1St Place");
+    expect(pyTitle("")).toBe("");
+  });
+
+  test("title picks the sigma form from the whole string and counts code points", () => {
+    // A capital sigma that ends a word lower-cases to the final form, as in str.title.
+    expect(pyTitle("ΟΔΟΣ")).toBe("Οδος");
+    // A case-ignorable character between it and the next letter keeps it medial.
+    expect(pyTitle("ΟΣ'Α")).toBe("Οσ'Α");
+    expect(pyTitle("ΟΣ\u0301Α")).toBe("Οσ\u0301Α");
+    expect(pyTitle("ΑΣʰ'Β")).toBe("Ασʰ'Β");
+    // A letter that is cased and case-ignorable doesn't count as the cased one before it.
+    expect(pyTitle("ʰΣ")).toBe("ʰσ");
+    expect(pyTitle("\u{1F600}abc")).toBe("\u{1F600}Abc");
+    // Deseret letters are cased and outside the BMP.
+    expect(pyTitle("\u{10428}\u{10428} x")).toBe("\u{10400}\u{10428} X");
   });
 
   test("pyFlatMap iterates each result the way python does", () => {

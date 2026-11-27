@@ -1,0 +1,1 @@
+`StringVar.title()` now title-cases like Python's `str.title()`: a word starts after any character that has no case, such as a hyphen, an apostrophe, a digit or a newline, not only after a space, so `"jean-luc picard"` renders as `Jean-Luc Picard` instead of `Jean-luc Picard`.
