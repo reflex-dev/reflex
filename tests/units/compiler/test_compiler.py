@@ -11,7 +11,11 @@ import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
 from reflex_base.components.component import BaseComponent, Component
-from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
+from reflex_base.components.dynamic import (
+    _bundle_library,
+    bundle_library,
+    reset_bundled_libraries,
+)
 from reflex_base.components.memo import MEMOS
 from reflex_base.constants.base import LiteralColorMode
 from reflex_base.constants.compiler import PageNames
@@ -627,8 +631,10 @@ def test_compile_preserves_app_bundle_registrations(
         assert all("d3-format" in libraries for libraries in seen)
         assert "d3-format" in context.bundled_libraries
         _, code = compiler.compile_app_root(rx.el.div())
-        assert 'import * as d3_format from "d3-format";' in code
-        assert '"d3-format": d3_format' in code
+        assert (
+            '    "d3-format": () => import("$/utils/dynamic_libraries/d3_format")'
+            ".then((module) => module.default),"
+        ) in code.splitlines()
         assert "compile-only-library" in context.bundled_libraries
         assert "@radix-ui/themes" in context.bundled_libraries
 
@@ -704,8 +710,14 @@ def test_compile_app_root_uses_unique_window_library_aliases(
         _, code = compiler.compile_app_root(rx.el.div("hello"))
 
     if lazy:
-        assert '"foo.bar": () => import("foo.bar")' in code
-        assert '"foo/bar.mjs": () => import("foo/bar.mjs")' in code
+        loader = (
+            '    "{}": () => import("$/utils/dynamic_libraries/{}")'
+            ".then((module) => module.default),"
+        )
+        lines = code.splitlines()
+        assert loader.format("foo.bar", "foo_bar") in lines
+        assert loader.format("foo_bar", "foo_bar_2") in lines
+        assert loader.format("foo/bar.mjs", "foo_bar_mjs") in lines
     else:
         assert 'import * as foo_bar from "foo.bar";' in code
         assert 'import * as foo_bar_2 from "foo_bar";' in code
@@ -737,7 +749,9 @@ def test_compile_app_root_includes_radix_window_library_when_bundled(mocker):
     """Bundled Radix libraries should be exposed to window.__reflex."""
     mocker.patch(
         "reflex.compiler.compiler.get_config",
-        return_value=rx.Config(app_name="eager_libraries"),
+        return_value=rx.Config(
+            app_name="eager_libraries", frontend_lazy_bundled_libraries=False
+        ),
     )
     reset_bundled_libraries()
     try:
@@ -751,25 +765,272 @@ def test_compile_app_root_includes_radix_window_library_when_bundled(mocker):
         reset_bundled_libraries()
 
 
-def test_compile_app_root_can_defer_optional_window_libraries(mocker):
-    """Dynamic libraries need not force their entire exports into every page."""
+_APP_ROOT_HEAD = """
+import {jsx} from "@emotion/react"
+import {Fragment,useEffect} from "react"
+
+import { defaultColorMode } from "$/utils/context";
+import { ThemeProvider } from '$/utils/react-theme';
+import { Layout as AppLayout } from './_document';
+import { Outlet } from 'react-router';
+import * as React from "react";
+import * as emotion_react from "@emotion/react";
+import * as utils_context from "$/utils/context";
+import * as utils_context_registry from "$/utils/context-registry";
+import * as utils_state from "$/utils/state";
+"""
+
+_APP_ROOT_TAIL = """
+  return jsx(ThemeProvider, {defaultTheme: defaultColorMode, attribute: "class"},
+    jsx(AppWrap, {}, children)
+  );
+}
+
+
+function AppWrap({children}) {
+
+return (jsx("div",{},"hello"))
+}
+
+export function Layout({children}) {
+  return jsx(AppLayout, {}, jsx(ReflexProviders, {}, children));
+}
+
+// Used by entry.client.js when mount_target is configured: skips the document
+// shell (which renders react-router's <Meta>/<Scripts>/<Links> and requires a
+// framework router context) but keeps the runtime providers.
+export function EmbedLayout({children}) {
+  return jsx(ReflexProviders, {}, children);
+}
+
+export default function App() {
+  return jsx(Outlet, {});
+}
+
+"""
+
+_APP_ROOT_WITHOUT_LOADERS = (
+    _APP_ROOT_HEAD
+    + """
+
+
+
+function ReflexProviders({children}) {
+  useEffect(() => {
+    // Make contexts and state objects available globally for dynamic eval'd components
+    window.__reflex = {
+          "react": React,
+    "@emotion/react": emotion_react,
+    "$/utils/context": utils_context,
+    "$/utils/context-registry": utils_context_registry,
+    "$/utils/state": utils_state,
+    };
+  }, []);
+"""
+    + _APP_ROOT_TAIL
+)
+
+
+def _app_root_with_loaders(*loaders: str) -> str:
+    """Build the root.jsx that loads optional libraries on demand.
+
+    Args:
+        *loaders: The loader entry of each optional library, in order.
+
+    Returns:
+        The complete expected module.
+    """
+    return (
+        _APP_ROOT_HEAD
+        + """
+if (typeof window !== "undefined") {
+  window.__reflex = { ...window.__reflex,
+        "react": React,
+    "@emotion/react": emotion_react,
+    "$/utils/context": utils_context,
+    "$/utils/context-registry": utils_context_registry,
+    "$/utils/state": utils_state,
+  };
+  const loaders = {
+"""
+        + "".join(f"    {loader}\n" for loader in loaders)
+        + """  };
+  const pending = Object.create(null);
+  window.__reflex_load = (libraries = Object.keys(loaders)) => {
+    return Promise.all(libraries.filter((name) => Object.hasOwn(loaders, name) && !Object.hasOwn(window.__reflex, name)).map((name) => {
+      if (!pending[name]) {
+        pending[name] = loaders[name]().then((module) => {
+          window.__reflex[name] = module;
+        }).catch((error) => {
+          delete pending[name];
+          throw error;
+        });
+      }
+      return pending[name];
+    }));
+  };
+}
+
+
+
+
+function ReflexProviders({children}) {
+  \n"""
+        + _APP_ROOT_TAIL
+    )
+
+
+_RADIX_LOADER = '"@radix-ui/themes": () => import("$/utils/dynamic_libraries/radix_ui_themes").then((module) => module.default),'
+_D3_LOADER = '"d3-format": () => import("$/utils/dynamic_libraries/d3_format").then((module) => module.default),'
+_RADIX_MODULE = (
+    "radix_ui_themes.js",
+    'import * as library from "@radix-ui/themes";\nexport default library;\n',
+)
+_D3_MODULE = (
+    "d3_format.js",
+    'import * as library from "d3-format";\nexport default library;\n',
+)
+
+
+@pytest.mark.parametrize(
+    ("app_libraries", "dynamic_components", "expected_root", "expected_modules"),
+    [
+        pytest.param(
+            (),
+            True,
+            _app_root_with_loaders(_RADIX_LOADER),
+            [_RADIX_MODULE],
+            id="dynamic_components",
+        ),
+        pytest.param(
+            (), False, _APP_ROOT_WITHOUT_LOADERS, [], id="no_dynamic_components"
+        ),
+        pytest.param(
+            ("d3-format@3.1.0",),
+            True,
+            _app_root_with_loaders(_RADIX_LOADER, _D3_LOADER),
+            [_RADIX_MODULE, _D3_MODULE],
+            id="dynamic_components_and_app_library",
+        ),
+        pytest.param(
+            ("d3-format@3.1.0",),
+            False,
+            _app_root_with_loaders(_D3_LOADER),
+            [_D3_MODULE],
+            id="app_library_only",
+        ),
+    ],
+)
+def test_compile_app_root_loads_optional_libraries_on_demand(
+    app_libraries: tuple[str, ...],
+    dynamic_components: bool,
+    expected_root: str,
+    expected_modules: list[tuple[str, str]],
+    mocker: MockerFixture,
+):
+    """Keep optional library namespaces out of root.jsx, in modules of their own.
+
+    A library the compiler registered is only loadable when the app renders a
+    dynamic component, a library the app registered is always loadable.
+
+    Args:
+        app_libraries: The libraries the app registers with bundle_library.
+        dynamic_components: Whether the app renders a dynamic component.
+        expected_root: The complete expected root.jsx.
+        expected_modules: The expected file name and code of each library module.
+        mocker: Fixture for configuring the app.
+    """
     mocker.patch(
-        "reflex.compiler.compiler.get_config",
+        "reflex_base.config._get_config",
+        return_value=rx.Config(app_name="lazy_libraries"),
+    )
+    with RegistrationContext():
+        _bundle_library("@radix-ui/themes")
+        for library in app_libraries:
+            bundle_library(library)
+        root_path, code = compiler.compile_app_root(
+            rx.el.div("hello"), dynamic_components=dynamic_components
+        )
+        modules = compiler.compile_dynamic_libraries(
+            dynamic_components=dynamic_components
+        )
+
+    assert root_path == str(prerequisites.get_web_dir() / "app" / "root.jsx")
+    assert code == expected_root
+    assert modules == [
+        (
+            str(prerequisites.get_web_dir() / "utils" / "dynamic_libraries" / name),
+            module_code,
+        )
+        for name, module_code in expected_modules
+    ]
+
+
+def test_compile_dynamic_libraries_is_empty_for_eager_libraries(mocker: MockerFixture):
+    """Write no library modules when root.jsx imports the namespaces itself.
+
+    Args:
+        mocker: Fixture for configuring the app.
+    """
+    mocker.patch(
+        "reflex_base.config._get_config",
         return_value=rx.Config(
-            app_name="lazy_libraries", frontend_lazy_bundled_libraries=True
+            app_name="eager_libraries", frontend_lazy_bundled_libraries=False
         ),
     )
     with RegistrationContext():
-        bundle_library("@radix-ui/themes@3.3.0")
-        bundle_library("constructor")
-        _, code = compiler.compile_app_root(rx.el.div("hello"))
+        bundle_library("d3-format@3.1.0")
+        assert compiler.compile_dynamic_libraries() == []
 
-    assert 'import * as radix_ui_themes from "@radix-ui/themes"' not in code
-    assert '() => import("@radix-ui/themes")' in code
-    assert '"constructor": () => import("constructor")' in code
-    assert 'import * as React from "react"' in code
-    assert 'import * as utils_context from "$/utils/context"' in code
-    assert "window.__reflex_load" in code
+
+@pytest.mark.parametrize("dynamic", [False, True])
+def test_compile_detects_dynamic_components(
+    dynamic: bool,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+):
+    """Tell the app root whether any page renders a dynamic component.
+
+    Args:
+        dynamic: Whether the page renders a component held in state.
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory.
+        mocker: Fixture for configuring the test app.
+    """
+    monkeypatch.chdir(tmp_path)
+    with RegistrationContext():
+        mocker.patch(
+            "reflex_base.config._get_config",
+            return_value=rx.Config(app_name="dynamic_detection", plugins=[]),
+        )
+
+        class DynamicDetectionState(rx.State):
+            """A state holding a component and a plain value."""
+
+            component: rx.Component = rx.el.div("dynamic")
+            text: str = "static"
+
+        def index() -> rx.Component:
+            """Render the component or the plain value from state.
+
+            Returns:
+                The page.
+            """
+            return rx.el.div(
+                DynamicDetectionState.component
+                if dynamic
+                else DynamicDetectionState.text
+            )
+
+        app = rx.App()
+        app.add_page(index)
+        compile_root = mocker.spy(compiler, "compile_app_root")
+        compile_libraries = mocker.spy(compiler, "compile_dynamic_libraries")
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+
+    assert compile_root.call_args.kwargs == {"dynamic_components": dynamic}
+    assert compile_libraries.call_args == mocker.call(dynamic_components=dynamic)
 
 
 def _mock_config_color_mode(mocker: MockerFixture, mode: LiteralColorMode) -> None:

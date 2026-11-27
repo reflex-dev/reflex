@@ -42,9 +42,10 @@ def test_dynamic_component_codegen_rewrites_bundled_library_subpath() -> None:
         "const {DynamicIcon} = window.__reflex['lucide-react/dynamic.mjs']"
     ) in dynamic_code
     assert (
-        "import * as lucide_react_dist_esm_icons_apple_mjs "
-        'from "lucide-react/dist/esm/icons/apple.mjs";'
-    ) in app_root_code
+        '    "lucide-react/dist/esm/icons/apple.mjs": () => '
+        'import("$/utils/dynamic_libraries/lucide_react_dist_esm_icons_apple_mjs")'
+        ".then((module) => module.default),"
+    ) in app_root_code.splitlines()
 
 
 def test_lazy_dynamic_component_lists_only_its_optional_libraries(mocker) -> None:
@@ -70,7 +71,11 @@ def test_lazy_dynamic_component_lists_only_its_optional_libraries(mocker) -> Non
     )
     assert default_only_code.split("\n", 1)[0] == "//__reflex_evaluate:[]"
     # The app can load the unused library, but the icon does not request it.
-    assert '"unused-library": () => import("unused-library")' in app_root_code
+    assert (
+        '    "unused-library": () => '
+        'import("$/utils/dynamic_libraries/unused_library")'
+        ".then((module) => module.default),"
+    ) in app_root_code.splitlines()
 
 
 @pytest.mark.parametrize("reactive", [False, True])
@@ -113,8 +118,8 @@ def test_component_registration_bundles_subpaths_before_serialization(
         with context.fork():
             _reset_bundled_libraries_for_compile()
             _, app_root_code = compiler.compile_app_root(rx.el.div())
-            assert f'from "{subpath}";' in app_root_code
-            assert 'from "lucide-react";' not in app_root_code
+            assert f'    "{subpath}": () => ' in app_root_code
+            assert '    "lucide-react": () => ' not in app_root_code
             assert RegistrationContext.get().bundled_libraries.count(subpath) == 1
             code = serializers.serialize(prototype)
         assert isinstance(code, str)
@@ -141,7 +146,7 @@ def test_explicit_subpath_registration_does_not_require_package_root(reactive: b
         _, app_root_code = compiler.compile_app_root(rx.el.div())
         code = serializers.serialize(icon)
         assert "lucide-react" not in context.bundled_libraries
-    assert f'from "{subpath}";' in app_root_code
+    assert f'    "{subpath}": () => ' in app_root_code
     assert isinstance(code, str)
     assert f"window.__reflex['{subpath}']" in code
     assert "cdn.jsdelivr.net/npm/lucide-react" not in code
@@ -212,7 +217,7 @@ def test_initial_state_components_bundle_their_imports(lazy: bool, mocker):
             assert subpath in context.bundled_libraries
             assert f"window.__reflex['{subpath}'].default" in context_code
             assert (
-                f'() => import("{subpath}")' if lazy else f'from "{subpath}";'
+                f'    "{subpath}": () => ' if lazy else f'from "{subpath}";'
             ) in root_code
             assert subpath not in context._explicit_bundled_libraries
             assert any(
@@ -326,8 +331,8 @@ def test_component_registration_uses_import_var_subpath(library: str, is_default
         with context.fork() as forked:
             _reset_bundled_libraries_for_compile()
             _, app_root_code = compiler.compile_app_root(rx.el.div())
-            assert f'from "{root}";' not in app_root_code
-            assert f'from "{subpath}";' in app_root_code
+            assert f'    "{root}": () => ' not in app_root_code
+            assert f'    "{subpath}": () => ' in app_root_code
             assert root not in forked.bundled_libraries
             code = serializers.serialize(component)
             assert root not in forked.bundled_libraries
