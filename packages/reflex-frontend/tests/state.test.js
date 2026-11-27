@@ -166,9 +166,15 @@ describe("python string operations", () => {
     expect(pyTitle("")).toBe("");
   });
 
-  test("title lower-cases a word as a whole and counts code points", () => {
+  test("title picks the sigma form from the whole string and counts code points", () => {
     // A capital sigma that ends a word lower-cases to the final form, as in str.title.
     expect(pyTitle("ΟΔΟΣ")).toBe("Οδος");
+    // A case-ignorable character between it and the next letter keeps it medial.
+    expect(pyTitle("ΟΣ'Α")).toBe("Οσ'Α");
+    expect(pyTitle("ΟΣ\u0301Α")).toBe("Οσ\u0301Α");
+    expect(pyTitle("ΑΣʰ'Β")).toBe("Ασʰ'Β");
+    // A letter that is cased and case-ignorable doesn't count as the cased one before it.
+    expect(pyTitle("ʰΣ")).toBe("ʰσ");
     expect(pyTitle("\u{1F600}abc")).toBe("\u{1F600}Abc");
     // Deseret letters are cased and outside the BMP.
     expect(pyTitle("\u{10428}\u{10428} x")).toBe("\u{10400}\u{10428} X");
