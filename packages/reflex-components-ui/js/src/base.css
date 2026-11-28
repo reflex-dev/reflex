@@ -90,6 +90,22 @@ html.dark {
     flex-shrink: 0;
   }
 
+  /*
+   * The line before an item of a segmented control is not shown before the
+   * first item, nor on either side of the chosen one or of the one the
+   * keyboard is on: the item before another is no state of that other.
+   */
+  [data-rx-segmented-item]:first-child,
+  [data-rx-segmented-item]:is(:has(> input:checked), :has(> input:focus-visible)),
+  [data-rx-segmented-item]:is(:has(> input:checked), :has(> input:focus-visible))
+    + [data-rx-segmented-item] {
+    --rx-segmented-separator-opacity: 0;
+    --rx-segmented-separator-easing: ease-in;
+  }
+  [data-rx-segmented-item] svg {
+    flex-shrink: 0;
+  }
+
   /* The thumb of the scrollbar of a text area, under the pointer. */
   @media (hover: hover) {
     [data-rx-text-area-input]:not(:disabled)::-webkit-scrollbar-thumb:hover {

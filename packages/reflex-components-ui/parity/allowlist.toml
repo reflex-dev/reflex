@@ -195,3 +195,14 @@ reason = "rx.checkbox_cards takes one Tab stop for the whole group. In rx.ui.che
 component = "checkbox_cards"
 step = "hands over the checked values in the order they were checked in"
 reason = "`on_value_change` of rx.ui.checkbox_cards hands over the values of the checked cards in the order of the cards, whatever the order they were checked in: the group keeps no state of its own and reads its checkboxes. rx.checkbox_cards appends each value as it is checked."
+
+[[look]]
+component = "segmented_control"
+check = "a11y"
+reason = "An item of rx.ui.segmented_control is a label around a native radio button: what the item holds names the radio button, as in rx.segmented_control, and is also text of the page, as the text of any label is. An item of rx.segmented_control is one button that holds its text."
+
+[[contract]]
+component = "segmented_control"
+step = "chooses an item with JavaScript disabled"
+system = "rx"
+reason = "The items of rx.segmented_control are buttons that JavaScript turns into radio buttons: until it has run, a click does nothing. An item of rx.ui.segmented_control is a label around a native radio button, which the browser checks with or without JavaScript."

@@ -24,6 +24,7 @@ _SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = {
     "components.radio_cards": ["radio_cards"],
     "components.radio_group": ["radio", "radio_group"],
     "components.scroll_area": ["scroll_area"],
+    "components.segmented_control": ["segmented_control"],
     "components.separator": ["divider", "separator"],
     "components.skeleton": ["skeleton"],
     "components.spinner": ["spinner"],
