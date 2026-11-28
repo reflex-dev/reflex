@@ -38,6 +38,7 @@ def matrix(component: str, engine: str, differing: int) -> MatrixResult:
                     kind: f"{engine}/{component}/size-1@hover.{kind}.png"
                     for kind in ("reference", "candidate", "diff")
                 },
+                skipped=["inside <button>: rx has 2 element children, rx.ui 1"],
             )
         ],
         seconds=1.5,
@@ -71,6 +72,7 @@ ENTRY = {
             ],
             "a11y": None,
             "allowed": ["Tooltips have <no> arrow."],
+            "skipped": ["inside <button>: rx has 2 element children, rx.ui 1"],
             "problems": [
                 "400 of 5000 pixels differ (8.00%, 0.50% allowed)",
                 "height: rx '32px', rx.ui '30px'",
@@ -116,7 +118,9 @@ PAGE = (
     f"{image('reference')}{image('candidate')}{image('diff')}"
     "<td><pre>400 of 5000 pixels differ (8.00%, 0.50% allowed)\n"
     "height: rx &#x27;32px&#x27;, rx.ui &#x27;30px&#x27;\n"
-    "allowed: Tooltips have &lt;no&gt; arrow.</pre></td></tr>"
+    "allowed: Tooltips have &lt;no&gt; arrow.\n"
+    "not compared inside &lt;button&gt;: rx has 2 element children, rx.ui 1"
+    "</pre></td></tr>"
     "</tbody></table></body></html>"
 )
 

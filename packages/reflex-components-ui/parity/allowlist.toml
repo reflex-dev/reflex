@@ -49,6 +49,13 @@ check = "pixels"
 cells = "size-responsive-large@800"
 reason = "When the size of rx.avatar grows at a breakpoint from one of the four small sizes to a larger one, Radix Themes keeps the smaller letters the small size has for a fallback of two letters. rx.ui.avatar gives the two letters the size they have in an avatar of the larger size alone."
 
+[[look]]
+component = "avatar"
+check = "style"
+cells = "size-responsive-large@800"
+properties = ["font-size", "line-height"]
+reason = "When the size of rx.avatar grows at a breakpoint from one of the four small sizes to a larger one, Radix Themes keeps the smaller letters the small size has for a fallback of two letters. rx.ui.avatar gives the two letters the size they have in an avatar of the larger size alone."
+
 [[contract]]
 component = "scroll_area"
 step = "scrolls to its last line with JavaScript disabled"
@@ -73,3 +80,9 @@ component = "scroll_area"
 check = "pixels"
 cells = "*type-always*"
 reason = "rx.ui.scroll_area scrolls natively and has the scrollbars of the browser, thin and in the grays of the theme, where rx.scroll_area draws scrollbars of its own with JavaScript. Their shape and where they show follow the browser and the system: they may take room beside the content or lie over it, and `type` \"hover\" and \"scroll\" and `scroll_hide_delay` are left to them."
+
+[[look]]
+component = "table"
+check = "style"
+properties = ["overflow-x", "overflow-y"]
+reason = "The box a table scrolls in is an rx.ui.scroll_area, which is itself the element that scrolls. In rx.table it is a clipped box around a viewport that scrolls and the scrollbars it draws."
