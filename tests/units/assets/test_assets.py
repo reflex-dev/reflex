@@ -1,14 +1,18 @@
 import copy
 import hashlib
+import importlib
 import io
 import itertools
 import logging
 import os
 import pickle
 import shutil
+import sys
 import threading
+import time
 from collections.abc import Callable, Generator
 from pathlib import Path
+from types import ModuleType
 from typing import cast
 
 import pytest
@@ -86,6 +90,87 @@ def test_shared_asset(mock_asset_path: Path) -> None:
 
     # Nothing is done to assets when file does not exist.
     assert not Path(mock_asset_path / "assets" / "external").exists()
+
+
+@pytest.fixture
+def asset_caller(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> Generator[ModuleType, None, None]:
+    """Import a module of another package that calls `rx.asset` itself.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+
+    Yields:
+        The module `asset_pkg.caller`, next to which `nested/script.js` lies.
+    """
+    package = tmp_path / "asset_pkg"
+    (package / "nested").mkdir(parents=True)
+    (package / "__init__.py").touch()
+    (package / "nested" / "script.js").write_text("nested")
+    (package / "caller.py").write_text(
+        "import reflex as rx\n"
+        "\n"
+        "def own_asset(path):\n"
+        "    return rx.asset(path, shared=True)\n"
+        "\n"
+        "def helper_asset(path):\n"
+        "    return rx.asset(path, shared=True, _stack_level=2)\n"
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    yield importlib.import_module("asset_pkg.caller")
+    sys.modules.pop("asset_pkg.caller", None)
+    sys.modules.pop("asset_pkg", None)
+
+
+def test_shared_asset_in_subdirectory(
+    tmp_path: Path, mock_asset_path: Path, asset_caller: ModuleType
+) -> None:
+    """A shared asset in a subdirectory of its module keeps that directory.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        mock_asset_path: The mock current working directory.
+        asset_caller: The module that calls `rx.asset`.
+    """
+    source_file = tmp_path / "asset_pkg" / "nested" / "script.js"
+
+    asset = asset_caller.own_asset("nested/script.js")
+
+    assert asset == (
+        f"/external/asset_pkg/caller/nested/script.js?v={_asset_hash(source_file)}"
+    )
+    dst_file = (
+        mock_asset_path
+        / constants.Dirs.APP_ASSETS
+        / constants.Dirs.EXTERNAL_APP_ASSETS
+        / "asset_pkg"
+        / "caller"
+        / "nested"
+        / "script.js"
+    )
+    assert dst_file.is_symlink()
+    assert dst_file.resolve() == source_file.resolve()
+
+
+def test_shared_asset_stack_level_names_the_helpers_caller(
+    mock_asset_path: Path, asset_caller: ModuleType
+) -> None:
+    """With `_stack_level=2` the asset belongs to the module calling the helper.
+
+    Args:
+        mock_asset_path: The mock current working directory.
+        asset_caller: The module whose helper calls `rx.asset`.
+    """
+    source_file = Path(__file__).parent / "custom_script.js"
+
+    asset = asset_caller.helper_asset("custom_script.js")
+
+    assert (
+        asset == f"/external/test_assets/custom_script.js?v={_asset_hash(source_file)}"
+    )
+    assert _shared_dst_file(mock_asset_path).resolve() == source_file.resolve()
 
 
 # Captured before any patching so the simulated competitor below can write
@@ -662,6 +747,81 @@ def test_asset_hash_uses_timestamp_when_file_never_stabilizes(
         .endswith(
             f"was modified {assets_module._MAX_HASH_ATTEMPTS} times while calculating hash."
         )
+    )
+
+
+def _record_reads(monkeypatch: pytest.MonkeyPatch) -> list[Path]:
+    """Record every full read of an asset file for its digest.
+
+    Args:
+        monkeypatch: A pytest fixture for patching.
+
+    Returns:
+        The files read so far, in order.
+    """
+    reads: list[Path] = []
+    real_content_digest = assets_module._content_digest
+
+    def recording_content_digest(path: Path) -> str:
+        reads.append(path)
+        return real_content_digest(path)
+
+    monkeypatch.setattr(assets_module, "_content_digest", recording_content_digest)
+    return reads
+
+
+def test_asset_hash_is_cached_until_the_file_changes(
+    custom_script_in_asset_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An unchanged asset is read for its hash once, a changed one again.
+
+    Args:
+        custom_script_in_asset_dir: Fixture that creates a custom_script.js file in the app's assets directory.
+        monkeypatch: A pytest fixture for patching.
+    """
+    monkeypatch.setattr(assets_module, "_content_hash_cache", {})
+    # Hash a minute after the writes, when the file has settled.
+    later = time.time_ns() + 60 * 10**9
+    monkeypatch.setattr(assets_module.time, "time_ns", lambda: later)
+    reads = _record_reads(monkeypatch)
+    custom_script_in_asset_dir.write_text("first")
+
+    first_asset = rx.asset("custom_script.js")
+    assert rx.asset("custom_script.js") == first_asset
+    # Both reads are the stability check of the first call.
+    assert len(reads) == 2
+
+    custom_script_in_asset_dir.write_text("second")
+
+    assert rx.asset("custom_script.js") == (
+        f"/custom_script.js?v={hashlib.sha256(b'second').hexdigest()[:8]}"
+    )
+    assert len(reads) == 4
+
+
+def test_asset_hash_of_a_just_changed_file_is_not_cached(
+    custom_script_in_asset_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A file changed within the timestamp granularity is read on every call.
+
+    A second write in the same tick can leave the stat unchanged, which the
+    patched signature makes certain here.
+
+    Args:
+        custom_script_in_asset_dir: Fixture that creates a custom_script.js file in the app's assets directory.
+        monkeypatch: A pytest fixture for patching.
+    """
+    monkeypatch.setattr(assets_module, "_content_hash_cache", {})
+    now = time.time_ns()
+    signature = assets_module._FileSignature(1, 1, 3, now, now)
+    monkeypatch.setattr(assets_module, "_file_signature", lambda path: signature)
+    custom_script_in_asset_dir.write_text("old")
+    rx.asset("custom_script.js")
+
+    custom_script_in_asset_dir.write_text("new")
+
+    assert rx.asset("custom_script.js") == (
+        f"/custom_script.js?v={hashlib.sha256(b'new').hexdigest()[:8]}"
     )
 
 
