@@ -187,7 +187,7 @@ class DrawerTrigger(DialogSlot):
             named: What names and describes the drawer, by the attribute.
             on_open_change: What the drawer does when it opens or closes.
         """
-        super()._join(root, name, named, on_open_change)
+        super()._join(root, name, named, on_open_change)  # pyright: ignore[reportAttributeAccessIssue]
         if literal(getattr(root, "modal", None)) is not None:
             # A drawer that may not be modal is opened by its script alone.
             self._dialog = {}
@@ -205,7 +205,7 @@ class DrawerTrigger(DialogSlot):
             state Radix gives what opens a dialog.
         """
         tag = super()._render(props)
-        if not self._as_child:
+        if not self._as_child:  # pyright: ignore[reportAttributeAccessIssue]
             tag = tag.add_props(type="button")
         if self._command == "close":
             return tag
@@ -290,15 +290,15 @@ class DrawerSurface(DialogSurface):
             named: What names and describes the drawer, by the attribute.
             on_open_change: What the drawer does when it opens or closes.
         """
-        super()._join(root, name, named, on_open_change)
+        super()._join(root, name, named, on_open_change)  # pyright: ignore[reportAttributeAccessIssue]
         self._direction = getattr(root, "direction", None)
         modeless = _is_off(getattr(root, "modal", None))
         self._modal = choose(modeless, "false", "true")
         if modeless is not False:
-            self._dialog["data-modal"] = choose(modeless, "false", None)
+            self._dialog["data-modal"] = choose(modeless, "false", None)  # pyright: ignore[reportAttributeAccessIssue]
         kept = _is_off(getattr(root, "dismissible", None))
         if kept is not False:
-            self._dialog["data-rx-keep"] = choose(kept, "all", None)
+            self._dialog["data-rx-keep"] = choose(kept, "all", None)  # pyright: ignore[reportAttributeAccessIssue]
         for part in self.children:
             if isinstance(part, DrawerContent):
                 part._direction = self._direction

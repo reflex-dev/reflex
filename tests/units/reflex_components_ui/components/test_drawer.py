@@ -36,7 +36,7 @@ def test_drawer(
             )
         ),
         direction="left",
-        on_animation_end=rx.console_log,
+        on_animation_end=rx.console_log("moved"),
     )
     assert component.render() == {
         "name": '"div"',
@@ -78,7 +78,7 @@ def test_drawer(
                             'id:"rx-dialog-1"',
                             "onCancel:dialogEvent",
                             "onClose:dialogEvent",
-                            'onTransitionEnd:((event) => event.propertyName === "transform" && event.target.parentElement === event.currentTarget && (((_ev_0) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : (() => (console?.["log"](_ev_0))), ["callback"] : null }), ({  })))], [_ev_0], ({  })))))(event.currentTarget.open))',
+                            'onTransitionEnd:((event) => event.propertyName === "transform" && event.target.parentElement === event.currentTarget && (((_ev_0) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : (() => (console?.["log"]("moved"))), ["callback"] : null }), ({  })))], [_ev_0], ({  })))))(event.currentTarget.open))',
                             "ref:((dialog) => dialogSync(dialog, null, null))",
                         ],
                         "children": [

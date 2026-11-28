@@ -93,7 +93,9 @@ DRAWER_CONTENT: ComponentStyles = {
         },
     }),
     "variants": {
-        "_direction": {side: {"_after": beyond} for side, beyond in _BEYOND.items()},
+        "_direction": {
+            side: unchecked({"_after": beyond}) for side, beyond in _BEYOND.items()
+        },
     },
     "defaults": {"_direction": "bottom"},
 }

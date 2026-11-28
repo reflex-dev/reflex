@@ -43,7 +43,7 @@ function build({
   value = "",
   disabled = "",
   attributes = "",
-  id = "list",
+  id = "rx-list",
 } = {}) {
   const container = document.createElement("div");
   container.innerHTML = `<span data-rx-select ${attributes}>

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import dataclasses
 import itertools
 from collections.abc import Iterator
 from typing import Any, ClassVar
@@ -14,8 +13,8 @@ from reflex_base.vars.base import LiteralVar, Var, VarData
 from reflex_components_ui.base import Part, UIComponent
 from reflex_components_ui.components._group import descendants
 from reflex_components_ui.components._script import handlers, listen, script
-from reflex_components_ui.layout.flex import Flex
-from reflex_components_ui.style import ComponentStyles, StyleError
+from reflex_components_ui.components._slot import become_child, held
+from reflex_components_ui.style import ComponentStyles
 from reflex_components_ui.styles.dialog import (
     DIALOG,
     DIALOG_DESCRIPTION,
@@ -190,11 +189,7 @@ class DialogSlot(DialogPart):
         Returns:
             The component.
         """
-        for child in children:
-            if "on_click" in getattr(child, "event_triggers", {}):
-                children = (Flex.create(*children),)
-                break
-        return super().create(*children, **props)
+        return super().create(*held(children), **props)
 
     def _post_init(self, *args, **kwargs):
         """Initialize the part, rendered as its only child.
@@ -202,36 +197,15 @@ class DialogSlot(DialogPart):
         Args:
             *args: Args to initialize the component.
             **kwargs: Kwargs to initialize the component.
-
-        Raises:
-            StyleError: If the part does not have exactly one child that is
-                an element.
         """
         super()._post_init(*args, **kwargs)
         if "as_child" in self.get_fields():
             # The part says itself whether it is its child, and is a button
             # around its children otherwise.
-            if not self._as_child:
+            if not self._as_child:  # pyright: ignore[reportAttributeAccessIssue]
                 self.tag = "button"
             return
-        children = self.children
-        if (
-            len(children) != 1
-            or not isinstance(children[0], Component)
-            or type(children[0]).render not in (Component.render, UIComponent.render)
-        ):
-            name = self._display_name()  # pyright: ignore[reportAttributeAccessIssue]
-            msg = (
-                f"{name}: it is rendered as its child, so it needs exactly one "
-                "child that is an element, such as a button."
-            )
-            raise StyleError(msg)
-        self._as_child = True
-        # The child has to stay the child: a compile would otherwise move
-        # one that is bound to state into a component of its own.
-        self._memoization_mode = dataclasses.replace(
-            self._memoization_mode, recursive=False
-        )
+        become_child(self)
 
     def _join(
         self,

@@ -24,6 +24,7 @@ _SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = {
     "components.form": ["form"],
     "components.icon_button": ["icon_button"],
     "components.inset": ["inset"],
+    "components.popover": ["popover"],
     "components.progress": ["progress"],
     "components.radio_cards": ["radio_cards"],
     "components.radio_group": ["radio", "radio_group"],

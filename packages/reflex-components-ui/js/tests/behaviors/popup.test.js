@@ -2,6 +2,8 @@
 // browser that does not place it.
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
+import { installPopover } from "./popover.js";
+
 /**
  * Build a button and the popup it opens.
  *
@@ -83,7 +85,7 @@ test("the popups a loop renders with one id are told apart", async () => {
   document.body.innerHTML = [1, 2]
     .map(
       () =>
-        `<span><button popovertarget="list"></button><div popover id="list"></div></span>`,
+        `<span><button popovertarget="rx-list"></button><div popover id="rx-list"><button popovertarget="rx-list" popovertargetaction="hide"></button></div></span>`,
     )
     .join("");
   const spans = [...document.querySelectorAll("span")];
@@ -107,8 +109,8 @@ test("the popups a loop renders with one id are told apart", async () => {
       span.querySelector("button")?.getAttribute("aria-controls"),
     ]),
   ).toEqual([
-    ["list-1", "list-1", "list-1"],
-    ["list-2", "list-2", "list-2"],
+    ["rx-list-1", "rx-list-1", "rx-list-1"],
+    ["rx-list-2", "rx-list-2", "rx-list-2"],
   ]);
   expect(
     opener(/** @type {Element} */ (spans[1].querySelector("[popover]"))),
@@ -131,4 +133,199 @@ test("a browser without anchor positioning has the popup placed by a script", as
   expect(popup.getAttribute("style")).toBe(
     "margin-top: 4px; position: fixed; inset: auto; min-width: 120px; max-height: 454px; left: 40px; top: 132px;",
   );
+});
+
+/**
+ * Build a popover with a control and a button that closes it, after the
+ * button that opens it.
+ *
+ * @param {string} [attributes] The attributes of the popover.
+ * @returns {Promise<{ api: typeof import("$/reflex-ui/behaviors/popup.js"), trigger: HTMLElement, popup: HTMLElement, seen: string[], on: Record<string, (open?: boolean) => void> }>}
+ *   The script, the two elements, and handlers that keep what they are
+ *   called with.
+ */
+async function popover(attributes = "") {
+  installPopover();
+  const api = await import("$/reflex-ui/behaviors/popup.js");
+  document.body.innerHTML = `
+    <button id="open" popovertarget="rx-panel"></button>
+    <div popover id="rx-panel" tabindex="-1" ${attributes}>
+      <input id="field" />
+      <button id="close" popovertarget="rx-panel" popovertargetaction="hide"><span id="close-text">Close</span></button>
+    </div>
+    <button id="beside"></button>`;
+  const popup = /** @type {HTMLElement} */ (
+    document.querySelector("[popover]")
+  );
+  /** @type {string[]} */
+  const seen = [];
+  const on = Object.fromEntries(
+    [
+      "open",
+      "openAutoFocus",
+      "closeAutoFocus",
+      "escape",
+      "outside",
+      "focusOutside",
+      "interact",
+    ].map((name) => [
+      name,
+      (/** @type {boolean | undefined} */ open) =>
+        seen.push(open === undefined ? name : `${name}:${open}`),
+    ]),
+  );
+  popup.addEventListener("toggle", (event) =>
+    api.popupEvent(
+      /** @type {{ type: string, target: EventTarget | null, currentTarget: HTMLElement }} */ (
+        /** @type {unknown} */ (event)
+      ),
+      on,
+    ),
+  );
+  return {
+    api,
+    trigger: /** @type {HTMLElement} */ (document.getElementById("open")),
+    popup,
+    seen,
+    on,
+  };
+}
+
+/**
+ * Send a popover something that happens inside it.
+ *
+ * @param {typeof import("$/reflex-ui/behaviors/popup.js")} api The script.
+ * @param {HTMLElement} popup The popover.
+ * @param {string} type The type of the event.
+ * @param {{ target?: string, key?: string, to?: string }} [details] The id
+ *   of the element it happens on, the key, and where the focus goes.
+ * @returns {void}
+ */
+function inside(api, popup, type, { target, key, to } = {}) {
+  api.popupEvent({
+    type,
+    target: target ? document.getElementById(target) : popup,
+    currentTarget: popup,
+    key,
+    relatedTarget: to ? document.getElementById(to) : null,
+  });
+}
+
+test("a popover takes the focus when it opens, and says what closed it", async () => {
+  const { api, popup, trigger, seen } = await popover();
+  api.popupSync(popup);
+  api.popupSync(null);
+  expect([popup.id, trigger.getAttribute("popovertarget")]).toEqual([
+    "rx-panel-1",
+    "rx-panel-1",
+  ]);
+  expect(document.getElementById("close")?.getAttribute("popovertarget")).toBe(
+    "rx-panel-1",
+  );
+
+  popup.showPopover();
+  expect(document.activeElement).toBe(popup);
+  expect(said(trigger)).toEqual(["true", "open"]);
+  inside(api, popup, "keydown", { target: "field", key: "a" });
+  inside(api, popup, "keydown", { target: "field", key: "Escape" });
+  popup.hidePopover();
+
+  popup.showPopover();
+  inside(api, popup, "click", { target: "field" });
+  inside(api, popup, "click", { target: "close-text" });
+  popup.hidePopover();
+
+  popup.showPopover();
+  popup.hidePopover();
+
+  expect(seen).toEqual([
+    "open:true",
+    "openAutoFocus",
+    "escape",
+    "open:false",
+    "closeAutoFocus",
+    "open:true",
+    "openAutoFocus",
+    "open:false",
+    "closeAutoFocus",
+    "open:true",
+    "openAutoFocus",
+    "outside",
+    "interact",
+    "open:false",
+    "closeAutoFocus",
+  ]);
+});
+
+test("a popover closes when the focus leaves it for the page", async () => {
+  const { api, popup, seen } = await popover();
+  popup.showPopover();
+  inside(api, popup, "blur", { target: "field", to: "close" });
+  inside(api, popup, "blur", { target: "field", to: "open" });
+  inside(api, popup, "blur", { target: "field" });
+  expect(popup.matches(":popover-open")).toBe(true);
+  // A press outside is left to the browser.
+  const beside = /** @type {HTMLElement} */ (document.getElementById("beside"));
+  const matches = beside.matches.bind(beside);
+  beside.matches = (selector) => selector === ":active" || matches(selector);
+  inside(api, popup, "blur", { target: "field", to: "beside" });
+  expect(popup.matches(":popover-open")).toBe(true);
+  beside.matches = matches;
+  inside(api, popup, "blur", { target: "field", to: "beside" });
+  expect(popup.matches(":popover-open")).toBe(false);
+  expect(seen).toEqual([
+    "open:true",
+    "openAutoFocus",
+    "focusOutside",
+    "interact",
+    "open:false",
+    "closeAutoFocus",
+  ]);
+});
+
+test("a popover bound to state shows its state, and one that starts open opens once", async () => {
+  const { api, popup, seen } = await popover('data-default-open="true"');
+  api.popupSync(popup);
+  expect(popup.matches(":popover-open")).toBe(true);
+  expect(popup.hasAttribute("data-default-open")).toBe(false);
+  api.popupSync(popup, false);
+  api.popupSync(popup, false);
+  expect(popup.matches(":popover-open")).toBe(false);
+  api.popupSync(popup);
+  expect(popup.matches(":popover-open")).toBe(false);
+  api.popupSync(popup, true);
+  expect(popup.matches(":popover-open")).toBe(true);
+  expect(seen).toEqual(["openAutoFocus", "closeAutoFocus", "openAutoFocus"]);
+});
+
+test("a popover without handlers, and the toggle of a popup inside it, change nothing", async () => {
+  installPopover();
+  const api = await import("$/reflex-ui/behaviors/popup.js");
+  document.body.innerHTML = `<button id="open" popovertarget="mine"></button><div popover id="mine" tabindex="-1"><div popover id="inner"></div></div>`;
+  const popup = /** @type {HTMLElement} */ (document.getElementById("mine"));
+  api.popupSync(popup);
+  expect(popup.id).toBe("mine");
+  api.popupEvent({
+    type: "toggle",
+    target: popup,
+    currentTarget: popup,
+    newState: "open",
+  });
+  expect(document.activeElement).toBe(popup);
+  api.popupEvent({
+    type: "toggle",
+    target: document.getElementById("inner"),
+    currentTarget: popup,
+    newState: "closed",
+  });
+  expect(
+    said(/** @type {HTMLElement} */ (document.getElementById("open"))),
+  ).toEqual(["true", "open"]);
+  api.popupEvent({
+    type: "toggle",
+    target: popup,
+    currentTarget: popup,
+    newState: "closed",
+  });
+  api.popupEvent({ type: "click", target: null, currentTarget: popup });
 });

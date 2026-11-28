@@ -866,6 +866,18 @@ def UIComponentsApp(radix: bool = False):
                     ),
                 ),
             ),
+            # A popover for each row of a list: each trigger opens its own.
+            rx.foreach(
+                ["cut", "dye"],
+                lambda name: rx.ui.popover.root(
+                    rx.ui.popover.trigger(rx.ui.button("About ", name)),
+                    rx.ui.popover.content(
+                        "All about ",
+                        name,
+                        rx.ui.popover.close(rx.ui.button("Got it")),
+                    ),
+                ),
+            ),
             rx.el.span(rx.cond(rx.State.is_hydrated, "ready", "loading"), id="ready"),
         )
 
@@ -1893,6 +1905,14 @@ def test_overlays_and_disclosure_work_in_an_app(ui_app: AppHarness, page: Page):
     page.keyboard.press("Escape")
     expect(page.get_by_role("dialog")).to_have_count(0)
     expect(page.get_by_role("button", name="bob")).to_be_focused()
+
+    # The popovers of a list share the id they are rendered with: the script
+    # of a popup tells them apart, and each close button closes its own.
+    page.get_by_role("button", name="About dye").click()
+    shown = page.locator(":popover-open")
+    expect(shown).to_have_text("All about dyeGot it")
+    shown.get_by_role("button", name="Got it").click()
+    expect(page.locator(":popover-open")).to_have_count(0)
 
     # The panel of the selected tab alone is shown, whatever display an app
     # gives the panels.

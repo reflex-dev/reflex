@@ -409,3 +409,32 @@ reason = "With rx.drawer open, Tab goes on through the page behind it. rx.ui.dra
 component = "drawer"
 step = "is dragged out of the page by its panel"
 reason = "rx.ui.drawer is not dragged: it is closed by Escape, by a press beside its panel and by its close button, and `snap_points`, `fade_from_index`, `handle_only`, `close_threshold`, `scroll_lock_timeout`, `prevent_scroll_restoration` and `should_scale_background`, which all describe the drag of rx.drawer, have nothing to say. The handle is drawn and does nothing."
+
+[[contract]]
+component = "popover"
+step = "what it holds is in the server render"
+system = "rx"
+reason = "rx.popover renders what it holds when it opens: the page the server sends has only its trigger. What rx.ui.popover holds is in the page from the start, in a popover that is closed, and it keeps its state between two openings."
+
+[[contract]]
+component = "popover"
+step = "opens and closes with JavaScript disabled"
+system = "rx"
+reason = "rx.popover is opened by JavaScript: until it has run, a press on its trigger does nothing. rx.ui.popover is a native popover of its trigger, which the browser opens, places and closes, from its close button, on Escape and on a press outside, with or without JavaScript."
+
+[[contract]]
+component = "popover"
+step = "its trigger names the popover it opens by the id it is given"
+system = "rx"
+reason = "The trigger of rx.popover names its popover by an id rx.popover makes up, so giving the content an `id` breaks the link, and it has none while the popover is closed. The trigger of rx.ui.popover names the popover by the id it was given."
+
+[[contract]]
+component = "popover"
+step = "Tab stays inside an open popover"
+reason = "rx.ui.popover is a native popover, which is not modal: it comes right after its trigger in the order of the page, Tab moves through what it holds and on to what follows the trigger, and the popover closes when the focus leaves it. rx.popover keeps Tab going round inside it until Escape. `modal` has nothing to say: the page beside a native popover stays as it is."
+
+[[contract]]
+component = "popover"
+step = "the dark appearance of a theme around a popover reaches it"
+system = "rx"
+reason = "rx.theme around part of a page does not take an appearance of its own: what is inside follows the color mode of the app, a popover included. rx.ui.theme does, and a popover declared inside a dark rx.ui.theme is dark."
