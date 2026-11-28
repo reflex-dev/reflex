@@ -10,9 +10,9 @@ from reflex_base.vars.base import LiteralVar, Var, VarData
 from reflex_components_core.core.breakpoints import Responsive
 from reflex_components_core.el import elements
 
-from reflex_components_ui.base import Part, UIComponent, _literal
+from reflex_components_ui.base import Part, UIComponent
 from reflex_components_ui.components.spinner import leaves, while_loading
-from reflex_components_ui.props import LiteralVariant
+from reflex_components_ui.props import LiteralVariant, literal_value
 from reflex_components_ui.style import ComponentStyles
 from reflex_components_ui.styles.button import BUTTON
 from reflex_components_ui.themes import LiteralAccentColor, LiteralRadius
@@ -80,7 +80,7 @@ class BaseButton(UIComponent, elements.Button):
         loading = props.get("loading")
         # Bound to state it has no truth value: the element then says why
         # as_child cannot be.
-        as_child = _literal(props.get("as_child"))
+        as_child = literal_value(props.get("as_child"))
         if loading is not None and not (isinstance(as_child, Var) or as_child):
             # As Radix Themes renders it: the children keep their place
             # without being shown, and are still read out.

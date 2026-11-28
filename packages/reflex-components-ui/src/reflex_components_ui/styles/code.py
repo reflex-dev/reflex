@@ -48,8 +48,9 @@ def _hover(inside_link: str, otherwise: str) -> dict[str, Any]:
 
 _OUTLINE = "inset 0 0 0 max(1px, 0.033em)"
 
-# Inside a link, code with a background is a stacking context.
-_ISOLATION = f"var({LINK_CODE_ISOLATION}, auto)"
+# Inside a link, code with a background is a stacking context. Its value is
+# read from the link, which the type of the property does not allow for.
+_ISOLATION: Any = f"var({LINK_CODE_ISOLATION}, auto)"
 
 _SOFT: Any = {
     "isolation": _ISOLATION,

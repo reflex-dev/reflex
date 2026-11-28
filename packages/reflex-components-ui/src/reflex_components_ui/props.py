@@ -56,3 +56,17 @@ def style_props(name: str, props: dict[str, Any], names: tuple[str, ...]) -> Non
         props["style"] = [ordered, *written]
     else:
         props["style"] = [ordered, written]
+
+
+def literal_value(value: Any) -> Any:
+    """Read a prop that has to be known while compiling.
+
+    Args:
+        value: The value of the prop.
+
+    Returns:
+        The value a literal Var holds, or the value as given.
+    """
+    if isinstance(value, LiteralVar) and value._get_all_var_data() is None:
+        return value._var_value
+    return value
