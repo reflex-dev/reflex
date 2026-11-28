@@ -48,6 +48,32 @@ FREEZE_CSS = """
 }
 """
 
+
+def use_fonts(text: str, code: str) -> Callable[[Page], None]:
+    """Make a page render both systems in other fonts than the theme's.
+
+    A look that only matches in the fonts of one machine is not the same
+    look: the box of a line follows the metrics of its font.
+
+    Args:
+        text: The font family of everything but code.
+        code: The font family of ``code``, ``kbd`` and ``pre``.
+
+    Returns:
+        The ``prepare`` of ``run_matrix`` that sets the fonts.
+    """
+    css = (
+        f'* {{ font-family: "{text}" !important; }}\n'
+        f'code, code *, kbd, kbd *, pre, pre * {{ font-family: "{code}" !important; }}'
+    )
+
+    def prepare(page: Page) -> None:
+        page.add_style_tag(content=css)
+        page.evaluate("document.fonts.ready")
+
+    return prepare
+
+
 # Resolves once the page is hydrated, in the color scheme asked for, with its
 # fonts loaded.
 READY_SCRIPT = f"""async (appearance) => {{

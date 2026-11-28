@@ -25,6 +25,9 @@ LINK_CODE_SOFT = "--rx-link-code-soft"
 LINK_CODE_OUTLINE = "--rx-link-code-outline"
 # And what solid code is filtered by there when it is high contrast.
 LINK_CODE_FILTER = "--rx-link-code-filter"
+# And the stacking context code with a background is there, as in Radix
+# Themes: Chromium rounds the focus ring of the link around it differently.
+LINK_CODE_ISOLATION = "--rx-link-code-isolation"
 
 
 def underline_color(step: Step12) -> str:

@@ -69,7 +69,10 @@ def test_plugin_imports_the_base_stylesheet_before_compile():
         radix_themes_plugin=None,
         unevaluated_pages=[],
     )
-    assert modified == {"styles/__reflex_global_styles.css": add_base_stylesheet}
+    # Named as the system names a path, like the stylesheet a compile saves.
+    assert modified == {
+        str(Path("styles") / "__reflex_global_styles.css"): add_base_stylesheet
+    }
 
 
 def test_base_stylesheet_is_imported_ahead_of_every_other_stylesheet():

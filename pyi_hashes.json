@@ -130,7 +130,7 @@
   "packages/reflex-components-ui/src/reflex_components_ui/components/icon_button.pyi": "ff38238be8b0b1efa006048e8d7c093b",
   "packages/reflex-components-ui/src/reflex_components_ui/components/inset.pyi": "e7845d0ca8291ca3d4990c7f91eca734",
   "packages/reflex-components-ui/src/reflex_components_ui/components/progress.pyi": "ba32f562c590556d634f16062120fa34",
-  "packages/reflex-components-ui/src/reflex_components_ui/components/scroll_area.pyi": "2102625de1fc3800ee61b9e161c4ca83",
+  "packages/reflex-components-ui/src/reflex_components_ui/components/scroll_area.pyi": "0b9bb867b1ef68c0fd9b10d52867d2b8",
   "packages/reflex-components-ui/src/reflex_components_ui/components/separator.pyi": "bd32f08f7c0ff2cb6733f964ea843440",
   "packages/reflex-components-ui/src/reflex_components_ui/components/skeleton.pyi": "4bedd989efb5b095b943a04830bbd140",
   "packages/reflex-components-ui/src/reflex_components_ui/components/spinner.pyi": "9e62e8634e1425a75302d24fb458e8a8",

@@ -31,6 +31,7 @@ from ui_parity.look import (  # noqa: E402
     READY_SCRIPT,
     StyleDifference,
     run_matrix,
+    use_fonts,
 )
 from ui_parity.systems import CANDIDATE, REFERENCE, SYSTEMS  # noqa: E402
 
@@ -38,6 +39,8 @@ from ui_parity.systems import CANDIDATE, REFERENCE, SYSTEMS  # noqa: E402
 DEFAULT_REPORT = Path(allowlist.ALLOWLIST).parent / "report"
 # How long the build and every matrix may take together, in seconds.
 BUDGET = float(os.environ.get("UI_PARITY_BUDGET_SECONDS", "900"))
+# The fonts the matrices render in instead of the theme's, as "text|code".
+FONTS = os.environ.get("UI_PARITY_FONTS")
 TIMINGS = "timings.json"
 
 # What the runs of this module took: the build, then each matrix by engine and
@@ -125,6 +128,7 @@ def test_matrix(
         report_dir,
         allowlist.load(),
         scale=int(os.environ.get("UI_PARITY_SCALE", "1")),
+        prepare=use_fonts(*FONTS.split("|")) if FONTS else None,
     )
     index = report.write(report_dir, result)
     _seconds[f"{result.engine}/{component}"] = result.seconds

@@ -723,8 +723,10 @@ def over(under: Merged, top: Merged) -> Merged:
     """
     props = dict(under.style.style)
     apply_layer(props, (top.style.style, ()))
+    # A whole style bound to state is a Var, which has no truth value.
+    inline = top.style.inline if top.style.inline is not None else under.style.inline
     return Merged(
-        finish(props, top.style.inline or under.style.inline),
+        finish(props, inline),
         (*under.dynamic, *top.dynamic),
         {**under.parts, **top.parts} if under.parts else top.parts,
     )

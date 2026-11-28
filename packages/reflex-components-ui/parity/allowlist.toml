@@ -61,6 +61,13 @@ step = "scrolls to its last line with JavaScript disabled"
 system = "rx"
 reason = "rx.scroll_area scrolls once JavaScript has run: until then its content is clipped. rx.ui.scroll_area scrolls natively, with or without JavaScript."
 
+[[contract]]
+component = "scroll_area"
+step = "Tab reaches it and the keyboard scrolls it"
+system = "rx"
+engines = ["webkit"]
+reason = "Safari focuses no scrolling box of its own accord, so Tab passes rx.scroll_area by and the keyboard cannot scroll it there. rx.ui.scroll_area is a tab stop in every browser."
+
 [[look]]
 component = "scroll_area"
 check = "style"

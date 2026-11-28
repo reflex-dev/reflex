@@ -26,6 +26,7 @@ from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.cond import Cond
 
 from reflex_components_ui.plugin import UIPlugin
+from reflex_components_ui.props import literal_value
 from reflex_components_ui.style import (
     LAYOUT_PROPS,
     ComponentStyles,
@@ -91,20 +92,6 @@ def _choices(annotation: Any) -> tuple[str, ...] | None:
             found = choices if found is None else (*found, *choices)
         return found
     return None
-
-
-def _literal(value: Any) -> Any:
-    """Read a prop that has to be known while compiling.
-
-    Args:
-        value: The value of the prop.
-
-    Returns:
-        The value a literal Var holds, or the value as given.
-    """
-    if isinstance(value, LiteralVar) and value._get_all_var_data() is None:
-        return value._var_value
-    return value
 
 
 def _join_class_names(first: Any, second: Any) -> Any:
@@ -299,7 +286,7 @@ class UIComponent(Component):
         for prop, choices in self._literal_props().items():
             if prop not in kwargs:
                 continue
-            value = _literal(kwargs[prop])
+            value = literal_value(kwargs[prop])
             for item in value.values() if isinstance(value, Mapping) else (value,):
                 if item.__class__ is str and item not in choices:
                     values = ", ".join([f'"{choice}"' for choice in choices])
@@ -397,7 +384,7 @@ class UIComponent(Component):
 
     def _set_tag(self) -> None:
         """Render the element the ``as_`` prop names."""
-        as_ = _literal(getattr(self, "as_", None))
+        as_ = literal_value(getattr(self, "as_", None))
         if isinstance(as_, Var):
             # The tag is then an expression, evaluated in the browser.
             self._as = as_
@@ -411,7 +398,7 @@ class UIComponent(Component):
             StyleError: If ``as_child`` is bound to state, or the component
                 does not have exactly one child that renders an element.
         """
-        as_child = _literal(getattr(self, "as_child", None))
+        as_child = literal_value(getattr(self, "as_child", None))
         name = self._display_name()
         if isinstance(as_child, Var):
             msg = (

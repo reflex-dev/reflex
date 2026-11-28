@@ -15,7 +15,7 @@ def test_code_plain(
     component = rx.ui.code("a")
     assert component.render() == {
         "name": '"code"',
-        "props": ["className:sx_1e9979b5c2_c", '"data-variant":"soft"'],
+        "props": ["className:sx_13e8bd16fd_c", '"data-variant":"soft"'],
         "children": [{"contents": '"a"'}],
     }
     assert declared_styles(component) == [
@@ -35,6 +35,7 @@ def test_code_plain(
             "paddingBottom": "var(--code-padding-bottom)",
             "paddingRight": "var(--code-padding-right)",
             "height": "fit-content",
+            "isolation": "var(--rx-link-code-isolation, auto)",
             "backgroundColor": {
                 "default": "var(--accent-a3)",
                 "@media (hover: hover)": {
@@ -123,7 +124,7 @@ def test_code_solid(
     )
     assert component.render() == {
         "name": '"code"',
-        "props": ["className:sx_16de2ef521_c", '"data-variant":"solid"'],
+        "props": ["className:sx_8d89af6b0e_c", '"data-variant":"solid"'],
         "children": [{"contents": '"a"'}],
     }
     assert declared_styles(component) == [
@@ -144,6 +145,7 @@ def test_code_solid(
             "paddingRight": "var(--code-padding-right)",
             "height": "fit-content",
             "--letter-spacing": "var(--letter-spacing-2)",
+            "isolation": "var(--rx-link-code-isolation, auto)",
             "backgroundColor": {
                 "default": "var(--accent-12)",
                 "::selection": "var(--accent-a11)",
@@ -169,12 +171,12 @@ def test_code_outline(
         "children": [
             {
                 "name": '"code"',
-                "props": ["className:sx_f9cadf6492_c", '"data-variant":"outline"'],
+                "props": ["className:sx_ab161c22a8_c", '"data-variant":"outline"'],
                 "children": [{"contents": '"a"'}],
             },
             {
                 "name": '"code"',
-                "props": ["className:sx_1e9979b5c2_c", '"data-variant":"surface"'],
+                "props": ["className:sx_13e8bd16fd_c", '"data-variant":"surface"'],
                 "children": [{"contents": '"b"'}],
             },
         ],
@@ -197,6 +199,7 @@ def test_code_outline(
             "paddingBottom": "var(--code-padding-bottom)",
             "paddingRight": "var(--code-padding-right)",
             "height": "fit-content",
+            "isolation": "var(--rx-link-code-isolation, auto)",
             "boxShadow": "inset 0 0 0 max(1px, 0.033em) var(--accent-a8)",
             "color": "var(--accent-a11)",
             "backgroundColor": {
@@ -221,6 +224,7 @@ def test_code_outline(
             "paddingBottom": "var(--code-padding-bottom)",
             "paddingRight": "var(--code-padding-right)",
             "height": "fit-content",
+            "isolation": "var(--rx-link-code-isolation, auto)",
             "backgroundColor": {
                 "default": "var(--accent-a3)",
                 "@media (hover: hover)": {
