@@ -37,11 +37,6 @@ class DialogRoot(DialogElement):
         doc="The modality of the dialog. When set to true, interaction with outside elements will be disabled and only dialog content will be visible to screen readers."
     )
 
-    _valid_children: ClassVar[list[str]] = [
-        "DialogTrigger",
-        "DialogPortal",
-    ]
-
 
 class DialogPortal(DialogElement):
     """Portal component for Dialog."""
@@ -74,8 +69,6 @@ class DialogOverlay(DialogElement):
         doc="Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries. It inherits from Dialog.Portal."
     )
 
-    _valid_parents: ClassVar[list[str]] = ["DialogPortal"]
-
 
 class DialogTrigger(DialogElement, RadixPrimitiveTriggerComponent):
     """Trigger an action or event, to open a Dialog modal."""
@@ -88,8 +81,6 @@ class DialogTrigger(DialogElement, RadixPrimitiveTriggerComponent):
     )
 
     _memoization_mode = MemoizationMode(recursive=False)
-
-    _valid_parents: ClassVar[list[str]] = ["DialogRoot"]
 
 
 class DialogContent(elements.Div, DialogElement):
@@ -125,8 +116,6 @@ class DialogContent(elements.Div, DialogElement):
     on_interact_outside: EventHandler[no_args_event_spec] = field(
         doc="Fired when the pointer interacts outside the dialog."
     )
-
-    _valid_parents: ClassVar[list[str]] = ["DialogPortal"]
 
 
 class DialogTitle(DialogElement):
