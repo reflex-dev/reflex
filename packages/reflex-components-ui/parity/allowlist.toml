@@ -233,3 +233,41 @@ reason = "The thumbs of rx.ui.slider are native range inputs: the browser moves 
 component = "slider"
 step = "a thumb can be moved past the one after it"
 reason = "A thumb of rx.ui.slider stops at the thumbs beside it, where a thumb of rx.slider passes them and the two change places. Home and End move the thumb that has the focus, where rx.slider moves the first and the last whichever has it."
+
+[[look]]
+component = "select"
+check = "style"
+cells = "*@open"
+properties = ["pointer-events"]
+reason = "While its list is open rx.select takes the pointer off the rest of the page: nothing else can be clicked or scrolled until the list closes. The list of rx.ui.select is a native popover, which leaves the page as it is: a click outside closes the list, and the page scrolls."
+
+[[look]]
+component = "select"
+check = "pixels"
+cells = "long-true*"
+reason = "A list of rx.ui.select too long for the room it has scrolls natively, with the scrollbar of the browser, which may lie over the options and show only while they scroll. rx.select draws a scrollbar of its own with JavaScript, and leaves room for it beside the options."
+
+[[look]]
+component = "select"
+check = "style"
+cells = "size-responsive*"
+properties = ["width", "height"]
+reason = "When the size of rx.select goes from \"3\" at one breakpoint to a smaller one at the next, Radix Themes keeps the larger icon size \"3\" has. The icon of rx.ui.select has the size of the select at each breakpoint, so the trigger is two pixels narrower there."
+
+[[contract]]
+component = "select"
+step = "shows the chosen option in the server render"
+system = "rx"
+reason = "The trigger of rx.select is empty until JavaScript has found the text of the chosen option. rx.ui.select works the text out while compiling, where the options are known or show their values, so the page the server sends shows it."
+
+[[contract]]
+component = "select"
+step = "opens and closes its list with JavaScript disabled"
+system = "rx"
+reason = "rx.select is opened by JavaScript: until it has run, a click on its trigger does nothing. The list of rx.ui.select is a native popover of its trigger, which the browser opens and closes with or without JavaScript; choosing an option waits for it."
+
+[[contract]]
+component = "select"
+step = "the page behind an open list takes no click"
+system = "rx.ui"
+reason = "While its list is open rx.select takes the pointer off the rest of the page: a click outside closes the list and does nothing else. The list of rx.ui.select is a native popover: a click outside closes it and also reaches what is under the pointer, as with a native select, and the page behind it scrolls."

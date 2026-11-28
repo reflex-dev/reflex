@@ -575,6 +575,8 @@ class _Pass:
         """Load the page and wait until it is still."""
         self.page.goto(self.url)
         self.page.wait_for_function(READY_SCRIPT, arg=self.appearance)
+        if self.matrix.ready is not None:
+            self.page.wait_for_function(self.matrix.ready)
         self.page.add_style_tag(content=FREEZE_CSS)
         if self.prepare is not None:
             self.prepare(self.page)

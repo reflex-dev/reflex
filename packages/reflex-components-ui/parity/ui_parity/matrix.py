@@ -202,6 +202,8 @@ class Matrix:
             pixel counts as differing.
         tolerance: The fraction of a cell's pixels that may differ.
         states: Drivers of states the runner does not know, such as ``open``.
+        ready: A JavaScript expression that is true once the page is still,
+            for a component that goes on rendering after it is hydrated.
     """
 
     component: str
@@ -223,6 +225,7 @@ class Matrix:
     threshold: float = 0.01
     tolerance: float = 0.005
     states: Mapping[str, Any] = dataclasses.field(default_factory=dict)
+    ready: str | None = None
 
     def create(self, namespace: Any, props: Mapping[str, Any]) -> Any:
         """Create the component of one system for a cell.

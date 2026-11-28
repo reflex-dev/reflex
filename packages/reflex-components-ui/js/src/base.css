@@ -106,6 +106,18 @@ html.dark {
     flex-shrink: 0;
   }
 
+  /*
+   * A popup leaves the top layer when it has faded out, not before, and
+   * the label of a group of options keeps its distance from the option
+   * before it.
+   */
+  [data-rx-popup] {
+    transition-behavior: allow-discrete;
+  }
+  [role="option"] + [data-rx-select-label] {
+    margin-top: var(--space-2);
+  }
+
   /* The thumb of the scrollbar of a text area, under the pointer. */
   @media (hover: hover) {
     [data-rx-text-area-input]:not(:disabled)::-webkit-scrollbar-thumb:hover {
