@@ -127,7 +127,9 @@ CONTRACT = Contract(
 )
 
 # What an indeterminate bar plays, as `getAnimations()` reports it: the
-# indicator grows, fades and pulses, and a shine crosses it.
+# indicator grows, fades and pulses, and a shine crosses it. Firefox keeps a
+# keyframe offset as a 32-bit float, so `20%` reads back as 0.20000000298:
+# an offset is compared to the six decimals such a float holds.
 ANIMATIONS = """element => element.getAnimations({subtree: true}).map(animation => {
     const {delay, duration, iterations, fill, direction, easing} =
         animation.effect.getTiming();
@@ -135,7 +137,10 @@ ANIMATIONS = """element => element.getAnimations({subtree: true}).map(animation 
         on: animation.effect.pseudoElement,
         timing: {delay, duration, iterations, fill, direction, easing},
         frames: animation.effect.getKeyframes().map(
-            ({computedOffset, composite, ...frame}) => frame
+            ({computedOffset, composite, offset, ...frame}) => ({
+                offset: Math.round(offset * 1e6) / 1e6,
+                ...frame,
+            })
         ),
     };
 })"""
