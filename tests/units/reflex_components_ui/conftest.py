@@ -59,7 +59,8 @@ def pyright(tmp_path: Path) -> Callable[[str], list[tuple[int, str, str]]]:
                 str(target),
             ],
             capture_output=True,
-            text=True,
+            # Pyright writes UTF-8 whatever the encoding of the system is.
+            encoding="utf-8",
             cwd=tmp_path,
             check=False,
         )
