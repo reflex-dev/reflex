@@ -75,7 +75,7 @@ export const useNavigate = () => (to, options) =>
 _RUNTIME_DRIVER = """
 import { pathToFileURL } from "node:url";
 const [modulePath, component, env, action] = process.argv.slice(2);
-const { pathname, languages, props, mountTarget } = JSON.parse(env);
+const { pathname, languages, cookie, props, mountTarget } = JSON.parse(env);
 globalThis.navigations = [];
 globalThis.stateUpdates = [];
 const localeChanges = [];
@@ -95,7 +95,7 @@ const element = () =>
   });
 const mountElement = element();
 globalThis.document = {
-  cookie: "",
+  cookie,
   documentElement: element(),
   querySelector: (selector) => (selector === mountTarget ? mountElement : null),
 };
@@ -150,6 +150,7 @@ def _render_runtime(
     localized_paths: dict[str, dict[str, str]] | None = None,
     pathname: str = "/",
     languages: tuple[str, ...] = ("en",),
+    cookie: str = "",
     props: dict[str, Any] | None = None,
     mount_target: str | None = None,
     mount_present: bool = True,
@@ -170,6 +171,7 @@ def _render_runtime(
             {locale: path}.
         pathname: The router location's path.
         languages: The browser's preferred languages.
+        cookie: The page's ``document.cookie``.
         props: Extra props for the component.
         mount_target: The embed mount target selector (EmbedPlugin), if any.
         mount_present: Whether the page has an element matching the mount
@@ -215,6 +217,7 @@ def _render_runtime(
     env = json.dumps({
         "pathname": pathname,
         "languages": list(languages),
+        "cookie": cookie,
         "props": props or {},
         "mountTarget": mount_target if mount_present else None,
     })
@@ -509,6 +512,30 @@ def test_embedded_provider_without_its_mount_element_leaves_the_host_page_alone(
     )
     assert rendered["documentElement"] == {}
     assert rendered["visibility"] == ""
+
+
+@requires_node
+@pytest.mark.parametrize(
+    ("cookie", "visibility"),
+    [
+        # the cookie's locale is the default one, rendered at once
+        ("reflex_locale=en", ""),
+        # no usable cookie: the browser's German, held until its catalog renders
+        ("reflex_locale=%", "hidden"),
+    ],
+)
+def test_provider_takes_a_malformed_locale_cookie_as_none(
+    tmp_path: Path, cookie: str, visibility: str
+):
+    rendered = _render_runtime(
+        tmp_path,
+        "I18nProvider",
+        locales=["en", "de"],
+        default_locale="en",
+        languages=("de",),
+        cookie=cookie,
+    )
+    assert rendered["visibility"] == visibility
 
 
 _PICK_CASES = [

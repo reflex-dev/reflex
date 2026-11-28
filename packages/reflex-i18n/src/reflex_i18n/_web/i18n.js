@@ -78,7 +78,15 @@ const readCookie = (name) => {
   const match = document.cookie
     .split("; ")
     .find((row) => row.startsWith(name + "="));
-  return match ? decodeURIComponent(match.split("=")[1]) : undefined;
+  if (!match) {
+    return undefined;
+  }
+  try {
+    return decodeURIComponent(match.slice(name.length + 1));
+  } catch {
+    // Malformed percent encoding, e.g. a lone "%": no usable preference.
+    return undefined;
+  }
 };
 
 const writeCookie = (name, value) => {
