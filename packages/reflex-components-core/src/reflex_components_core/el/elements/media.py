@@ -274,7 +274,93 @@ class Source(VoidBaseHTML):
     type: Var[str] = field(doc="Media type of the source")
 
 
-class Svg(BaseHTML):
+class SvgPresentationProps(BaseHTML):
+    """The presentation attributes of the SVG containers, shapes and text elements."""
+
+    clip_path: Var[str] = field(doc="Reference to the clipPath that clips the element.")
+
+    clip_rule: Var[str] = field(
+        doc="Fill rule of a shape inside a clipPath: nonzero or evenodd."
+    )
+
+    direction: Var[str] = field(doc="Base direction of the text: ltr or rtl.")
+
+    dominant_baseline: Var[str] = field(doc="Baseline the text is aligned to.")
+
+    fill: Var[str | Color] = field(doc="Color or paint server filling the element.")
+
+    fill_opacity: Var[str | int | float] = field(doc="Opacity of the fill.")
+
+    fill_rule: Var[str] = field(
+        doc="How the inside of a shape is determined: nonzero or evenodd."
+    )
+
+    filter: Var[str] = field(doc="Reference to the filter applied to the element.")
+
+    font_family: Var[str] = field(doc="Font family of the text.")
+
+    font_size: Var[str | int | float] = field(doc="Font size of the text.")
+
+    font_style: Var[str] = field(doc="Font style of the text.")
+
+    font_weight: Var[str | int] = field(doc="Font weight of the text.")
+
+    letter_spacing: Var[str | int | float] = field(
+        doc="Space between the characters of the text."
+    )
+
+    marker_end: Var[str] = field(
+        doc="Reference to the marker drawn at the last vertex."
+    )
+
+    marker_mid: Var[str] = field(
+        doc="Reference to the marker drawn at every vertex between the first and the last."
+    )
+
+    marker_start: Var[str] = field(
+        doc="Reference to the marker drawn at the first vertex."
+    )
+
+    mask: Var[str] = field(doc="Reference to the mask applied to the element.")
+
+    opacity: Var[str | int | float] = field(doc="Opacity of the element as a whole.")
+
+    stroke: Var[str | Color] = field(doc="Color or paint server of the outline.")
+
+    stroke_dasharray: Var[str | int | float] = field(
+        doc="Lengths of the dashes and gaps of the outline."
+    )
+
+    stroke_dashoffset: Var[str | int | float] = field(
+        doc="Offset at which the dash pattern of the outline starts."
+    )
+
+    stroke_linecap: Var[str] = field(
+        doc="Shape of the ends of open outlines: butt, round or square."
+    )
+
+    stroke_linejoin: Var[str] = field(
+        doc="Shape of the corners of the outline: miter, round or bevel."
+    )
+
+    stroke_miterlimit: Var[str | int | float] = field(
+        doc="Limit of the ratio of the miter length to the stroke width."
+    )
+
+    stroke_opacity: Var[str | int | float] = field(doc="Opacity of the outline.")
+
+    stroke_width: Var[str | int | float] = field(doc="Width of the outline.")
+
+    text_anchor: Var[str] = field(
+        doc="Alignment of the text to its position: start, middle or end."
+    )
+
+    transform: Var[str] = field(
+        doc="Transformations applied to the element and its children."
+    )
+
+
+class Svg(SvgPresentationProps):
     """Display the svg element.
 
     The svg root and its descendants render as a single memoized component,
@@ -293,12 +379,9 @@ class Svg(BaseHTML):
     preserve_aspect_ratio: Var[str] = field(
         doc="Controls how the SVG scales to fit its viewport."
     )
-    transform: Var[str] = field(
-        doc="Defines a list of transform definitions that are applied to an element and the element's children."
-    )
 
 
-class Text(BaseHTML):
+class Text(SvgPresentationProps):
     """The SVG text component."""
 
     tag = "text"
@@ -323,7 +406,7 @@ class Text(BaseHTML):
     )
 
 
-class Line(BaseHTML):
+class Line(SvgPresentationProps):
     """The SVG line component."""
 
     tag = "line"
@@ -334,7 +417,7 @@ class Line(BaseHTML):
     path_length: Var[int] = field(doc="The total path length, in user units.")
 
 
-class Circle(BaseHTML):
+class Circle(SvgPresentationProps):
     """The SVG circle component."""
 
     tag = "circle"
@@ -346,7 +429,7 @@ class Circle(BaseHTML):
     )
 
 
-class Ellipse(BaseHTML):
+class Ellipse(SvgPresentationProps):
     """The SVG ellipse component."""
 
     tag = "ellipse"
@@ -359,7 +442,7 @@ class Ellipse(BaseHTML):
     )
 
 
-class Rect(BaseHTML):
+class Rect(SvgPresentationProps):
     """The SVG rect component."""
 
     tag = "rect"
@@ -378,7 +461,7 @@ class Rect(BaseHTML):
     )
 
 
-class Polygon(BaseHTML):
+class Polygon(SvgPresentationProps):
     """The SVG polygon component."""
 
     tag = "polygon"
@@ -390,7 +473,7 @@ class Polygon(BaseHTML):
     )
 
 
-class Polyline(BaseHTML):
+class Polyline(SvgPresentationProps):
     """The SVG polyline component."""
 
     tag = "polyline"
@@ -492,7 +575,7 @@ class Stop(BaseHTML):
     )
 
 
-class Path(BaseHTML):
+class Path(SvgPresentationProps):
     """Display the path element."""
 
     tag = "path"
@@ -501,7 +584,7 @@ class Path(BaseHTML):
     path_length: Var[int] = field(doc="The total path length, in user units.")
 
 
-class Marker(BaseHTML):
+class Marker(SvgPresentationProps):
     """Display the marker element."""
 
     tag = "marker"
@@ -539,27 +622,13 @@ class Marker(BaseHTML):
     )
 
 
-class G(BaseHTML):
+class G(SvgPresentationProps):
     """The SVG g component, used to group other SVG elements."""
 
     tag = "g"
 
-    fill: Var[str | Color] = field(doc="The fill color of the group.")
 
-    fill_opacity: Var[str | int | float] = field(doc="The fill opacity of the group.")
-
-    stroke: Var[str | Color] = field(doc="The stroke color of the group.")
-
-    stroke_opacity: Var[str | int | float] = field(
-        doc="The stroke opacity of the group."
-    )
-
-    stroke_width: Var[str | int | float] = field(doc="The stroke width of the group.")
-
-    transform: Var[str] = field(doc="The transform applied to the group.")
-
-
-class SvgImage(BaseHTML):
+class SvgImage(SvgPresentationProps):
     """The SVG image component."""
 
     tag = "image"
@@ -581,7 +650,7 @@ class SvgImage(BaseHTML):
     crossorigin: Var[str] = field(doc="CORS settings for the image.")
 
 
-class Use(BaseHTML):
+class Use(SvgPresentationProps):
     """The SVG use component for reusing defined elements."""
 
     tag = "use"
@@ -601,7 +670,7 @@ class Use(BaseHTML):
     height: Var[str | int] = field(doc="Height of the referenced element.")
 
 
-class TSpan(BaseHTML):
+class TSpan(SvgPresentationProps):
     """The SVG tspan component for text spans within text elements."""
 
     tag = "tspan"
@@ -625,7 +694,7 @@ class TSpan(BaseHTML):
     )
 
 
-class TextPath(BaseHTML):
+class TextPath(SvgPresentationProps):
     """The SVG textPath component for text along a path."""
 
     tag = "textPath"
@@ -653,7 +722,7 @@ class TextPath(BaseHTML):
     text_length: Var[str | int] = field(doc="Target length for the text.")
 
 
-class Pattern(BaseHTML):
+class Pattern(SvgPresentationProps):
     """The SVG pattern component for defining repeating patterns."""
 
     tag = "pattern"
@@ -683,7 +752,7 @@ class Pattern(BaseHTML):
     href: Var[str] = field(doc="Reference to another pattern to inherit from.")
 
 
-class ClipPath(BaseHTML):
+class ClipPath(SvgPresentationProps):
     """The SVG clipPath component for defining clipping paths."""
 
     tag = "clipPath"
@@ -691,7 +760,7 @@ class ClipPath(BaseHTML):
     clip_path_units: Var[str] = field(doc="Units for the clipping path coordinates.")
 
 
-class Symbol(BaseHTML):
+class Symbol(SvgPresentationProps):
     """The SVG symbol component for defining reusable symbols."""
 
     tag = "symbol"
@@ -707,7 +776,7 @@ class Symbol(BaseHTML):
     ref_y: Var[str | int] = field(doc="Reference Y coordinate.")
 
 
-class Mask(BaseHTML):
+class Mask(SvgPresentationProps):
     """The SVG mask component for defining masks."""
 
     tag = "mask"
@@ -725,7 +794,7 @@ class Mask(BaseHTML):
     mask_content_units: Var[str] = field(doc="Units for the mask content coordinates.")
 
 
-class ForeignObject(BaseHTML):
+class ForeignObject(SvgPresentationProps):
     """The SVG foreignObject component for embedding foreign content."""
 
     tag = "foreignObject"
@@ -739,7 +808,7 @@ class ForeignObject(BaseHTML):
     height: Var[str | int] = field(doc="Height of the foreign object.")
 
 
-class SvgA(BaseHTML):
+class SvgA(SvgPresentationProps):
     """The SVG anchor component for creating links."""
 
     tag = "a"
@@ -780,6 +849,10 @@ class Animate(BaseHTML):
 
     repeat_count: Var[str] = field(doc="Number of times to repeat the animation.")
 
+    fill: Var[str] = field(
+        doc="Whether the animated value is kept once the animation ends: freeze or remove."
+    )
+
     calc_mode: Var[str] = field(
         doc="How values should be calculated during the animation."
     )
@@ -812,6 +885,14 @@ class AnimateMotion(BaseHTML):
 
     repeat_count: Var[str] = field(doc="Number of times to repeat the animation.")
 
+    fill: Var[str] = field(
+        doc="Whether the animated value is kept once the animation ends: freeze or remove."
+    )
+
+    calc_mode: Var[str] = field(
+        doc="How values should be calculated during the animation."
+    )
+
     rotate: Var[str] = field(doc="Rotation behavior during motion.")
 
     key_times: Var[str] = field(doc="Key times for the motion.")
@@ -842,6 +923,14 @@ class AnimateTransform(BaseHTML):
 
     repeat_count: Var[str] = field(doc="Number of times to repeat the animation.")
 
+    fill: Var[str] = field(
+        doc="Whether the animated value is kept once the animation ends: freeze or remove."
+    )
+
+    calc_mode: Var[str] = field(
+        doc="How values should be calculated during the animation."
+    )
+
     values: Var[str] = field(doc="List of values for the transformation.")
 
     href: Var[str] = field(doc="Reference to the target element.")
@@ -861,6 +950,10 @@ class Set(BaseHTML):
     dur: Var[str] = field(doc="Duration for which to maintain the value.")
 
     end: Var[str] = field(doc="When to end the setting.")
+
+    fill: Var[str] = field(
+        doc="Whether the animated value is kept once the animation ends: freeze or remove."
+    )
 
     href: Var[str] = field(doc="Reference to the target element.")
 
@@ -915,7 +1008,7 @@ class SvgStyle(RawTextBaseHTML):
     title: Var[str] = field(doc="Title of the stylesheet.")
 
 
-class Switch(BaseHTML):
+class Switch(SvgPresentationProps):
     """The SVG switch component for conditional processing."""
 
     tag = "switch"
@@ -931,6 +1024,452 @@ class View(BaseHTML):
     preserve_aspect_ratio: Var[str] = field(
         doc="How the view should scale to fit its viewport."
     )
+
+
+class Filter(BaseHTML):
+    """The SVG filter component, a filter effect made of filter primitives."""
+
+    tag = "filter"
+
+    x: Var[str | int | float] = field(doc="X coordinate of the filter region.")
+
+    y: Var[str | int | float] = field(doc="Y coordinate of the filter region.")
+
+    width: Var[str | int | float] = field(doc="Width of the filter region.")
+
+    height: Var[str | int | float] = field(doc="Height of the filter region.")
+
+    filter_units: Var[str] = field(
+        doc="Coordinate system of the filter region: userSpaceOnUse or objectBoundingBox."
+    )
+
+    primitive_units: Var[str] = field(
+        doc="Coordinate system of the lengths within the filter primitives."
+    )
+
+    color_interpolation_filters: Var[str] = field(
+        doc="Color space of the filter operations: auto, sRGB or linearRGB."
+    )
+
+
+class FilterPrimitive(BaseHTML):
+    """The attributes all SVG filter primitives share."""
+
+    x: Var[str | int | float] = field(
+        doc="X coordinate of the subregion the primitive is restricted to."
+    )
+
+    y: Var[str | int | float] = field(
+        doc="Y coordinate of the subregion the primitive is restricted to."
+    )
+
+    width: Var[str | int | float] = field(
+        doc="Width of the subregion the primitive is restricted to."
+    )
+
+    height: Var[str | int | float] = field(
+        doc="Height of the subregion the primitive is restricted to."
+    )
+
+    result: Var[str] = field(
+        doc="Name of the result, for later primitives of the filter to take as input."
+    )
+
+    color_interpolation_filters: Var[str] = field(
+        doc="Color space of the operation: auto, sRGB or linearRGB."
+    )
+
+
+class FeBlend(FilterPrimitive):
+    """The SVG feBlend component, blending two inputs."""
+
+    tag = "feBlend"
+
+    in_: Var[str] = field(doc="The first input.")
+
+    in2: Var[str] = field(doc="The second input.")
+
+    mode: Var[str] = field(doc="Blend mode, such as normal, multiply or screen.")
+
+
+class FeColorMatrix(FilterPrimitive):
+    """The SVG feColorMatrix component, transforming colors with a matrix."""
+
+    tag = "feColorMatrix"
+
+    in_: Var[str] = field(doc="The input.")
+
+    type: Var[str] = field(
+        doc="Kind of operation: matrix, saturate, hueRotate or luminanceToAlpha."
+    )
+
+    values: Var[str | int | float] = field(doc="The values of the operation.")
+
+
+class FeComponentTransfer(FilterPrimitive):
+    """The SVG feComponentTransfer component, remapping each color channel."""
+
+    tag = "feComponentTransfer"
+
+    in_: Var[str] = field(doc="The input.")
+
+
+class FeComposite(FilterPrimitive):
+    """The SVG feComposite component, compositing two inputs."""
+
+    tag = "feComposite"
+
+    in_: Var[str] = field(doc="The first input.")
+
+    in2: Var[str] = field(doc="The second input.")
+
+    operator: Var[str] = field(
+        doc="Compositing operation: over, in, out, atop, xor, lighter or arithmetic."
+    )
+
+    k1: Var[str | int | float] = field(doc="The k1 value of the arithmetic operation.")
+
+    k2: Var[str | int | float] = field(doc="The k2 value of the arithmetic operation.")
+
+    k3: Var[str | int | float] = field(doc="The k3 value of the arithmetic operation.")
+
+    k4: Var[str | int | float] = field(doc="The k4 value of the arithmetic operation.")
+
+
+class FeConvolveMatrix(FilterPrimitive):
+    """The SVG feConvolveMatrix component, applying a convolution kernel."""
+
+    tag = "feConvolveMatrix"
+
+    in_: Var[str] = field(doc="The input.")
+
+    order: Var[str | int] = field(
+        doc="Number of cells of the kernel matrix in each dimension."
+    )
+
+    kernel_matrix: Var[str] = field(doc="The values of the kernel matrix.")
+
+    divisor: Var[str | int | float] = field(
+        doc="Divisor of the sum of the weighted pixel values."
+    )
+
+    bias: Var[str | int | float] = field(doc="Value added to each result.")
+
+    target_x: Var[str | int] = field(doc="Column of the target pixel in the kernel.")
+
+    target_y: Var[str | int] = field(doc="Row of the target pixel in the kernel.")
+
+    edge_mode: Var[str] = field(
+        doc="How the input is extended at its edges: duplicate, wrap or none."
+    )
+
+    kernel_unit_length: Var[str | int | float] = field(
+        doc="Distance between the cells of the kernel, in user units."
+    )
+
+    preserve_alpha: Var[str | bool] = field(
+        doc="Whether the convolution leaves the alpha channel unchanged."
+    )
+
+
+class FeDiffuseLighting(FilterPrimitive):
+    """The SVG feDiffuseLighting component, lighting the input's alpha channel as a bump map."""
+
+    tag = "feDiffuseLighting"
+
+    in_: Var[str] = field(doc="The input.")
+
+    surface_scale: Var[str | int | float] = field(
+        doc="Height of the surface at an alpha value of 1."
+    )
+
+    diffuse_constant: Var[str | int | float] = field(
+        doc="The kd value of the Phong lighting model."
+    )
+
+    kernel_unit_length: Var[str | int | float] = field(
+        doc="Distance between the cells of the surface normal kernel, in user units."
+    )
+
+    lighting_color: Var[str | Color] = field(doc="Color of the light source.")
+
+
+class FeDisplacementMap(FilterPrimitive):
+    """The SVG feDisplacementMap component, displacing the pixels of an input by another."""
+
+    tag = "feDisplacementMap"
+
+    in_: Var[str] = field(doc="The input to displace.")
+
+    in2: Var[str] = field(doc="The input the displacement is taken from.")
+
+    scale: Var[str | int | float] = field(doc="Scale factor of the displacement.")
+
+    x_channel_selector: Var[str] = field(
+        doc="Channel of in2 that displaces along the x axis: R, G, B or A."
+    )
+
+    y_channel_selector: Var[str] = field(
+        doc="Channel of in2 that displaces along the y axis: R, G, B or A."
+    )
+
+
+class FeDistantLight(BaseHTML):
+    """The SVG feDistantLight component, a light source infinitely far away."""
+
+    tag = "feDistantLight"
+
+    azimuth: Var[str | int | float] = field(
+        doc="Direction of the light on the xy plane, in degrees clockwise from the x axis."
+    )
+
+    elevation: Var[str | int | float] = field(
+        doc="Direction of the light from the xy plane towards the z axis, in degrees."
+    )
+
+
+class FeDropShadow(FilterPrimitive):
+    """The SVG feDropShadow component, a drop shadow of the input."""
+
+    tag = "feDropShadow"
+
+    in_: Var[str] = field(doc="The input.")
+
+    dx: Var[str | int | float] = field(doc="Horizontal offset of the shadow.")
+
+    dy: Var[str | int | float] = field(doc="Vertical offset of the shadow.")
+
+    std_deviation: Var[str | int | float] = field(
+        doc="Standard deviation of the shadow's blur."
+    )
+
+    flood_color: Var[str | Color] = field(doc="Color of the shadow.")
+
+    flood_opacity: Var[str | int | float] = field(doc="Opacity of the shadow.")
+
+
+class FeFlood(FilterPrimitive):
+    """The SVG feFlood component, filling the subregion with a color."""
+
+    tag = "feFlood"
+
+    flood_color: Var[str | Color] = field(doc="Color of the fill.")
+
+    flood_opacity: Var[str | int | float] = field(doc="Opacity of the fill.")
+
+
+class TransferFunction(BaseHTML):
+    """The attributes of the transfer functions of feComponentTransfer."""
+
+    type: Var[str] = field(
+        doc="Kind of function: identity, table, discrete, linear or gamma."
+    )
+
+    table_values: Var[str] = field(doc="Values of a table or discrete function.")
+
+    slope: Var[str | int | float] = field(doc="Slope of a linear function.")
+
+    intercept: Var[str | int | float] = field(doc="Intercept of a linear function.")
+
+    amplitude: Var[str | int | float] = field(doc="Amplitude of a gamma function.")
+
+    exponent: Var[str | int | float] = field(doc="Exponent of a gamma function.")
+
+    offset: Var[str | int | float] = field(doc="Offset of a gamma function.")
+
+
+class FeFuncA(TransferFunction):
+    """The SVG feFuncA component, the transfer function of the alpha channel."""
+
+    tag = "feFuncA"
+
+
+class FeFuncB(TransferFunction):
+    """The SVG feFuncB component, the transfer function of the blue channel."""
+
+    tag = "feFuncB"
+
+
+class FeFuncG(TransferFunction):
+    """The SVG feFuncG component, the transfer function of the green channel."""
+
+    tag = "feFuncG"
+
+
+class FeFuncR(TransferFunction):
+    """The SVG feFuncR component, the transfer function of the red channel."""
+
+    tag = "feFuncR"
+
+
+class FeGaussianBlur(FilterPrimitive):
+    """The SVG feGaussianBlur component, blurring the input."""
+
+    tag = "feGaussianBlur"
+
+    in_: Var[str] = field(doc="The input.")
+
+    std_deviation: Var[str | int | float] = field(
+        doc="Standard deviation of the blur, for both axes or for x and y."
+    )
+
+    edge_mode: Var[str] = field(
+        doc="How the input is extended at its edges: duplicate, wrap or none."
+    )
+
+
+class FeImage(FilterPrimitive):
+    """The SVG feImage component, an image or element rendered as the result."""
+
+    tag = "feImage"
+
+    href: Var[str] = field(doc="URL of the image or reference to the element.")
+
+    preserve_aspect_ratio: Var[str] = field(
+        doc="How the image is scaled to fit the subregion."
+    )
+
+    cross_origin: Var[CrossOrigin] = field(
+        doc="Configures the CORS requests for the image."
+    )
+
+
+class FeMerge(FilterPrimitive):
+    """The SVG feMerge component, layering the inputs of its feMergeNode children."""
+
+    tag = "feMerge"
+
+
+class FeMergeNode(BaseHTML):
+    """The SVG feMergeNode component, one layer of feMerge."""
+
+    tag = "feMergeNode"
+
+    in_: Var[str] = field(doc="The input.")
+
+
+class FeMorphology(FilterPrimitive):
+    """The SVG feMorphology component, thinning or fattening the input."""
+
+    tag = "feMorphology"
+
+    in_: Var[str] = field(doc="The input.")
+
+    operator: Var[str] = field(doc="Whether to erode (thin) or dilate (fatten).")
+
+    radius: Var[str | int | float] = field(
+        doc="Radius of the operation, for both axes or for x and y."
+    )
+
+
+class FeOffset(FilterPrimitive):
+    """The SVG feOffset component, moving the input."""
+
+    tag = "feOffset"
+
+    in_: Var[str] = field(doc="The input.")
+
+    dx: Var[str | int | float] = field(doc="Horizontal offset.")
+
+    dy: Var[str | int | float] = field(doc="Vertical offset.")
+
+
+class FePointLight(BaseHTML):
+    """The SVG fePointLight component, a light source shining in all directions."""
+
+    tag = "fePointLight"
+
+    x: Var[str | int | float] = field(doc="X coordinate of the light.")
+
+    y: Var[str | int | float] = field(doc="Y coordinate of the light.")
+
+    z: Var[str | int | float] = field(doc="Z coordinate of the light.")
+
+
+class FeSpecularLighting(FilterPrimitive):
+    """The SVG feSpecularLighting component, lighting the input's alpha channel with highlights."""
+
+    tag = "feSpecularLighting"
+
+    in_: Var[str] = field(doc="The input.")
+
+    surface_scale: Var[str | int | float] = field(
+        doc="Height of the surface at an alpha value of 1."
+    )
+
+    specular_constant: Var[str | int | float] = field(
+        doc="The ks value of the Phong lighting model."
+    )
+
+    specular_exponent: Var[str | int | float] = field(
+        doc="Exponent of the specular term; larger is more shiny."
+    )
+
+    kernel_unit_length: Var[str | int | float] = field(
+        doc="Distance between the cells of the surface normal kernel, in user units."
+    )
+
+    lighting_color: Var[str | Color] = field(doc="Color of the light source.")
+
+
+class FeSpotLight(BaseHTML):
+    """The SVG feSpotLight component, a light source shining in a cone."""
+
+    tag = "feSpotLight"
+
+    x: Var[str | int | float] = field(doc="X coordinate of the light.")
+
+    y: Var[str | int | float] = field(doc="Y coordinate of the light.")
+
+    z: Var[str | int | float] = field(doc="Z coordinate of the light.")
+
+    points_at_x: Var[str | int | float] = field(
+        doc="X coordinate of the point the light points at."
+    )
+
+    points_at_y: Var[str | int | float] = field(
+        doc="Y coordinate of the point the light points at."
+    )
+
+    points_at_z: Var[str | int | float] = field(
+        doc="Z coordinate of the point the light points at."
+    )
+
+    specular_exponent: Var[str | int | float] = field(
+        doc="Exponent of the falloff from the center of the cone."
+    )
+
+    limiting_cone_angle: Var[str | int | float] = field(
+        doc="Angle of the cone outside which no light falls, in degrees."
+    )
+
+
+class FeTile(FilterPrimitive):
+    """The SVG feTile component, repeating the input across the subregion."""
+
+    tag = "feTile"
+
+    in_: Var[str] = field(doc="The input.")
+
+
+class FeTurbulence(FilterPrimitive):
+    """The SVG feTurbulence component, Perlin turbulence or fractal noise."""
+
+    tag = "feTurbulence"
+
+    base_frequency: Var[str | int | float] = field(
+        doc="Base frequency of the noise, for both axes or for x and y."
+    )
+
+    num_octaves: Var[str | int] = field(doc="Number of octaves of the noise.")
+
+    seed: Var[str | int | float] = field(doc="Seed of the pseudo-random numbers.")
+
+    stitch_tiles: Var[str] = field(
+        doc="Whether the noise tiles seamlessly: stitch or noStitch."
+    )
+
+    type: Var[str] = field(doc="Kind of noise: turbulence or fractalNoise.")
 
 
 class SVG(ComponentNamespace):
@@ -972,6 +1511,32 @@ class SVG(ComponentNamespace):
     style = staticmethod(SvgStyle.create)
     switch = staticmethod(Switch.create)
     view = staticmethod(View.create)
+    filter = staticmethod(Filter.create)
+    fe_blend = staticmethod(FeBlend.create)
+    fe_color_matrix = staticmethod(FeColorMatrix.create)
+    fe_component_transfer = staticmethod(FeComponentTransfer.create)
+    fe_composite = staticmethod(FeComposite.create)
+    fe_convolve_matrix = staticmethod(FeConvolveMatrix.create)
+    fe_diffuse_lighting = staticmethod(FeDiffuseLighting.create)
+    fe_displacement_map = staticmethod(FeDisplacementMap.create)
+    fe_distant_light = staticmethod(FeDistantLight.create)
+    fe_drop_shadow = staticmethod(FeDropShadow.create)
+    fe_flood = staticmethod(FeFlood.create)
+    fe_func_a = staticmethod(FeFuncA.create)
+    fe_func_b = staticmethod(FeFuncB.create)
+    fe_func_g = staticmethod(FeFuncG.create)
+    fe_func_r = staticmethod(FeFuncR.create)
+    fe_gaussian_blur = staticmethod(FeGaussianBlur.create)
+    fe_image = staticmethod(FeImage.create)
+    fe_merge = staticmethod(FeMerge.create)
+    fe_merge_node = staticmethod(FeMergeNode.create)
+    fe_morphology = staticmethod(FeMorphology.create)
+    fe_offset = staticmethod(FeOffset.create)
+    fe_point_light = staticmethod(FePointLight.create)
+    fe_specular_lighting = staticmethod(FeSpecularLighting.create)
+    fe_spot_light = staticmethod(FeSpotLight.create)
+    fe_tile = staticmethod(FeTile.create)
+    fe_turbulence = staticmethod(FeTurbulence.create)
     __call__ = staticmethod(Svg.create)
 
 
@@ -1006,6 +1571,32 @@ desc = Desc.create
 metadata = Metadata.create
 switch = Switch.create
 view = View.create
+filter_svg = Filter.create
+fe_blend = FeBlend.create
+fe_color_matrix = FeColorMatrix.create
+fe_component_transfer = FeComponentTransfer.create
+fe_composite = FeComposite.create
+fe_convolve_matrix = FeConvolveMatrix.create
+fe_diffuse_lighting = FeDiffuseLighting.create
+fe_displacement_map = FeDisplacementMap.create
+fe_distant_light = FeDistantLight.create
+fe_drop_shadow = FeDropShadow.create
+fe_flood = FeFlood.create
+fe_func_a = FeFuncA.create
+fe_func_b = FeFuncB.create
+fe_func_g = FeFuncG.create
+fe_func_r = FeFuncR.create
+fe_gaussian_blur = FeGaussianBlur.create
+fe_image = FeImage.create
+fe_merge = FeMerge.create
+fe_merge_node = FeMergeNode.create
+fe_morphology = FeMorphology.create
+fe_offset = FeOffset.create
+fe_point_light = FePointLight.create
+fe_specular_lighting = FeSpecularLighting.create
+fe_spot_light = FeSpotLight.create
+fe_tile = FeTile.create
+fe_turbulence = FeTurbulence.create
 area = Area.create
 audio = Audio.create
 image = img = Img.create
