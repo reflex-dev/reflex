@@ -33,7 +33,7 @@ from reflex.utils.frontend_skeleton import (
     _compile_vite_config,
     _update_react_router_config,
 )
-from reflex.utils.rename import rename_imports_and_app_name
+from reflex.utils.rename import process_directory, rename_imports_and_app_name
 from reflex.utils.telemetry import CpuInfo, get_cpu_info
 
 runner = CliRunner()
@@ -724,6 +724,27 @@ def test_sync_root_lockfiles_to_web_keeps_web_package_json(tmp_path, monkeypatch
 
     assert web_pkg.read_text() == '{"name": "reflex"}'
     assert not web_lock.exists()
+
+
+def test_lockfiles_persist_in_the_configured_directory(tmp_path, monkeypatch):
+    """An app whose config names another lockfile directory keeps its lockfiles there."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+    config = Config(app_name="site", lockfile_dir=Path("site/reflex.lock"))
+    monkeypatch.setattr(frontend_skeleton, "get_config", lambda: config)
+    (web_dir / constants.Bun.LOCKFILE_PATH).write_text("site-lock")
+
+    with chdir(tmp_path):
+        assert frontend_skeleton.get_root_lockfile_path(
+            constants.Bun.LOCKFILE_PATH
+        ) == (tmp_path / "site" / "reflex.lock" / constants.Bun.LOCKFILE_PATH)
+        frontend_skeleton.sync_web_lockfiles_to_root()
+
+    assert (
+        tmp_path / "site" / "reflex.lock" / constants.Bun.LOCKFILE_PATH
+    ).read_text() == ("site-lock")
+    assert not (tmp_path / constants.Bun.ROOT_LOCKFILE_DIR).exists()
 
 
 def test_sync_root_lockfiles_to_web_processes_package_json(tmp_path, monkeypatch):
@@ -2656,6 +2677,123 @@ app = rx.App()
 app.add_page(index)
 """
     )
+
+
+_RENAME_CONFIG = """import pathlib
+from pathlib import Path
+
+import reflex as rx
+
+# Keep assets_dir="foo/assets" out of the other app.
+OTHER_APP = dict(assets_dir="foo/assets")
+
+config = rx.Config(
+    app_name="{app_name}",
+    disable_plugins=[rx.plugins.SitemapPlugin],
+    {args}
+)
+"""
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+@pytest.mark.parametrize(
+    ("config_args", "renamed_config_args", "warning"),
+    [
+        pytest.param(
+            "assets_dir=Path('foo/assets'), lockfile_dir=\"foo/reflex.lock\"",
+            "assets_dir=Path('bar/assets'), lockfile_dir=\"bar/reflex.lock\"",
+            "",
+            id="literals-inside-the-app",
+        ),
+        pytest.param(
+            'assets_dir=Path (r"foo/assets"), lockfile_dir=pathlib.Path("foo/reflex.lock")',
+            'assets_dir=Path (r"bar/assets"), lockfile_dir=pathlib.Path("bar/reflex.lock")',
+            "",
+            id="raw-string-and-spacing",
+        ),
+        pytest.param(
+            'assets_dir="foo/assets", frontend_path="foo/assets"',
+            'assets_dir="bar/assets", frontend_path="foo/assets"',
+            "",
+            id="other-settings-untouched",
+        ),
+        pytest.param(
+            'assets_dir=Path("foo_assets"), lockfile_dir="foo.lock"',
+            'assets_dir=Path("foo_assets"), lockfile_dir="foo.lock"',
+            "",
+            id="outside-the-app",
+        ),
+        pytest.param(
+            'assets_dir="{root}/foo/assets", lockfile_dir=Path("{root}/foo.lock")',
+            'assets_dir="{root}/bar/assets", lockfile_dir=Path("{root}/foo.lock")',
+            "",
+            id="absolute-paths",
+        ),
+        pytest.param(
+            'assets_dir=Path("foo") / "assets"',
+            'assets_dir=Path("foo") / "assets"',
+            "Warning: assets_dir foo/assets moved to bar/assets with the app "
+            "directory. Update it in your config. ",
+            id="not-a-literal",
+        ),
+    ],
+)
+def test_cli_rename_updates_configured_dirs_it_moves(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    config_args: str,
+    renamed_config_args: str,
+    warning: str,
+):
+    """Directories configured inside the app package follow it to its new name.
+
+    Args:
+        tmp_path: The app root.
+        monkeypatch: The pytest monkeypatch fixture.
+        config_args: The directory settings before the rename, ``{root}`` standing for the app root.
+        renamed_config_args: The directory settings expected after the rename.
+        warning: The warning expected for a setting the rename cannot update.
+    """
+    monkeypatch.delenv(log._MANAGED_ENV_VAR, raising=False)
+    config_args = config_args.format(root=tmp_path.as_posix())
+    renamed_config_args = renamed_config_args.format(root=tmp_path.as_posix())
+    (tmp_path / "foo").mkdir()
+    (tmp_path / "foo" / "__init__.py").touch()
+    (tmp_path / "foo" / "foo.py").write_text("import reflex as rx\n")
+    config_file = tmp_path / "rxconfig.py"
+    config_file.write_text(_RENAME_CONFIG.format(app_name="foo", args=config_args))
+
+    try:
+        with chdir(tmp_path):
+            result = runner.invoke(cli, ["rename", "bar"])
+    finally:
+        log._reset()
+
+    assert result.exit_code == 0, result.output
+    assert config_file.read_text() == _RENAME_CONFIG.format(
+        app_name="bar", args=renamed_config_args
+    )
+    assert " ".join(result.output.split()) == (
+        f"Info: Renaming app directory to bar. {warning}"
+        "Success: App directory renamed to bar."
+    )
+
+
+def test_process_directory_skips_an_exclude_dir_given_with_dot_dot(tmp_path: Path):
+    """An excluded directory is matched however its path is spelled.
+
+    Args:
+        tmp_path: The directory to process.
+    """
+    (tmp_path / "foo").mkdir()
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "foo" / "page.py").write_text("import foo\n")
+    (tmp_path / "assets" / "page.py").write_text("import foo\n")
+
+    process_directory(tmp_path, "foo", "bar", exclude_dirs=[Path("foo/../assets")])
+
+    assert (tmp_path / "foo" / "page.py").read_text() == "import bar\n"
+    assert (tmp_path / "assets" / "page.py").read_text() == "import foo\n"
 
 
 def test_has_uuid_distinct_id_semantics_absent(

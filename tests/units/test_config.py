@@ -67,6 +67,26 @@ def test_frozen_lockfile_default(base_config_values):
     assert config.frozen_lockfile is True
 
 
+def test_app_directories(base_config_values, monkeypatch: pytest.MonkeyPatch):
+    """The assets and lockfile directories default to the app root's and take strings.
+
+    Args:
+        base_config_values: Config values.
+        monkeypatch: Fixture for setting environment variables.
+    """
+    config = rx.Config(**base_config_values)
+    assert (config.assets_dir, config.lockfile_dir) == (
+        Path("assets"),
+        Path("reflex.lock"),
+    )
+
+    config = rx.Config(**base_config_values, assets_dir="site/assets")  # pyright: ignore[reportArgumentType]
+    assert config.assets_dir == Path("site/assets")
+
+    monkeypatch.setenv("REFLEX_LOCKFILE_DIR", "site/reflex.lock")
+    assert rx.Config(**base_config_values).lockfile_dir == Path("site/reflex.lock")
+
+
 def test_trusted_proxy_hops_defaults_to_zero(base_config_values):
     """Do not trust client-controlled forwarded headers by default."""
     assert rx.Config(**base_config_values).trusted_proxy_hops == 0

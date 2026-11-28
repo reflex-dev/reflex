@@ -496,6 +496,27 @@ def test_local_asset(custom_script_in_asset_dir: Path) -> None:
     assert asset == f"/custom_script.js?v={_asset_hash(custom_script_in_asset_dir)}"
 
 
+def test_local_asset_from_the_configured_directory(
+    mock_asset_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A local asset resolves against the configured assets directory.
+
+    Args:
+        mock_asset_path: The app root the test runs in.
+        monkeypatch: A pytest fixture for patching.
+    """
+    site_assets = mock_asset_path / "site" / "assets"
+    site_assets.mkdir(parents=True)
+    script = site_assets / "site_script.js"
+    script.write_text("site")
+    config = rx.Config(app_name="site", assets_dir=Path("site/assets"))
+    monkeypatch.setattr(assets_module, "get_config", lambda: config)
+
+    asset = rx.asset("site_script.js", shared=False)
+
+    assert asset == f"/site_script.js?v={_asset_hash(script)}"
+
+
 def test_local_asset_hash_changes_with_content(
     custom_script_in_asset_dir: Path,
 ) -> None:

@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 import uuid
 from pathlib import Path
 from typing import Literal
@@ -20,16 +21,39 @@ from reflex.utils.registry import get_npm_registry
 logger = logging.getLogger(__name__)
 
 
+def _external_assets_gitignore_entry() -> str | None:
+    """Get the gitignore entry for the shared asset links in the configured assets dir.
+
+    Returns:
+        The entry relative to the app root, or None if the assets dir lies outside it.
+    """
+    root = Path.cwd()
+    external_dir = Path(
+        os.path.normpath(
+            root / get_config().assets_dir / constants.Dirs.EXTERNAL_APP_ASSETS
+        )
+    )
+    if not external_dir.is_relative_to(root):
+        return None
+    return f"{external_dir.relative_to(root).as_posix()}/"
+
+
 def initialize_gitignore(
     gitignore_file: Path = constants.GitIgnore.FILE,
-    files_to_ignore: set[str] | list[str] = constants.GitIgnore.DEFAULTS,
+    files_to_ignore: set[str] | list[str] | None = None,
 ):
     """Initialize the template .gitignore file.
 
     Args:
         gitignore_file: The .gitignore file to create.
-        files_to_ignore: The files to add to the .gitignore file.
+        files_to_ignore: The files to add to the .gitignore file, by default Reflex's own and the shared asset links of the configured assets dir.
     """
+    if files_to_ignore is None:
+        external_assets = _external_assets_gitignore_entry()
+        files_to_ignore = constants.GitIgnore.DEFAULTS | (
+            {external_assets} if external_assets else set()
+        )
+
     # Combine with the current ignored files.
     current_ignore: list[str] = []
     if gitignore_file.exists():
@@ -277,16 +301,25 @@ LOCKFILE_NAMES: tuple[str, ...] = (
 NO_PRUNE_LOCKFILE_NAMES: tuple[str, ...] = (constants.PackageJson.PATH,)
 
 
+def get_root_lockfile_dir() -> Path:
+    """Get the directory the frontend lockfiles persist in, ``reflex.lock`` by default.
+
+    Returns:
+        The configured ``lockfile_dir`` under the app root.
+    """
+    return Path.cwd() / get_config().lockfile_dir
+
+
 def get_root_lockfile_path(filename: str) -> Path:
-    """Get a persisted lockfile path under the app root's reflex.lock dir.
+    """Get a persisted lockfile path under the app's lockfile directory.
 
     Args:
         filename: The lockfile basename (e.g. ``bun.lock``, ``package-lock.json``).
 
     Returns:
-        The lockfile path inside ``<cwd>/reflex.lock/``.
+        The lockfile path inside the configured ``lockfile_dir``.
     """
-    return Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR / filename
+    return get_root_lockfile_dir() / filename
 
 
 def get_web_lockfile_path(filename: str) -> Path:

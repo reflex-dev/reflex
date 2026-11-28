@@ -1,0 +1,1 @@
+`rx.Config(assets_dir=...)` and `rx.Config(lockfile_dir=...)` move an app's `assets` and `reflex.lock` directories, so apps that share a project root each ship only their own assets and keep their own frontend lockfiles: `rx.Config(app_name="website", assets_dir=Path("website/assets"), lockfile_dir=Path("website/reflex.lock"))`.

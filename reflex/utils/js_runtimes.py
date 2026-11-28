@@ -106,7 +106,7 @@ def _persisted_lockfile_implies_npm() -> bool:
     Returns:
         Whether the persisted state implies npm.
     """
-    root_dir = Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR
+    root_dir = frontend_skeleton.get_root_lockfile_dir()
     return (root_dir / constants.Node.LOCKFILE_PATH).exists() and not (
         root_dir / constants.Bun.LOCKFILE_PATH
     ).exists()
@@ -144,7 +144,7 @@ def prefer_npm_over_bun() -> bool:
     if explicit is not None:
         return explicit
     if _persisted_lockfile_implies_npm():
-        _log_implicit_npm_notice(Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR)
+        _log_implicit_npm_notice(frontend_skeleton.get_root_lockfile_dir())
         return True
     return False
 
@@ -553,7 +553,7 @@ def _run_initial_install(
         return
 
     if any("lockfile had changes, but lockfile is frozen" in line for line in logs):
-        root_dir = Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR
+        root_dir = frontend_skeleton.get_root_lockfile_dir()
         logger.error(
             "The persisted lockfile is out of sync with the recovered "
             f"package.json. Delete the [bold]{escape(str(root_dir))}[/bold] directory "
