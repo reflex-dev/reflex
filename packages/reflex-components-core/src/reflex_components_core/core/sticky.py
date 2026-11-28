@@ -16,7 +16,7 @@ from reflex_components_core.el.elements.typography import Div
 _STYLESHEET = "rx-sticky-badge"
 
 
-def _badge_css() -> str:
+def badge_css() -> str:
     """Write the look of the badge.
 
     Plain rules, not ``css`` props: the badge is added to apps that may
@@ -102,7 +102,7 @@ class StickyLabel(Span):
         return super().create(
             # Its own copy of the stylesheet, for a label outside the badge:
             # React keeps one per name in the document.
-            static_style(_STYLESHEET, _badge_css()),
+            static_style(_STYLESHEET, badge_css()),
             "Built with Reflex",
             class_name="rx-sticky-label",
         )
@@ -131,7 +131,7 @@ class StickyBadge(A):
             The sticky badge.
         """
         return super().create(
-            static_style(_STYLESHEET, _badge_css()),
+            static_style(_STYLESHEET, badge_css()),
             StickyLogo.create(),
             Div.create(
                 Span.create("Built with Reflex", class_name="rx-sticky-label"),
