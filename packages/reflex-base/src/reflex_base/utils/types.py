@@ -1159,6 +1159,7 @@ def get_attribute_access_type(
         import sqlalchemy
         from sqlalchemy.ext.associationproxy import AssociationProxyInstance
         from sqlalchemy.orm import (
+            MANYTOONE,
             DeclarativeBase,
             Mapped,
             QueryableAttribute,
@@ -1195,7 +1196,18 @@ def get_attribute_access_type(
                     target_type = get_attribute_access_type(
                         attr.target_class, attr.value_attr
                     )
-                    return target_type if attr.scalar else list[target_type]
+                    if not attr.scalar:
+                        return list[target_type]
+                    if target_type is not None:
+                        source = insp.relationships[attr.target_collection]
+                        # A scalar inverse relationship can be absent even when
+                        # its local columns are required.
+                        if source.direction is not MANYTOONE or any(
+                            getattr(column, "nullable", True)
+                            for column in source.local_columns
+                        ):
+                            return target_type | None
+                    return target_type
         elif (
             sqlmodel_type is not None
             and not is_generic_alias(cls)

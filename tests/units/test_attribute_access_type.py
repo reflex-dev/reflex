@@ -484,8 +484,15 @@ class SQLAProxyUser(MappedAsDataclass, SQLABase):
     profile_id: Mapped[int] = mapped_column(
         sqlalchemy.ForeignKey(SQLAClassDataclass.id), init=False
     )
-    profile: Mapped[SQLAClassDataclass] = relationship()
+    backup_profile_id: Mapped[int | None] = mapped_column(
+        sqlalchemy.ForeignKey(SQLAClassDataclass.id), init=False
+    )
+    profile: Mapped[SQLAClassDataclass] = relationship(foreign_keys=[profile_id])
+    backup_profile: Mapped[SQLAClassDataclass | None] = relationship(
+        foreign_keys=[backup_profile_id], default=None
+    )
     profile_name = association_proxy("profile", "name")
+    backup_profile_name = association_proxy("backup_profile", "name")
     profile_count = association_proxy("profile", "count")
     profile_optional_int = association_proxy("profile", "optional_int")
     profile_data = association_proxy("profile", "dict_str_str")
@@ -509,6 +516,8 @@ def test_get_attribute_access_type_sqlalchemy_association_proxies(
 
     user = ProxyState.user
     assert get_attribute_access_type(SQLAClassDataclass, "label_ids") == list[int]
+    assert user.profile_name._var_type is str
+    assert user.backup_profile_name._var_type == str | None
     assert user.profile_name.upper()._var_type is str
 
     count = user.profile_count

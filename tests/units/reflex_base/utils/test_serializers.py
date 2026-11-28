@@ -129,6 +129,16 @@ def test_declarative_base_serializer_includes_loaded_scalar_proxy_values():
         name: Mapped[str]
         note: Mapped[str] = mapped_column(deferred=True)
 
+        @property
+        def label(self) -> str:
+            """Guard against evaluating a property absent from serialized state.
+
+            Raises:
+                AssertionError: If serialization calls the getter.
+            """
+            msg = "Serialization must not call the profile label getter."
+            raise AssertionError(msg)
+
     class User(Base):
         """A user exposing the name and note of an optional profile."""
 
@@ -141,6 +151,17 @@ def test_declarative_base_serializer_includes_loaded_scalar_proxy_values():
         profile: Mapped[Profile | None] = relationship()
         profile_name = association_proxy("profile", "name")
         profile_note = association_proxy("profile", "note")
+        profile_label = association_proxy("profile", "label")
+
+    class Account(Base):
+        """An account that exposes the same name through a second scalar proxy."""
+
+        __tablename__ = "serializer_proxy_account"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        user_id: Mapped[int] = mapped_column(ForeignKey("serializer_proxy_user.id"))
+        user: Mapped[User] = relationship()
+        profile_name = association_proxy("user", "profile_name")
 
     engine = create_engine("sqlite://")
     Base.metadata.create_all(engine)
@@ -155,10 +176,17 @@ def test_declarative_base_serializer_includes_loaded_scalar_proxy_values():
         session.expunge(unloaded)
     engine.dispose()
 
-    assert json.loads(json_dumps(loaded)) == {
+    expected_user = {
         "id": 1,
         "profile_id": 1,
         "profile": {"id": 1, "name": "Ada"},
+        "profile_name": "Ada",
+    }
+    assert json.loads(json_dumps(loaded)) == expected_user
+    assert json.loads(json_dumps(Account(id=1, user_id=1, user=loaded))) == {
+        "id": 1,
+        "user_id": 1,
+        "user": expected_user,
         "profile_name": "Ada",
     }
     assert json.loads(json_dumps(unloaded)) == {"id": 1, "profile_id": 1}
@@ -168,6 +196,7 @@ def test_declarative_base_serializer_includes_loaded_scalar_proxy_values():
         "profile": None,
         "profile_name": None,
         "profile_note": None,
+        "profile_label": None,
     }
 
 
