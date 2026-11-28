@@ -195,7 +195,7 @@ ACTIONS_MEMO_DECLARATIONS = [
         'se-button-height)", "--rx-icon-opacity": "0.9"}, a0_0: {"position": "rel'
         'ative"} });'
     ),
-    "const sx_8d448f3b8d_c = stylex.props(sx_8d448f3b8d.s).className;",
+    ("const sx_8d448f3b8d_c = stylex.props(sx_8d448f3b8d.s).className;"),
     (
         'const sx_8d448f3b8d_0 = { __proto__: null, "true": stylex.props(sx_8d448'
         "f3b8d.a0_0).className };"
@@ -240,7 +240,33 @@ ACTIONS_MEMO_DECLARATIONS = [
         'isible)": "0"}, ":focus-visible:not([data-disabled])": "2px"}, "height":'
         ' "var(--base-button-height)", "--rx-icon-opacity": "0.9"} });'
     ),
-    "const sx_6fb0976665_c = stylex.props(sx_6fb0976665.s).className;",
+    ("const sx_6fb0976665_c = stylex.props(sx_6fb0976665.s).className;"),
+    (
+        'const sx_21e3781dc3 = stylex.create({ s: {"boxSizing": "border-box", "fo'
+        'ntFamily": "var(--default-font-family)", "fontWeight": "var(--font-weigh'
+        't-medium)", "fontStyle": "normal", "zIndex": 0, "width": "100%", "height'
+        '": "100%", "display": "flex", "alignItems": "center", "justifyContent": '
+        '"center", "lineHeight": 1, "borderTopLeftRadius": "inherit", "borderTopR'
+        'ightRadius": "inherit", "borderBottomRightRadius": "inherit", "borderBot'
+        'tomLeftRadius": "inherit", "textTransform": "uppercase", "flexShrink": {'
+        '":not(:only-child)": 0}, "visibility": {"[data-status=\'loaded\']": "hidde'
+        'n"}, "fontSize": {"[data-letters=\'1\']": "var(--avatar-fallback-one-lette'
+        'r-font-size)", "[data-letters=\'2\']": "var(--avatar-fallback-two-letters-'
+        'font-size, var(--avatar-fallback-one-letter-font-size))"}, "backgroundCo'
+        'lor": "var(--accent-a3)", "color": "var(--accent-a11)"} });'
+    ),
+    ("const sx_21e3781dc3_c = stylex.props(sx_21e3781dc3.s).className;"),
+    (
+        'const sx_8df01e863a = stylex.create({ s: {"boxSizing": "border-box", "di'
+        'splay": "inline-flex", "alignItems": "center", "justifyContent": "center'
+        '", "verticalAlign": "middle", "userSelect": "none", "width": "var(--avat'
+        'ar-size)", "height": "var(--avatar-size)", "flexShrink": 0, "--avatar-si'
+        'ze": "var(--space-8)", "--avatar-fallback-one-letter-font-size": "var(--'
+        'font-size-5)", "borderRadius": "max(var(--radius-3), var(--radius-full))'
+        '", "letterSpacing": "var(--letter-spacing-4)", "--avatar-fallback-two-le'
+        'tters-font-size": "var(--font-size-4)"} });'
+    ),
+    ("const sx_8df01e863a_c = stylex.props(sx_8df01e863a.s).className;"),
 ]
 
 # The colors the theme pages are read through, as Radix Themes defines them.

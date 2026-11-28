@@ -266,10 +266,10 @@ if TYPE_CHECKING:
     # None unsets a property, or leaves a breakpoint to the one before it.
     _Value: TypeAlias = (
         _T
-        | None
         | Sequence[_T | None]
         | Breakpoints[Any, Any]
-        | Mapping[str, _T | None | Mapping[str, _T | None]]
+        | Mapping[str, _T | Mapping[str, _T | None] | None]
+        | None
     )
     _StrVar: TypeAlias = Var[str]
     _Str: TypeAlias = str | Var[str]

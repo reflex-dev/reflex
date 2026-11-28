@@ -34,7 +34,6 @@ EXPECTED_ERRORS: Diagnostics = [
             "\xa0\xa0Type \"Literal['flx']\" is not assignable to type "
             '"_Value[_Display | _StrVar]"\n'
             '\xa0\xa0\xa0\xa0"Literal[\'flx\']" is not assignable to "Var[str]"\n'
-            '\xa0\xa0\xa0\xa0"Literal[\'flx\']" is not assignable to "None"\n'
             '\xa0\xa0\xa0\xa0"Literal[\'flx\']" is not assignable to "Sequence[_Display | '
             '_StrVar | None]"\n'
             '\xa0\xa0\xa0\xa0\xa0\xa0Type parameter "_T_co@Sequence" is covariant, but "str" is '
@@ -42,7 +41,8 @@ EXPECTED_ERRORS: Diagnostics = [
             '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0Type "str" is not assignable to type "_Display | _StrVar '
             '| None"\n'
             '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0"str" is not assignable to "Var[str]"\n'
-            '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0"str" is not assignable to "None"'
+            '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0"str" is not assignable to "None"\n'
+            '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0"str" is not assignable to type "Literal[\'-webkit-box\']"'
         ),
     ),
     (
@@ -54,12 +54,12 @@ EXPECTED_ERRORS: Diagnostics = [
             '\xa0\xa0Type "Literal[1]" is not assignable to type "_Value[_Position | '
             '_StrVar]"\n'
             '\xa0\xa0\xa0\xa0"Literal[1]" is not assignable to "Var[str]"\n'
-            '\xa0\xa0\xa0\xa0"Literal[1]" is not assignable to "None"\n'
             '\xa0\xa0\xa0\xa0"Literal[1]" is not assignable to "Sequence[_Position | '
             '_StrVar | None]"\n'
             '\xa0\xa0\xa0\xa0"Literal[1]" is not assignable to "Breakpoints[Any, Any]"\n'
             '\xa0\xa0\xa0\xa0"Literal[1]" is not assignable to "Mapping[str, _Position | '
             '_StrVar | Mapping[str, _Position | _StrVar | None] | None]"\n'
+            '\xa0\xa0\xa0\xa0"Literal[1]" is not assignable to "None"\n'
             '\xa0\xa0\xa0\xa0"Literal[1]" is not assignable to "Literal[\'absolute\']"\n'
             '\xa0\xa0\xa0\xa0"Literal[1]" is not assignable to "Literal[\'fixed\']"'
         ),
@@ -73,7 +73,6 @@ EXPECTED_ERRORS: Diagnostics = [
             '\xa0\xa0Type "dict[str, str]" is not assignable to type '
             '"_Value[_Display | _StrVar]"\n'
             '\xa0\xa0\xa0\xa0"dict[str, str]" is not assignable to "Var[str]"\n'
-            '\xa0\xa0\xa0\xa0"dict[str, str]" is not assignable to "None"\n'
             '\xa0\xa0\xa0\xa0"dict[str, str]" is not assignable to "Sequence[_Display | '
             '_StrVar | None]"\n'
             '\xa0\xa0\xa0\xa0"dict[str, str]" is not assignable to "Breakpoints[Any, Any]"\n'
@@ -83,7 +82,8 @@ EXPECTED_ERRORS: Diagnostics = [
             'not a subtype of "_Display | _StrVar | Mapping[str, _Display | '
             '_StrVar | None] | None"\n'
             '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0Type "str" is not assignable to type "_Display | _StrVar '
-            '| Mapping[str, _Display | _StrVar | None] | None"'
+            '| Mapping[str, _Display | _StrVar | None] | None"\n'
+            '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0"str" is not assignable to "Var[str]"'
         ),
     ),
     (
@@ -135,9 +135,10 @@ EXPECTED_ERRORS: Diagnostics = [
             '\xa0\xa0\xa0\xa0"Text" is not assignable to "Color"\n'
             '\xa0\xa0\xa0\xa0"Text" is not assignable to "Var[str]"\n'
             '\xa0\xa0\xa0\xa0"Text" is not assignable to "Var[Color]"\n'
-            '\xa0\xa0\xa0\xa0"Text" is not assignable to "None"\n'
             '\xa0\xa0\xa0\xa0"Text" is not assignable to "Sequence[_Color | None]"\n'
-            '\xa0\xa0\xa0\xa0"Text" is not assignable to "Breakpoints[Any, Any]"'
+            '\xa0\xa0\xa0\xa0"Text" is not assignable to "Breakpoints[Any, Any]"\n'
+            '\xa0\xa0\xa0\xa0"Text" is not assignable to "Mapping[str, _Color | '
+            'Mapping[str, _Color | None] | None]"'
         ),
     ),
     (
@@ -167,7 +168,6 @@ EXPECTED_ERRORS: Diagnostics = [
             "\xa0\xa0Type \"Literal['invisible']\" is not assignable to type "
             '"_Value[_Visibility | _StrVar]"\n'
             '\xa0\xa0\xa0\xa0"Literal[\'invisible\']" is not assignable to "Var[str]"\n'
-            '\xa0\xa0\xa0\xa0"Literal[\'invisible\']" is not assignable to "None"\n'
             "\xa0\xa0\xa0\xa0\"Literal['invisible']\" is not assignable to "
             '"Sequence[_Visibility | _StrVar | None]"\n'
             '\xa0\xa0\xa0\xa0\xa0\xa0Type parameter "_T_co@Sequence" is covariant, but "str" is '
@@ -175,7 +175,8 @@ EXPECTED_ERRORS: Diagnostics = [
             '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0Type "str" is not assignable to type "_Visibility | '
             '_StrVar | None"\n'
             '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0"str" is not assignable to "Var[str]"\n'
-            '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0"str" is not assignable to "None"'
+            '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0"str" is not assignable to "None"\n'
+            '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0"str" is not assignable to type "Literal[\'collapse\']"'
         ),
     ),
     (
