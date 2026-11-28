@@ -1,8 +1,9 @@
 """Tests for reflex_components_ui.components.select."""
 
 import itertools
+import re
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Literal, get_args
 
 import pytest
 from reflex_base.utils.imports import ImportVar
@@ -1375,9 +1376,14 @@ def test_select_unknown_side(ui_plugin: UIPlugin):
     """A side a list cannot be on is an error that lists the sides."""
     with pytest.raises(StyleError) as error:
         rx.ui.select.content(side="above")  # pyright: ignore[reportArgumentType]
+    # In the order of the Literal Python keeps for these four values, which
+    # is the one of whichever module first wrote them.
+    sides = ", ".join(
+        f'"{side}"' for side in get_args(Literal["top", "right", "bottom", "left"])
+    )
     assert (
         str(error.value)
-        == 'rx.ui.select_content: unknown side "above". The values are "top", "right", "bottom", "left".'
+        == f'rx.ui.select_content: unknown side "above". The values are {sides}.'
     )
 
 
@@ -1527,6 +1533,10 @@ def test_select_of_a_list_in_state(ui_plugin: UIPlugin):
     (group,) = content.children
     (options,) = group.children
     item = options.children[0]
+    # Named after the bytecode of the function that renders an option, which
+    # differs from one Python version to the next.
+    index = options.render()["index_var_name"]
+    assert re.fullmatch(r"index_[0-9a-f]{32}", index)
     assert item.render()["props"] == [
         (
             f'"aria-selected":(({STATE}.fruit_rx_state_ === item_rx_state_) '
@@ -1534,7 +1544,7 @@ def test_select_of_a_list_in_state(ui_plugin: UIPlugin):
         ),
         "className:sx_afbb711e7e_c",
         '"data-value":item_rx_state_',
-        "key:index_d6d6157c99650830f12a866606ea87b7",
+        f"key:{index}",
         'role:"option"',
         "tabIndex:-1",
     ]

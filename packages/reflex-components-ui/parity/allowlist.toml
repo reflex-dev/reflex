@@ -49,6 +49,13 @@ check = "pixels"
 cells = "size-responsive-large@800"
 reason = "When the size of rx.avatar grows at a breakpoint from one of the four small sizes to a larger one, Radix Themes keeps the smaller letters the small size has for a fallback of two letters. rx.ui.avatar gives the two letters the size they have in an avatar of the larger size alone."
 
+[[look]]
+component = "avatar"
+check = "style"
+cells = "size-responsive-large@800"
+properties = ["font-size", "line-height"]
+reason = "When the size of rx.avatar grows at a breakpoint from one of the four small sizes to a larger one, Radix Themes keeps the smaller letters the small size has for a fallback of two letters. rx.ui.avatar gives the two letters the size they have in an avatar of the larger size alone."
+
 [[contract]]
 component = "scroll_area"
 step = "scrolls to its last line with JavaScript disabled"

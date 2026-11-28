@@ -110,7 +110,11 @@ const show =
     const remove = () => {
       clearTimeout(timer);
       notices.delete(id);
+      // With its last notice the stack goes too: left empty it is still a
+      // box over a corner of the page, which takes the clicks meant for it.
+      const stack = notice.parentElement;
       notice.remove();
+      if (stack && !stack.childElementCount) stack.remove();
     };
     notices.set(id, remove);
     const close = () => {

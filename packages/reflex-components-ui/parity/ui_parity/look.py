@@ -87,13 +87,40 @@ READY_SCRIPT = f"""async (appearance) => {{
     return document.fonts.status === "loaded";
 }}"""
 
+# How long nothing may change in a page before it is read, in milliseconds.
+# The fallback of the avatar of Radix Themes fills in some 250 milliseconds
+# after the page is hydrated on a busy machine, with no change in between.
+SETTLE_MS = 500
+
+# Resolves once nothing in the page has changed for that long: a component
+# may still be rebuilt after the page is flagged as hydrated, and what is
+# inside an element is read as well as the element.
+SETTLED_SCRIPT = """(quiet) => new Promise((resolve) => {
+    let timer = setTimeout(done, quiet);
+    const observer = new MutationObserver(() => {
+        clearTimeout(timer);
+        timer = setTimeout(done, quiet);
+    });
+    function done() {
+        observer.disconnect();
+        resolve(true);
+    }
+    observer.observe(document.body, {
+        subtree: true, childList: true, attributes: true, characterData: true,
+    });
+})"""
+
 # The first element of a frame that renders: not a style tag a library left
 # beside the component.
 _FIRST_RENDERED = ":scope > " + "".join(f":not({tag})" for tag in NOT_RENDERED)
 
+# Where the styles of a frame keep the shape of its element: how many element
+# children it and each element inside it have, by the path of the element.
+SHAPE = "(shape)"
+
 # Reads the geometry and the computed style of the frames: all of them, or the
 # one of a system and props id.
-READ_SCRIPT = """({properties, targets, parts, only, matches, first}) => {
+READ_SCRIPT = """({properties, targets, parts, only, matches, first, notRendered, shapeKey}) => {
     const read = (element) => {
         const style = getComputedStyle(element);
         return Object.fromEntries(
@@ -117,18 +144,38 @@ READ_SCRIPT = """({properties, targets, parts, only, matches, first}) => {
         const target = stage.querySelector(targets[system] ?? first);
         const styles = {};
         const missing = [];
-        if (target === null) {
-            missing.push("target");
-        } else {
-            styles[""] = read(target);
-        }
+        const named = new Set();
         for (const [name, selectors] of Object.entries(parts)) {
             const part = stage.querySelector(selectors[system]);
             if (part === null) {
                 missing.push(name);
             } else {
                 styles[name] = read(part);
+                named.add(part);
             }
+        }
+        // The elements inside the target, by the path of their places among
+        // the element children: "> 2 > 1". The shape says how many each has
+        // and what it is, which decides the ones of the two systems that
+        // correspond.
+        const shape = {};
+        const walk = (element, path) => {
+            const children = Array.from(element.children).filter(
+                (child) => !child.matches(notRendered),
+            );
+            shape[path] = `${children.length} ${element.localName}`;
+            children.forEach((child, index) => {
+                const place = `${path}${path && " "}> ${index + 1}`;
+                if (!named.has(child)) styles[place] = read(child);
+                walk(child, place);
+            });
+        };
+        if (target === null) {
+            missing.push("target");
+        } else {
+            styles[""] = read(target);
+            walk(target, "");
+            styles[shapeKey] = shape;
         }
         return {
             id: stage.dataset.parityStage,
@@ -349,6 +396,8 @@ class CellResult:
         images: The files of the reference, the candidate and the diff,
             relative to the report.
         pixels_allowed: Whether the allowlist excuses the pixels.
+        skipped: The elements whose insides were not compared, because the
+            two systems build them differently, and how.
     """
 
     cell: str
@@ -362,6 +411,7 @@ class CellResult:
     allowed: list[str]
     images: dict[str, str]
     pixels_allowed: bool = False
+    skipped: list[str] = dataclasses.field(default_factory=list)
 
     @property
     def ratio(self) -> float:
@@ -526,10 +576,73 @@ def _crop(
     )
 
 
+def _unmatched(
+    reference: dict[str, dict[str, str]], candidate: dict[str, dict[str, str]]
+) -> dict[str, str]:
+    """Find the elements whose insides the two systems build differently.
+
+    The elements inside the compared one correspond while each has as many
+    element children in one system as in the other. One that does not is
+    another element standing in the same place, as the thumb of a Radix
+    slider stands where rx.ui has a range input: it is not compared, and
+    neither is what is inside it.
+
+    Args:
+        reference: The computed properties of the reference, by part.
+        candidate: The computed properties of the candidate, by part.
+
+    Returns:
+        Why what is inside an element is not compared, by the path of the
+        element: the empty string for the compared element itself.
+    """
+    ours, theirs = reference.get(SHAPE, {}), candidate.get(SHAPE, {})
+    unmatched: dict[str, str] = {}
+    # A parent before what is inside it.
+    for path in sorted(ours.keys() & theirs.keys(), key=lambda path: path.count(">")):
+        if any(_inside(path, root) for root in unmatched):
+            continue
+        (count, tag), (their_count, _) = ours[path].split(), theirs[path].split()
+        if count != their_count:
+            unmatched[path] = (
+                f"{'at and ' if path else ''}inside {_describe_path(path, tag)}: "
+                f"rx has {count} element children, rx.ui {their_count}"
+            )
+    return unmatched
+
+
+def _inside(path: str, root: str) -> bool:
+    """Tell whether a path is of an element inside another.
+
+    Args:
+        path: The path of the element.
+        root: The path of the other, the empty string for the compared element.
+
+    Returns:
+        Whether the element is below the other.
+    """
+    return path.startswith(f"{root} > " if root else "> ")
+
+
+def _describe_path(path: str, tag: str) -> str:
+    """Name an element inside the compared one.
+
+    Args:
+        path: Its path, the empty string for the compared element.
+        tag: Its tag in the reference.
+
+    Returns:
+        The name differences and skipped elements are reported under.
+    """
+    return f"{path} <{tag}>" if path else f"<{tag}>"
+
+
 def _style_differences(
     reference: dict[str, dict[str, str]], candidate: dict[str, dict[str, str]]
 ) -> list[StyleDifference]:
     """Compare the computed styles of two frames.
+
+    The element, its named parts, and every element inside it that
+    corresponds to one of the other system are compared.
 
     Args:
         reference: The computed properties of the reference, by part.
@@ -538,13 +651,28 @@ def _style_differences(
     Returns:
         The properties that differ, a missing part as a property of its own.
     """
+    unmatched = _unmatched(reference, candidate)
+    tags = reference.get(SHAPE, {})
     differences = []
-    for part in sorted({*reference, *candidate}):
+    for part in sorted({*reference, *candidate} - {SHAPE}):
         ours, theirs = reference.get(part), candidate.get(part)
+        name = part
+        if part.startswith(">"):
+            # Not one a system names as a part, nor one the systems build
+            # differently, nor inside such a one: an element with other
+            # insides is another element that happens to stand in its place.
+            if (
+                ours is None
+                or theirs is None
+                or part in unmatched
+                or any(_inside(part, root) for root in unmatched)
+            ):
+                continue
+            name = _describe_path(part, tags[part].split()[1])
         if ours is None or theirs is None:
             differences.append(
                 StyleDifference(
-                    part=part,
+                    part=name,
                     property="(element)",
                     reference=None if ours is None else "present",
                     candidate=None if theirs is None else "present",
@@ -552,9 +680,9 @@ def _style_differences(
             )
             continue
         differences.extend(
-            StyleDifference(part, name, value, theirs[name])
-            for name, value in ours.items()
-            if theirs[name] != value
+            StyleDifference(name, property_, value, theirs[property_])
+            for property_, value in ours.items()
+            if theirs[property_] != value
         )
     return differences
 
@@ -603,6 +731,7 @@ class _Pass:
         self.page.wait_for_function(READY_SCRIPT, arg=self.appearance)
         if self.matrix.ready is not None:
             self.page.wait_for_function(self.matrix.ready)
+        self.page.evaluate(SETTLED_SCRIPT, SETTLE_MS)
         self.page.add_style_tag(content=FREEZE_CSS)
         if self.prepare is not None:
             self.prepare(self.page)
@@ -637,6 +766,8 @@ class _Pass:
                 else {"id": only[0], "system": only[1].role},
                 "matches": matches,
                 "first": _FIRST_RENDERED,
+                "notRendered": ",".join(NOT_RENDERED),
+                "shapeKey": SHAPE,
             },
         )
         for frame in frames:
@@ -845,6 +976,9 @@ def _compare(
         a11y=a11y,
         allowed=list(allowed),
         images=files,
+        skipped=list(
+            _unmatched(styles[REFERENCE.role], styles[CANDIDATE.role]).values()
+        ),
         pixels_allowed=bool(pixel_reasons),
     )
 

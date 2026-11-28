@@ -5,7 +5,7 @@ from collections.abc import Callable
 from typing import Any, ClassVar, Literal
 
 import pytest
-from reflex_base.components.component import Component
+from reflex_base.components.component import Component, field
 from reflex_base.components.dynamic import _RENDERING_DYNAMIC_COMPONENT
 from reflex_base.components.memo import MEMOS
 from reflex_base.config import get_config
@@ -13,7 +13,7 @@ from reflex_base.plugins import CompileContext
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import ConfigError
 from reflex_base.utils.serializers import serialize
-from reflex_base.vars.base import Var
+from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.core.breakpoints import Responsive
 from reflex_components_ui import tokens
 from reflex_components_ui.base import Part, UIComponent
@@ -1265,3 +1265,22 @@ def test_compile_merges_the_styles_it_gives_a_copy_of_the_component(
         lambda: Centered.create("new", color="red"), ApplyStylePlugin(style={})
     )
     assert page.compiled_pages["/"].output_code == CENTERED_PAGE
+
+
+class RedChip(Chip):
+    """A chip that is red unless it is told otherwise."""
+
+    color_scheme: Var[LiteralAccentColor] = field(default=LiteralVar.create("red"))
+
+
+def test_default_color_scheme_of_a_component_is_its_accent(ui_plugin: UIPlugin):
+    """The accent a field defaults to applies until the element sets one."""
+    red = Chip.create("red", color_scheme="red").render()
+    assert red["props"] == [
+        'className:sx_8f99169642_c + " " + reflexUIClasses_01ac7ed29f'
+    ]
+    assert RedChip.create("red").render() == red
+    assert (
+        RedChip.create("gray", color_scheme="gray").render()["props"]
+        == Chip.create("gray", color_scheme="gray").render()["props"]
+    )

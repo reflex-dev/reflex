@@ -1,5 +1,6 @@
 """Tests for reflex_components_ui.components.slider."""
 
+import re
 from collections.abc import Callable
 from typing import Any
 
@@ -989,9 +990,13 @@ def test_slider_bound_to_state(ui_plugin: UIPlugin):
         ),
     ]
     thumb = slider.children[1].children[0]
+    # Named after the bytecode of the function that renders a thumb, which
+    # differs from one Python version to the next.
+    index = slider.children[1].render()["index_var_name"]
+    assert re.fullmatch(r"index_[0-9a-f]{32}", index)
     assert thumb.render()["props"] == [
         "className:sx_04c810abee_c",
-        "key:index_026251c31afbb080c3de6ddc69e4448c",
+        f"key:{index}",
         f"min:{low}",
         'type:"range"',
         'value:(isNotNullOrUndefined(item_rx_state_) ? item_rx_state_ : "")',

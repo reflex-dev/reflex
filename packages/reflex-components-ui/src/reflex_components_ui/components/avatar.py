@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
 from reflex_base.components.component import Component, field
 from reflex_base.utils.imports import ImportVar
@@ -95,14 +95,19 @@ class Avatar(UIComponent):
         letters = fallback
         if isinstance(fallback, LiteralVar):
             letters = fallback._var_value
-        # The size of the letters follows their number, which only a literal
-        # says while compiling: any other fallback has the size around it.
+        # The size of the letters follows their number, which a literal says
+        # while compiling and the page counts for letters bound to state.
         part = _FALLBACK_PARTS.get(len(letters) if isinstance(letters, str) else 0)
+        counted: dict[str, Any] = {}
+        if isinstance(letters, Var):
+            part = "fallback_bound"
+            counted = {"custom_attrs": {"data-letters": letters.to(str).length()}}
         parts = [
             Part.create(
                 *([] if fallback is None else [fallback]),
                 part=part or "fallback",
                 tag="span",
+                **counted,
             )
         ]
         src = props.get("src")

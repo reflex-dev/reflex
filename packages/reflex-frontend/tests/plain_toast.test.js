@@ -151,3 +151,33 @@ test("the first toast says once why it is plain", () => {
     ],
   ]);
 });
+
+test("a stack leaves the page with its last notice", () => {
+  const stacks = () =>
+    [...document.querySelectorAll("[id^=reflex-plain-toasts-]")].map(
+      (stack) => [stack.id, stack.childElementCount],
+    );
+  const first = plainToast("One");
+  plainToast("Two", { duration: 100 });
+  plainToast.error("Failed", { position: "top-left" });
+  expect(stacks()).toEqual([
+    ["reflex-plain-toasts-bottom-right", 2],
+    ["reflex-plain-toasts-top-left", 1],
+  ]);
+
+  // An empty stack is still a box over a corner of the page: it would take
+  // the clicks meant for what is under it.
+  vi.advanceTimersByTime(100);
+  expect(stacks()).toEqual([
+    ["reflex-plain-toasts-bottom-right", 1],
+    ["reflex-plain-toasts-top-left", 1],
+  ]);
+  plainToast.dismiss(first);
+  expect(stacks()).toEqual([["reflex-plain-toasts-top-left", 1]]);
+  plainToast.dismiss();
+  expect(stacks()).toEqual([]);
+
+  // The next notice gets a stack again.
+  plainToast("Three");
+  expect(stacks()).toEqual([["reflex-plain-toasts-bottom-right", 1]]);
+});

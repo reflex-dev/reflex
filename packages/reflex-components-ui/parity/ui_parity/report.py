@@ -47,6 +47,7 @@ def _row(result: dict[str, Any]) -> str:
     notes = [
         *(html.escape(problem) for problem in result["problems"]),
         *(f"allowed: {html.escape(reason)}" for reason in result["allowed"]),
+        *(f"not compared {html.escape(skipped)}" for skipped in result["skipped"]),
     ]
     images = "".join(
         f'<td><a href="{html.escape(result["images"][kind])}">'
@@ -146,6 +147,7 @@ def entry(result: MatrixResult) -> dict[str, Any]:
                 ],
                 "a11y": cell.a11y,
                 "allowed": cell.allowed,
+                "skipped": cell.skipped,
                 "problems": cell.problems,
                 "images": cell.images,
             }

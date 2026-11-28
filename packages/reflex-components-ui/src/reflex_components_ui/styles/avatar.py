@@ -109,11 +109,12 @@ def _size(
     return style
 
 
-def _fallback(font_size: str | None) -> ComponentStyles:
+def _fallback(font_size: str | dict[str, str] | None) -> ComponentStyles:
     """Make the table of what stands in for the image.
 
     Args:
-        font_size: The size of its letters, when their number says it.
+        font_size: The size of its letters, when their number says it: one
+            size, or a size by the condition that tells the number.
 
     Returns:
         The table.
@@ -132,8 +133,9 @@ def _fallback(font_size: str | None) -> ComponentStyles:
         "line_height": 1,
         "border_radius": "inherit",
         "text_transform": "uppercase",
-        # Under the image, which is as large: neither gives way to the other.
-        "flex_shrink": 0,
+        # Under the image, which is as large: neither gives way to the
+        # other. Alone it is the fallback of Radix Themes, which may shrink.
+        "flex_shrink": {":not(:only-child)": 0},
         # An image that loaded is all there is to see, see-through or not.
         "visibility": {"[data-status='loaded']": "hidden"},
     }
@@ -186,6 +188,11 @@ AVATAR: ComponentStyles = {
         "fallback": _fallback(None),
         "fallback_one": _fallback(f"var({_ONE_LETTER})"),
         "fallback_two": _fallback(f"var({_TWO_LETTERS}, var({_ONE_LETTER}))"),
+        # Letters bound to state are counted where the page runs.
+        "fallback_bound": _fallback({
+            "[data-letters='1']": f"var({_ONE_LETTER})",
+            "[data-letters='2']": f"var({_TWO_LETTERS}, var({_ONE_LETTER}))",
+        }),
         "image": {
             "base": unchecked({
                 "box_sizing": "border-box",

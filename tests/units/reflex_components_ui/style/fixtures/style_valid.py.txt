@@ -113,3 +113,11 @@ BUTTON: ComponentStyles = {
 }
 
 compound: CompoundStyle = {"props": {"size": "1"}, "style": {"padding": 0}}
+
+# None unsets a property, and leaves a breakpoint to the one before it.
+unset: StyleProps = {
+    "width": None,
+    "height": [None, "50%"],
+    "color": {"default": "red", ":hover": None},
+    "_hover": {"opacity": None},
+}

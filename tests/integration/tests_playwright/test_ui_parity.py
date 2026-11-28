@@ -29,6 +29,7 @@ from ui_parity.hydration import ATTRIBUTE  # noqa: E402
 from ui_parity.look import (  # noqa: E402
     READ_SCRIPT,
     READY_SCRIPT,
+    SETTLED_SCRIPT,
     StyleDifference,
     run_matrix,
     use_fonts,
@@ -271,6 +272,8 @@ def test_page_is_read_only_once_hydration_committed(page: Page):
         "only": None,
         "matches": None,
         "first": ":scope > :not(style):not(script):not(link):not(template)",
+        "notRendered": "style,script,link,template",
+        "shapeKey": "(shape)",
     }
     assert page.evaluate(READ_SCRIPT, request) == [
         {
@@ -279,7 +282,10 @@ def test_page_is_read_only_once_hydration_committed(page: Page):
             "stage": [0, 0, 1280, 44],
             # The content box and its padding of 12 pixels a side.
             "target": [0, 0, 64, 44],
-            "styles": {"": {"display": "block", "padding-top": "12px"}},
+            "styles": {
+                "": {"display": "block", "padding-top": "12px"},
+                "(shape)": {"": "0 div"},
+            },
             "missing": [],
             "matched": True,
             "view": [0, 0, 1280, 720],
@@ -290,6 +296,55 @@ def test_page_is_read_only_once_hydration_committed(page: Page):
     assert page.evaluate(READY_SCRIPT, "light") is True
     # In the wrong color scheme the page is still not the one to read.
     assert page.evaluate(READY_SCRIPT, "dark") is False
+
+
+NESTED = """
+<html class="light">
+  <body style="margin: 0">
+    <div data-parity-stage="nested" data-parity-system="candidate">
+      <a style="display: block">
+        <code style="isolation: isolate"><b style="display: inline">x</b></code>
+        <style>.unused { color: red }</style>
+        <span class="icon" style="display: inline-block"><i></i><i></i></span>
+      </a>
+    </div>
+  </body>
+</html>
+"""
+
+
+def test_read_reaches_the_elements_inside_the_compared_one(page: Page):
+    """Each element inside is read by its place, a named part under its name."""
+    page.set_content(NESTED)
+    request = {
+        "properties": ["display", "isolation"],
+        "targets": {"reference": None, "candidate": None},
+        "parts": {"icon": {"reference": ".icon", "candidate": ".icon"}},
+        "only": None,
+        "matches": None,
+        "first": ":scope > :not(style):not(script):not(link):not(template)",
+        "notRendered": "style,script,link,template",
+        "shapeKey": "(shape)",
+    }
+    [frame] = page.evaluate(READ_SCRIPT, request)
+    assert frame["styles"] == {
+        "": {"display": "block", "isolation": "auto"},
+        "icon": {"display": "inline-block", "isolation": "auto"},
+        "> 1": {"display": "inline", "isolation": "isolate"},
+        "> 1 > 1": {"display": "inline", "isolation": "auto"},
+        "> 2 > 1": {"display": "inline", "isolation": "auto"},
+        "> 2 > 2": {"display": "inline", "isolation": "auto"},
+        "(shape)": {
+            "": "2 a",
+            "> 1": "1 code",
+            "> 1 > 1": "0 b",
+            "> 2": "2 span",
+            "> 2 > 1": "0 i",
+            "> 2 > 2": "0 i",
+        },
+    }
+    # The page is still: nothing changes it after it has loaded.
+    assert page.evaluate(SETTLED_SCRIPT, 50) is True
 
 
 CONTRACT_STEPS = [

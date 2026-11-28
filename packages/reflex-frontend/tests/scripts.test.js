@@ -419,6 +419,10 @@ describe("START_AFTER_FIRST_PAINT", () => {
       '<textarea id="target"></textarea>',
       '<details><summary id="target">more</summary></details>',
       '<div contenteditable id="target"></div>',
+      '<form><button id="target"></button></form>',
+      '<form><button type="submit"><span id="target">send</span></button></form>',
+      '<form><button type="reset" id="target"></button></form>',
+      '<form id="f"></form><button form="f" id="target"></button>',
     ])("is left alone where the browser acted on it: %s", async (html) => {
       const { target, clicks } = addToPage(html);
       target.addEventListener("click", (event) => event.preventDefault());
@@ -426,6 +430,20 @@ describe("START_AFTER_FIRST_PAINT", () => {
       click(target);
       await hydrate();
       expect(clicks.length).toBe(1);
+    });
+
+    test.each([
+      '<form><button type="button" id="target"></button></form>',
+      '<form><button type="button"><span id="target">add</span></button></form>',
+      '<form><div id="target"></div></form>',
+      '<button id="target"></button>',
+    ])("in a form is dispatched again where the browser does nothing: %s", async (html) => {
+      const { target, clicks } = addToPage(html);
+      run();
+      click(target);
+      await hydrate();
+      // The click itself, and the one dispatched again.
+      expect(clicks.length).toBe(2);
     });
 
     test("is dropped when its target has left the page", async () => {

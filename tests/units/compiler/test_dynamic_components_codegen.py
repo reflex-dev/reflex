@@ -22,6 +22,36 @@ from reflex.state import State
 STATE_JS_TEMPLATE = Templates.Dirs.WEB_TEMPLATE / "utils" / "state.js"
 
 
+def app_root_loaders(code: str) -> list[str]:
+    """Get the loaders an app root gives its optional libraries.
+
+    Args:
+        code: The source of the app root.
+
+    Returns:
+        Every entry of its ``loaders`` object, in order.
+    """
+    lines = code.splitlines()
+    start = lines.index("  const loaders = {")
+    return [line.strip() for line in lines[start + 1 : lines.index("  };", start)]]
+
+
+def loader(library: str, alias: str) -> str:
+    """Write the loader an app root gives an optional library.
+
+    Args:
+        library: The library.
+        alias: The name of the module the library is loaded from.
+
+    Returns:
+        The entry of the ``loaders`` object.
+    """
+    return (
+        f'"{library}": () => import("$/utils/dynamic_libraries/{alias}")'
+        ".then((module) => module.default),"
+    )
+
+
 def test_dynamic_component_codegen_rewrites_bundled_library_subpath() -> None:
     """Bundled Lucide subpaths resolve through their own window namespaces."""
     with RegistrationContext():
@@ -41,11 +71,15 @@ def test_dynamic_component_codegen_rewrites_bundled_library_subpath() -> None:
     assert (
         "const {DynamicIcon} = window.__reflex['lucide-react/dynamic.mjs']"
     ) in dynamic_code
-    assert (
-        '    "lucide-react/dist/esm/icons/apple.mjs": () => '
-        'import("$/utils/dynamic_libraries/lucide_react_dist_esm_icons_apple_mjs")'
-        ".then((module) => module.default),"
-    ) in app_root_code.splitlines()
+    assert app_root_loaders(app_root_code) == [
+        loader("@emotion/react", "emotion_react"),
+        loader("lucide-react", "lucide_react"),
+        loader(
+            "lucide-react/dist/esm/icons/apple.mjs",
+            "lucide_react_dist_esm_icons_apple_mjs",
+        ),
+        loader("lucide-react/dynamic.mjs", "lucide_react_dynamic_mjs"),
+    ]
 
 
 def test_lazy_dynamic_component_lists_only_its_optional_libraries(mocker) -> None:
@@ -71,11 +105,15 @@ def test_lazy_dynamic_component_lists_only_its_optional_libraries(mocker) -> Non
     )
     assert default_only_code.split("\n", 1)[0] == "//__reflex_evaluate:[]"
     # The app can load the unused library, but the icon does not request it.
-    assert (
-        '    "unused-library": () => '
-        'import("$/utils/dynamic_libraries/unused_library")'
-        ".then((module) => module.default),"
-    ) in app_root_code.splitlines()
+    assert app_root_loaders(app_root_code) == [
+        loader("@emotion/react", "emotion_react"),
+        loader("unused-library", "unused_library"),
+        loader("lucide-react", "lucide_react"),
+        loader(
+            "lucide-react/dist/esm/icons/apple.mjs",
+            "lucide_react_dist_esm_icons_apple_mjs",
+        ),
+    ]
 
 
 @pytest.mark.parametrize("reactive", [False, True])

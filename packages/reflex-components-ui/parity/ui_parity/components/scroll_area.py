@@ -19,6 +19,9 @@ CONTENT = {
     "large": (500, 300),
 }
 
+# The keys that scroll a focused box down, the last one to its end.
+SCROLL_KEYS = ["ArrowDown", "Space", "PageDown", "End"]
+
 # The scroller of an area: the area itself in rx.ui, its viewport in Radix.
 SCROLLER = """(area) => [area, ...area.querySelectorAll("*")].find((element) => {
     const style = getComputedStyle(element);
@@ -169,14 +172,26 @@ def _keyboard(run: Run) -> None:
     assert run.page.locator("#area").evaluate(
         f"(area) => ({SCROLLER})(area) === document.activeElement"
     )
-    # A page down and back up: the keys every engine scrolls a focused box
-    # with. WebKit leaves Home and End to the platform, which may not bind them.
-    run.page.keyboard.press("Space")
-    run.page.wait_for_function(
+    # Every key a browser scrolls a focused box with, each from the top: the
+    # ones that did not move it are named when the step fails.
+    scrolled = (
         f"(() => {{ const scroller = ({SCROLLER})(document.getElementById('area'));"
         " return scroller.scrollTop > 0; })()"
     )
-    run.page.keyboard.press("Shift+Space")
+    moved = []
+    for key in SCROLL_KEYS:
+        run.page.locator("#area").evaluate(
+            f"(area) => ({SCROLLER})(area).scrollTo({{top: 0, behavior: 'instant'}})"
+        )
+        run.page.keyboard.press(key)
+        try:
+            run.page.wait_for_function(scrolled, timeout=2000)
+        except PlaywrightTimeoutError:
+            continue
+        moved.append(key)
+    assert moved == SCROLL_KEYS
+    # And back to the top, from the end the last key went to.
+    run.page.keyboard.press("Home")
     run.page.wait_for_function(
         f"({SCROLLER})(document.getElementById('area')).scrollTop === 0"
     )

@@ -110,14 +110,17 @@ COMPONENT_ERRORS: list[tuple[int, str, str]] = [
         5,
         "reportArgumentType",
         (
-            'Argument of type "dict[str, str]" cannot be assigned to parameter "style" of type '
-            '"Sequence[StyleProps] | StyleProps | Var[Mapping[str, Any]] | Breakpoints[Unknown, '
-            'Unknown] | None" in function "create"\n'
-            '\xa0\xa0Type "dict[str, str]" is not assignable to type "Sequence[StyleProps] | '
-            'StyleProps | Var[Mapping[str, Any]] | Breakpoints[Unknown, Unknown] | None"\n'
+            'Argument of type "dict[str, str]" cannot be assigned to parameter '
+            '"style" of type "Sequence[StyleProps] | StyleProps | '
+            'Var[Mapping[str, Any]] | Breakpoints[Unknown, Unknown] | None" in '
+            'function "create"\n'
+            '\xa0\xa0Type "dict[str, str]" is not assignable to type '
+            '"Sequence[StyleProps] | StyleProps | Var[Mapping[str, Any]] | '
+            'Breakpoints[Unknown, Unknown] | None"\n'
             '\xa0\xa0\xa0\xa0"dict[str, str]" is not assignable to "Sequence[StyleProps]"\n'
             '\xa0\xa0\xa0\xa0"dict[str, str]" is not assignable to "StyleProps"\n'
-            '\xa0\xa0\xa0\xa0"dict[str, str]" is not assignable to "Var[Mapping[str, Any]]"\n'
+            '\xa0\xa0\xa0\xa0"dict[str, str]" is not assignable to "Var[Mapping[str, '
+            'Any]]"\n'
             '\xa0\xa0\xa0\xa0"dict[str, str]" is not assignable to "Breakpoints[Unknown, '
             'Unknown]"\n'
             '\xa0\xa0\xa0\xa0"dict[str, str]" is not assignable to "None"'
@@ -127,14 +130,17 @@ COMPONENT_ERRORS: list[tuple[int, str, str]] = [
         7,
         "reportArgumentType",
         (
-            'Argument of type "dict[str, str]" cannot be assigned to parameter "style" of type '
-            '"Sequence[StyleProps] | StyleProps | Var[Mapping[str, Any]] | Breakpoints[Unknown, '
-            'Unknown] | None" in function "create"\n'
-            '\xa0\xa0Type "dict[str, str]" is not assignable to type "Sequence[StyleProps] | '
-            'StyleProps | Var[Mapping[str, Any]] | Breakpoints[Unknown, Unknown] | None"\n'
+            'Argument of type "dict[str, str]" cannot be assigned to parameter '
+            '"style" of type "Sequence[StyleProps] | StyleProps | '
+            'Var[Mapping[str, Any]] | Breakpoints[Unknown, Unknown] | None" in '
+            'function "create"\n'
+            '\xa0\xa0Type "dict[str, str]" is not assignable to type '
+            '"Sequence[StyleProps] | StyleProps | Var[Mapping[str, Any]] | '
+            'Breakpoints[Unknown, Unknown] | None"\n'
             '\xa0\xa0\xa0\xa0"dict[str, str]" is not assignable to "Sequence[StyleProps]"\n'
             '\xa0\xa0\xa0\xa0"dict[str, str]" is not assignable to "StyleProps"\n'
-            '\xa0\xa0\xa0\xa0"dict[str, str]" is not assignable to "Var[Mapping[str, Any]]"\n'
+            '\xa0\xa0\xa0\xa0"dict[str, str]" is not assignable to "Var[Mapping[str, '
+            'Any]]"\n'
             '\xa0\xa0\xa0\xa0"dict[str, str]" is not assignable to "Breakpoints[Unknown, '
             'Unknown]"\n'
             '\xa0\xa0\xa0\xa0"dict[str, str]" is not assignable to "None"'
@@ -144,17 +150,18 @@ COMPONENT_ERRORS: list[tuple[int, str, str]] = [
         9,
         "reportArgumentType",
         (
-            'Argument of type "dict[str, dict[str, str]]" cannot be assigned to parameter '
-            '"style" of type "Sequence[StyleProps] | StyleProps | Var[Mapping[str, Any]] | '
-            'Breakpoints[Unknown, Unknown] | None" in function "create"\n'
+            'Argument of type "dict[str, dict[str, str]]" cannot be assigned '
+            'to parameter "style" of type "Sequence[StyleProps] | StyleProps | '
+            'Var[Mapping[str, Any]] | Breakpoints[Unknown, Unknown] | None" in '
+            'function "create"\n'
             '\xa0\xa0Type "dict[str, dict[str, str]]" is not assignable to type '
-            '"Sequence[StyleProps] | StyleProps | Var[Mapping[str, Any]] | Breakpoints[Unknown, '
-            'Unknown] | None"\n'
+            '"Sequence[StyleProps] | StyleProps | Var[Mapping[str, Any]] | '
+            'Breakpoints[Unknown, Unknown] | None"\n'
             '\xa0\xa0\xa0\xa0"dict[str, dict[str, str]]" is not assignable to '
             '"Sequence[StyleProps]"\n'
             '\xa0\xa0\xa0\xa0"dict[str, dict[str, str]]" is not assignable to "StyleProps"\n'
-            '\xa0\xa0\xa0\xa0"dict[str, dict[str, str]]" is not assignable to "Var[Mapping[str, '
-            'Any]]"\n'
+            '\xa0\xa0\xa0\xa0"dict[str, dict[str, str]]" is not assignable to '
+            '"Var[Mapping[str, Any]]"\n'
             '\xa0\xa0\xa0\xa0"dict[str, dict[str, str]]" is not assignable to '
             '"Breakpoints[Unknown, Unknown]"\n'
             '\xa0\xa0\xa0\xa0"dict[str, dict[str, str]]" is not assignable to "None"'
@@ -164,43 +171,43 @@ COMPONENT_ERRORS: list[tuple[int, str, str]] = [
         11,
         "reportArgumentType",
         (
-            'Argument of type "list[StyleProps | dict[str, str]]" cannot be assigned to '
-            'parameter "style" of type "Sequence[StyleProps] | StyleProps | Var[Mapping[str, '
-            'Any]] | Breakpoints[Unknown, Unknown] | None" in function "create"\n'
-            '\xa0\xa0Type "Literal[\'flx\']" is not assignable to type "_Value[_Display | '
-            '_StrVar]"\n'
+            'Argument of type "list[StyleProps | dict[str, str]]" cannot be '
+            'assigned to parameter "style" of type "Sequence[StyleProps] | '
+            "StyleProps | Var[Mapping[str, Any]] | Breakpoints[Unknown, "
+            'Unknown] | None" in function "create"\n'
+            "\xa0\xa0Type \"Literal['flx']\" is not assignable to type "
+            '"_Value[_Display | _StrVar]"\n'
             '\xa0\xa0\xa0\xa0"Literal[\'flx\']" is not assignable to "Var[str]"\n'
             '\xa0\xa0\xa0\xa0"Literal[\'flx\']" is not assignable to "Sequence[_Display | '
-            '_StrVar]"\n'
+            '_StrVar | None]"\n'
             '\xa0\xa0\xa0\xa0\xa0\xa0Type parameter "_T_co@Sequence" is covariant, but "str" is '
-            'not a subtype of "_Display | _StrVar"\n'
-            '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0Type "str" is not assignable to type "_Display | '
-            '_StrVar"\n'
+            'not a subtype of "_Display | _StrVar | None"\n'
+            '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0Type "str" is not assignable to type "_Display | _StrVar '
+            '| None"\n'
             '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0"str" is not assignable to "Var[str]"\n'
-            '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0"str" is not assignable to type '
-            "\"Literal['-webkit-box']\"\n"
-            '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0"str" is not assignable to type '
-            "\"Literal['block']\""
+            '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0"str" is not assignable to "None"\n'
+            '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0"str" is not assignable to type "Literal[\'-webkit-box\']"'
         ),
     ),
     (
         13,
         "reportArgumentType",
         (
-            "Argument of type \"Literal['padding: 1em']\" cannot be assigned to parameter "
-            '"style" of type "Sequence[StyleProps] | StyleProps | Var[Mapping[str, Any]] | '
-            'Breakpoints[Unknown, Unknown] | None" in function "create"\n'
+            "Argument of type \"Literal['padding: 1em']\" cannot be assigned to "
+            'parameter "style" of type "Sequence[StyleProps] | StyleProps | '
+            'Var[Mapping[str, Any]] | Breakpoints[Unknown, Unknown] | None" in '
+            'function "create"\n'
             "\xa0\xa0Type \"Literal['padding: 1em']\" is not assignable to type "
-            '"Sequence[StyleProps] | StyleProps | Var[Mapping[str, Any]] | Breakpoints[Unknown, '
-            'Unknown] | None"\n'
+            '"Sequence[StyleProps] | StyleProps | Var[Mapping[str, Any]] | '
+            'Breakpoints[Unknown, Unknown] | None"\n'
             "\xa0\xa0\xa0\xa0\"Literal['padding: 1em']\" is not assignable to "
             '"Sequence[StyleProps]"\n'
             '\xa0\xa0\xa0\xa0\xa0\xa0Type parameter "_T_co@Sequence" is covariant, but "str" is '
             'not a subtype of "StyleProps"\n'
             '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0"str" is not assignable to "StyleProps"\n'
             '\xa0\xa0\xa0\xa0"Literal[\'padding: 1em\']" is not assignable to "StyleProps"\n'
-            '\xa0\xa0\xa0\xa0"Literal[\'padding: 1em\']" is not assignable to "Var[Mapping[str, '
-            'Any]]"\n'
+            "\xa0\xa0\xa0\xa0\"Literal['padding: 1em']\" is not assignable to "
+            '"Var[Mapping[str, Any]]"\n'
             "\xa0\xa0\xa0\xa0\"Literal['padding: 1em']\" is not assignable to "
             '"Breakpoints[Unknown, Unknown]"\n'
             '\xa0\xa0\xa0\xa0"Literal[\'padding: 1em\']" is not assignable to "None"'

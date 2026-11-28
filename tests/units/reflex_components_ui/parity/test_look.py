@@ -5,12 +5,14 @@ from pathlib import Path
 import pytest
 from ui_parity.allowlist import Allowlist, LookEntry
 from ui_parity.look import (
+    SHAPE,
     CellResult,
     MatrixResult,
     StyleDifference,
     _crop,
     _Excuses,
     _style_differences,
+    _unmatched,
     split_a11y,
     use_fonts,
 )
@@ -85,6 +87,63 @@ def test_style_differences_name_the_part_and_both_values():
         StyleDifference("thumb", "width", "16px", "14px"),
     ]
     assert _style_differences(reference, reference) == []
+
+
+def test_style_differences_reach_the_elements_inside_that_correspond():
+    """An element inside is compared while both systems build it alike."""
+    reference = {
+        "": {"color": "red"},
+        "> 1": {"isolation": "isolate"},
+        "> 1 > 1": {"color": "red"},
+        "> 2": {"color": "red"},
+        "> 2 > 1": {"color": "red"},
+        "> 2 > 2": {"color": "red"},
+        "> 3": {"color": "red"},
+        SHAPE: {
+            "": "3 a",
+            "> 1": "1 code",
+            "> 1 > 1": "0 b",
+            "> 2": "2 span",
+            "> 2 > 1": "0 i",
+            "> 2 > 2": "0 i",
+            "> 3": "0 svg",
+        },
+    }
+    candidate = {
+        "": {"color": "red"},
+        "> 1": {"isolation": "auto"},
+        "> 1 > 1": {"color": "blue"},
+        "> 2": {"color": "green"},
+        # Built differently: what is inside is not compared.
+        "> 2 > 1": {"color": "blue"},
+        # Named as a part in this system, and compared as one.
+        "icon": {"color": "red"},
+        SHAPE: {
+            "": "3 a",
+            "> 1": "1 code",
+            "> 1 > 1": "0 span",
+            "> 2": "1 span",
+            "> 2 > 1": "0 i",
+            "> 3": "0 svg",
+        },
+    }
+    assert _style_differences(reference, candidate) == [
+        StyleDifference("> 1 <code>", "isolation", "isolate", "auto"),
+        StyleDifference("> 1 > 1 <b>", "color", "red", "blue"),
+        StyleDifference("icon", "(element)", None, "present"),
+    ]
+    assert _unmatched(reference, candidate) == {
+        # Built differently: neither it nor what is inside it is compared.
+        "> 2": "at and inside > 2 <span>: rx has 2 element children, rx.ui 1"
+    }
+    # Nothing inside an element that differs at its root is compared.
+    assert _style_differences(
+        {**reference, SHAPE: {**reference[SHAPE], "": "4 a"}}, candidate
+    ) == [StyleDifference("icon", "(element)", None, "present")]
+    assert _unmatched(
+        {**reference, SHAPE: {**reference[SHAPE], "": "4 a"}}, candidate
+    ) == {"": "inside <a>: rx has 4 element children, rx.ui 3"}
+    assert _unmatched(reference, reference) == {}
 
 
 def result(cell: str, differing: int, **differences) -> CellResult:

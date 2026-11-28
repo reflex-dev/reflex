@@ -73,11 +73,14 @@ export const HOLD_CLICK_TIMEOUT_MS = 10000;
 
 /**
  * Where a click acts without javascript, or is not safe to dispatch a second
- * time: a link is being followed, a form is submitted, a form control or a
- * `<details>` has changed state. Such a click is left to the browser.
+ * time: a link is being followed, a form is submitted or reset, a form
+ * control or a `<details>` has changed state. Such a click is left to the
+ * browser. A button submits or resets its form unless its type says it is
+ * only a button: that one does nothing until a handler is attached.
  */
 const ACTS_WITHOUT_SCRIPTS =
-  "a[href],area[href],form,input,select,textarea,label,summary,[contenteditable]";
+  "a[href],area[href],input,select,textarea,label,summary,[contenteditable]," +
+  'form button:not([type="button" i]),button[form]:not([type="button" i])';
 
 let earlyClick = null;
 let holdTimer;

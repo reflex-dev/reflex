@@ -354,7 +354,9 @@ _PARTS: dict[str, ComponentStyles] = {
     "label": {
         "base": {
             "position": "absolute",
-            "border_width": "0",
+            # All of the border, as the visually hidden label of Radix
+            # Themes: a style left `solid` is still a computed difference.
+            "border": "0",
             "width": "1px",
             "height": "1px",
             "padding": "0",

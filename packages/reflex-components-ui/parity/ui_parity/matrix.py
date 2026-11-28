@@ -78,6 +78,7 @@ DEFAULT_PROPERTIES: tuple[str, ...] = (
     "box-shadow",
     "color",
     "opacity",
+    "isolation",
     "font-family",
     "font-size",
     "font-weight",

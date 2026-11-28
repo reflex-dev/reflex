@@ -19,8 +19,13 @@ if TYPE_CHECKING:
     _T = TypeVar("_T")
 
     # A value, one per breakpoint, or one per condition such as ":hover".
+    # None unsets a property, or leaves a breakpoint to the one before it.
     _Value: TypeAlias = (
-        _T | Sequence[_T] | Breakpoints[Any, Any] | Mapping[str, _T | Mapping[str, _T]]
+        _T
+        | Sequence[_T | None]
+        | Breakpoints[Any, Any]
+        | Mapping[str, _T | Mapping[str, _T | None] | None]
+        | None
     )
     _StrVar: TypeAlias = Var[str]
     _Str: TypeAlias = str | Var[str]
