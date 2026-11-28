@@ -190,6 +190,14 @@ return redis.call('PTTL', KEYS[1])
 """
 
 
+@dataclasses.dataclass(slots=True)
+class _CachedStateLock:
+    """A local oplock mutex and its number of holders and waiters."""
+
+    lock: asyncio.Lock = dataclasses.field(default_factory=asyncio.Lock)
+    users: int = 0
+
+
 @dataclasses.dataclass
 class StateManagerRedis(StateManager):
     """A state manager that stores states in redis."""
@@ -230,7 +238,7 @@ class StateManagerRedis(StateManager):
     # Whether keyspace notifications have been enabled.
     _redis_notify_keyspace_events_enabled: bool = dataclasses.field(default=False)
 
-    # The mutex ensures the dict of mutexes is updated exclusively
+    # Protects updates to the Redis lock waiter registry.
     _state_manager_lock: asyncio.Lock = dataclasses.field(
         default_factory=asyncio.Lock, init=False
     )
@@ -242,7 +250,7 @@ class StateManagerRedis(StateManager):
 
     # Cached states
     _cached_states: dict[str, Any] = dataclasses.field(default_factory=dict, init=False)
-    _cached_states_locks: dict[str, asyncio.Lock] = dataclasses.field(
+    _cached_states_locks: dict[str, _CachedStateLock] = dataclasses.field(
         default_factory=dict, init=False
     )
 
@@ -775,6 +783,34 @@ class StateManagerRedis(StateManager):
                     return
 
     @contextlib.asynccontextmanager
+    async def _acquire_cached_state_lock(
+        self, lock_key: str, *, create: bool = False
+    ) -> AsyncIterator[None]:
+        """Hold the local lock, keeping it registered until all uses and leases end.
+
+        Args:
+            lock_key: The token's lock key.
+            create: Whether to create the lock if one is missing. Otherwise,
+                the caller must already have checked that it is registered.
+
+        Yields:
+            Control while the cached state lock is held.
+        """
+        # Reserve the entry before the first await on this event loop. Count
+        # waiters too, since release can wake a waiter before it takes the lock.
+        if create and lock_key not in self._cached_states_locks:
+            self._cached_states_locks[lock_key] = _CachedStateLock()
+        entry = self._cached_states_locks[lock_key]
+        entry.users += 1
+        try:
+            async with entry.lock:
+                yield
+        finally:
+            entry.users -= 1
+            if entry.users == 0 and lock_key not in self._local_leases:
+                del self._cached_states_locks[lock_key]
+
+    @contextlib.asynccontextmanager
     async def _get_state_cached(
         self, token: StateToken[TOKEN_TYPE]
     ) -> AsyncIterator[TOKEN_TYPE | None]:
@@ -788,11 +824,8 @@ class StateManagerRedis(StateManager):
         """
         lock_key = token.lock_key
         # Opportunistically reuse existing lock.
-        if (
-            lock_key in self._local_leases
-            and (state_lock := self._cached_states_locks.get(lock_key)) is not None
-        ):
-            async with state_lock:
+        if lock_key in self._local_leases:
+            async with self._acquire_cached_state_lock(lock_key):
                 if await self._get_local_lease(lock_key) is not None:
                     if (cached_state := self._cached_states.get(lock_key)) is not None:
                         if isinstance(token, BaseStateToken):
@@ -863,11 +896,9 @@ class StateManagerRedis(StateManager):
         lock_key = token.lock_key
         redis_lock_key = self._lock_key(token)
 
-        if (state_lock := self._cached_states_locks.get(lock_key)) is not None:
-            # We have an existing lock, so lets see if we have an existing lease to cancel.
-            async with state_lock:
+        if lock_key in self._cached_states_locks:
+            async with self._acquire_cached_state_lock(lock_key):
                 if (existing_task := self._local_leases.get(lock_key)) is not None:
-                    # There's already a lease break task, so cancel it to clear it out.
                     existing_task.cancel()
             if existing_task is not None:
                 # Wait for its flush; its outcome is its own (it reports a
@@ -880,13 +911,7 @@ class StateManagerRedis(StateManager):
             # Until it is, update without a lease rather than wait for it.
             return None
 
-        # Now we might need to create a new lock.
-        if (state_lock := self._cached_states_locks.get(lock_key)) is None:
-            async with self._state_manager_lock:
-                if (state_lock := self._cached_states_locks.get(lock_key)) is None:
-                    state_lock = self._cached_states_locks[lock_key] = asyncio.Lock()
-
-        async with state_lock:
+        async with self._acquire_cached_state_lock(lock_key, create=True):
             # Create the task now if one didn't sneak past us.
             if (
                 lock_key not in self._local_leases
@@ -992,20 +1017,22 @@ class StateManagerRedis(StateManager):
         Args:
             message: The redis message.
         """
+        if message["data"] != b"sadd":
+            return
+
         # Opportunistic lock contention notification.
         token = message["channel"].rsplit(b":", 1)[1][: -len(b"_lock_waiters")].decode()
-        if (
-            message["data"] == b"sadd"
-            and (state_lock := self._cached_states_locks.get(token)) is not None
-        ):
+        if token not in self._cached_states_locks:
+            return
+
+        async with self._acquire_cached_state_lock(token):
             # Cancel the lease break task to force a lock reacquisition.
-            async with state_lock:
-                if (lease_task := await self._get_local_lease(token)) is not None:
-                    lease_task.cancel()
-                    if self._debug_enabled:
-                        logger.debug(
-                            f"{SMR} [{time.monotonic() - start:.3f}] {token} OPLOCK CONTEND - lease break task cancelled {lease_task=}"
-                        )
+            if (lease_task := await self._get_local_lease(token)) is not None:
+                lease_task.cancel()
+                if self._debug_enabled:
+                    logger.debug(
+                        f"{SMR} [{time.monotonic() - start:.3f}] {token} OPLOCK CONTEND - lease break task cancelled {lease_task=}"
+                    )
 
     async def _subscribe_lock_updates(self):
         """Subscribe to redis keyspace notifications for lock updates."""
@@ -1487,7 +1514,7 @@ class _Lease:
         """
         manager = self.manager
         lock_key = self.token.lock_key
-        if (state_lock := manager._cached_states_locks.get(lock_key)) is None:
+        if lock_key not in manager._cached_states_locks:
             # If we lost the lock, we can't write the state, something went wrong.
             logger.warning(f"State lock for {lock_key} missing while finalizing lease.")
             return
@@ -1496,7 +1523,7 @@ class _Lease:
         # could expire under them, and the flush would then drop their changes.
         keep_alive = asyncio.create_task(self.keep_lock_alive())
         try:
-            async with state_lock:
+            async with manager._acquire_cached_state_lock(lock_key):
                 # Write the state to redis while no one else can modify the
                 # cached copy. A lease cancelled before it started can flush
                 # after the next lease took over, whose copy is not its to write.
@@ -1519,7 +1546,6 @@ class _Lease:
                         current_lease := manager._local_leases.get(lock_key)
                     ) is self.task:
                         manager._local_leases.pop(lock_key, None)
-                        # TODO: clean up the cached states locks periodically
                     elif manager._debug_enabled:
                         logger.debug(
                             f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} lease breaker {self.lock_id.decode()} cleanup of task={self.task!r} found different task in _local_leases {current_lease=}."

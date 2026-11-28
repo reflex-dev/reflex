@@ -583,7 +583,7 @@ async def test_modify_oplock(
     # The state should not be locked
     state_lock_1 = state_manager_redis._cached_states_locks.get(token)
     assert state_lock_1 is not None
-    assert not state_lock_1.locked()
+    assert not state_lock_1.lock.locked()
 
     lock_events_before = await _wait_for_keyspace_events(
         event_log, event_log_on_update, b"lock", b"set", 1
@@ -595,7 +595,7 @@ async def test_modify_oplock(
         BaseStateToken(ident=token, cls=root_state),
     ) as new_state:
         new_state.count = 2
-        assert state_lock_1.locked()
+        assert state_lock_1.lock.locked()
 
     lock_events_after = _count_keyspace_events(event_log, b"lock", b"set")
 
@@ -608,19 +608,20 @@ async def test_modify_oplock(
         new_state.count = 3
         state_lock_2 = state_manager_2._cached_states_locks.get(token)
         assert state_lock_2 is not None
-        assert state_lock_2.locked()
+        assert state_lock_2.lock.locked()
 
     # The second manager should be holding the lease now
     lease_task_2 = state_manager_2._local_leases.get(token)
     assert lease_task_2 is not None
     assert not lease_task_2.done()
-    assert not state_lock_2.locked()
+    assert not state_lock_2.lock.locked()
 
     # Lease task 1 should be cancelled by the time we have modified the state
     assert lease_task_1.done()
     assert lease_task_1.cancelled()
     assert token not in state_manager_redis._local_leases
     assert token not in state_manager_redis._cached_states
+    assert token not in state_manager_redis._cached_states_locks
 
     # There should have been another redis lock taken.
     lock_events_after_2 = await _wait_for_keyspace_events(
@@ -643,6 +644,7 @@ async def test_modify_oplock(
 
     # Now close the contender to release its lease.
     await state_manager_2.close()
+    assert token not in state_manager_2._cached_states_locks
 
     # Both locks should have been released.
     unlock_events = await _wait_for_keyspace_events(
@@ -655,6 +657,109 @@ async def test_modify_oplock(
         event_log, event_log_on_update, state_key_suffix, b"set", 2
     )
     assert token_set_events == 2
+
+
+async def test_oplock_prunes_idle_state_locks(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+):
+    """Each lease expiry flushes its state and discards the idle local lock.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+    """
+    state_manager_redis._oplock_enabled = True
+    state_manager_redis.oplock_hold_time_ms = 1
+    await _subscribed(state_manager_redis)
+
+    for index in range(1, 21):
+        token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+        async with state_manager_redis.modify_state(token) as state:
+            state.count = index
+            lease_task = state_manager_redis._local_leases[token.lock_key]
+            assert token.lock_key in state_manager_redis._cached_states_locks
+        await lease_task
+
+        persisted_state = await state_manager_redis.get_state(token)
+        assert isinstance(persisted_state, root_state)
+        assert persisted_state.count == index
+
+    assert state_manager_redis._local_leases == {}
+    assert state_manager_redis._cached_states == {}
+    assert state_manager_redis._cached_states_locks == {}
+
+
+async def test_oplock_retains_state_lock_for_queued_use(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Keep one local mutex through lease expiry and release it after the last user.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    lock_key = token.lock_key
+    state_manager_redis._oplock_enabled = True
+    state_manager_redis.oplock_hold_time_ms = 1
+    await _subscribed(state_manager_redis)
+
+    flush_started = asyncio.Event()
+    finish_flush = asyncio.Event()
+    waiter_acquired = asyncio.Event()
+    finish_waiter = asyncio.Event()
+    set_state = state_manager_redis.set_state
+    get_local_lease = state_manager_redis._get_local_lease
+
+    async def held_set_state(*args: Any, **kwargs: Any) -> None:
+        flush_started.set()
+        await finish_flush.wait()
+        await set_state(*args, **kwargs)
+
+    async def held_get_local_lease(key: str) -> asyncio.Task | None:
+        # The cached lookup calls this under the local mutex, after the flush.
+        waiter_acquired.set()
+        await finish_waiter.wait()
+        return await get_local_lease(key)
+
+    async def get_cached_state() -> None:
+        async with state_manager_redis._get_state_cached(token) as state:
+            assert state is None
+
+    monkeypatch.setattr(state_manager_redis, "set_state", held_set_state)
+    async with state_manager_redis.modify_state(token) as state:
+        state.count = 1
+        lease_task = state_manager_redis._local_leases[lock_key]
+        state_lock = state_manager_redis._cached_states_locks[lock_key]
+
+    try:
+        await asyncio.wait_for(flush_started.wait(), timeout=5)
+        monkeypatch.setattr(
+            state_manager_redis, "_get_local_lease", held_get_local_lease
+        )
+        async with asyncio.TaskGroup() as waiters:
+            cancelled_waiter = waiters.create_task(get_cached_state())
+            waiters.create_task(get_cached_state())
+            # Both lookups queue on the mutex while write-back holds it.
+            await asyncio.sleep(0)
+            cancelled_waiter.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await cancelled_waiter
+
+            finish_flush.set()
+            await lease_task
+            await asyncio.wait_for(waiter_acquired.wait(), timeout=5)
+            assert lock_key not in state_manager_redis._local_leases
+            assert state_manager_redis._cached_states_locks[lock_key] is state_lock
+            finish_waiter.set()
+    finally:
+        finish_flush.set()
+
+    assert state_manager_redis._cached_states_locks == {}
 
 
 async def test_oplock_contention_queue(
@@ -759,6 +864,7 @@ async def test_oplock_contention_no_lease(
     other_state_manager: Callable[[], Awaitable[StateManagerRedis]],
     root_state: type[RedisTestState],
     event_log: list[dict[str, Any]],
+    event_log_on_update: asyncio.Event,
 ):
     """Test the oplock contention queue, when no waiters can share.
 
@@ -767,8 +873,9 @@ async def test_oplock_contention_no_lease(
         other_state_manager: Creates the managers of other app instances.
         root_state: The root state class.
         event_log: The redis event log.
+        event_log_on_update: The event set when the event log grows.
     """
-    token = str(uuid.uuid4())
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
 
     state_manager_redis._debug_enabled = True
     state_manager_redis._oplock_enabled = True
@@ -782,73 +889,39 @@ async def test_oplock_contention_no_lease(
     state_manager_3._debug_enabled = True
     state_manager_3._oplock_enabled = True
 
-    modify_started = asyncio.Event()
-    modify_2_started = asyncio.Event()
-    modify_1_continue = asyncio.Event()
-    modify_2_continue = asyncio.Event()
+    leased_contenders: list[StateManagerRedis] = []
 
-    async def modify_1():
-        async with state_manager_redis.modify_state(
-            BaseStateToken(ident=token, cls=root_state),
-        ) as new_state:
-            assert isinstance(new_state, root_state)
-            new_state.count += 1
-            modify_started.set()
-            await modify_1_continue.wait()
+    async def modify_contender(manager: StateManagerRedis) -> None:
+        async with manager.modify_state(token) as state:
+            assert isinstance(state, root_state)
+            if token.lock_key in manager._local_leases:
+                leased_contenders.append(manager)
+            state.count += 1
 
-    async def modify_2():
-        await modify_started.wait()
-        modify_2_started.set()
-        async with state_manager_2.modify_state(
-            BaseStateToken(ident=token, cls=root_state),
-        ) as new_state:
-            assert isinstance(new_state, root_state)
-            new_state.count += 1
-            await modify_2_continue.wait()
+    async with (
+        asyncio.TaskGroup() as contenders,
+        state_manager_redis.modify_state(token) as state,
+    ):
+        assert isinstance(state, root_state)
+        assert token.lock_key in state_manager_redis._local_leases
+        state.count += 1
+        contenders.create_task(modify_contender(state_manager_2))
+        contenders.create_task(modify_contender(state_manager_3))
+        assert (
+            await _wait_for_keyspace_events(
+                event_log, event_log_on_update, b"_lock_waiters", b"sadd", 2
+            )
+            == 2
+        )
 
-    async def modify_3():
-        await modify_started.wait()
-        modify_2_started.set()
-        async with state_manager_3.modify_state(
-            BaseStateToken(ident=token, cls=root_state),
-        ) as new_state:
-            assert isinstance(new_state, root_state)
-            new_state.count += 1
-            await modify_2_continue.wait()
-
-    task_1 = asyncio.create_task(modify_1())
-    task_2 = asyncio.create_task(modify_2())
-    task_3 = asyncio.create_task(modify_3())
-
-    await modify_2_started.wait()
-
-    # Let modify 1 complete
-    modify_1_continue.set()
-
-    # Let modify 2 complete
-    modify_2_continue.set()
-
-    await task_1
-    await task_2
-    await task_3
-
-    # First task should have always gotten a lease
-    assert token in state_manager_redis._cached_states_locks
-
-    # The 2nd or 3rd modify should have _never_ got a lease due to contention
-    if token not in state_manager_2._cached_states_locks:
-        assert await state_manager_3._get_local_lease(token) is not None
-    elif token not in state_manager_3._cached_states_locks:
-        assert await state_manager_2._get_local_lease(token) is not None
-    else:
-        pytest.fail("One of the contending state managers should not have a lease.")
+    # The first contender makes a single update while the other is waiting.
+    assert len(leased_contenders) == 1
+    assert await leased_contenders[0]._get_local_lease(token.lock_key) is not None
 
     await state_manager_2.close()
     await state_manager_3.close()
 
-    final_state = await state_manager_2.get_state(
-        BaseStateToken(ident=token, cls=root_state)
-    )
+    final_state = await state_manager_2.get_state(token)
     assert isinstance(final_state, root_state)
     assert final_state.count == 3
 
@@ -1054,6 +1127,7 @@ async def test_oplock_immediate_cancel(
     await asyncio.gather(*state_manager_redis._lease_cleanups)
 
     assert await state_manager_redis._get_local_lease(token) is None
+    assert token not in state_manager_redis._cached_states_locks
     assert (
         await state_manager_redis.redis.get(state_manager_redis._lock_key(state_token))
         is None
@@ -1172,7 +1246,7 @@ async def test_oplock_hold_oplock_after_cancel(
     await asyncio.sleep(short_lock_expiration / 1000 * 0.5)
     state_lock = state_manager_redis._cached_states_locks.get(token)
     assert state_lock is not None
-    assert state_lock.locked()
+    assert state_lock.lock.locked()
     lease_task = await state_manager_redis._get_local_lease(token)
     assert lease_task is not None
     assert not lease_task.done()
@@ -1685,6 +1759,7 @@ async def test_oplock_lease_reports_its_failure_once(
         loop.set_exception_handler(previous_handler)
 
     assert reported == [LeaseError]
+    assert token.lock_key not in state_manager_redis._cached_states_locks
 
 
 @pytest.mark.asyncio
