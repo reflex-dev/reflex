@@ -144,6 +144,7 @@ def test_every_wave_is_in_the_namespace():
         "spacer",
         "spinner",
         "stack",
+        "switch",
         "table.body",
         "table.cell",
         "table.column_header_cell",

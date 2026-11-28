@@ -88,3 +88,19 @@ reason = "rx.checkbox is a button that JavaScript turns into a checkbox: until i
 component = "checkbox"
 step = "Enter on a checkbox does not submit its form"
 reason = "rx.ui.checkbox is a native input, and the browser submits a form when Enter is pressed in one of its inputs, a checkbox included. rx.checkbox swallows the key. Space toggles both, and Enter toggles neither."
+
+[[contract]]
+component = "switch"
+step = "is turned on by a click with JavaScript disabled"
+system = "rx"
+reason = "rx.switch is a button that JavaScript turns into a switch: until it has run, a click does nothing. rx.ui.switch is a native checkbox with the role of a switch, which a click on it or on its label turns on and off with or without JavaScript."
+
+[[contract]]
+component = "switch"
+step = "Enter toggles it"
+reason = "rx.ui.switch is a native checkbox, which the browser toggles on Space and not on Enter. rx.switch is a button, which both keys press."
+
+[[contract]]
+component = "switch"
+step = "Enter on a switch does not submit its form"
+reason = "rx.ui.switch is a native input, and the browser submits a form when Enter is pressed in one of its inputs. rx.switch toggles on that key instead."
