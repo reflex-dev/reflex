@@ -78,6 +78,17 @@ html.dark {
   [data-rx-skeleton] > * {
     visibility: hidden !important;
   }
+
+  /*
+   * What a radio card or a checkbox card holds is not dragged out of it, an
+   * image for one, and an icon keeps its size beside a long text.
+   */
+  [data-rx-cards-item] > * {
+    pointer-events: none;
+  }
+  [data-rx-cards-item] > svg {
+    flex-shrink: 0;
+  }
 }
 
 /*

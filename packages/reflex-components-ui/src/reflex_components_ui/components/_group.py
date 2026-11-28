@@ -58,15 +58,8 @@ class GroupRoot(UIComponent):
         """
         super()._post_init(*args, **kwargs)
         self._bind()
-        # The size Radix Themes gives a group that is not given one.
-        size = getattr(self, "size", None)
-        if size is None:
-            size = LiteralVar.create("2")
-        for label in descendants(self, GroupItemLabel):
-            label.size = size
-            label._merge_styles()
-        for item in descendants(self, GroupInput):
-            item._join(self)
+        for member in descendants(self, GroupMember):
+            member._join(self)
 
     def _bind(self) -> None:
         """Work out what the items of the group are given, before they join."""
@@ -90,8 +83,29 @@ def descendants(component: BaseComponent, kind: type[T]) -> Iterator[T]:
             yield from descendants(child, kind)
 
 
-class GroupItemLabel(Text):
+class GroupMember:
+    """An element below the root of a group that takes something from it."""
+
+    def _join(self, group: Any) -> None:
+        """Take from a group what Radix hands down through a context.
+
+        Args:
+            group: The group the element is in.
+        """
+
+
+class GroupItemLabel(GroupMember, Text):
     """The label around an item of a group that is given children."""
+
+    def _join(self, group: Any) -> None:
+        """Take the size of the text from the group.
+
+        Args:
+            group: The group the label is in.
+        """
+        # The size Radix Themes gives a group that is not given one.
+        self.size = LiteralVar.create("2") if group.size is None else group.size
+        self._merge_styles()
 
     def add_style(self) -> dict[str, Any]:
         """Lay the input and its text out in a row.
@@ -110,7 +124,7 @@ class GroupItemInner(UIComponent):
     styles: ClassVar[ComponentStyles] = GROUP_ITEM_INNER
 
 
-class GroupInput(UIComponent):
+class GroupInput(GroupMember, UIComponent):
     """An item of a group: a native input its group gives a look and a state."""
 
     tag = "input"
@@ -167,7 +181,7 @@ class GroupInput(UIComponent):
             group: The group the item is in.
         """
         self._size = group.size
-        self._variant = group.variant
+        self._variant = self._variant_of(group)
         self._high_contrast = group.high_contrast
         attributes: dict[str, Any] = {"name": group._name}
         disabled = either(group.disabled, getattr(self, "disabled", None))
@@ -187,6 +201,17 @@ class GroupInput(UIComponent):
                 attributes["default_checked"] = checked
         self._group = attributes
         self._merge_styles()
+
+    def _variant_of(self, group: Any) -> Any:
+        """Get the variant the input has in a group.
+
+        Args:
+            group: The group the item is in.
+
+        Returns:
+            The variant of the group.
+        """
+        return group.variant
 
     def _get_vars(
         self, include_children: bool = False, ignore_ids: set[int] | None = None

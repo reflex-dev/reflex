@@ -147,3 +147,51 @@ reason = "rx.checkbox_group takes one Tab stop for the whole group. In rx.ui.che
 component = "checkbox_group"
 step = "hands over the checked values in the order they were checked in"
 reason = "`on_value_change` of rx.ui.checkbox_group hands over the values of the checked items in the order of the items, whatever the order they were checked in: the group keeps no state of its own and reads its checkboxes. rx.checkbox_group appends each value as it is checked."
+
+[[look]]
+component = "radio_cards"
+check = "a11y"
+reason = "A card of rx.ui.radio_cards is a label around a native radio button: what the card holds names the radio button, as in rx.radio_cards, and is also text of the page, as the text of any label is. A card of rx.radio_cards is one button that holds its text."
+
+[[contract]]
+component = "radio_cards"
+step = "checks one card of a group with JavaScript disabled"
+system = "rx"
+reason = "The cards of rx.radio_cards are buttons that JavaScript turns into radio buttons: until it has run, a click does nothing. A card of rx.ui.radio_cards is a label around a native radio button, which the browser checks with or without JavaScript."
+
+[[contract]]
+component = "radio_cards"
+step = "Enter on a card does not submit its form"
+reason = "The cards of rx.ui.radio_cards hold native inputs, and the browser submits a form when Enter is pressed in one of its inputs, a radio button included. rx.radio_cards swallows the key. Space and the arrow keys check a card in both."
+
+[[look]]
+component = "checkbox_cards"
+check = "a11y"
+reason = "The checkbox of a checked card of rx.checkbox_cards holds its check as an image without a name. The checkbox of a card of rx.ui.checkbox_cards is one native input: its check is drawn by its styles and is nothing to the accessibility tree."
+
+[[contract]]
+component = "checkbox_cards"
+step = "checks its cards with JavaScript disabled"
+system = "rx"
+reason = "The checkboxes of rx.checkbox_cards are buttons that JavaScript turns into checkboxes: until it has run, a click does nothing. The checkbox of a card of rx.ui.checkbox_cards is a native input, which a click on the card checks with or without JavaScript."
+
+[[contract]]
+component = "checkbox_cards"
+step = "Tab stops once in each group"
+reason = "The cards of rx.ui.checkbox_cards hold native checkboxes, and Tab stops on each of them, as it does on every checkbox of a page. rx.checkbox_cards takes one stop for the whole group and moves through it with the arrow keys."
+
+[[contract]]
+component = "checkbox_cards"
+step = "the arrow keys move through a group"
+reason = "The browser does not move between checkboxes with the arrow keys: in rx.ui.checkbox_cards Tab and Shift+Tab do, and `orientation`, `loop` and the direction of `dir` for the arrow keys have nothing to say. rx.checkbox_cards moves the focus with the arrow keys."
+
+[[contract]]
+component = "checkbox_cards"
+step = "Tab reaches every card that is not disabled"
+system = "rx"
+reason = "rx.checkbox_cards takes one Tab stop for the whole group. In rx.ui.checkbox_cards every card is a stop, as native checkboxes are."
+
+[[contract]]
+component = "checkbox_cards"
+step = "hands over the checked values in the order they were checked in"
+reason = "`on_value_change` of rx.ui.checkbox_cards hands over the values of the checked cards in the order of the cards, whatever the order they were checked in: the group keeps no state of its own and reads its checkboxes. rx.checkbox_cards appends each value as it is checked."

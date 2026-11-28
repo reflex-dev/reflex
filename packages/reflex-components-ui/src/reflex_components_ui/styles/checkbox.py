@@ -11,6 +11,8 @@ from reflex_components_ui.styles.control import DISABLED, FOCUS, FOCUS_RING, RES
 accent, gray, white, black = tokens.accent, tokens.gray, tokens.white, tokens.black
 
 _SIZE = "--checkbox-size"
+# How far the checkbox of a card is from its end: the padding of the card.
+CARD_PADDING = "var(--checkbox-cards-item-padding-left)"
 _INDICATOR = "--checkbox-indicator-size"
 _RADIUS = "--checkbox-border-radius"
 
@@ -34,12 +36,13 @@ _DIVIDER = mask(
 )
 
 
-def _look(variant: str, high_contrast: bool) -> dict[str, Any]:
+def _look(variant: str, high_contrast: bool, disabled: str) -> dict[str, Any]:
     """Make the box and the check of one variant.
 
     Args:
         variant: The variant.
         high_contrast: Whether the checkbox is high contrast.
+        disabled: The fill of a disabled checkbox.
 
     Returns:
         The styles of the two pseudo-elements, for every state of the input.
@@ -51,7 +54,7 @@ def _look(variant: str, high_contrast: bool) -> dict[str, Any]:
             "background_color": {
                 "default": tokens.color.surface,
                 _ON_ENABLED: fill,
-                DISABLED: gray.a[3],
+                DISABLED: disabled,
             },
             "box_shadow": {
                 "default": f"inset 0 0 0 1px {gray.a[7]}",
@@ -64,7 +67,7 @@ def _look(variant: str, high_contrast: bool) -> dict[str, Any]:
             "background_color": {
                 "default": tokens.color.surface,
                 _ON_ENABLED: fill,
-                DISABLED: gray.a[3],
+                DISABLED: disabled,
             },
             "background_image": {
                 "default": "none",
@@ -83,7 +86,7 @@ def _look(variant: str, high_contrast: bool) -> dict[str, Any]:
             },
         }
     else:
-        box = {"background_color": {"default": accent.a[5], DISABLED: gray.a[3]}}
+        box = {"background_color": {"default": accent.a[5], DISABLED: disabled}}
         check = accent[12] if high_contrast else accent.a[11]
     return {
         "_before": box,
@@ -94,7 +97,9 @@ def _look(variant: str, high_contrast: bool) -> dict[str, Any]:
 _VARIANTS = ("classic", "surface", "soft")
 
 
-def _table(size: str, variant: str, high_contrast: str) -> ComponentStyles:
+def _table(
+    size: str, variant: str, high_contrast: str, card: bool = False
+) -> ComponentStyles:
     """Make the table of a checkbox.
 
     Args:
@@ -102,23 +107,31 @@ def _table(size: str, variant: str, high_contrast: str) -> ComponentStyles:
         variant: The name of the prop that says which look it has.
         high_contrast: The name of the prop that says whether it is high
             contrast.
+        card: Whether the checkbox is the one of a card, which shows the
+            focus itself and places the checkbox at its end.
 
     Returns:
         The table.
     """
+    disabled = "transparent" if card else gray.a[3]
     return {
         "base": unchecked({
             **RESET,
-            "position": "relative",
+            "position": "absolute" if card else "relative",
+            **({"right": CARD_PADDING} if card else {}),
             "display": "inline-flex",
             "align_items": "center",
             "justify_content": "center",
             "vertical_align": "top",
             "flex_shrink": 0,
-            "cursor": {
-                "default": tokens.cursor.checkbox,
-                DISABLED: tokens.cursor.disabled,
-            },
+            "cursor": (
+                tokens.cursor.checkbox
+                if card
+                else {
+                    "default": tokens.cursor.checkbox,
+                    DISABLED: tokens.cursor.disabled,
+                }
+            ),
             # In a line of text it is as high as the line.
             "height": f"var(--line-height, var({_SIZE}))",
             "_before": {
@@ -127,7 +140,7 @@ def _table(size: str, variant: str, high_contrast: str) -> ComponentStyles:
                 "height": f"var({_SIZE})",
                 "width": f"var({_SIZE})",
                 "border_radius": f"var({_RADIUS})",
-                FOCUS: FOCUS_RING,
+                **({} if card else {FOCUS: FOCUS_RING}),
             },
             # The check, or the line of a checkbox that is neither.
             "_after": {
@@ -162,13 +175,15 @@ def _table(size: str, variant: str, high_contrast: str) -> ComponentStyles:
                     _RADIUS: f"calc({tokens.radius[1]} * 1.25)",
                 }),
             },
-            variant: {look: unchecked(_look(look, False)) for look in _VARIANTS},
+            variant: {
+                look: unchecked(_look(look, False, disabled)) for look in _VARIANTS
+            },
         },
         "defaults": {size: "2", variant: "surface"},
         "compound": [
             {
                 "props": {variant: look, high_contrast: "true"},
-                "style": unchecked(_look(look, True)),
+                "style": unchecked(_look(look, True, disabled)),
             }
             for look in _VARIANTS
         ],
@@ -179,3 +194,8 @@ CHECKBOX: ComponentStyles = _table("size", "variant", "high_contrast")
 
 # A checkbox of a group, which says how it looks: the variants are not props.
 CHECKBOX_GROUP_ITEM: ComponentStyles = _table("_size", "_variant", "_high_contrast")
+
+# The checkbox of a card, at its end.
+CHECKBOX_CARDS_ITEM: ComponentStyles = _table(
+    "_size", "_variant", "_high_contrast", card=True
+)
