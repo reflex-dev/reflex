@@ -532,12 +532,18 @@ class I18nPlugin(Plugin):
             sitemap: The sitemap XML the SitemapPlugin generated.
 
         Returns:
-            The sitemap with an ``xhtml:link`` alternate per locale on each URL.
+            The sitemap with an ``xhtml:link`` alternate per locale on each
+            page's URL.
         """
         from reflex_base.config import get_config
 
+        from reflex.route import get_router
+
         frontend_path = get_config().frontend_path.strip("/")
         prefix = f"/{frontend_path}" if frontend_path else ""
+        dynamic_page = get_router([
+            url.strip("/") for url in self._page_urls if "[" in url
+        ])
         urlset = ET.fromstring(sitemap)
         namespace = urlset.tag.partition("}")[0].removeprefix("{")
         # Written back with the literal names the SitemapPlugin writes.
@@ -551,6 +557,11 @@ class I18nPlugin(Plugin):
                 # Not one of the app's pages, e.g. a page's custom loc.
                 continue
             path = loc.path[len(prefix) :] or "/"
+            if (path.rstrip("/") or "/").lower() not in self._page_urls and (
+                dynamic_page(path) is None
+            ):
+                # No page's URL in any locale, e.g. a feed's.
+                continue
             slash = "/" if path != "/" and path.endswith("/") else ""
             for locale, alternate in self._alternates(path).items():
                 if alternate != "/":

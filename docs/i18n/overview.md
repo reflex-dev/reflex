@@ -511,6 +511,7 @@ Notes:
   locale routes, and compilation fails with a clear error.
 - The sitemap (`SitemapPlugin`) lists every locale's URL of a page, each
   naming all of them as `xhtml:link` alternates, as its `hreflang` links do.
+  A URL no page has in any locale, e.g. a feed's, gets none.
 - Each locale route prerenders that language's content, `hreflang`,
   `canonical` and `<html lang>`/`dir`. Unprefixed pages of the default locale
   keep the app-wide `rx.App(html_lang=...)`, which defaults to `default_locale`.

@@ -745,6 +745,46 @@ def test_sitemap_leaves_a_url_outside_the_app_alone(monkeypatch: pytest.MonkeyPa
     assert "xhtml:link" not in plugin._add_sitemap_alternates(sitemap)
 
 
+def test_sitemap_names_alternates_of_pages_only(monkeypatch: pytest.MonkeyPatch):
+    """A URL no page has in any locale, e.g. a feed's, gets none; a dynamic page's does."""
+    from reflex_base.config import get_config
+    from reflex_base.plugins.sitemap import generate_xml
+
+    from reflex.app import UnevaluatedPage
+
+    plugin = I18nPlugin(
+        locales=["de", "en"], default_locale="de", routing=PathPrefixRouting()
+    )
+    ctx = _fake_context([
+        UnevaluatedPage(component=lambda: rx.text("Post"), route="blog/[slug]"),
+    ])
+    plugin.expand_routes(add_page=ctx["add_page"], pages=ctx["pages"])  # pyright: ignore[reportCallIssue]
+    monkeypatch.setattr(get_config(), "frontend_path", "")
+    sitemap = generate_xml([
+        {"loc": "https://example.com/en/blog/hello"},
+        {"loc": "https://example.com/blog/feed/atom"},
+    ])
+
+    assert plugin._add_sitemap_alternates(sitemap) == (
+        "<?xml version='1.0' encoding='utf-8'?>\n"
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
+        'xmlns:xhtml="http://www.w3.org/1999/xhtml">\n'
+        "  <url>\n"
+        "    <loc>https://example.com/en/blog/hello</loc>\n"
+        '    <xhtml:link rel="alternate" hreflang="de" '
+        'href="https://example.com/blog/hello" />\n'
+        '    <xhtml:link rel="alternate" hreflang="en" '
+        'href="https://example.com/en/blog/hello" />\n'
+        '    <xhtml:link rel="alternate" hreflang="x-default" '
+        'href="https://example.com/blog/hello" />\n'
+        "  </url>\n"
+        "  <url>\n"
+        "    <loc>https://example.com/blog/feed/atom</loc>\n"
+        "  </url>\n"
+        "</urlset>"
+    )
+
+
 @pytest.mark.parametrize(
     ("routing", "sitemap", "expected"),
     [
