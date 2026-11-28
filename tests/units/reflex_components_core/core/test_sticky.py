@@ -1,7 +1,8 @@
 """Tests for the "Built with Reflex" sticky badge."""
 
 import pytest
-from reflex_components_core.core.sticky import StickyBadge
+from reflex_base.breakpoints import breakpoints_values, set_breakpoints
+from reflex_components_core.core.sticky import StickyBadge, StickyLabel, StickyLogo
 
 
 def _badge_href() -> str:
@@ -97,6 +98,7 @@ def test_badge_is_styled_without_a_css_prop(monkeypatch: pytest.MonkeyPatch):
                         "name": '"rect"',
                         "props": [
                             'className:"rx-sticky-logo-square"',
+                            'fill:"#6E56CF"',
                             'height:"16"',
                             'rx:"2"',
                             'width:"16"',
@@ -108,6 +110,7 @@ def test_badge_is_styled_without_a_css_prop(monkeypatch: pytest.MonkeyPatch):
                         "props": [
                             'className:"rx-sticky-logo-letter"',
                             'd:"M10 9V13H12V9H10Z"',
+                            'fill:"white"',
                         ],
                         "children": [],
                     },
@@ -116,6 +119,7 @@ def test_badge_is_styled_without_a_css_prop(monkeypatch: pytest.MonkeyPatch):
                         "props": [
                             'className:"rx-sticky-logo-letter"',
                             'd:"M4 3V13H6V9H10V7H6V5H10V7H12V3H4Z"',
+                            'fill:"white"',
                         ],
                         "children": [],
                     },
@@ -132,5 +136,60 @@ def test_badge_is_styled_without_a_css_prop(monkeypatch: pytest.MonkeyPatch):
                     }
                 ],
             },
+        ],
+    }
+
+
+STYLESHEET = {
+    "name": '"style"',
+    "props": [
+        'href:"rx-sticky-badge"',
+        'precedence:"reflex"',
+        "suppressHydrationWarning:true",
+    ],
+    "children": [{"contents": f'"{BADGE_CSS}"'}],
+}
+
+
+def test_label_and_logo_are_styled_on_their_own():
+    """Outside the badge the label brings the stylesheet, the logo its fills."""
+    assert StickyLabel.create().render() == {
+        "name": '"span"',
+        "props": ['className:"rx-sticky-label"'],
+        "children": [STYLESHEET, {"contents": '"Built with Reflex"'}],
+    }
+    logo = StickyLogo.create()
+    assert logo._get_all_imports(collapse=True) == {}
+    assert [child["props"] for child in logo.render()["children"]] == [
+        [
+            'className:"rx-sticky-logo-square"',
+            'fill:"#6E56CF"',
+            'height:"16"',
+            'rx:"2"',
+            'width:"16"',
+        ],
+        ['className:"rx-sticky-logo-letter"', 'd:"M10 9V13H12V9H10Z"', 'fill:"white"'],
+        [
+            'className:"rx-sticky-logo-letter"',
+            'd:"M4 3V13H6V9H10V7H6V5H10V7H12V3H4Z"',
+            'fill:"white"',
+        ],
+    ]
+
+
+def test_badge_label_shows_from_the_desktop_breakpoint_of_the_app():
+    """The label follows the breakpoints the app sets, as desktop_only does."""
+    before = tuple(breakpoints_values)
+    set_breakpoints(("20em", "40em", "50em", "70em", "90em"))
+    try:
+        [stylesheet, *_] = StickyBadge.create().render()["children"]
+    finally:
+        set_breakpoints(before)  # pyright: ignore[reportArgumentType]
+    assert stylesheet == {
+        **STYLESHEET,
+        "children": [
+            {
+                "contents": f'"{BADGE_CSS.replace("(min-width: 62em)", "(min-width: 50em)")}"'
+            }
         ],
     }

@@ -7,7 +7,7 @@ from collections.abc import Generator
 import pytest
 from playwright.sync_api import Page, expect
 from reflex_components_core.core.banner import _PULSER_CSS
-from reflex_components_core.core.sticky import _BADGE_CSS
+from reflex_components_core.core.sticky import _badge_css
 
 import reflex.constants as constants
 import reflex.utils.prerequisites as prerequisites
@@ -116,7 +116,7 @@ def test_prerendered_head_preloads_no_script(scripts_app: AppHarness):
     own_styles = (
         '<style data-precedence="reflex" '
         'data-href="rx-connection-pulser rx-sticky-badge">'
-        f"{_PULSER_CSS}{_BADGE_CSS}</style>"
+        f"{_PULSER_CSS}{_badge_css()}</style>"
     )
     assert re.sub(r"-[\w-]{8}\.css", "-HASH.css", head) == (
         '<head><meta charSet="utf-8"/>'
