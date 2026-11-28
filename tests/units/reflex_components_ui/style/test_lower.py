@@ -691,7 +691,10 @@ ALL_SIDES = ("borderTop", "borderRight", "borderBottom", "borderLeft")
             {"border_block": "1px solid", "border_inline": "2px solid"},
             {
                 **_border(
-                    ("borderTop", "borderBottom"), "1px", "solid", "currentcolor"
+                    ("borderBlockStart", "borderBlockEnd"),
+                    "1px",
+                    "solid",
+                    "currentcolor",
                 ),
                 **_border(
                     ("borderInlineStart", "borderInlineEnd"),
@@ -710,8 +713,8 @@ ALL_SIDES = ("borderTop", "borderRight", "borderBottom", "borderLeft")
                 "border_inline_end": "4px solid",
             },
             {
-                **_border(("borderTop",), "1px", "solid", "currentcolor"),
-                **_border(("borderBottom",), "2px", "solid", "currentcolor"),
+                **_border(("borderBlockStart",), "1px", "solid", "currentcolor"),
+                **_border(("borderBlockEnd",), "2px", "solid", "currentcolor"),
                 **_border(("borderInlineStart",), "3px", "solid", "currentcolor"),
                 **_border(("borderInlineEnd",), "4px", "solid", "currentcolor"),
             },
@@ -1597,3 +1600,77 @@ def test_shorthand_kept_whole_replaces_the_longhands_written_before_it():
     assert lower_layer(
         "rx.ui.box", {"margin_top": "1em", "_hover": {"margin": "var(--gap)"}}
     ) == ({"marginTop": "1em", "margin": {":hover": "var(--gap)"}}, ())
+
+
+@pytest.mark.parametrize(
+    "keyword", ["inherit", "initial", "unset", "revert", "INHERIT"]
+)
+def test_css_wide_keyword_of_a_split_shorthand_goes_to_every_longhand(keyword: str):
+    """`border: inherit` inherits the whole border, and a background its all."""
+    assert lower("rx.ui.card", {"border_top": keyword}) == Lowered(
+        _border(("borderTop",), keyword, keyword, keyword)
+    )
+    assert lower("rx.ui.card", {"border": f" {keyword} "}) == Lowered(
+        _border(ALL_SIDES, keyword, keyword, keyword)
+    )
+    assert lower("rx.ui.card", {"background": keyword}) == Lowered({
+        "backgroundColor": keyword,
+        "backgroundImage": keyword,
+        "backgroundPosition": keyword,
+        "backgroundSize": keyword,
+        "backgroundRepeat": keyword,
+        "backgroundAttachment": keyword,
+        "backgroundOrigin": keyword,
+        "backgroundClip": keyword,
+    })
+
+
+def test_background_resets_the_longhands_it_does_not_name():
+    """A background replaces the size, position and the rest set before it."""
+    rest = (
+        "backgroundPosition",
+        "backgroundSize",
+        "backgroundRepeat",
+        "backgroundAttachment",
+        "backgroundOrigin",
+        "backgroundClip",
+    )
+    earlier = lower_layer(
+        "rx.ui.card",
+        {"background_size": "cover", "background_repeat": "no-repeat", "top": "0"},
+    )
+    later = lower_layer(
+        "rx.ui.card", {"background_clip": "text", "background": "url(new.png)"}
+    )
+    # In its own style, and in the ones before: back to their initial values.
+    assert later == (
+        {"backgroundColor": "transparent", "backgroundImage": "url(new.png)"},
+        rest,
+    )
+    merged = dict(earlier[0])
+    apply_layer(merged, later)
+    assert merged == {
+        "top": "0",
+        "backgroundColor": "transparent",
+        "backgroundImage": "url(new.png)",
+    }
+    # A longhand written after the shorthand is kept.
+    assert lower_layer("rx.ui.card", {"bg": "red", "background_size": "cover"}) == (
+        {
+            "backgroundColor": "red",
+            "backgroundImage": "none",
+            "backgroundSize": "cover",
+        },
+        rest,
+    )
+    # Under a condition nothing is replaced: the size holds outside of it.
+    assert lower_layer(
+        "rx.ui.card", {"background_size": "cover", "_hover": {"background": "red"}}
+    ) == (
+        {
+            "backgroundSize": "cover",
+            "backgroundColor": {":hover": "red"},
+            "backgroundImage": {":hover": "none"},
+        },
+        (),
+    )

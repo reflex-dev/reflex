@@ -185,9 +185,10 @@ _BORDERS: dict[str, tuple[str, ...]] = {
     "borderRight": ("borderRight",),
     "borderBottom": ("borderBottom",),
     "borderLeft": ("borderLeft",),
-    "borderBlock": ("borderTop", "borderBottom"),
-    "borderBlockStart": ("borderTop",),
-    "borderBlockEnd": ("borderBottom",),
+    # Logical, as written: which sides they are follows the writing mode.
+    "borderBlock": ("borderBlockStart", "borderBlockEnd"),
+    "borderBlockStart": ("borderBlockStart",),
+    "borderBlockEnd": ("borderBlockEnd",),
     "borderInline": ("borderInlineStart", "borderInlineEnd"),
     "borderInlineStart": ("borderInlineStart",),
     "borderInlineEnd": ("borderInlineEnd",),
@@ -211,6 +212,20 @@ _BORDER_STYLES = frozenset((
     "inset",
     "outset",
 ))
+# The keywords every property takes: given to a shorthand, each of its
+# longhands takes the keyword.
+_CSS_WIDE = frozenset(("inherit", "initial", "unset", "revert", "revert-layer"))
+# What the background shorthand resets besides the color and the image it is
+# split into: without a value of their own they are at their initial values,
+# so the ones written before the shorthand go.
+_BACKGROUND_REST = (
+    "backgroundPosition",
+    "backgroundSize",
+    "backgroundRepeat",
+    "backgroundAttachment",
+    "backgroundOrigin",
+    "backgroundClip",
+)
 _BORDER_WIDTH = re.compile(
     r"thin|medium|thick|-?(?:\d+\.?\d*|\.\d+)[a-z%]*|(?:calc|min|max|clamp)\(.*\)"
 )
@@ -249,6 +264,7 @@ _REPLACES: dict[str, tuple[str, ...]] = {
         *_ends("insetBlock"),
     ),
     "outline": ("outlineColor", "outlineStyle", "outlineWidth"),
+    "background": _BACKGROUND_REST,
     "flex": ("flexGrow", "flexShrink", "flexBasis"),
     "flexFlow": ("flexDirection", "flexWrap"),
     "font": (
@@ -504,6 +520,13 @@ def _border(sides: tuple[str, ...]) -> Callable[[str, str, Any], list[tuple[str,
         """
         width = style = color = None
         if value.__class__ is str:
+            keyword = value.strip()
+            if keyword.lower() in _CSS_WIDE:
+                return [
+                    (f"{side}{part}", keyword)
+                    for side in sides
+                    for part in ("Width", "Style", "Color")
+                ]
             for token in _tokens(value):
                 lowered = token.lower()
                 if style is None and lowered in _BORDER_STYLES:
@@ -557,6 +580,16 @@ def _background(name: str, key: str, value: Any) -> list[tuple[str, Any]]:
     if value is None:
         return [("backgroundColor", None), ("backgroundImage", None)]
     if value.__class__ is str:
+        keyword = value.strip()
+        if keyword.lower() in _CSS_WIDE:
+            return [
+                (longhand, keyword)
+                for longhand in (
+                    "backgroundColor",
+                    "backgroundImage",
+                    *_BACKGROUND_REST,
+                )
+            ]
         tokens = _tokens(value)
         if len(tokens) == 1 and "!" not in value:
             if _IMAGE.match(value.strip().lower()):
@@ -616,7 +649,7 @@ def _entries() -> tuple[dict[str, _Entry], dict[str, _Entry]]:
     }
     for key, camel in CSS_PROPS.items():
         if camel in custom:
-            entry = (camel, (), custom[camel], None)
+            entry = (camel, (), custom[camel], _REPLACES.get(camel))
         elif camel in _EXPANSIONS:
             entry = (camel, *_EXPANSIONS[camel], _REPLACES[camel])
         else:
@@ -817,6 +850,11 @@ def _leaf(
                 _put(out, target, path, value)
             return
         if spread.__class__ is not dict:
+            if replaces is not None and not path:
+                # What the shorthand resets without naming it, as below.
+                for longhand in replaces:
+                    out.pop(longhand, None)
+                replaced.extend(replaces)
             for target, item in spread(name, key, value):
                 _put(out, target, path, item)
             return
