@@ -511,11 +511,13 @@ def UIComponentsApp(radix: bool = False):
         """What the display and action components are bound to."""
 
         busy: rx.Field[bool] = rx.field(False)
+        initials: rx.Field[str] = rx.field("A")
 
         @rx.event
         def start(self):
             """Start loading."""
             self.busy = True
+            self.initials = "AB"
 
         @rx.event
         def finish(self):
@@ -554,6 +556,7 @@ def UIComponentsApp(radix: bool = False):
                 size="2",
             ),
             rx.ui.avatar(fallback="AB", id="initials"),
+            rx.ui.avatar(fallback=ActionState.initials, size="4", id="bound"),
             rx.el.div(rx.ui.avatar(src="/missing.png", fallback="CD"), id="broken"),
             rx.ui.box(
                 rx.ui.scroll_area(rx.ui.box(height="400px"), id="area"),
@@ -1518,8 +1521,14 @@ def test_display_and_action_components_work_in_an_app(ui_app: AppHarness, page: 
     expect(page.locator("#broken").get_by_text("CD")).to_be_visible()
 
     # Loading follows the state: the button is disabled under a spinner.
+    # So do the letters of an avatar, sized by how many they are.
+    bound = page.locator("#bound > span")
+    expect(bound).to_have_text("A")
+    expect(bound).to_have_css("font-size", "20px")
     assert save.is_enabled()
     save.click()
+    expect(bound).to_have_text("AB")
+    expect(bound).to_have_css("font-size", "18px")
     expect(save).to_be_disabled()
     expect(save).to_have_attribute("data-disabled", "true")
     expect(save.locator("span > span > span")).to_have_count(8)

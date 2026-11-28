@@ -176,7 +176,7 @@ def test_avatar_fallback_bound_to_state(
     ui_plugin: UIPlugin,
     declared_styles: Callable[[Any], list[dict[str, Any]]],
 ):
-    """A fallback bound to state has the size of the text around it."""
+    """The letters of a fallback bound to state are counted by the page."""
     component = rx.ui.avatar(
         fallback=AvatarState.initials, size=rx.breakpoints(initial="1", md="4")
     )
@@ -186,7 +186,10 @@ def test_avatar_fallback_bound_to_state(
         "children": [
             {
                 "name": '"span"',
-                "props": ["className:sx_24751921fb_c"],
+                "props": [
+                    "className:sx_21e3781dc3_c",
+                    f'"data-letters":pyStrLength({AvatarState.initials!s})',
+                ],
                 "children": [
                     {
                         "contents": "reflex___state____state__tests___units___reflex_components_ui___components___test_avatar____avatar_state.initials_rx_state_"
@@ -246,6 +249,13 @@ def test_avatar_fallback_bound_to_state(
             "borderBottomLeftRadius": "inherit",
             "textTransform": "uppercase",
             "flexShrink": {":not(:only-child)": 0},
+            "fontSize": {
+                "[data-letters='1']": "var(--avatar-fallback-one-letter-font-size)",
+                "[data-letters='2']": (
+                    "var(--avatar-fallback-two-letters-font-size, "
+                    "var(--avatar-fallback-one-letter-font-size))"
+                ),
+            },
             "visibility": {"[data-status='loaded']": "hidden"},
             "backgroundColor": "var(--accent-a3)",
             "color": "var(--accent-a11)",

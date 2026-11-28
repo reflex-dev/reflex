@@ -109,11 +109,12 @@ def _size(
     return style
 
 
-def _fallback(font_size: str | None) -> ComponentStyles:
+def _fallback(font_size: str | dict[str, str] | None) -> ComponentStyles:
     """Make the table of what stands in for the image.
 
     Args:
-        font_size: The size of its letters, when their number says it.
+        font_size: The size of its letters, when their number says it: one
+            size, or a size by the condition that tells the number.
 
     Returns:
         The table.
@@ -187,6 +188,11 @@ AVATAR: ComponentStyles = {
         "fallback": _fallback(None),
         "fallback_one": _fallback(f"var({_ONE_LETTER})"),
         "fallback_two": _fallback(f"var({_TWO_LETTERS}, var({_ONE_LETTER}))"),
+        # Letters bound to state are counted where the page runs.
+        "fallback_bound": _fallback({
+            "[data-letters='1']": f"var({_ONE_LETTER})",
+            "[data-letters='2']": f"var({_TWO_LETTERS}, var({_ONE_LETTER}))",
+        }),
         "image": {
             "base": unchecked({
                 "box_sizing": "border-box",
