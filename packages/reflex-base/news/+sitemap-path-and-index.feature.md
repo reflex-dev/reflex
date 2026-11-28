@@ -1,0 +1,1 @@
+`SitemapPlugin(path=...)` writes the sitemap to another path than `sitemap.xml`, and `index_path=` with `index_sitemaps=` adds a sitemap index listing it and other sitemaps, e.g. one served by another part of the site. `SitemapPlugin.file_path` names the generated file for plugins that modify it.

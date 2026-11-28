@@ -65,6 +65,28 @@ The sitemap configuration supports the following options:
 - `changefreq`: How frequently the page changes (`"always"`, `"hourly"`, `"daily"`, `"weekly"`, `"monthly"`, `"yearly"`, `"never"`)
 - `priority`: Priority of this URL relative to other URLs (0.0 to 1.0)
 
+The sitemap is written to `sitemap.xml` at the root of the frontend. `path` moves it, and `index_path` adds a [sitemap index](https://www.sitemaps.org/protocol.html#index) listing it first, followed by `index_sitemaps` (absolute URLs, or paths resolved against `deploy_url`, which must be set for relative paths), for a site whose other part comes from another server:
+
+```python
+config = rx.Config(
+    app_name="my_app",
+    deploy_url="https://www.example.com",
+    plugins=[
+        rx.plugins.SitemapPlugin(
+            path="sitemap-app.xml",
+            index_path="sitemap.xml",
+            index_sitemaps=["https://www.example.com/sitemap-blog.xml"],
+        ),
+    ],
+)
+```
+
+`extra_links` adds links that are no pages after the pages' links, e.g. a feed the build writes. Each takes the keys of a page's sitemap configuration with a required `loc`, an absolute URL or a path resolved against `deploy_url`, which `trailing_slash` leaves as it is:
+
+```python
+rx.plugins.SitemapPlugin(extra_links=[{"loc": "/blog/feed.xml", "changefreq": "daily"}])
+```
+
 ### TailwindV4Plugin
 
 The `TailwindV4Plugin` provides support for Tailwind CSS v4, which is the recommended version for new projects and includes performance improvements and new features.
