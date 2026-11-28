@@ -47,6 +47,10 @@ from reflex.compiler.plugins import default_page_plugins
 from reflex.state import BaseState
 from reflex.utils import prerequisites
 from reflex.utils.misc import preload_color_theme
+from tests.units.compiler.test_dynamic_components_codegen import (
+    app_root_loaders,
+    loader,
+)
 
 
 @pytest.mark.parametrize("with_plugin", [False, True])
@@ -636,10 +640,12 @@ def test_compile_preserves_app_bundle_registrations(
         assert all("d3-format" in libraries for libraries in seen)
         assert "d3-format" in context.bundled_libraries
         _, code = compiler.compile_app_root(rx.el.div())
-        assert (
-            '    "d3-format": () => import("$/utils/dynamic_libraries/d3_format")'
-            ".then((module) => module.default),"
-        ) in code.splitlines()
+        assert app_root_loaders(code) == [
+            loader("@emotion/react", "emotion_react"),
+            loader("d3-format", "d3_format"),
+            loader("compile-only-library", "compile_only_library"),
+            loader("@radix-ui/themes", "radix_ui_themes"),
+        ]
         assert "compile-only-library" in context.bundled_libraries
         assert "@radix-ui/themes" in context.bundled_libraries
 
