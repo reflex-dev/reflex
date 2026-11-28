@@ -10,9 +10,12 @@ from typing import Any, Generic, List, NotRequired, TypedDict, TypeVar  # noqa: 
 import attrs
 import pytest
 import typing_extensions
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import types as types_module
 from reflex_base.utils.exceptions import VarAttributeError
 from reflex_base.utils.types import GenericType, get_attribute_access_type
+from reflex_base.vars.number import NumberVar
+from reflex_base.vars.object import ObjectVar
 
 import reflex as rx
 
@@ -24,6 +27,7 @@ import pydantic
 import sqlalchemy
 import sqlmodel
 from sqlalchemy import JSON, TypeDecorator
+from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import (
     DeclarativeBase,
@@ -147,6 +151,7 @@ class SQLAClassDataclass(MappedAsDataclass, SQLABase):
     sqla_tag_id: Mapped[int] = mapped_column(sqlalchemy.ForeignKey(SQLATag.id))
     sqla_tag: Mapped[SQLATag | None] = relationship()
     labels: Mapped[list[SQLALabel]] = relationship(back_populates="test_dataclass")
+    label_ids = association_proxy("labels", "id")
     # do not use lower case dict here!
     # https://github.com/sqlalchemy/sqlalchemy/issues/9902
     dict_str_str: Mapped[dict[str, str]] = mapped_column()
@@ -468,6 +473,55 @@ def test_get_attribute_access_type_sqlalchemy_synonyms() -> None:
     assert get_attribute_access_type(SynonymMember, "author") == SynonymWriter | None
     assert get_attribute_access_type(SynonymMember, "status_size") is int
     assert get_attribute_access_type(SynonymMember, "shout") is str
+
+
+class SQLAProxyUser(MappedAsDataclass, SQLABase):
+    """Expose values on a single related profile through scalar proxies."""
+
+    __tablename__ = "association_proxy_user"
+
+    id: Mapped[int] = mapped_column(init=False, primary_key=True)
+    profile_id: Mapped[int] = mapped_column(
+        sqlalchemy.ForeignKey(SQLAClassDataclass.id), init=False
+    )
+    profile: Mapped[SQLAClassDataclass] = relationship()
+    profile_name = association_proxy("profile", "name")
+    profile_count = association_proxy("profile", "count")
+    profile_optional_int = association_proxy("profile", "optional_int")
+    profile_data = association_proxy("profile", "dict_str_str")
+    profile_property = association_proxy("profile", "str_property")
+    profile_label_ids = association_proxy("profile", "label_ids")
+
+
+def test_get_attribute_access_type_sqlalchemy_association_proxies(
+    clean_registration_context: RegistrationContext,
+) -> None:
+    """Preserve the target's type for scalar proxies and the list for collections.
+
+    Args:
+        clean_registration_context: Isolate the state class defined for this test.
+    """
+
+    class ProxyState(rx.State):
+        """Store the optional SQLAlchemy model from the reported reproduction."""
+
+        user: rx.Field[SQLAProxyUser | None] = rx.field(None)
+
+    user = ProxyState.user
+    assert get_attribute_access_type(SQLAClassDataclass, "label_ids") == list[int]
+    assert user.profile_name.upper()._var_type is str
+
+    count = user.profile_count
+    assert isinstance(count, NumberVar)
+    assert (count + 1)._var_type is int
+
+    data = user.profile_data
+    assert isinstance(data, ObjectVar)
+    assert data["key"]._var_type is str
+
+    assert user.profile_optional_int._var_type == int | None
+    assert user.profile_property._var_type is str
+    assert user.profile_label_ids._var_type == list[int]
 
 
 class UnresolvableRefClass:

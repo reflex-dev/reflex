@@ -1192,12 +1192,10 @@ def get_attribute_access_type(
                         # TODO: check for nullable?
                         return list[type_] if prop.uselist else type_ | None
                 if isinstance(attr, AssociationProxyInstance):
-                    return list[
-                        get_attribute_access_type(
-                            attr.target_class,
-                            attr.remote_attr.key,  # pyright: ignore [reportAttributeAccessIssue]
-                        )
-                    ]
+                    target_type = get_attribute_access_type(
+                        attr.target_class, attr.value_attr
+                    )
+                    return target_type if attr.scalar else list[target_type]
         elif (
             sqlmodel_type is not None
             and not is_generic_alias(cls)
