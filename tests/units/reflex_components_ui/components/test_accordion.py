@@ -2,7 +2,7 @@
 
 import itertools
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Literal
 
 import pytest
 from reflex_base.utils.imports import ImportVar
@@ -676,7 +676,7 @@ class AccordionState(rx.State):
     """What an accordion is bound to."""
 
     open_item: str = "b"
-    kind: str = "soft"
+    kind: Literal["classic", "soft", "surface", "outline", "ghost"] = "soft"
     shown: bool = True
 
     @rx.event
@@ -766,7 +766,7 @@ def test_accordion_loads_its_script_only_for_what_the_browser_does_not_do(
 def test_accordion_refuses_a_variant_it_does_not_have(ui_plugin: UIPlugin):
     """A variant an accordion does not have fails with the name of the component and its variants."""
     with pytest.raises(StyleError) as error:
-        rx.ui.accordion.root(variant="loud")
+        rx.ui.accordion.root(variant="loud")  # pyright: ignore[reportArgumentType]
     assert str(error.value) == (
         'rx.ui.accordion_root: unknown variant "loud". The values are "classic", '
         '"soft", "surface", "outline", "ghost".'

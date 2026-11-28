@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from reflex_components_ui import tokens
-from reflex_components_ui.style import ComponentStyles, unchecked
+from reflex_components_ui.style import ComponentStyles, StyleProps, unchecked
 
 accent, gray, black = tokens.accent, tokens.gray, tokens.black
 
@@ -160,7 +158,7 @@ ACCORDION_TRIGGER: ComponentStyles = {
     },
 }
 
-_PAD: dict[str, Any] = {
+_PAD: StyleProps = {
     "content": "' '",
     "display": "block",
     "height": tokens.space[3],
