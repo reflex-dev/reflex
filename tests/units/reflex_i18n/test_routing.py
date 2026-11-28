@@ -785,6 +785,69 @@ def test_sitemap_names_alternates_of_pages_only(monkeypatch: pytest.MonkeyPatch)
     )
 
 
+def test_expand_routes_moves_a_configured_sitemap_loc_to_each_locale():
+    """A loc the page configures follows its route into every locale."""
+    from reflex.app import UnevaluatedPage
+
+    plugin = I18nPlugin(
+        locales=["de", "en", "fr"], default_locale="de", routing=PathPrefixRouting()
+    )
+    ctx = _fake_context([
+        UnevaluatedPage(
+            component=lambda: rx.text("Post"),
+            route="blog/[slug]",
+            context={"sitemap": {"loc": "/blog/hallo", "priority": 0.5}},
+        ),
+        UnevaluatedPage(
+            component=lambda: rx.text("News"),
+            route="neuigkeiten",
+            context={
+                "i18n_paths": {"en": "/news"},
+                "sitemap": {"loc": "https://example.com/neuigkeiten/"},
+            },
+        ),
+    ])
+    plugin.expand_routes(add_page=ctx["add_page"], pages=ctx["pages"])  # pyright: ignore[reportCallIssue]
+
+    assert {route: kwargs["context"]["sitemap"] for route, kwargs in ctx["calls"]} == {
+        "/en/blog/[slug]": {"loc": "/en/blog/hallo", "priority": 0.5},
+        "/fr/blog/[slug]": {"loc": "/fr/blog/hallo", "priority": 0.5},
+        "/en/news": {"loc": "https://example.com/en/news/"},
+        "/fr/neuigkeiten": {"loc": "https://example.com/fr/neuigkeiten/"},
+    }
+
+
+def test_sitemap_names_alternates_of_a_configured_loc(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A page's own loc, unlike its route, is still one of its URLs."""
+    from reflex_base.config import get_config
+    from reflex_base.plugins.sitemap import generate_xml
+
+    from reflex.app import UnevaluatedPage
+
+    plugin = I18nPlugin(
+        locales=["de", "en"], default_locale="de", routing=PathPrefixRouting()
+    )
+    ctx = _fake_context([
+        UnevaluatedPage(
+            component=lambda: rx.text("Offers"),
+            route="pricing",
+            context={"sitemap": {"loc": "/angebote"}},
+        ),
+    ])
+    plugin.expand_routes(add_page=ctx["add_page"], pages=ctx["pages"])  # pyright: ignore[reportCallIssue]
+    monkeypatch.setattr(get_config(), "frontend_path", "")
+    sitemap = generate_xml([
+        {"loc": "https://example.com/angebote"},
+        {"loc": "https://example.com/en/angebote"},
+    ])
+
+    alternates = plugin._add_sitemap_alternates(sitemap)
+    assert alternates.count('hreflang="de" href="https://example.com/angebote"') == 2
+    assert alternates.count('hreflang="en" href="https://example.com/en/angebote"') == 2
+
+
 @pytest.mark.parametrize(
     ("routing", "sitemap", "expected"),
     [

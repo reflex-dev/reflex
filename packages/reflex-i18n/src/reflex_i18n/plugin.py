@@ -218,6 +218,37 @@ def _translate_text(value: Any) -> Any:
     return translate(value) if isinstance(value, str) else value
 
 
+def _split_frontend_path(path: str) -> tuple[str, str] | None:
+    """Split a URL path into the ``frontend_path`` prefix and the page path after it.
+
+    Args:
+        path: A URL path, e.g. a sitemap ``loc``'s.
+
+    Returns:
+        The prefix (``""`` without a ``frontend_path``) and the page path, or None
+        for a path outside the ``frontend_path``.
+    """
+    from reflex_base.config import get_config
+
+    frontend_path = get_config().frontend_path.strip("/")
+    prefix = f"/{frontend_path}" if frontend_path else ""
+    if prefix and path != prefix and not path.startswith(prefix + "/"):
+        return None
+    return prefix, path[len(prefix) :] or "/"
+
+
+def _sitemap_loc(sitemap: Any) -> str | None:
+    """The ``loc`` a page's ``sitemap`` context configures, if any.
+
+    Args:
+        sitemap: The page's ``sitemap`` context entry.
+
+    Returns:
+        The configured location, or None.
+    """
+    return sitemap.get("loc") if isinstance(sitemap, Mapping) else None
+
+
 def _translate_meta(meta: Any) -> Any:
     """Translate the text content of a page's meta tag.
 
@@ -330,6 +361,10 @@ class I18nPlugin(Plugin):
     _page_urls: set[str] = dataclasses.field(
         default_factory=set, init=False, repr=False, compare=False
     )
+    # The lowered page path of every sitemap ``loc`` a page configures, per locale.
+    _sitemap_paths: set[str] = dataclasses.field(
+        default_factory=set, init=False, repr=False, compare=False
+    )
 
     def _config(self) -> I18nConfig:
         """Build the i18n configuration from the plugin's fields.
@@ -410,6 +445,7 @@ class I18nPlugin(Plugin):
         self._paths_by_base = {}
         self._base_paths = {}
         self._page_urls = set()
+        self._sitemap_paths = set()
         for page in context["pages"]:
             base_path = "/" if page.route == "index" else f"/{page.route}"
             head = base_path.lstrip("/").partition("/")[0]
@@ -424,12 +460,19 @@ class I18nPlugin(Plugin):
                 raise RouteValueError(msg)
             if paths := self._translated_paths(base_path, page.context or {}):
                 self._add_page_paths(base_path, paths)
+            sitemap = (page.context or {}).get("sitemap")
             for locale in self.locales:
                 localized = self._localize(base_path, locale)
                 self._page_urls.add(localized.lower())
+                localized_sitemap = self._localized_sitemap(sitemap, locale)
+                if (loc := _sitemap_loc(localized_sitemap)) is not None:
+                    self._sitemap_paths.add(self._sitemap_page_path(loc))
                 if localized == base_path:
                     # Default-at-root: the app's own page already serves this.
                     continue
+                page_context = {**(page.context or {}), _PAGE_LOCALE_KEY: locale}
+                if localized_sitemap is not sitemap:
+                    page_context["sitemap"] = localized_sitemap
                 add_page(
                     _localized_page(
                         page.component,
@@ -442,7 +485,7 @@ class I18nPlugin(Plugin):
                     image=page.image,
                     on_load=page.on_load,
                     meta=page.meta,
-                    context={**(page.context or {}), _PAGE_LOCALE_KEY: locale},
+                    context=page_context,
                 )
 
     def _translated_paths(
@@ -508,6 +551,45 @@ class I18nPlugin(Plugin):
         translated = self._paths_by_base.get(path.lower(), {}).get(locale, path)
         return self.routing.localize(translated, locale, self.default_locale)
 
+    def _localized_sitemap(self, sitemap: Any, locale: str) -> Any:
+        """A page's ``sitemap`` context for its route in ``locale``.
+
+        A configured ``loc`` moves to the locale, as the route does; the
+        configuration is returned as is without one.
+
+        Args:
+            sitemap: The page's ``sitemap`` context entry.
+            locale: The locale of the route.
+
+        Returns:
+            The configuration with the ``loc`` in ``locale``.
+        """
+        if (loc := _sitemap_loc(sitemap)) is None:
+            return sitemap
+        parts = urlsplit(loc)
+        split = _split_frontend_path(parts.path or "/")
+        prefix, path = split if split is not None else ("", parts.path or "/")
+        slash = "/" if path != "/" and path.endswith("/") else ""
+        localized = self._localize(path.rstrip("/") or "/", locale)
+        if localized != "/":
+            localized += slash
+        return {**sitemap, "loc": urlunsplit(parts._replace(path=prefix + localized))}
+
+    @staticmethod
+    def _sitemap_page_path(loc: str) -> str:
+        """The lowered page path of a sitemap ``loc``, as ``_page_urls`` holds them.
+
+        Args:
+            loc: The location, a path or a URL.
+
+        Returns:
+            Its path after the ``frontend_path``, without a trailing slash.
+        """
+        path = urlsplit(loc).path or "/"
+        split = _split_frontend_path(path)
+        page_path = split[1] if split is not None else path
+        return (page_path.rstrip("/") or "/").lower()
+
     def _alternates(self, path: str) -> dict[str, str]:
         """The URL path of the page at a path in each locale, as hreflang names it.
 
@@ -535,12 +617,8 @@ class I18nPlugin(Plugin):
             The sitemap with an ``xhtml:link`` alternate per locale on each
             page's URL.
         """
-        from reflex_base.config import get_config
-
         from reflex.route import get_router
 
-        frontend_path = get_config().frontend_path.strip("/")
-        prefix = f"/{frontend_path}" if frontend_path else ""
         dynamic_page = get_router([
             url.strip("/") for url in self._page_urls if "[" in url
         ])
@@ -553,14 +631,18 @@ class I18nPlugin(Plugin):
         urlset.set("xmlns:xhtml", _XHTML_NAMESPACE)
         for url in urlset.iter("url"):
             loc = urlsplit(url.findtext("loc", ""))
-            if prefix and loc.path != prefix and not loc.path.startswith(prefix + "/"):
-                # Not one of the app's pages, e.g. a page's custom loc.
+            split = _split_frontend_path(loc.path)
+            if split is None:
+                # Not one of the app's pages, e.g. a custom loc on another path.
                 continue
-            path = loc.path[len(prefix) :] or "/"
-            if (path.rstrip("/") or "/").lower() not in self._page_urls and (
-                dynamic_page(path) is None
+            prefix, path = split
+            page_path = (path.rstrip("/") or "/").lower()
+            if (
+                page_path not in self._page_urls
+                and page_path not in self._sitemap_paths
+                and dynamic_page(path) is None
             ):
-                # No page's URL in any locale, e.g. a feed's.
+                # No page's URL or configured loc in any locale, e.g. a feed's.
                 continue
             slash = "/" if path != "/" and path.endswith("/") else ""
             for locale, alternate in self._alternates(path).items():
