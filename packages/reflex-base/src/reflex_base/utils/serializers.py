@@ -650,6 +650,7 @@ class _SQLAlchemyLayout(NamedTuple):
     columns: tuple[str, ...]
     synonyms: tuple[tuple[str, str, bool | None], ...]
     relationships: tuple[tuple[str, bool], ...]
+    scalar_proxies: tuple[tuple[str, str, str], ...]
     primary_key: tuple[str, ...]
 
 
@@ -670,12 +671,13 @@ def _get_sqlalchemy_layout(cls: type) -> _SQLAlchemyLayout:
     Returns:
         The unmapped dataclass fields, the other mapped columns, the synonyms
         with their target attribute and the target's ``uselist`` flag (None for
-        a column), the relationships with their ``uselist`` flags and the
-        primary-key attributes.
+        a column), the relationships with their ``uselist`` flags, the scalar proxies
+        with their source relationship and target attribute, and the primary keys.
     """
     if (layout := _SQLALCHEMY_LAYOUTS.get(cls)) is not None:
         return layout
     import sqlalchemy
+    from sqlalchemy.ext.associationproxy import AssociationProxy
 
     mapper = sqlalchemy.inspect(cls)
     manager = mapper.class_manager
@@ -701,6 +703,13 @@ def _get_sqlalchemy_layout(cls: type) -> _SQLAlchemyLayout:
             if prop.name not in relationships or prop.name in loadable
         ),
         relationships=tuple((key, loadable[key]) for key in manager if key in loadable),
+        scalar_proxies=tuple(
+            (key, proxy.target_collection, proxy.value_attr)
+            for key, proxy in mapper.all_orm_descriptors.items()
+            if isinstance(proxy, AssociationProxy)
+            and loadable.get(proxy.target_collection) is False
+            and proxy.getset_factory is None
+        ),
         primary_key=tuple(
             mapper.get_property_by_column(column).key for column in mapper.primary_key
         ),
@@ -759,6 +768,15 @@ def _serialize_sqlalchemy_model(
                 result[key] = _serialize_sqlalchemy_relationship(
                     getattr(m, key), uselist, seen
                 )
+
+        # Use the serialized relationship so a proxy cannot trigger a lazy load.
+        for key, source, target in layout.scalar_proxies:
+            if source in result:
+                related = result[source]
+                if isinstance(related, Mapping) and target in related:
+                    result[key] = related[target]
+                elif related is None and values.get(source) is None:
+                    result[key] = None
 
         return result
     finally:
