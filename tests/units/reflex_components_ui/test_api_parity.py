@@ -115,6 +115,7 @@ def test_every_wave_is_in_the_namespace():
         "callout.text",
         "card",
         "center",
+        "checkbox",
         "code",
         "container",
         "data_list.item",

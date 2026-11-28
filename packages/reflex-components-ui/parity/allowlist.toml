@@ -72,3 +72,19 @@ component = "scroll_area"
 check = "pixels"
 cells = "*type-always*"
 reason = "rx.ui.scroll_area scrolls natively and has the scrollbars of the browser, thin and in the grays of the theme, where rx.scroll_area draws scrollbars of its own with JavaScript. Their shape and where they show follow the browser and the system: they may take room beside the content or lie over it, and `type` \"hover\" and \"scroll\" and `scroll_hide_delay` are left to them."
+
+[[look]]
+component = "checkbox"
+check = "a11y"
+reason = "A checked rx.checkbox holds its check as an image without a name, which a screen reader may announce inside the checkbox. rx.ui.checkbox is one native input: its check is drawn by its styles and is nothing to the accessibility tree, which has the role, the name and the state of the checkbox alone."
+
+[[contract]]
+component = "checkbox"
+step = "is checked by a click with JavaScript disabled"
+system = "rx"
+reason = "rx.checkbox is a button that JavaScript turns into a checkbox: until it has run, a click does nothing. rx.ui.checkbox is a native input, which is checked by a click on it or on its label with or without JavaScript."
+
+[[contract]]
+component = "checkbox"
+step = "Enter on a checkbox does not submit its form"
+reason = "rx.ui.checkbox is a native input, and the browser submits a form when Enter is pressed in one of its inputs, a checkbox included. rx.checkbox swallows the key. Space toggles both, and Enter toggles neither."
