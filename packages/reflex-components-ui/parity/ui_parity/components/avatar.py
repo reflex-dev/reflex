@@ -53,6 +53,12 @@ MATRIX = Matrix(
         {"size": {"responsive-large": RESPONSIVE_LARGE}, "viewport": [520, 800]},
     ],
     stage=(200, 200),
+    # An avatar of Radix is empty until JavaScript has run, and shows its
+    # image or its fallback some time after the page is hydrated.
+    ready=(
+        "[...document.querySelectorAll('[data-parity-system=reference]')].every("
+        "stage => stage.querySelector('.rt-AvatarFallback, img'))"
+    ),
     # Not held to zero, for the image alone: at a threshold of zero every
     # cell without an image is equal pixel for pixel, and so are most with
     # one. The image is a checkerboard of eight pixels scaled up, and where

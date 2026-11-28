@@ -276,6 +276,46 @@ def _blur(page: Page, target: Locator, point: Point) -> None:
     target.blur()
 
 
+def _focus_within(page: Page, target: Locator, point: Point) -> None:
+    """Focus an element, or the control inside it, as the keyboard does.
+
+    Args:
+        page: The page.
+        target: The element: a control, or what is drawn around one.
+        point: The middle of the element.
+    """
+    page.keyboard.press("Tab")
+    # The key may have landed on the control itself and selected its text,
+    # which a focus alone does not: the caret goes back to the start.
+    target.evaluate(
+        """element => {
+            const control = element.matches(
+                'button, input, select, textarea, [tabindex]'
+            ) ? element : element.querySelector(
+                'input:not([type=hidden], [aria-hidden]), button, select, textarea,'
+                + ' [tabindex]:not([tabindex="-1"])'
+            );
+            control.focus();
+            try {
+                control.setSelectionRange?.(0, 0);
+            } catch {
+                // A control without text has no selection to collapse.
+            }
+        }"""
+    )
+
+
+def _blur_within(page: Page, target: Locator, point: Point) -> None:
+    """Take the focus off whatever has it.
+
+    Args:
+        page: The page.
+        target: The element that was focused, or held what was.
+        point: The middle of the element.
+    """
+    page.evaluate("document.activeElement.blur()")
+
+
 def _press(page: Page, target: Locator, point: Point) -> None:
     """Hold the pointer down on an element.
 
@@ -308,6 +348,15 @@ STATES: Mapping[str, State] = {
     FOCUS_VISIBLE: State(enter=_focus, leave=_blur, matches=":focus-visible"),
     ACTIVE: State(enter=_press, leave=_release, matches=":active"),
 }
+
+# The focus of the keyboard on an element whose control is inside it, for a
+# matrix to drive `focus-visible` with: Radix draws some controls as one
+# button where rx.ui draws a label around a native input.
+FOCUS_WITHIN = State(
+    enter=_focus_within,
+    leave=_blur_within,
+    matches=":is(:focus-visible, :has(:focus-visible))",
+)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -675,6 +724,8 @@ class _Pass:
         """Load the page and wait until it is still."""
         self.page.goto(self.url)
         self.page.wait_for_function(READY_SCRIPT, arg=self.appearance)
+        if self.matrix.ready is not None:
+            self.page.wait_for_function(self.matrix.ready)
         self.page.evaluate(SETTLED_SCRIPT, SETTLE_MS)
         self.page.add_style_tag(content=FREEZE_CSS)
         if self.prepare is not None:

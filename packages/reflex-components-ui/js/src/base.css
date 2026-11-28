@@ -78,6 +78,77 @@ html.dark {
   [data-rx-skeleton] > * {
     visibility: hidden !important;
   }
+
+  /*
+   * What a radio card or a checkbox card holds is not dragged out of it, an
+   * image for one, and an icon keeps its size beside a long text.
+   */
+  [data-rx-cards-item] > * {
+    pointer-events: none;
+  }
+  [data-rx-cards-item] > svg {
+    flex-shrink: 0;
+  }
+
+  /*
+   * The line before an item of a segmented control is not shown before the
+   * first item, nor on either side of the chosen one or of the one the
+   * keyboard is on: the item before another is no state of that other.
+   */
+  [data-rx-segmented-item]:first-child,
+  [data-rx-segmented-item]:is(:has(> input:checked), :has(> input:focus-visible)),
+  [data-rx-segmented-item]:is(:has(> input:checked), :has(> input:focus-visible))
+    + [data-rx-segmented-item] {
+    --rx-segmented-separator-opacity: 0;
+    --rx-segmented-separator-easing: ease-in;
+  }
+  [data-rx-segmented-item] svg {
+    flex-shrink: 0;
+  }
+
+  /*
+   * A popup leaves the top layer when it has faded out, not before, and
+   * the label of a group of options keeps its distance from the option
+   * before it.
+   */
+  [data-rx-popup] {
+    transition-behavior: allow-discrete;
+  }
+  [role="option"] + [data-rx-select-label] {
+    margin-top: var(--space-2);
+  }
+
+  /* The thumb of the scrollbar of a text area, under the pointer. */
+  @media (hover: hover) {
+    [data-rx-text-area-input]:not(:disabled)::-webkit-scrollbar-thumb:hover {
+      background-color: var(--gray-a9);
+    }
+  }
+
+  /*
+   * The fields and the icon the browser lays a date or a time out as, in a
+   * text field: a state of one of them is no state of the input, so no
+   * class on the input can say it.
+   */
+  [data-rx-text-field-input]::-webkit-calendar-picker-indicator:hover {
+    background-color: var(--gray-a3);
+  }
+  [data-rx-text-field-input]::-webkit-calendar-picker-indicator:focus-visible {
+    outline: 2px solid var(--text-field-focus-color);
+  }
+  [data-rx-text-field-input]::-webkit-datetime-edit-ampm-field:focus,
+  [data-rx-text-field-input]::-webkit-datetime-edit-day-field:focus,
+  [data-rx-text-field-input]::-webkit-datetime-edit-hour-field:focus,
+  [data-rx-text-field-input]::-webkit-datetime-edit-millisecond-field:focus,
+  [data-rx-text-field-input]::-webkit-datetime-edit-minute-field:focus,
+  [data-rx-text-field-input]::-webkit-datetime-edit-month-field:focus,
+  [data-rx-text-field-input]::-webkit-datetime-edit-second-field:focus,
+  [data-rx-text-field-input]::-webkit-datetime-edit-week-field:focus,
+  [data-rx-text-field-input]::-webkit-datetime-edit-year-field:focus {
+    background-color: var(--text-field-selection-color);
+    color: inherit;
+    outline: none;
+  }
 }
 
 /*
