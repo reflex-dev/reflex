@@ -130,23 +130,3 @@ RADIO: ComponentStyles = {
         for variant in _VARIANTS
     ],
 }
-
-RADIO_GROUP: ComponentStyles = {
-    "base": {
-        "box_sizing": "border-box",
-        "display": "flex",
-        "flex_direction": "column",
-        "gap": tokens.space[1],
-    },
-}
-
-# The label Radix Themes puts an item with children in: no wider than its
-# text, so that the space beside it does not check the item.
-RADIO_GROUP_ITEM: dict[str, Any] = {
-    "display": "flex",
-    "gap": "0.5em",
-    "width": "fit-content",
-}
-
-# What is beside the radio button of such an item: text that may be cut off.
-RADIO_GROUP_ITEM_INNER: ComponentStyles = {"base": {"min_width": 0}}

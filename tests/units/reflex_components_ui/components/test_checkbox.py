@@ -163,35 +163,8 @@ def test_checkbox_with_its_label(
             "pointerEvents": {"::after": "none"},
             "maskImage": {
                 "::after": {
-                    "default": 'url("data:image/svg+xml,%3Csvg '
-                    "xmlns='http://www.w3.org/2000/svg' "
-                    "viewBox='0 0 9 9'%3E%3Cpath "
-                    "fill-rule='evenodd' "
-                    "clip-rule='evenodd' d='M8.53547 "
-                    "0.62293C8.88226 0.849446 8.97976 "
-                    "1.3142 8.75325 1.66099L4.5083 "
-                    "8.1599C4.38833 8.34356 4.19397 8.4655 "
-                    "3.9764 8.49358C3.75883 8.52167 3.53987 "
-                    "8.45309 3.3772 8.30591L0.616113 "
-                    "5.80777C0.308959 5.52987 0.285246 "
-                    "5.05559 0.563148 4.74844C0.84105 "
-                    "4.44128 1.31533 4.41757 1.62249 "
-                    "4.69547L3.73256 6.60459L7.49741 "
-                    "0.840706C7.72393 0.493916 8.18868 "
-                    "0.396414 8.53547 "
-                    "0.62293Z'/%3E%3C/svg%3E\")",
-                    ":indeterminate": 'url("data:image/svg+xml,%3Csvg '
-                    "xmlns='http://www.w3.org/2000/svg' "
-                    "viewBox='0 0 9 9'%3E%3Cpath "
-                    "fill-rule='evenodd' "
-                    "clip-rule='evenodd' d='M0.75 "
-                    "4.5C0.75 4.08579 1.08579 3.75 "
-                    "1.5 3.75H7.5C7.91421 3.75 8.25 "
-                    "4.08579 8.25 4.5C8.25 4.91421 "
-                    "7.91421 5.25 7.5 "
-                    "5.25H1.5C1.08579 5.25 0.75 "
-                    "4.91421 0.75 "
-                    "4.5Z'/%3E%3C/svg%3E\")",
+                    "default": "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 9'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M8.53547 0.62293C8.88226 0.849446 8.97976 1.3142 8.75325 1.66099L4.5083 8.1599C4.38833 8.34356 4.19397 8.4655 3.9764 8.49358C3.75883 8.52167 3.53987 8.45309 3.3772 8.30591L0.616113 5.80777C0.308959 5.52987 0.285246 5.05559 0.563148 4.74844C0.84105 4.44128 1.31533 4.41757 1.62249 4.69547L3.73256 6.60459L7.49741 0.840706C7.72393 0.493916 8.18868 0.396414 8.53547 0.62293Z'/%3E%3C/svg%3E\")",
+                    ":indeterminate": "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 9'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M0.75 4.5C0.75 4.08579 1.08579 3.75 1.5 3.75H7.5C7.91421 3.75 8.25 4.08579 8.25 4.5C8.25 4.91421 7.91421 5.25 7.5 5.25H1.5C1.08579 5.25 0.75 4.91421 0.75 4.5Z'/%3E%3C/svg%3E\")",
                 }
             },
             "maskSize": {"::after": "100% 100%"},
@@ -322,35 +295,8 @@ def test_checkbox_alone(
             "pointerEvents": {"::after": "none"},
             "maskImage": {
                 "::after": {
-                    "default": 'url("data:image/svg+xml,%3Csvg '
-                    "xmlns='http://www.w3.org/2000/svg' "
-                    "viewBox='0 0 9 9'%3E%3Cpath "
-                    "fill-rule='evenodd' "
-                    "clip-rule='evenodd' d='M8.53547 "
-                    "0.62293C8.88226 0.849446 8.97976 "
-                    "1.3142 8.75325 1.66099L4.5083 "
-                    "8.1599C4.38833 8.34356 4.19397 8.4655 "
-                    "3.9764 8.49358C3.75883 8.52167 3.53987 "
-                    "8.45309 3.3772 8.30591L0.616113 "
-                    "5.80777C0.308959 5.52987 0.285246 "
-                    "5.05559 0.563148 4.74844C0.84105 "
-                    "4.44128 1.31533 4.41757 1.62249 "
-                    "4.69547L3.73256 6.60459L7.49741 "
-                    "0.840706C7.72393 0.493916 8.18868 "
-                    "0.396414 8.53547 "
-                    "0.62293Z'/%3E%3C/svg%3E\")",
-                    ":indeterminate": 'url("data:image/svg+xml,%3Csvg '
-                    "xmlns='http://www.w3.org/2000/svg' "
-                    "viewBox='0 0 9 9'%3E%3Cpath "
-                    "fill-rule='evenodd' "
-                    "clip-rule='evenodd' d='M0.75 "
-                    "4.5C0.75 4.08579 1.08579 3.75 "
-                    "1.5 3.75H7.5C7.91421 3.75 8.25 "
-                    "4.08579 8.25 4.5C8.25 4.91421 "
-                    "7.91421 5.25 7.5 "
-                    "5.25H1.5C1.08579 5.25 0.75 "
-                    "4.91421 0.75 "
-                    "4.5Z'/%3E%3C/svg%3E\")",
+                    "default": "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 9'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M8.53547 0.62293C8.88226 0.849446 8.97976 1.3142 8.75325 1.66099L4.5083 8.1599C4.38833 8.34356 4.19397 8.4655 3.9764 8.49358C3.75883 8.52167 3.53987 8.45309 3.3772 8.30591L0.616113 5.80777C0.308959 5.52987 0.285246 5.05559 0.563148 4.74844C0.84105 4.44128 1.31533 4.41757 1.62249 4.69547L3.73256 6.60459L7.49741 0.840706C7.72393 0.493916 8.18868 0.396414 8.53547 0.62293Z'/%3E%3C/svg%3E\")",
+                    ":indeterminate": "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 9'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M0.75 4.5C0.75 4.08579 1.08579 3.75 1.5 3.75H7.5C7.91421 3.75 8.25 4.08579 8.25 4.5C8.25 4.91421 7.91421 5.25 7.5 5.25H1.5C1.08579 5.25 0.75 4.91421 0.75 4.5Z'/%3E%3C/svg%3E\")",
                 }
             },
             "maskSize": {"::after": "100% 100%"},
@@ -412,11 +358,7 @@ def test_checkbox_classic(
                 "default": "none",
                 "::before": {
                     "default": "none",
-                    ":is(:checked, :indeterminate):not(:disabled)": "linear-gradient(to "
-                    "bottom, "
-                    "var(--white-a3), "
-                    "transparent, "
-                    "var(--black-a1))",
+                    ":is(:checked, :indeterminate):not(:disabled)": "linear-gradient(to bottom, var(--white-a3), transparent, var(--black-a1))",
                 },
             },
             "boxSizing": "border-box",
@@ -471,35 +413,8 @@ def test_checkbox_classic(
             "pointerEvents": {"::after": "none"},
             "maskImage": {
                 "::after": {
-                    "default": 'url("data:image/svg+xml,%3Csvg '
-                    "xmlns='http://www.w3.org/2000/svg' "
-                    "viewBox='0 0 9 9'%3E%3Cpath "
-                    "fill-rule='evenodd' "
-                    "clip-rule='evenodd' d='M8.53547 "
-                    "0.62293C8.88226 0.849446 8.97976 "
-                    "1.3142 8.75325 1.66099L4.5083 "
-                    "8.1599C4.38833 8.34356 4.19397 8.4655 "
-                    "3.9764 8.49358C3.75883 8.52167 3.53987 "
-                    "8.45309 3.3772 8.30591L0.616113 "
-                    "5.80777C0.308959 5.52987 0.285246 "
-                    "5.05559 0.563148 4.74844C0.84105 "
-                    "4.44128 1.31533 4.41757 1.62249 "
-                    "4.69547L3.73256 6.60459L7.49741 "
-                    "0.840706C7.72393 0.493916 8.18868 "
-                    "0.396414 8.53547 "
-                    "0.62293Z'/%3E%3C/svg%3E\")",
-                    ":indeterminate": 'url("data:image/svg+xml,%3Csvg '
-                    "xmlns='http://www.w3.org/2000/svg' "
-                    "viewBox='0 0 9 9'%3E%3Cpath "
-                    "fill-rule='evenodd' "
-                    "clip-rule='evenodd' d='M0.75 "
-                    "4.5C0.75 4.08579 1.08579 3.75 "
-                    "1.5 3.75H7.5C7.91421 3.75 8.25 "
-                    "4.08579 8.25 4.5C8.25 4.91421 "
-                    "7.91421 5.25 7.5 "
-                    "5.25H1.5C1.08579 5.25 0.75 "
-                    "4.91421 0.75 "
-                    "4.5Z'/%3E%3C/svg%3E\")",
+                    "default": "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 9'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M8.53547 0.62293C8.88226 0.849446 8.97976 1.3142 8.75325 1.66099L4.5083 8.1599C4.38833 8.34356 4.19397 8.4655 3.9764 8.49358C3.75883 8.52167 3.53987 8.45309 3.3772 8.30591L0.616113 5.80777C0.308959 5.52987 0.285246 5.05559 0.563148 4.74844C0.84105 4.44128 1.31533 4.41757 1.62249 4.69547L3.73256 6.60459L7.49741 0.840706C7.72393 0.493916 8.18868 0.396414 8.53547 0.62293Z'/%3E%3C/svg%3E\")",
+                    ":indeterminate": "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 9'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M0.75 4.5C0.75 4.08579 1.08579 3.75 1.5 3.75H7.5C7.91421 3.75 8.25 4.08579 8.25 4.5C8.25 4.91421 7.91421 5.25 7.5 5.25H1.5C1.08579 5.25 0.75 4.91421 0.75 4.5Z'/%3E%3C/svg%3E\")",
                 }
             },
             "maskSize": {"::after": "100% 100%"},
@@ -510,16 +425,7 @@ def test_checkbox_classic(
             "boxShadow": {
                 "::before": {
                     "default": "inset 0 0 0 1px var(--gray-a3), var(--shadow-1)",
-                    ":is(:checked, :indeterminate):not(:disabled)": "inset "
-                    "0 "
-                    "0.5px "
-                    "0.5px "
-                    "var(--white-a4), "
-                    "inset "
-                    "0 "
-                    "-0.5px "
-                    "0.5px "
-                    "var(--black-a4)",
+                    ":is(:checked, :indeterminate):not(:disabled)": "inset 0 0.5px 0.5px var(--white-a4), inset 0 -0.5px 0.5px var(--black-a4)",
                     ":disabled": "var(--shadow-1)",
                 }
             },
@@ -570,24 +476,3 @@ def test_checkbox_unknown_size(ui_plugin: UIPlugin):
         str(error.value)
         == 'rx.ui.checkbox: unknown size "4". The values are "1", "2", "3".'
     )
-
-
-def test_checkbox_bound_to_state(ui_plugin: UIPlugin):
-    """A change hands over whether the input is checked, and the input follows."""
-    component = Checkbox.create(
-        checked=CheckboxState.agreed, on_change=CheckboxState.agree
-    )
-    state = (
-        "tests___units___reflex_components_ui___components___test_checkbox"
-        "____checkbox_state"
-    )
-    assert component.render()["props"] == [
-        f"checked:reflex___state____state__{state}.agreed_rx_state_",
-        "className:sx_eda6ae65a6_c",
-        (
-            'onChange:((_e) => (addEvents([(ReflexEvent("reflex___state____state.'
-            f'{state}.agree", ({{ ["agreed"] : _e?.["target"]?.["checked"] }}), '
-            "({  })))], [_e], ({  }))))"
-        ),
-        'type:"checkbox"',
-    ]

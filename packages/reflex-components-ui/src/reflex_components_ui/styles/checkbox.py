@@ -93,67 +93,89 @@ def _look(variant: str, high_contrast: bool) -> dict[str, Any]:
 
 _VARIANTS = ("classic", "surface", "soft")
 
-CHECKBOX: ComponentStyles = {
-    "base": unchecked({
-        **RESET,
-        "position": "relative",
-        "display": "inline-flex",
-        "align_items": "center",
-        "justify_content": "center",
-        "vertical_align": "top",
-        "flex_shrink": 0,
-        "cursor": {"default": tokens.cursor.checkbox, DISABLED: tokens.cursor.disabled},
-        # In a line of text it is as high as the line.
-        "height": f"var(--line-height, var({_SIZE}))",
-        "_before": {
-            "content": "''",
-            "display": "block",
-            "height": f"var({_SIZE})",
-            "width": f"var({_SIZE})",
-            "border_radius": f"var({_RADIUS})",
-            FOCUS: FOCUS_RING,
+
+def _table(size: str, variant: str, high_contrast: str) -> ComponentStyles:
+    """Make the table of a checkbox.
+
+    Args:
+        size: The name of the prop that says how large it is.
+        variant: The name of the prop that says which look it has.
+        high_contrast: The name of the prop that says whether it is high
+            contrast.
+
+    Returns:
+        The table.
+    """
+    return {
+        "base": unchecked({
+            **RESET,
+            "position": "relative",
+            "display": "inline-flex",
+            "align_items": "center",
+            "justify_content": "center",
+            "vertical_align": "top",
+            "flex_shrink": 0,
+            "cursor": {
+                "default": tokens.cursor.checkbox,
+                DISABLED: tokens.cursor.disabled,
+            },
+            # In a line of text it is as high as the line.
+            "height": f"var(--line-height, var({_SIZE}))",
+            "_before": {
+                "content": "''",
+                "display": "block",
+                "height": f"var({_SIZE})",
+                "width": f"var({_SIZE})",
+                "border_radius": f"var({_RADIUS})",
+                FOCUS: FOCUS_RING,
+            },
+            # The check, or the line of a checkbox that is neither.
+            "_after": {
+                _ON: {"content": "''"},
+                "position": "absolute",
+                "width": f"var({_INDICATOR})",
+                "height": f"var({_INDICATOR})",
+                "transform": "translate(-50%, -50%)",
+                "top": "50%",
+                "left": "50%",
+                "pointer_events": "none",
+                "mask_image": {"default": _CHECK, ":indeterminate": _DIVIDER},
+                "mask_size": "100% 100%",
+                "mask_repeat": "no-repeat",
+            },
+        }),
+        "variants": {
+            size: {
+                "1": unchecked({
+                    _SIZE: f"calc({tokens.space[4]} * 0.875)",
+                    _INDICATOR: f"calc(9px * {tokens.scaling})",
+                    _RADIUS: f"calc({tokens.radius[1]} * 0.875)",
+                }),
+                "2": unchecked({
+                    _SIZE: tokens.space[4],
+                    _INDICATOR: f"calc(10px * {tokens.scaling})",
+                    _RADIUS: tokens.radius[1],
+                }),
+                "3": unchecked({
+                    _SIZE: f"calc({tokens.space[4]} * 1.25)",
+                    _INDICATOR: f"calc(12px * {tokens.scaling})",
+                    _RADIUS: f"calc({tokens.radius[1]} * 1.25)",
+                }),
+            },
+            variant: {look: unchecked(_look(look, False)) for look in _VARIANTS},
         },
-        # The check, or the line of a checkbox that is neither.
-        "_after": {
-            _ON: {"content": "''"},
-            "position": "absolute",
-            "width": f"var({_INDICATOR})",
-            "height": f"var({_INDICATOR})",
-            "transform": "translate(-50%, -50%)",
-            "top": "50%",
-            "left": "50%",
-            "pointer_events": "none",
-            "mask_image": {"default": _CHECK, ":indeterminate": _DIVIDER},
-            "mask_size": "100% 100%",
-            "mask_repeat": "no-repeat",
-        },
-    }),
-    "variants": {
-        "size": {
-            "1": unchecked({
-                _SIZE: f"calc({tokens.space[4]} * 0.875)",
-                _INDICATOR: f"calc(9px * {tokens.scaling})",
-                _RADIUS: f"calc({tokens.radius[1]} * 0.875)",
-            }),
-            "2": unchecked({
-                _SIZE: tokens.space[4],
-                _INDICATOR: f"calc(10px * {tokens.scaling})",
-                _RADIUS: tokens.radius[1],
-            }),
-            "3": unchecked({
-                _SIZE: f"calc({tokens.space[4]} * 1.25)",
-                _INDICATOR: f"calc(12px * {tokens.scaling})",
-                _RADIUS: f"calc({tokens.radius[1]} * 1.25)",
-            }),
-        },
-        "variant": {variant: unchecked(_look(variant, False)) for variant in _VARIANTS},
-    },
-    "defaults": {"size": "2", "variant": "surface"},
-    "compound": [
-        {
-            "props": {"variant": variant, "high_contrast": "true"},
-            "style": unchecked(_look(variant, True)),
-        }
-        for variant in _VARIANTS
-    ],
-}
+        "defaults": {size: "2", variant: "surface"},
+        "compound": [
+            {
+                "props": {variant: look, high_contrast: "true"},
+                "style": unchecked(_look(look, True)),
+            }
+            for look in _VARIANTS
+        ],
+    }
+
+
+CHECKBOX: ComponentStyles = _table("size", "variant", "high_contrast")
+
+# A checkbox of a group, which says how it looks: the variants are not props.
+CHECKBOX_GROUP_ITEM: ComponentStyles = _table("_size", "_variant", "_high_contrast")

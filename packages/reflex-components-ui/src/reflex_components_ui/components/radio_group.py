@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Sequence
 from typing import Any, ClassVar, Literal
 
 from reflex_base.components.component import Component, ComponentNamespace, field
@@ -17,8 +17,8 @@ from reflex_components_core.core.foreach import foreach
 
 from reflex_components_ui.base import UIComponent
 from reflex_components_ui.components._group import (
-    descendants,
-    either,
+    GroupInput,
+    GroupRoot,
     group_name,
     is_value,
     literal,
@@ -26,44 +26,20 @@ from reflex_components_ui.components._group import (
 from reflex_components_ui.layout.flex import Flex
 from reflex_components_ui.props import LiteralSpacing
 from reflex_components_ui.style import ComponentStyles
-from reflex_components_ui.styles.radio import (
-    RADIO,
-    RADIO_GROUP,
-    RADIO_GROUP_ITEM,
-    RADIO_GROUP_ITEM_INNER,
-)
+from reflex_components_ui.styles.control import GROUP
+from reflex_components_ui.styles.radio import RADIO
 from reflex_components_ui.themes import LiteralAccentColor
 from reflex_components_ui.typography.text import Text
 
 LiteralFlexDirection = Literal["row", "column", "row-reverse", "column-reverse"]
 
 
-class RadioGroupItemLabel(Text):
-    """The label around an item that is given children."""
-
-    def add_style(self) -> dict[str, Any]:
-        """Lay the radio button and its text out in a row.
-
-        Returns:
-            The styles Radix Themes gives the label of an item.
-        """
-        return RADIO_GROUP_ITEM
-
-
-class RadioGroupItemInner(UIComponent):
-    """The children of an item, beside its radio button."""
-
-    tag = "span"
-
-    styles: ClassVar[ComponentStyles] = RADIO_GROUP_ITEM_INNER
-
-
-class RadioGroupItem(UIComponent):
+class RadioGroupItem(GroupInput):
     """An item in the group that can be checked."""
 
-    tag = "input"
-
     styles: ClassVar[ComponentStyles] = RADIO
+
+    _type: ClassVar[str] = "radio"
 
     value: Var[str] = field(
         doc="The value of the radio item to check. Should be used in conjunction with on_change."
@@ -77,113 +53,13 @@ class RadioGroupItem(UIComponent):
         doc="When true, indicates that the user must check the radio item before the owning form can be submitted."
     )
 
-    @classmethod
-    def create(cls, *children, **props) -> Component:
-        """Create an item: a radio button, in a label when it has children.
 
-        Args:
-            *children: What is shown beside the radio button.
-            **props: The props of the item. With children, its styles are
-                those of the label.
-
-        Returns:
-            The radio button, or the label that holds it.
-        """
-        if not children:
-            return super().create(**props)
-        fields = cls.get_fields()
-        triggers = cls.get_event_triggers()
-        own = {
-            key: props.pop(key)
-            for key in list(props)
-            if key in fields
-            or key in triggers
-            or key.startswith(("on_", "aria_", "data_"))
-        }
-        return RadioGroupItemLabel.create(
-            super().create(**own),
-            RadioGroupItemInner.create(*children),
-            as_="label",
-            **props,
-        )
-
-    def _post_init(self, *args, **kwargs):
-        """Initialize the item, with the look of a group of its own.
-
-        Args:
-            *args: Args to initialize the component.
-            **kwargs: Kwargs to initialize the component.
-        """
-        # What the style table reads as variants, and the attributes the
-        # group gives its items: both are set by the group around the item.
-        self._size: Any = None
-        self._variant: Any = None
-        self._high_contrast: Any = None
-        self._group: dict[str, Any] = {}
-        super()._post_init(*args, **kwargs)
-
-    def _join(self, group: RadioGroupRoot) -> None:
-        """Take from a group what Radix hands its items through a context.
-
-        Args:
-            group: The group the item is in.
-        """
-        self._size = group.size
-        self._variant = group.variant
-        self._high_contrast = group.high_contrast
-        attributes: dict[str, Any] = {"name": group._name}
-        disabled = either(group.disabled, self.disabled)
-        if disabled is not None:
-            attributes["disabled"] = disabled
-        required = either(group.required, self.required)
-        if required is not None:
-            attributes["required"] = required
-        if group.value is not None:
-            # An input React keeps checked says who changes it: the group.
-            attributes["checked"] = is_value(group.value, self.value)
-            attributes["read_only"] = True
-        elif group.default_value is not None:
-            checked = is_value(group.default_value, self.value)
-            if checked is not False:
-                attributes["default_checked"] = checked
-        self._group = attributes
-        self._merge_styles()
-
-    def _get_vars(
-        self, include_children: bool = False, ignore_ids: set[int] | None = None
-    ) -> Iterator[Var]:
-        """Walk all Vars used in the item, those its group gives it included.
-
-        Args:
-            include_children: Whether to include Vars from children.
-            ignore_ids: The ids to ignore.
-
-        Yields:
-            Each var referenced by the component.
-        """
-        yield from super()._get_vars(include_children, ignore_ids)
-        for value in self._group.values():
-            if isinstance(value, Var):
-                yield value
-
-    def _render(self, props: dict[str, Any] | None = None) -> CommonTag:
-        """Render the radio button.
-
-        Args:
-            props: The props to render (if None, then use get_props).
-
-        Returns:
-            The tag, with the type of the input and what its group gives it.
-        """
-        return super()._render(props).add_props(type="radio", **self._group)
-
-
-class RadioGroupRoot(UIComponent):
+class RadioGroupRoot(GroupRoot):
     """A set of interactive radio buttons where only one can be selected at a time."""
 
     tag = "div"
 
-    styles: ClassVar[ComponentStyles] = RADIO_GROUP
+    styles: ClassVar[ComponentStyles] = GROUP
 
     size: Var[Responsive[Literal["1", "2", "3"]]] = field(
         default=LiteralVar.create("2"),
@@ -220,21 +96,11 @@ class RadioGroupRoot(UIComponent):
         doc="Fired when the value of the radio group changes."
     )
 
-    def _post_init(self, *args, **kwargs):
-        """Initialize the group, and give its items what they share.
+    _holds = staticmethod(is_value)
 
-        Args:
-            *args: Args to initialize the component.
-            **kwargs: Kwargs to initialize the component.
-        """
-        super()._post_init(*args, **kwargs)
-        # The browser takes radio buttons for a group by their name.
+    def _bind(self) -> None:
+        """Name the group: the browser takes radio buttons for one by it."""
         self._name = group_name(self.name, "radio")
-        for label in descendants(self, RadioGroupItemLabel, RadioGroupRoot):
-            label.size = self.size
-            label._merge_styles()
-        for item in descendants(self, RadioGroupItem, RadioGroupRoot):
-            item._join(self)
 
     def _exclude_props(self) -> list[str]:
         """Keep the props that are the ones of the items off the element.

@@ -194,6 +194,7 @@ def _server_render(run: Run) -> None:
 @CONTRACT.step("checks one item of a group with JavaScript disabled", on=NO_JAVASCRIPT)
 def _without_javascript(run: Run) -> None:
     page = run.page
+    page.set_default_timeout(3000)
     page.locator("#pick").get_by_text("Two").click()
     _wait_for_checked(run, "pick", ["Two"])
     page.locator("#pick").get_by_text("Three").click()

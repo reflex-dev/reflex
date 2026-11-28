@@ -116,6 +116,8 @@ def test_every_wave_is_in_the_namespace():
         "card",
         "center",
         "checkbox",
+        "checkbox_group.item",
+        "checkbox_group.root",
         "code",
         "container",
         "data_list.item",

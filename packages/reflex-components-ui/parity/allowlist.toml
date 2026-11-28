@@ -115,3 +115,35 @@ reason = "The items of rx.radio_group are buttons that JavaScript turns into rad
 component = "radio_group"
 step = "Enter on a radio button does not submit its form"
 reason = "The items of rx.ui.radio_group are native inputs, and the browser submits a form when Enter is pressed in one of its inputs, a radio button included. rx.radio_group swallows the key. Space and the arrow keys check an item in both."
+
+[[look]]
+component = "checkbox_group"
+check = "a11y"
+reason = "A checked item of rx.checkbox_group holds its check as an image without a name. An item of rx.ui.checkbox_group is one native input: its check is drawn by its styles and is nothing to the accessibility tree."
+
+[[contract]]
+component = "checkbox_group"
+step = "checks its items with JavaScript disabled"
+system = "rx"
+reason = "The items of rx.checkbox_group are buttons that JavaScript turns into checkboxes: until it has run, a click does nothing. The items of rx.ui.checkbox_group are native checkboxes, which a click checks with or without JavaScript."
+
+[[contract]]
+component = "checkbox_group"
+step = "Tab stops once in each group"
+reason = "The items of rx.ui.checkbox_group are native checkboxes, and Tab stops on each of them, as it does on every checkbox of a page. rx.checkbox_group takes one stop for the whole group and moves through it with the arrow keys."
+
+[[contract]]
+component = "checkbox_group"
+step = "the arrow keys move through a group"
+reason = "The browser does not move between checkboxes with the arrow keys: in rx.ui.checkbox_group Tab and Shift+Tab do, and `orientation`, `loop` and the direction of `dir` for the arrow keys have nothing to say. rx.checkbox_group moves the focus with the arrow keys."
+
+[[contract]]
+component = "checkbox_group"
+step = "Tab reaches every checkbox that is not disabled"
+system = "rx"
+reason = "rx.checkbox_group takes one Tab stop for the whole group. In rx.ui.checkbox_group every checkbox is a stop, as native checkboxes are."
+
+[[contract]]
+component = "checkbox_group"
+step = "hands over the checked values in the order they were checked in"
+reason = "`on_value_change` of rx.ui.checkbox_group hands over the values of the checked items in the order of the items, whatever the order they were checked in: the group keeps no state of its own and reads its checkboxes. rx.checkbox_group appends each value as it is checked."

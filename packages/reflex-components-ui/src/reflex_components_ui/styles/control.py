@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from reflex_components_ui import tokens
+from reflex_components_ui.style import ComponentStyles
 
 DISABLED = ":disabled"
 FOCUS = ":focus-visible"
@@ -58,3 +59,25 @@ def mask(path: str) -> str:
         "viewBox='0 0 9 9'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' "
         f"d='{path}'/%3E%3C/svg%3E\")"
     )
+
+
+# A group of checkboxes or of radio buttons: one below the other.
+GROUP: ComponentStyles = {
+    "base": {
+        "box_sizing": "border-box",
+        "display": "flex",
+        "flex_direction": "column",
+        "gap": tokens.space[1],
+    },
+}
+
+# The label Radix Themes puts an item with children in: no wider than its
+# text, so that the space beside it does not check the item.
+GROUP_ITEM: dict[str, Any] = {
+    "display": "flex",
+    "gap": "0.5em",
+    "width": "fit-content",
+}
+
+# What is beside the input of such an item: text that may be cut off.
+GROUP_ITEM_INNER: ComponentStyles = {"base": {"min_width": 0}}
