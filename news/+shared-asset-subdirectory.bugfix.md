@@ -1,0 +1,1 @@
+`rx.asset(shared=True)` now links an asset whose path has directories, such as `rx.asset("icons/logo.svg", shared=True)`, instead of failing because the directory below the external assets folder did not exist.

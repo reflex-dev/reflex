@@ -538,6 +538,39 @@ def test_compile_stylesheets_no_reset(tmp_path: Path, mocker: MockerFixture):
     )
 
 
+def test_compile_stylesheets_versioned_asset(tmp_path: Path, mocker: MockerFixture):
+    """A stylesheet given as an `rx.asset` url compiles like its plain path.
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+    """
+    project = tmp_path / "test_project"
+    project.mkdir()
+
+    assets_dir = project / "assets"
+    assets_dir.mkdir()
+
+    (assets_dir / "style.css").write_text("a {\n\tcolor: red;\n}")
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+    mocker.patch(
+        "reflex.compiler.compiler.get_web_dir",
+        return_value=project / constants.Dirs.WEB,
+    )
+    mocker.patch(
+        "reflex.compiler.utils.get_web_dir", return_value=project / constants.Dirs.WEB
+    )
+
+    _, code = compiler.compile_root_stylesheet(
+        ["/style.css?v=0123abcd"], reset_style=False
+    )
+
+    assert code == "@layer __reflex_base;\n@import url('./style.css');"
+    assert (project / constants.Dirs.WEB / "styles" / "style.css").read_text() == (
+        assets_dir / "style.css"
+    ).read_text()
+
+
 def test_compile_stylesheets_includes_radix_plugin(
     tmp_path: Path, mocker: MockerFixture
 ):

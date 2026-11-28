@@ -1,12 +1,12 @@
 """Helper functions for adding assets to the app."""
 
 import hashlib
-import inspect
 import logging
+import sys
 import time
 import uuid
 from pathlib import Path
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, NamedTuple, overload
 
 from reflex_base import constants
 from reflex_base.config import get_config
@@ -16,11 +16,27 @@ logger = logging.getLogger(__name__)
 
 _HASH_CHUNK_SIZE = 1024 * 1024
 _MAX_HASH_ATTEMPTS = 3
+# The coarsest file timestamp granularity in common use (FAT's 2 s): a file
+# written again within it can keep the stat it had after the previous write.
+_RECENT_CHANGE_WINDOW_NS = 2_000_000_000
 _MAX_LINK_ATTEMPTS = 3
 _LINK_RETRY_DELAY = 0.01
 
 if TYPE_CHECKING:
     from typing_extensions import Buffer
+
+
+class _FileSignature(NamedTuple):
+    """The stat fields that change whenever a file's content changes."""
+
+    device: int
+    inode: int
+    size: int
+    mtime_ns: int
+    ctime_ns: int
+
+
+_content_hash_cache: dict[Path, tuple[_FileSignature, str]] = {}
 
 
 class AssetPathStr(str):
@@ -161,6 +177,50 @@ def _content_digest(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _file_signature(path: Path) -> _FileSignature:
+    """Get the stat signature of a file.
+
+    Args:
+        path: The file to inspect.
+
+    Returns:
+        The file's current signature.
+    """
+    stat = path.stat()
+    return _FileSignature(
+        stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns
+    )
+
+
+def _cached_short_content_hash(path: Path) -> str:
+    """Get a short content hash for an asset file, reading it only when it changed.
+
+    The hash is cached under the file's stat signature. A file changed within
+    ``_RECENT_CHANGE_WINDOW_NS`` is hashed but not cached, because another
+    write in the same timestamp tick would leave the signature unchanged.
+
+    Args:
+        path: The file to hash.
+
+    Returns:
+        The first 8 hex characters of the file's SHA-256 hash.
+    """
+    signature = _file_signature(path)
+    cached = _content_hash_cache.get(path)
+    if cached is not None and cached[0] == signature:
+        return cached[1]
+    hashed_at = time.time_ns()
+    short_hash = _short_content_hash(path)
+    # On Windows st_ctime is the creation time, so the newer of both counts.
+    last_change = max(signature.mtime_ns, signature.ctime_ns)
+    if (
+        last_change < hashed_at - _RECENT_CHANGE_WINDOW_NS
+        and _file_signature(path) == signature
+    ):
+        _content_hash_cache[path] = (signature, short_hash)
+    return short_hash
+
+
 def _versioned_asset_path(relative_path: str, source_file: Path) -> AssetPathStr:
     """Create an asset URL with a content-hash query parameter.
 
@@ -171,7 +231,7 @@ def _versioned_asset_path(relative_path: str, source_file: Path) -> AssetPathStr
     Returns:
         A versioned asset URL that preserves an unversioned import path.
     """
-    versioned_path = f"{relative_path}?v={_short_content_hash(source_file)}"
+    versioned_path = f"{relative_path}?v={_cached_short_content_hash(source_file)}"
     return AssetPathStr(versioned_path, importable_path=relative_path)
 
 
@@ -343,11 +403,12 @@ def asset(
         return _versioned_asset_path(relative_path, src_file_local)
 
     # Shared asset handling
-    # Determine the file by which the asset is exposed.
-    frame = inspect.stack()[_stack_level]
-    calling_file = frame.filename
-    module = inspect.getmodule(frame[0])
-    assert module is not None
+    # Determine the file by which the asset is exposed. inspect.stack() would
+    # read the source context of every frame on the stack, on every call.
+    frame = sys._getframe(_stack_level)
+    calling_file = frame.f_code.co_filename
+    module_name: str | None = frame.f_globals.get("__name__")
+    assert module_name is not None
 
     external = constants.Dirs.EXTERNAL_APP_ASSETS
     src_file_shared = Path(calling_file).parent / path
@@ -355,16 +416,16 @@ def asset(
         msg = f"File not found: {src_file_shared}"
         raise FileNotFoundError(msg)
 
-    caller_module_path = module.__name__.replace(".", "/")
+    caller_module_path = module_name.replace(".", "/")
     subfolder = f"{caller_module_path}/{subfolder}" if subfolder else caller_module_path
 
     # Symlink the asset to the app's external assets directory if running frontend.
     if not backend_only:
         # Create the asset folder in the currently compiling app.
-        asset_folder = Path.cwd() / assets / external / subfolder
-        asset_folder.mkdir(parents=True, exist_ok=True)
+        dst_file = Path.cwd() / assets / external / subfolder / path
+        dst_file.parent.mkdir(parents=True, exist_ok=True)
 
-        _link_shared_asset(asset_folder / path, src_file_shared)
+        _link_shared_asset(dst_file, src_file_shared)
 
     return _versioned_asset_path(
         f"/{external}/{subfolder}/{path}",

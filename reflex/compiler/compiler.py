@@ -408,8 +408,10 @@ def _compile_root_stylesheet(
 
     for stylesheet in stylesheets:
         if not utils.is_valid_url(stylesheet):
-            # check if stylesheet provided exists.
-            stylesheet_full_path = assets_app_path / stylesheet.strip("/")
+            # check if stylesheet provided exists. The version query rx.asset
+            # appends is dropped: the bundler versions the compiled stylesheet.
+            asset_path = stylesheet.partition("?")[0].strip("/")
+            stylesheet_full_path = assets_app_path / asset_path
 
             if not stylesheet_full_path.exists():
                 msg = f"The stylesheet file {stylesheet_full_path} does not exist."
