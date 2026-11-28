@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Generator
 
-import httpx
+import httpx2
 import pytest
 from playwright.sync_api import Page, expect
 from reflex_base.config import get_config
@@ -110,11 +110,11 @@ def test_ping_reachable_at_prefix(backend_path_app: AppHarness, backend_path: st
     base = get_config().api_url.rstrip("/")
     prefix = f"/{backend_path.strip('/')}" if backend_path.strip("/") else ""
 
-    resp = httpx.get(f"{base}{prefix}/ping")
+    resp = httpx2.get(f"{base}{prefix}/ping")
     assert resp.status_code == 200
 
     if prefix:
-        stray = httpx.get(f"{base}/ping")
+        stray = httpx2.get(f"{base}/ping")
         assert stray.status_code == 404
 
 
@@ -146,6 +146,6 @@ def test_uploaded_file_download(
     if prefix:
         assert prefix in href, f"upload URL {href} missing backend_path prefix {prefix}"
 
-    resp = httpx.get(href, follow_redirects=True)
+    resp = httpx2.get(href, follow_redirects=True)
     assert resp.status_code == 200
     assert resp.text == "hello from backend_path"
