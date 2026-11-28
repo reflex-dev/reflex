@@ -5,6 +5,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+
 import reflex as rx
 from ui_parity.contract import HYDRATED, NO_JAVASCRIPT, SERVER, Contract, Run
 from ui_parity.matrix import DARK, Matrix
@@ -132,13 +134,22 @@ def _server_render(run: Run) -> None:
 
 @CONTRACT.step("scrolls to its last line with JavaScript disabled", on=NO_JAVASCRIPT)
 def _without_javascript(run: Run) -> None:
+    run.page.locator("#last").wait_for(state="attached")
     run.page.locator("#area").hover()
-    run.page.mouse.wheel(0, 2000)
-    run.page.locator("#last").wait_for()
-    run.page.wait_for_function(
+    reached = (
         "document.getElementById('last').getBoundingClientRect().bottom"
         " <= document.getElementById('area').getBoundingClientRect().bottom + 1"
     )
+    # A wheel turned before the browser can hit-test the page scrolls nothing,
+    # so turn it until the area has moved: only the end of the scroll is asserted.
+    for _ in range(40):
+        run.page.mouse.wheel(0, 2000)
+        try:
+            run.page.wait_for_function(reached, timeout=250)
+        except PlaywrightTimeoutError:
+            continue
+        return
+    run.page.wait_for_function(reached, timeout=1)
 
 
 @CONTRACT.step("the wheel scrolls it both ways", on=HYDRATED)
