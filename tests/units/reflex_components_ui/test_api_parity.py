@@ -234,6 +234,7 @@ def test_every_wave_is_in_the_namespace():
         "text_field",
         "text_field.slot",
         "theme",
+        "tooltip",
         "unordered_list",
         "vstack",
     ]

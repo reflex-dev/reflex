@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from reflex_components_ui.style import CompoundStyle, unchecked
+
 # A popup that is open, and the element before it that opens it. A style
 # of that element selects on the second: no script says that it is open.
 OPEN = ":popover-open"
@@ -113,7 +115,7 @@ def placement(side: str, align: str, default_offset: str = "0px") -> dict[str, A
     return style
 
 
-def placements(default_offset: str = "0px") -> list[dict[str, Any]]:
+def placements(default_offset: str = "0px") -> list[CompoundStyle]:
     """Make the compound variants that place a popup by its side and alignment.
 
     Args:
@@ -125,7 +127,7 @@ def placements(default_offset: str = "0px") -> list[dict[str, Any]]:
     return [
         {
             "props": {"side": side, "align": align},
-            "style": placement(side, align, default_offset),
+            "style": unchecked(placement(side, align, default_offset)),
         }
         for side, align in _AREAS
     ]

@@ -47,12 +47,13 @@ def become_child(part: UIComponent) -> None:
         or not isinstance(children[0], Component)
         or type(children[0]).render not in (Component.render, UIComponent.render)
     ):
+        name = part._display_name()  # pyright: ignore[reportAttributeAccessIssue]
         msg = (
-            f"{type(part)._display_name()}: it is rendered as its child, so it "
-            "needs exactly one child that is an element, such as a button."
+            f"{name}: it is rendered as its child, so it needs exactly one "
+            "child that is an element, such as a button."
         )
         raise StyleError(msg)
-    part._as_child = True
+    part._as_child = True  # pyright: ignore[reportAttributeAccessIssue]
     # The child has to stay the child: a compile would otherwise move one
     # that is bound to state into a component of its own.
     part._memoization_mode = dataclasses.replace(

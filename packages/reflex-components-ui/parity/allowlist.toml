@@ -438,3 +438,20 @@ component = "popover"
 step = "the dark appearance of a theme around a popover reaches it"
 system = "rx"
 reason = "rx.theme around part of a page does not take an appearance of its own: what is inside follows the color mode of the app, a popover included. rx.ui.theme does, and a popover declared inside a dark rx.ui.theme is dark."
+
+[[contract]]
+component = "tooltip"
+step = "describes its button with JavaScript disabled"
+system = "rx"
+reason = "rx.tooltip renders its text when it opens, and names it as the description of its child only then. The text of rx.ui.tooltip is in the page from the start and always describes its child, so a screen reader reads it whether the tooltip is shown or not, with or without JavaScript; showing it under the pointer waits for JavaScript."
+
+[[contract]]
+component = "tooltip"
+step = "points at its button with an arrow"
+reason = "rx.ui.tooltip has no arrow. It is where the tooltip of rx.tooltip is, the room of the arrow included, and is placed by the browser, which turns it over where it would leave the page: an arrow drawn by its styles could not follow it. `arrow_padding` has nothing to say."
+
+[[contract]]
+component = "tooltip"
+step = "the dark appearance of a theme around a tooltip reaches it"
+system = "rx"
+reason = "rx.theme around part of a page does not take an appearance of its own: what is inside follows the color mode of the app, a tooltip included. rx.ui.theme does, and a tooltip declared inside a dark rx.ui.theme has the colors of the dark appearance."

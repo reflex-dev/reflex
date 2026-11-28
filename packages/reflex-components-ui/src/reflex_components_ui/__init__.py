@@ -40,6 +40,7 @@ _SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = {
     "components.tabs": ["tabs"],
     "components.text_area": ["text_area"],
     "components.text_field": ["input", "text_field"],
+    "components.tooltip": ["tooltip"],
     "layout.box": ["box"],
     "layout.center": ["center"],
     "layout.container": ["container"],

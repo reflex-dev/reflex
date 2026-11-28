@@ -50,17 +50,24 @@ def pixels(amount: Any) -> Any:
     )
 
 
-def offsets(props: dict[str, Any]) -> None:
+def offsets(props: dict[str, Any], gap: int = 0) -> None:
     """Put how far a popup is from its anchor before its other styles.
 
     Args:
         props: The props a popup is created with, changed in place: its
             ``side_offset`` and its ``align_offset`` become custom
             properties the placement of the popup reads.
+        gap: The room, in pixels, the popup leaves beside its anchor on top
+            of the distance it is asked to keep.
     """
     distances = {
-        name: pixels(props[prop])
-        for prop, name in (("side_offset", OFFSET), ("align_offset", SHIFT))
+        name: pixels(
+            literal(LiteralVar.create(props[prop])) + extra if extra else props[prop]
+        )
+        for prop, name, extra in (
+            ("side_offset", OFFSET, gap),
+            ("align_offset", SHIFT, 0),
+        )
         if props.get(prop) is not None
     }
     if distances:
@@ -247,6 +254,32 @@ class PopupContent(PopupPart):
     # The role of the popup.
     _role: ClassVar[str | None] = "dialog"
 
+    # The room the popup leaves beside its anchor on top of its offset.
+    _gap: ClassVar[int] = 0
+
+    # Whether the browser closes the popup on Escape and on a press outside
+    # it (``auto``), or its script does (``manual``).
+    _popover: ClassVar[str] = "auto"
+
+    # Whether the popup takes the focus from its script.
+    _tab_index: ClassVar[int | None] = -1
+
+    # The script of the popup: its name, what keeps the popup as its state
+    # says, and what hears the events named after them.
+    _script: ClassVar[tuple[str, ...]] = (
+        "popup",
+        "popupSync",
+        "popupEvent",
+        "onToggle",
+        "onKeyDown",
+        "onClick",
+        "onBlur",
+    )
+
+    # Whether what the popup does is handed to what keeps it as its state
+    # says, rather than to what hears its events.
+    _synced: ClassVar[bool] = False
+
     @classmethod
     def create(cls, *children: Any, **props: Any) -> Component:
         """Create a popup.
@@ -258,7 +291,7 @@ class PopupContent(PopupPart):
         Returns:
             The popup, as far from its anchor as it is asked to be.
         """
-        offsets(props)
+        offsets(props, cls._gap)
         return super().create(*children, **props)
 
     def _post_init(self, *args, **kwargs):
@@ -302,8 +335,9 @@ class PopupContent(PopupPart):
             Each var referenced by the component.
         """
         yield from super()._get_vars(include_children, ignore_ids)
-        yield script("popup", "popupSync")
-        yield script("popup", "popupEvent")
+        module, sync, heard = self._script[:3]
+        yield script(module, sync)
+        yield script(module, heard)
         if self._open is not None:
             yield self._open
 
@@ -336,29 +370,104 @@ class PopupContent(PopupPart):
             to its script, and through it to the events.
         """
         tag, on = handlers(super()._render(props), _EVENTS)
+        module, sync_name, heard, *events = self._script
         bound = LiteralVar.create(self._open)
-        sync = script("popup", "popupSync")
+        sync = script(module, sync_name)
+        handed = f", {on!s}" if self._synced and on is not None else ""
         tag = tag.add_props(**{
-            "popover": "auto",
+            "popover": self._popover,
             "role": self._role,
-            "tabIndex": -1,
+            "tabIndex": self._tab_index,
             "data-rx-popup": "",
             **self._popup,
             # Called whenever the page renders: a popup bound to state takes
             # whether it is open from there.
             "ref": Var(
-                f"((popup) => popupSync(popup, {bound!s}))",
+                f"((popup) => {sync_name}(popup, {bound!s}{handed}))",
                 _var_data=VarData.merge(
-                    sync._get_all_var_data(), bound._get_all_var_data()
+                    sync._get_all_var_data(),
+                    bound._get_all_var_data(),
+                    on._get_all_var_data() if handed and on is not None else None,
                 ),
             ),
         })
         return listen(
             tag,
-            script("popup", "popupEvent"),
-            "onToggle",
-            "onKeyDown",
-            "onClick",
-            "onBlur",
-            arguments=() if on is None else (on,),
+            script(module, heard),
+            *events,
+            arguments=() if on is None or self._synced else (on,),
         )
+
+
+class HoverTrigger(PopupTrigger):
+    """What a popup opens under: its child, which hears the pointer and the focus."""
+
+    # What the trigger hears of.
+    _heard: ClassVar[tuple[str, ...]] = (
+        "onPointerEnter",
+        "onPointerLeave",
+        "onFocus",
+        "onBlur",
+    )
+
+    def _join(self, root: PopupRoot | None, name: Any, on_open_change: Any) -> None:
+        """Take the id of the popup that opens under the trigger.
+
+        Args:
+            root: The popup the trigger is in.
+            name: The id of the popup.
+            on_open_change: What the popup does when it opens or closes.
+        """
+        self._popup = {"data-rx-hover": name}
+
+    def _get_vars(
+        self, include_children: bool = False, ignore_ids: set[int] | None = None
+    ) -> Iterator[Var]:
+        """Walk all Vars used in the trigger, its script included.
+
+        Args:
+            include_children: Whether to include Vars from children.
+            ignore_ids: The ids to ignore.
+
+        Yields:
+            Each var referenced by the component.
+        """
+        yield from super()._get_vars(include_children, ignore_ids)
+        yield script("hover", "hoverEvent")
+
+    def _render(self, props: dict[str, Any] | None = None) -> CommonTag:
+        """Render the trigger.
+
+        Args:
+            props: The props to render (if None, then use get_props).
+
+        Returns:
+            The tag: its child, which opens its popup under the pointer
+            and with the focus of the keyboard.
+        """
+        tag = UIComponent._render(self, props).add_props(**{
+            "data-state": "closed",
+            **self._popup,
+        })
+        return listen(tag, script("hover", "hoverEvent"), *self._heard)
+
+
+class HoverContent(PopupContent):
+    """A popup that opens under the pointer and with the focus of the keyboard."""
+
+    _role: ClassVar[str | None] = None
+
+    _popover: ClassVar[str] = "manual"
+
+    _tab_index: ClassVar[int | None] = None
+
+    _script: ClassVar[tuple[str, ...]] = (
+        "hover",
+        "hoverSync",
+        "hoverEvent",
+        "onPointerEnter",
+        "onPointerLeave",
+        "onBlur",
+    )
+
+    _synced: ClassVar[bool] = True
