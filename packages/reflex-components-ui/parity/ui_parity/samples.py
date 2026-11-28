@@ -60,3 +60,29 @@ def tiles(words: tuple[str, ...] = WORDS) -> list[Any]:
         )
         for word in words
     ]
+
+
+def focused(page: Any) -> str:
+    """Read which element of a page has the focus.
+
+    Args:
+        page: The page.
+
+    Returns:
+        The id of the element.
+    """
+    return page.evaluate("document.activeElement.id")
+
+
+def wait_for_text(page: Any, element: str, text: str) -> None:
+    """Wait until an element of a page holds a text.
+
+    Args:
+        page: The page.
+        element: The id of the element.
+        text: Its whole text.
+    """
+    page.wait_for_function(
+        "([id, text]) => document.getElementById(id).textContent === text",
+        arg=[element, text],
+    )

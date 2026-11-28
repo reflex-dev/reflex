@@ -15,6 +15,23 @@ LiteralSpacing = Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 LiteralVariant = Literal["classic", "solid", "soft", "surface", "outline", "ghost"]
 
 
+def style_before(props: dict[str, Any], style: Mapping[str, Any]) -> None:
+    """Put styles a component works out before the ones it is given.
+
+    Args:
+        props: The props a component is created with, changed in place: the
+            ``style`` of the element wins over what is put before it.
+        style: The styles the component works out.
+    """
+    written = props.get("style")
+    if written is None:
+        props["style"] = style
+    elif isinstance(written, (list, tuple)):
+        props["style"] = [style, *written]
+    else:
+        props["style"] = [style, written]
+
+
 def style_props(name: str, props: dict[str, Any], names: tuple[str, ...]) -> None:
     """Move the props that stand for a CSS property into the style of an element.
 
@@ -49,13 +66,7 @@ def style_props(name: str, props: dict[str, Any], names: tuple[str, ...]) -> Non
     ordered.update(
         (media, style[media]) for media in PROP_BREAKPOINTS.values() if media in style
     )
-    written = props.get("style")
-    if written is None:
-        props["style"] = ordered
-    elif isinstance(written, (list, tuple)):
-        props["style"] = [ordered, *written]
-    else:
-        props["style"] = [ordered, written]
+    style_before(props, ordered)
 
 
 def literal_value(value: Any) -> Any:

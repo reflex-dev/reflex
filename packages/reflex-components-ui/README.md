@@ -416,7 +416,9 @@ What the display and action wave settled, for the waves after it:
   fallback of an avatar and the scrollbars of a scroll area some time after
   the page is ready, so a screenshot has them or not. Leave such a cell out
   with a comment that says so, and cover the state in the contract, which
-  waits for it.
+  waits for it. What settles for good is waited for instead, with the
+  `ready` of its matrix: an avatar of Radix is empty until JavaScript has
+  run, and so is the trigger of its select.
 - **An animation is compared by the contract.** A screenshot is taken with
   animations off, and an animation that never ends is cancelled for it. A
   step reads `element.getAnimations()` on both systems and asserts the
@@ -458,6 +460,107 @@ What the display and action wave settled, for the waves after it:
   styles in the order they are written, and a whole shorthand written after
   its longhands cancels them. Write each side out, as the ghost button does.
 
+### Behaviour: the browser first, a script for the gap
+
+What a component does is the contract of its Radix counterpart, kept with
+as little JavaScript as the browser allows. In this order:
+
+1. **An element that already does it.** A checkbox, a radio button, a
+   switch and a thumb of a slider are native inputs, drawn by their table
+   with `appearance: none` and their `::before` and `::after`; an item with
+   text is a `<label>` around its input; a form reads the validity the
+   browser computes; the list of a select is a `popover` its trigger opens
+   with `popovertarget`. The browser then gives the keys, the focus, the
+   form value, the validation, the top layer and the dismissal, with
+   JavaScript off too.
+2. **CSS for what follows a state.** `:checked`, `:disabled`,
+   `:placeholder-shown`, `:popover-open`, and `:has()` on what is around
+   the control. Two conditions of one property that can both hold are
+   written so that only one does (`":checked:not(:disabled)"`): StyleX
+   orders rules by property, not by how they were written. What a class
+   cannot select is a rule of `base.css` on a `data-rx-*` attribute.
+3. **The compiler for what Radix hands down a context.** The root of a
+   group finds its items while compiling (`GroupRoot` in
+   `components/_group.py`, through `rx.foreach` and `rx.cond`) and gives
+   each its name, its look and its state: `_join` sets private variants
+   and attributes, and nothing is looked up in the browser. An item that is
+   not below its root in the tree of the page, as one a memoized component
+   renders, has the look of a group without props.
+4. **A script, when a step of the contract fails without one** and nothing
+   above gives it: the arrow keys of a segmented control, the filled part
+   of the track of a slider, the messages of a form, the value and the keys
+   of a select. It has this shape:
+   - plain exported functions in `js/src/behaviors/<name>.js`, typed by
+     JSDoc, with a vitest file that reaches every branch; no JSX, no hook,
+     no React state;
+   - one listener on the root for all its items (`onKeyDown`, `onClick`,
+     `onInputCapture`), or a `ref` for what must run when the page renders,
+     passed through `custom_attrs` as a `Var` that carries its import, so a
+     page without the component does not load it. A `Var` that is only
+     added in `_render` is not collected: yield it from `_get_vars`;
+   - its state is the DOM: the value of a native input, an attribute. A
+     value bound to state is handed to the `ref` as an argument, and the
+     script shows it;
+   - the server renders the right state, and the script only keeps it: the
+     trigger of a select shows the text of its value before any script
+     runs, where the options are known while compiling;
+   - together the scripts stay under 6 kB, minified and gzipped (the table
+     below). What only some browsers need is imported on demand, as
+     `popup-position.js` is where `CSS.supports` finds no anchor
+     positioning.
+5. **The contract says it against both systems.** Every step runs on
+   `rx.<name>` and on `rx.ui.<name>`; a step one of them does not pass is an
+   entry of `allowlist.toml` for that system, with a reason a user can read.
+   One step is on the server's HTML and one with JavaScript off, and they
+   say what the page is before a script runs. A reference that goes on
+   rendering after it is hydrated, as the trigger of the Radix select does,
+   is waited for with the `ready` of its matrix.
+
+**How open state reaches styles.** A popup is a native popover, and
+`:popover-open` is its open state: the table of the popup selects on it,
+and `@starting-style` under it is where the popup comes in from. What opens
+the popup is rendered right before it, so its table selects on
+`OPENS` (`styles/popup.py`): `:is([data-state='open'], :has(+ :popover-open))`.
+The second half needs no script; the first is what `popupToggle` writes,
+with `aria-expanded`, for assistive technology and for a trigger that
+cannot be the element before its popup. `styles/popup.py` (`POPUP`,
+`placements()`) and `behaviors/popup.js` are the popup the later waves
+reuse: placed by CSS anchor positioning, turned over by
+`position-try-fallbacks`, never taller than the room the viewport leaves.
+
+| script | minified and gzipped | what it does |
+| --- | --- | --- |
+| `image-status.js` | 232 B | shows the fallback of an avatar whose image fails |
+| `text-field.js` | 243 B | a press on the box of a text field focuses its input |
+| `form-validity.js` | 684 B | shows the messages of a form that match the validity the browser computed |
+| `roving-focus.js` | 411 B | the arrow keys of a segmented control |
+| `slider.js` | 660 B | the filled part of the track, the order of several thumbs, a press on the track |
+| `popup.js` | 386 B | says on a trigger that its popover is open, and gives the popups of a loop their own ids |
+| `popup-position.js` | 404 B | places a popover in a browser without anchor positioning; loaded only there |
+| `listbox.js` | 1,536 B | the value of a select, the keys of its list, typing to find an option |
+
+What the form controls wave settled:
+
+- **A component rendered from state.** Every form control but the parts of
+  `rx.ui.form` has styles under a condition (`:checked`, `:disabled`,
+  `:has(...)`), which code evaluated in the browser cannot apply: held in
+  state as a component, each raises the `StyleError` that says to render it
+  in a page and show it with `rx.cond`.
+- **Generated names.** A group that is given no `name`, a segmented
+  control, and the popup and the labels of a select are given an id from a
+  counter while compiling. Items a `rx.foreach` renders share it: give a
+  group in a loop a `name`; the script of a select tells its popups apart
+  when it first runs.
+- **One event for a group.** `on_change` of a group is one listener on its
+  root, which reads the values of its inputs from the event.
+- **An input bound to state** is rendered through `DebounceInput`, as the
+  inputs of `rx.el` are: `rx.ui.input` and `rx.ui.text_area` keep the caret
+  where it is while the state follows.
+- **A matrix of a popup** crops the stage, opens the popup with a state of
+  its own (`states={OPEN: State(...)}`), and leaves room in the stage for
+  it: a popup that meets the edge of the viewport is moved by Radix and
+  turned over by CSS, which is the browser's business, not a cell's.
+
 ### What a wave adds to a page
 
 Gzipped (`gzip -9` of each file under `.web/build/client`), for an app whose
@@ -469,12 +572,30 @@ only plugin is `UIPlugin()`, against the same page without the components:
 | a button with a `color_scheme` | +659 B | +2,081 B | one shared chunk of 188 B |
 | a button with a `radius` | +621 B | +1,031 B | one shared chunk of 287 B |
 | the 12 components of wave 2, one accent | +3,374 B | +5,295 B | Lucide's icon chunk (783 B), as `rx.icon` alone adds |
+| the 13 form controls of wave 3, one accent | +11,326 B | +10,639 B | one chunk of 404 B, `popup-position.js`, that a browser with anchor positioning never loads |
 
 The page without components is 146,124 B of JavaScript and 6,109 B of CSS,
 4.6 kB of it the theme. The script of an avatar is 231 B of the page's own
 chunk. Each further literal `color_scheme` on a page is about 1.05 kB of
 CSS, the scale of that color, and some 20 B of JavaScript: a page with six
 colors is 5.4 kB of CSS over the one with none, and still one chunk.
+
+The form controls were measured against a page that is 145,768 B of
+JavaScript and 6,464 B of CSS. Some 4.3 kB of their JavaScript is the
+scripts of the table above, and the rest the elements of the page.
+
+Opening a select of 50 options with the keyboard, in a production build,
+as the median of 15 runs of the main thread's task time (the
+`TaskDuration` of the Chrome DevTools protocol, from the key to two frames
+after an option has the focus):
+
+| | main thread | of it script | at a CPU four times slower |
+| --- | --- | --- | --- |
+| `rx.select` | 38.8 ms | 12.5 ms | 172.5 ms |
+| `rx.ui.select` | 15.6 ms | 0.7 ms | 63.7 ms |
+
+The page of that `rx.select` loads 192,201 B of JavaScript and 88,099 B of
+CSS, the one of `rx.ui.select` 151,165 B and 8,581 B.
 
 ## Themes and tokens
 
@@ -736,7 +857,8 @@ registers it.
    style is read when it is not the first element, `stage` sizes the frame,
    `crop="stage"` compares the whole frame for what is drawn outside the
    element, and `states` adds a driver for a state the runner does not know,
-   such as `open`.
+   such as `open`. `ready` is a JavaScript expression a page must meet before
+   it is read, for a reference that goes on rendering after it is hydrated.
 
 2. Declare the contract: what `render` shows, then one step per requirement.
    A step runs on the server's HTML (`SERVER`), on the page with scripts off
@@ -811,6 +933,7 @@ appearance) about 0.3 s. Keep interactive states to a sweep or a small group.
 | harness | box | 8 | 5 s + 1.1 s |
 | 1: layout and typography | 19, and `text.kbd` | 1011, 44 of them interactive | 27 s + 61 s |
 | 2: display and actions | 12 | 1379, 181 of them interactive | 56 s + 178 s for both waves, 115 s of it this one |
+| 3: form controls | 13 | 1514, 318 of them interactive | 115 s + 403 s for the three waves, 177 s of it this one |
 
 ## Rules the tooling enforces
 

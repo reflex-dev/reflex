@@ -1436,6 +1436,51 @@ class Lowered:
 EMPTY = Lowered({})
 
 
+def _before_longhands(props: dict[str, LoweredValue]) -> dict[str, LoweredValue]:
+    """Write a shorthand that only applies under a condition before its longhands.
+
+    StyleX applies the properties of a style in the order they are written,
+    and takes a whole shorthand written after its longhands to cancel them,
+    everywhere. A shorthand kept whole under a condition, such as the padding
+    of a pseudo-element, says nothing of what the longhands are anywhere
+    else: written before them, it leaves them be.
+
+    Args:
+        props: The merged properties.
+
+    Returns:
+        The properties, in an order StyleX reads as they are meant, and the
+        same dict when nothing has to move.
+    """
+    moved: dict[str, int] | None = None
+    order: dict[str, int] | None = None
+    for prop, value in props.items():
+        longhands = _REPLACES.get(prop)
+        if (
+            longhands is None or value.__class__ is not dict or "default" in value  # pyright: ignore[reportOperatorIssue]
+        ):
+            continue
+        if order is None:
+            order = {key: index for index, key in enumerate(props)}
+        first = min(
+            (order[key] for key in longhands if key in order), default=order[prop]
+        )
+        if first < order[prop]:
+            moved = moved or {}
+            moved[prop] = first
+    if moved is None or order is None:
+        return props
+    # A moved shorthand comes right before the first of its longhands.
+    return dict(
+        sorted(
+            props.items(),
+            key=lambda item: (
+                (moved[item[0]], 0) if item[0] in moved else (order[item[0]], 1)
+            ),
+        )
+    )
+
+
 def finish(
     props: dict[str, LoweredValue], inline: Var | None = None, unset: bool = False
 ) -> Lowered:
@@ -1465,6 +1510,7 @@ def finish(
         props = {prop: value for prop, value in props.items() if value is not None}
     if not props and inline is None:
         return EMPTY
+    props = _before_longhands(props)
     return Lowered(props, tuple(sorted(found)) if found else (), inline)
 
 

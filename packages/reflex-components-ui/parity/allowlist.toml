@@ -79,3 +79,202 @@ component = "scroll_area"
 check = "pixels"
 cells = "*type-always*"
 reason = "rx.ui.scroll_area scrolls natively and has the scrollbars of the browser, thin and in the grays of the theme, where rx.scroll_area draws scrollbars of its own with JavaScript. Their shape and where they show follow the browser and the system: they may take room beside the content or lie over it, and `type` \"hover\" and \"scroll\" and `scroll_hide_delay` are left to them."
+
+[[look]]
+component = "checkbox"
+check = "a11y"
+reason = "A checked rx.checkbox holds its check as an image without a name, which a screen reader may announce inside the checkbox. rx.ui.checkbox is one native input: its check is drawn by its styles and is nothing to the accessibility tree, which has the role, the name and the state of the checkbox alone."
+
+[[contract]]
+component = "checkbox"
+step = "is checked by a click with JavaScript disabled"
+system = "rx"
+reason = "rx.checkbox is a button that JavaScript turns into a checkbox: until it has run, a click does nothing. rx.ui.checkbox is a native input, which is checked by a click on it or on its label with or without JavaScript."
+
+[[contract]]
+component = "checkbox"
+step = "Enter on a checkbox does not submit its form"
+reason = "rx.ui.checkbox is a native input, and the browser submits a form when Enter is pressed in one of its inputs, a checkbox included. rx.checkbox swallows the key. Space toggles both, and Enter toggles neither."
+
+[[contract]]
+component = "switch"
+step = "is turned on by a click with JavaScript disabled"
+system = "rx"
+reason = "rx.switch is a button that JavaScript turns into a switch: until it has run, a click does nothing. rx.ui.switch is a native checkbox with the role of a switch, which a click on it or on its label turns on and off with or without JavaScript."
+
+[[contract]]
+component = "switch"
+step = "Enter toggles it"
+reason = "rx.ui.switch is a native checkbox, which the browser toggles on Space and not on Enter. rx.switch is a button, which both keys press."
+
+[[contract]]
+component = "switch"
+step = "Enter on a switch does not submit its form"
+reason = "rx.ui.switch is a native input, and the browser submits a form when Enter is pressed in one of its inputs. rx.switch toggles on that key instead."
+
+[[contract]]
+component = "radio_group"
+step = "checks one item of a group with JavaScript disabled"
+system = "rx"
+reason = "The items of rx.radio_group are buttons that JavaScript turns into radio buttons: until it has run, a click does nothing. The items of rx.ui.radio_group are native radio buttons that share a name, which the browser checks one at a time with or without JavaScript."
+
+[[contract]]
+component = "radio_group"
+step = "Enter on a radio button does not submit its form"
+reason = "The items of rx.ui.radio_group are native inputs, and the browser submits a form when Enter is pressed in one of its inputs, a radio button included. rx.radio_group swallows the key. Space and the arrow keys check an item in both."
+
+[[look]]
+component = "checkbox_group"
+check = "a11y"
+reason = "A checked item of rx.checkbox_group holds its check as an image without a name. An item of rx.ui.checkbox_group is one native input: its check is drawn by its styles and is nothing to the accessibility tree."
+
+[[contract]]
+component = "checkbox_group"
+step = "checks its items with JavaScript disabled"
+system = "rx"
+reason = "The items of rx.checkbox_group are buttons that JavaScript turns into checkboxes: until it has run, a click does nothing. The items of rx.ui.checkbox_group are native checkboxes, which a click checks with or without JavaScript."
+
+[[contract]]
+component = "checkbox_group"
+step = "Tab stops once in each group"
+reason = "The items of rx.ui.checkbox_group are native checkboxes, and Tab stops on each of them, as it does on every checkbox of a page. rx.checkbox_group takes one stop for the whole group and moves through it with the arrow keys."
+
+[[contract]]
+component = "checkbox_group"
+step = "the arrow keys move through a group"
+reason = "The browser does not move between checkboxes with the arrow keys: in rx.ui.checkbox_group Tab and Shift+Tab do, and `orientation`, `loop` and the direction of `dir` for the arrow keys have nothing to say. rx.checkbox_group moves the focus with the arrow keys."
+
+[[contract]]
+component = "checkbox_group"
+step = "Tab reaches every checkbox that is not disabled"
+system = "rx"
+reason = "rx.checkbox_group takes one Tab stop for the whole group. In rx.ui.checkbox_group every checkbox is a stop, as native checkboxes are."
+
+[[contract]]
+component = "checkbox_group"
+step = "hands over the checked values in the order they were checked in"
+reason = "`on_value_change` of rx.ui.checkbox_group hands over the values of the checked items in the order of the items, whatever the order they were checked in: the group keeps no state of its own and reads its checkboxes. rx.checkbox_group appends each value as it is checked."
+
+[[look]]
+component = "radio_cards"
+check = "a11y"
+reason = "A card of rx.ui.radio_cards is a label around a native radio button: what the card holds names the radio button, as in rx.radio_cards, and is also text of the page, as the text of any label is. A card of rx.radio_cards is one button that holds its text."
+
+[[contract]]
+component = "radio_cards"
+step = "checks one card of a group with JavaScript disabled"
+system = "rx"
+reason = "The cards of rx.radio_cards are buttons that JavaScript turns into radio buttons: until it has run, a click does nothing. A card of rx.ui.radio_cards is a label around a native radio button, which the browser checks with or without JavaScript."
+
+[[contract]]
+component = "radio_cards"
+step = "Enter on a card does not submit its form"
+reason = "The cards of rx.ui.radio_cards hold native inputs, and the browser submits a form when Enter is pressed in one of its inputs, a radio button included. rx.radio_cards swallows the key. Space and the arrow keys check a card in both."
+
+[[look]]
+component = "checkbox_cards"
+check = "a11y"
+reason = "The checkbox of a checked card of rx.checkbox_cards holds its check as an image without a name. The checkbox of a card of rx.ui.checkbox_cards is one native input: its check is drawn by its styles and is nothing to the accessibility tree."
+
+[[contract]]
+component = "checkbox_cards"
+step = "checks its cards with JavaScript disabled"
+system = "rx"
+reason = "The checkboxes of rx.checkbox_cards are buttons that JavaScript turns into checkboxes: until it has run, a click does nothing. The checkbox of a card of rx.ui.checkbox_cards is a native input, which a click on the card checks with or without JavaScript."
+
+[[contract]]
+component = "checkbox_cards"
+step = "Tab stops once in each group"
+reason = "The cards of rx.ui.checkbox_cards hold native checkboxes, and Tab stops on each of them, as it does on every checkbox of a page. rx.checkbox_cards takes one stop for the whole group and moves through it with the arrow keys."
+
+[[contract]]
+component = "checkbox_cards"
+step = "the arrow keys move through a group"
+reason = "The browser does not move between checkboxes with the arrow keys: in rx.ui.checkbox_cards Tab and Shift+Tab do, and `orientation`, `loop` and the direction of `dir` for the arrow keys have nothing to say. rx.checkbox_cards moves the focus with the arrow keys."
+
+[[contract]]
+component = "checkbox_cards"
+step = "Tab reaches every card that is not disabled"
+system = "rx"
+reason = "rx.checkbox_cards takes one Tab stop for the whole group. In rx.ui.checkbox_cards every card is a stop, as native checkboxes are."
+
+[[contract]]
+component = "checkbox_cards"
+step = "hands over the checked values in the order they were checked in"
+reason = "`on_value_change` of rx.ui.checkbox_cards hands over the values of the checked cards in the order of the cards, whatever the order they were checked in: the group keeps no state of its own and reads its checkboxes. rx.checkbox_cards appends each value as it is checked."
+
+[[look]]
+component = "segmented_control"
+check = "a11y"
+reason = "An item of rx.ui.segmented_control is a label around a native radio button: what the item holds names the radio button, as in rx.segmented_control, and is also text of the page, as the text of any label is. An item of rx.segmented_control is one button that holds its text."
+
+[[contract]]
+component = "segmented_control"
+step = "chooses an item with JavaScript disabled"
+system = "rx"
+reason = "The items of rx.segmented_control are buttons that JavaScript turns into radio buttons: until it has run, a click does nothing. An item of rx.ui.segmented_control is a label around a native radio button, which the browser checks with or without JavaScript."
+
+[[look]]
+component = "slider"
+check = "a11y"
+reason = "A thumb of rx.ui.slider is a native range input, which says its value to the accessibility tree as every such input does. A thumb of rx.slider has its value in `aria-valuenow` alone."
+
+[[contract]]
+component = "slider"
+step = "moves with the keyboard with JavaScript disabled"
+system = "rx"
+reason = "rx.slider is drawn and moved by JavaScript: until it has run, its thumb takes no focus and no key. The thumbs of rx.ui.slider are native range inputs, which the keyboard and the pointer move with or without JavaScript; only the filled part of the track waits for it."
+
+[[contract]]
+component = "slider"
+step = "the thumb of a slider has the name the slider is given"
+system = "rx"
+reason = "An `aria_label` of rx.slider names the element around its thumb, so the thumb, which is what a screen reader lands on, has no name. rx.ui.slider gives the label to the thumb."
+
+[[contract]]
+component = "slider"
+step = "Shift and an arrow key move a thumb by ten steps"
+reason = "The thumbs of rx.ui.slider are native range inputs: the browser moves one by one step for an arrow key, with or without Shift, and by ten for Page Up and Page Down, as rx.slider does for those."
+
+[[contract]]
+component = "slider"
+step = "a thumb can be moved past the one after it"
+reason = "A thumb of rx.ui.slider stops at the thumbs beside it, where a thumb of rx.slider passes them and the two change places. Home and End move the thumb that has the focus, where rx.slider moves the first and the last whichever has it."
+
+[[look]]
+component = "select"
+check = "style"
+cells = "*@open"
+properties = ["pointer-events"]
+reason = "While its list is open rx.select takes the pointer off the rest of the page: nothing else can be clicked or scrolled until the list closes. The list of rx.ui.select is a native popover, which leaves the page as it is: a click outside closes the list, and the page scrolls."
+
+[[look]]
+component = "select"
+check = "pixels"
+cells = "long-true*"
+reason = "A list of rx.ui.select too long for the room it has scrolls natively, with the scrollbar of the browser, which may lie over the options and show only while they scroll. rx.select draws a scrollbar of its own with JavaScript, and leaves room for it beside the options."
+
+[[look]]
+component = "select"
+check = "style"
+cells = "size-responsive*"
+properties = ["width", "height"]
+reason = "When the size of rx.select goes from \"3\" at one breakpoint to a smaller one at the next, Radix Themes keeps the larger icon size \"3\" has. The icon of rx.ui.select has the size of the select at each breakpoint, so the trigger is two pixels narrower there."
+
+[[contract]]
+component = "select"
+step = "shows the chosen option in the server render"
+system = "rx"
+reason = "The trigger of rx.select is empty until JavaScript has found the text of the chosen option. rx.ui.select works the text out while compiling, where the options are known or show their values, so the page the server sends shows it."
+
+[[contract]]
+component = "select"
+step = "opens and closes its list with JavaScript disabled"
+system = "rx"
+reason = "rx.select is opened by JavaScript: until it has run, a click on its trigger does nothing. The list of rx.ui.select is a native popover of its trigger, which the browser opens and closes with or without JavaScript; choosing an option waits for it."
+
+[[contract]]
+component = "select"
+step = "the page behind an open list takes no click"
+system = "rx.ui"
+reason = "While its list is open rx.select takes the pointer off the rest of the page: a click outside closes the list and does nothing else. The list of rx.ui.select is a native popover: a click outside closes it and also reaches what is under the pointer, as with a native select, and the page behind it scrolls."

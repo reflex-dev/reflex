@@ -239,6 +239,8 @@ class BaseTestState(rx.State):
     names: rx.Field[str] = rx.field("p-8")
     kind: rx.Field[str] = rx.field("solid")
     size: rx.Field[str] = rx.field("1")
+    sizes: rx.Field[list[str]] = rx.field(["1", "2"])
+    loading: rx.Field[bool] = rx.field(False)
     styles: rx.Field[dict[str, str]] = rx.field(default_factory=dict)
 
     @rx.event
@@ -608,6 +610,21 @@ def test_parts_are_styled_by_the_table_of_their_component(ui_plugin: UIPlugin):
     }
     # The size is a style of the switch and its thumb, not an attribute.
     assert bound.render()["props"] == ["className:sx_95ab4202b0_c"]
+
+
+def test_parts_a_foreach_or_a_cond_renders_are_styled_too(ui_plugin: UIPlugin):
+    """A part rendered once for each item of a list, or under a condition, is a part of the component around it."""
+    component = Switch.create(
+        rx.foreach(S.sizes, lambda size: Part.create(part="thumb", tag="i")),
+        rx.cond(S.loading, Part.create(part="thumb", tag="b")),
+    )
+    for wrapper in component.children[1:]:
+        # What is between the switch and the thumb renders no element.
+        thumb = wrapper
+        while not isinstance(thumb, Part):
+            thumb = thumb.children[0]
+        # Without a size the thumb is one em wide.
+        assert thumb._element_styles().style.style == {"width": "1em"}  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_part_outside_its_component_says_where_it_belongs(ui_plugin: UIPlugin):
