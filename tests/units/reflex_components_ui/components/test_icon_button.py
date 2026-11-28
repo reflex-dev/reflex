@@ -19,7 +19,7 @@ def test_icon_button_from_a_name(
     component = compiled(rx.ui.icon_button("plus"))
     assert component.render() == {
         "name": '"button"',
-        "props": ["className:sx_9b6dbd2f05_c"],
+        "props": ["className:sx_afda1d7c43_c"],
         "children": [{"name": "LucidePlus", "props": [], "children": []}],
     }
     assert declared_styles(component) == [
@@ -43,6 +43,7 @@ def test_icon_button_from_a_name(
             "backgroundColor": {
                 "default": "var(--accent-9)",
                 "@media (hover: hover)": {":hover:not(:active)": "var(--accent-10)"},
+                "[data-state='open']": "var(--accent-10)",
                 ":active:not([data-state='open'])": "var(--accent-10)",
                 "[data-disabled]": "var(--gray-a3)",
             },
@@ -127,7 +128,7 @@ def test_icon_button_size_sizes_the_icon(
     component = compiled(rx.ui.icon_button(rx.icon("trash"), size="3", variant="soft"))
     assert component.render() == {
         "name": '"button"',
-        "props": ["className:sx_76b6296e23_c"],
+        "props": ["className:sx_46971f9a00_c"],
         "children": [{"name": "LucideTrash", "props": ["size:36"], "children": []}],
     }
     assert declared_styles(component) == [
@@ -151,6 +152,7 @@ def test_icon_button_size_sizes_the_icon(
             "backgroundColor": {
                 "default": "var(--accent-a3)",
                 "@media (hover: hover)": {":hover:not(:active)": "var(--accent-a4)"},
+                "[data-state='open']": "var(--accent-a4)",
                 ":active:not([data-state='open'])": "var(--accent-a5)",
                 "[data-disabled]": "var(--gray-a3)",
             },
@@ -227,6 +229,7 @@ def test_icon_button_ghost(
             "backgroundColor": {
                 "default": "transparent",
                 "@media (hover: hover)": {":hover:not(:active)": "var(--accent-a3)"},
+                "[data-state='open']": "var(--accent-a3)",
                 ":active:not([data-state='open'])": "var(--accent-a4)",
                 "[data-disabled]": "transparent",
             },

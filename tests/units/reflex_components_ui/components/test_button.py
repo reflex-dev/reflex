@@ -69,7 +69,7 @@ def test_button_plain(
     component = rx.ui.button("Save")
     assert component.render() == {
         "name": '"button"',
-        "props": ["className:sx_6fb0976665_c"],
+        "props": ["className:sx_f2580dfc68_c"],
         "children": [{"contents": '"Save"'}],
     }
     assert declared_styles(component) == [
@@ -93,6 +93,7 @@ def test_button_plain(
             "backgroundColor": {
                 "default": "var(--accent-9)",
                 "@media (hover: hover)": {":hover:not(:active)": "var(--accent-10)"},
+                "[data-state='open']": "var(--accent-10)",
                 ":active:not([data-state='open'])": "var(--accent-10)",
                 "[data-disabled]": "var(--gray-a3)",
             },
@@ -187,7 +188,7 @@ def test_button_soft_with_a_color_and_a_radius(
         "name": '"button"',
         "props": [
             (
-                'className:sx_2d7416ba7b_c + " " + reflexUIClasses_e201574881 + " " + '
+                'className:sx_357e435970_c + " " + reflexUIClasses_e201574881 + " " + '
                 "reflexUIClasses_4c7cd6a7ce"
             )
         ],
@@ -214,6 +215,7 @@ def test_button_soft_with_a_color_and_a_radius(
             "backgroundColor": {
                 "default": "var(--accent-a3)",
                 "@media (hover: hover)": {":hover:not(:active)": "var(--accent-a4)"},
+                "[data-state='open']": "var(--accent-a4)",
                 ":active:not([data-state='open'])": "var(--accent-a5)",
                 "[data-disabled]": "var(--gray-a3)",
             },
@@ -277,7 +279,7 @@ def test_button_ghost(
     component = rx.ui.button("Save", variant="ghost", size="3")
     assert component.render() == {
         "name": '"button"',
-        "props": ["className:sx_2251570250_c"],
+        "props": ["className:sx_8db288804d_c"],
         "children": [{"contents": '"Save"'}],
     }
     assert declared_styles(component) == [
@@ -301,6 +303,7 @@ def test_button_ghost(
             "backgroundColor": {
                 "default": "transparent",
                 "@media (hover: hover)": {":hover:not(:active)": "var(--accent-a3)"},
+                "[data-state='open']": "var(--accent-a3)",
                 ":active:not([data-state='open'])": "var(--accent-a4)",
                 "[data-disabled]": "transparent",
             },
@@ -384,6 +387,7 @@ def test_button_classic_high_contrast(
                     "@media (hover: hover)": {
                         ":hover:not(:active)": "var(--accent-12)"
                     },
+                    "[data-state='open']": "var(--accent-12)",
                     ":active:not([data-state='open'], [data-disabled])": "inherit",
                     "[data-disabled]": "var(--gray-a2)",
                 },
@@ -402,6 +406,9 @@ def test_button_classic_high_contrast(
                         "transparent, "
                         "var(--white-a2))"
                     },
+                    "[data-state='open']": "linear-gradient(var(--black-a5), "
+                    "transparent, "
+                    "var(--white-a2))",
                     ":active:not([data-state='open'], [data-disabled])": "linear-gradient(var(--black-a5), "
                     "transparent, "
                     "var(--white-a3))",
@@ -534,6 +541,14 @@ def test_button_classic_high_contrast(
                     "saturate(1.3) "
                     "brightness(1.14))"
                 },
+                "[data-state='open']": "var(--rx-if-light, "
+                "contrast(0.88) "
+                "saturate(1.1) "
+                "brightness(1.1)) "
+                "var(--rx-if-dark, "
+                "contrast(0.88) "
+                "saturate(1.3) "
+                "brightness(1.14))",
             },
             "height": "var(--base-button-height)",
             "--rx-icon-opacity": "0.9",
@@ -576,6 +591,7 @@ def test_button_responsive_size(
             "backgroundColor": {
                 "default": "transparent",
                 "@media (hover: hover)": {":hover:not(:active)": "var(--accent-a2)"},
+                "[data-state='open']": "var(--accent-a2)",
                 ":active:not([data-state='open'])": "var(--accent-a3)",
                 "[data-disabled]": "transparent",
             },
@@ -663,7 +679,7 @@ def test_button_disabled(
     assert component.render() == {
         "name": '"button"',
         "props": [
-            "className:sx_6fb0976665_c",
+            "className:sx_f2580dfc68_c",
             '"data-disabled":true',
             "disabled:true",
             'type:"submit"',
@@ -680,7 +696,7 @@ def test_button_loading(
     component = rx.ui.button("Save", loading=True, size="4")
     assert component.render() == {
         "name": '"button"',
-        "props": ["className:sx_e8602a468e_c", '"data-disabled":true', "disabled:true"],
+        "props": ["className:sx_33c6aced18_c", '"data-disabled":true', "disabled:true"],
         "children": [
             {
                 "name": '"span"',
@@ -767,6 +783,7 @@ def test_button_loading(
             "backgroundColor": {
                 "default": "var(--accent-9)",
                 "@media (hover: hover)": {":hover:not(:active)": "var(--accent-10)"},
+                "[data-state='open']": "var(--accent-10)",
                 ":active:not([data-state='open'])": "var(--accent-10)",
                 "[data-disabled]": "var(--gray-a3)",
             },
@@ -903,8 +920,8 @@ def test_button_bound_to_state(
         "name": '"button"',
         "props": [
             (
-                'className:sx_aec9f4943f_c + " " + '
-                "(sx_aec9f4943f_0[reflex___state____state__tests___units___reflex_components_ui___components___test_button____button_state.busy_rx_state_] "
+                'className:sx_878a6e8128_c + " " + '
+                "(sx_878a6e8128_0[reflex___state____state__tests___units___reflex_components_ui___components___test_button____button_state.busy_rx_state_] "
                 '?? "")'
             ),
             (
@@ -1035,7 +1052,7 @@ def test_button_as_child(
     assert component.render() == {
         "name": "ReactRouterLink",
         "props": [
-            "className:sx_6fb0976665_c",
+            "className:sx_f2580dfc68_c",
             '"data-disabled":true',
             "disabled:true",
             'to:"/docs"',

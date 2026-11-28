@@ -452,7 +452,7 @@ def test_form_without_messages(
             {"name": '"span"', "props": [], "children": [{"contents": '"x"'}]},
             {
                 "name": '"button"',
-                "props": ["className:sx_6fb0976665_c", 'type:"submit"'],
+                "props": ["className:sx_f2580dfc68_c", 'type:"submit"'],
                 "children": [{"contents": '"Send"'}],
             },
         ],

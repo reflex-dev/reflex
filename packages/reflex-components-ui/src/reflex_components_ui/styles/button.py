@@ -40,21 +40,23 @@ _PRESSED_PADDING = "--base-button-classic-active-padding-top"
 _POINTER = "@media (hover: hover)"
 _HOVER = ":hover:not(:active)"
 _ACTIVE = ":active:not([data-state='open'])"
+_OPEN = "[data-state='open']"
 _DISABLED = "[data-disabled]"
 _FOCUS = ":focus-visible"
 _TOUCH = "@media (pointer: coarse)"
 
 
 def _hover(style: dict[str, Any]) -> dict[str, Any]:
-    """Make the styles of a button under the pointer.
+    """Make the styles of a button under the pointer, or whose popup is open.
 
     Args:
         style: The styles.
 
     Returns:
-        The styles, where a pointer can hover and the button is not pressed.
+        The styles, where a pointer can hover and the button is not pressed,
+        and while what the button opens is open.
     """
-    return {_POINTER: {_HOVER: style}}
+    return {_POINTER: {_HOVER: style}, _OPEN: style}
 
 
 def _ring(color: str, offset: str) -> dict[str, Any]:

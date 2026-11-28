@@ -847,6 +847,25 @@ def UIComponentsApp(radix: bool = False):
                 default_value="plan",
                 id="account",
             ),
+            # A dialog that starts open, and one for each row of a list.
+            rx.ui.dialog.root(
+                rx.ui.dialog.content(
+                    rx.ui.dialog.title("Welcome"),
+                    rx.ui.dialog.close(rx.ui.button("Start", id="start")),
+                    id="welcome",
+                ),
+                default_open=True,
+            ),
+            rx.foreach(
+                ["ada", "bob"],
+                lambda name: rx.ui.dialog.root(
+                    rx.ui.dialog.trigger(rx.ui.button(name)),
+                    rx.ui.dialog.content(
+                        rx.ui.dialog.title("Edit ", name),
+                        rx.ui.dialog.close(rx.ui.button("Done")),
+                    ),
+                ),
+            ),
             rx.el.span(rx.cond(rx.State.is_hydrated, "ready", "loading"), id="ready"),
         )
 
@@ -1863,6 +1882,17 @@ def test_overlays_and_disclosure_work_in_an_app(ui_app: AppHarness, page: Page):
     assert ui_app.frontend_url is not None
     page.goto(ui_app.frontend_url.rstrip("/") + "/overlays")
     expect(page.locator("#ready")).to_have_text("ready")
+
+    # A dialog that starts open is over the page once the page is hydrated,
+    # and each dialog of a list is opened by its own trigger.
+    expect(page.get_by_role("dialog", name="Welcome")).to_be_visible()
+    page.locator("#start").click()
+    expect(page.locator("#welcome")).to_be_hidden()
+    page.get_by_role("button", name="bob").click()
+    expect(page.get_by_role("dialog")).to_have_text("Edit bobDone")
+    page.keyboard.press("Escape")
+    expect(page.get_by_role("dialog")).to_have_count(0)
+    expect(page.get_by_role("button", name="bob")).to_be_focused()
 
     # The panel of the selected tab alone is shown, whatever display an app
     # gives the panels.

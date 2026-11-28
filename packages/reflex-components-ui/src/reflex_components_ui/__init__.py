@@ -18,6 +18,7 @@ _SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = {
     "components.checkbox_cards": ["checkbox_cards"],
     "components.checkbox_group": ["checkbox_group"],
     "components.data_list": ["data_list"],
+    "components.dialog": ["dialog"],
     "components.form": ["form"],
     "components.icon_button": ["icon_button"],
     "components.inset": ["inset"],

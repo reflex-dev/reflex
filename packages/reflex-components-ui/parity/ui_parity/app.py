@@ -116,6 +116,9 @@ def parity_page(matrix: Matrix) -> rx.Component:
             "grid_template_columns": f"repeat(auto-fill, {matrix.stage[0]}px)",
             "gap": f"{GAP}px",
             "padding": f"{GAP}px",
+            # Room to scroll the last frame to the top of the viewport, where
+            # what covers the viewport, such as a dialog, is read.
+            "padding_bottom": "100vh",
         },
     )
 

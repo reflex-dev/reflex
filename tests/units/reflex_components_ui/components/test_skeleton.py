@@ -152,7 +152,7 @@ def test_skeleton_as_its_child(
         "name": '"button"',
         "props": [
             '"aria-hidden":true',
-            'className:(sx_6fb0976665_c) + " " + sx_596747f37d_c',
+            'className:(sx_f2580dfc68_c) + " " + sx_596747f37d_c',
             '"data-rx-skeleton":""',
             'id:"save"',
             "inert:true",
@@ -218,6 +218,7 @@ def test_skeleton_as_its_child(
             "backgroundColor": {
                 "default": "var(--accent-9)",
                 "@media (hover: hover)": {":hover:not(:active)": "var(--accent-10)"},
+                "[data-state='open']": "var(--accent-10)",
                 ":active:not([data-state='open'])": "var(--accent-10)",
                 "[data-disabled]": "var(--gray-a3)",
             },
@@ -307,7 +308,7 @@ def test_skeleton_not_loading(
         "children": [
             {
                 "name": '"button"',
-                "props": ["className:sx_6fb0976665_c"],
+                "props": ["className:sx_f2580dfc68_c"],
                 "children": [{"contents": '"Save"'}],
             }
         ],
@@ -333,6 +334,7 @@ def test_skeleton_not_loading(
             "backgroundColor": {
                 "default": "var(--accent-9)",
                 "@media (hover: hover)": {":hover:not(:active)": "var(--accent-10)"},
+                "[data-state='open']": "var(--accent-10)",
                 ":active:not([data-state='open'])": "var(--accent-10)",
                 "[data-disabled]": "var(--gray-a3)",
             },
