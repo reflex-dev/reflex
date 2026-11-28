@@ -1,6 +1,7 @@
 """Tests for reflex_components_ui.components.radio_group."""
 
 import itertools
+import re
 from collections.abc import Callable
 from typing import Any
 
@@ -639,7 +640,10 @@ def test_radio_group_from_items(ui_plugin: UIPlugin):
         '(((typeof(value_rx_state_))?.valueOf?.() === "string"?.valueOf?.()) ? '
         "value_rx_state_ : (JSON.stringify(value_rx_state_)))"
     )
-    index = "index_cb46f9c6d80243188763ec1eabe9a266"
+    # Named after the bytecode of the function that renders an item, which
+    # differs from one Python version to the next.
+    index = items["index_var_name"]
+    assert re.fullmatch(r"index_[0-9a-f]{32}", index)
     assert rendered == {
         "name": '"div"',
         "props": ["className:sx_a088d40a93_c", 'role:"radiogroup"'],
