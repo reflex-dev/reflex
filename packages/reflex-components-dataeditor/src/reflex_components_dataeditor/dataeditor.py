@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import dataclasses
 import logging
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from enum import Enum
-from typing import Any, Literal, TypedDict
+from typing import Any, Literal, TypedDict, get_args
 
 from reflex_base.components.component import Component, NoSSRComponent, field
 from reflex_base.components.literals import LiteralRowMarker
@@ -22,10 +22,12 @@ from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.utils.serializers import serializer
 from reflex_base.vars import get_leaf_vars, get_unique_variable_name
 from reflex_base.vars.base import LiteralVar, Var, VarData
-from reflex_base.vars.function import FunctionStringVar
+from reflex_base.vars.function import FunctionStringVar, ReflexCallable
 from reflex_base.vars.sequence import ArrayVar
 
 logger = logging.getLogger(__name__)
+
+_VERTICAL_BORDER_PROP = "vertical_border"
 
 
 # TODO: Fix the serialization issue for custom types.
@@ -266,6 +268,39 @@ def _with_column_defaults(columns: Var, editor_id: str) -> Var:
     )
 
 
+def _normalize_vertical_border(border: Var) -> Var:
+    """Adapt a border value to Glide's boolean or callback prop.
+
+    Args:
+        border: The column mapping, boolean, or callback as a var.
+
+    Returns:
+        The prop value with its original state dependencies.
+    """
+    border_type = types.resolve_type_alias(border._var_type)
+    variants = get_args(border_type) if types.is_union(border_type) else (border_type,)
+    origins = tuple(types.get_origin(variant) or variant for variant in variants)
+
+    if any(types.safe_issubclass(origin, Mapping) for origin in origins):
+        # Resolve a conditional value or literal mapping once per render.
+        expression = (
+            '((border) => typeof border === "object" && border !== null '
+            "? (col) => (border[col] ?? true) : (border ?? true))"
+            f"({border!s})"
+        )
+    elif any(origin in (Callable, ReflexCallable) for origin in origins):
+        # Component prop validation only needs the callable's runtime type.
+        expression = str(border)
+    else:
+        return border
+
+    return Var(
+        _js_expr=expression,
+        _var_type=bool | Callable,
+        _var_data=border._get_all_var_data(),
+    )
+
+
 class DataEditor(NoSSRComponent):
     """The DataEditor Component."""
 
@@ -348,10 +383,10 @@ class DataEditor(NoSSRComponent):
 
     smooth_scroll_y: Var[bool] = field(doc="Enable vertical smooth scrolling.")
 
-    vertical_border: Var[  # TODO: support a mapping (dict[int, bool])
-        bool
+    vertical_border: Var[
+        bool | Mapping[int, bool | Var[bool]] | Callable[[int], bool]
     ] = field(
-        doc="Controls the drawing of the left hand vertical border of a column. If set to a boolean value it controls all borders."
+        doc="Controls the drawing of the left hand vertical border of a column. A boolean controls all columns; a mapping or callback controls columns individually. Unspecified columns in a mapping default to True."
     )
 
     column_select: Var[Literal["none", "single", "multi"]] = field(
@@ -663,6 +698,12 @@ class DataEditor(NoSSRComponent):
             theme = props.get("theme")
             if isinstance(theme, Mapping):
                 props["theme"] = DataEditorTheme(**theme)
+
+        # Convert border mappings to the callback Glide expects.
+        if isinstance(border := props.get(_VERTICAL_BORDER_PROP), (Mapping, Var)):
+            props[_VERTICAL_BORDER_PROP] = _normalize_vertical_border(
+                LiteralVar.create(border)
+            )
 
         # Allow by default to select a region of cells in the grid.
         props.setdefault("get_cells_for_selection", True)

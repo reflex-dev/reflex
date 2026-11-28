@@ -530,6 +530,24 @@ async def test_garbage_collection_is_not_reported(
 ):
     """Do not blame the task that a slow garbage collection interrupts."""
     probe_pending = _track_pending_probe(asyncio.get_running_loop(), monkeypatch)
+    # The clock only runs in the finalizer, so a runner stall between timing the
+    # probe and starting the collection cannot add to the blocked time.
+    now = 0.0
+    collected = False
+    reads_after_collection = threading.Semaphore(0)
+    loop_thread_id = threading.get_ident()
+
+    def perf_counter() -> float:
+        """Read the fake clock and count a monitor read after the collection.
+
+        Returns:
+            The seconds the finalizer has spent.
+        """
+        if collected and threading.get_ident() != loop_thread_id:
+            reads_after_collection.release()
+        return now
+
+    monkeypatch.setattr(blocking, "time", SimpleNamespace(perf_counter=perf_counter))
 
     class _SlowGarbage:
         """A reference cycle whose finalizer holds up the collection."""
@@ -538,13 +556,20 @@ async def test_garbage_collection_is_not_reported(
             self.cycle = self
 
         def __del__(self) -> None:
-            time.sleep(_BLOCK_SECONDS)
+            nonlocal now
+            now += _BLOCK_SECONDS
 
     async def collecting_handler():  # noqa: RUF029
         """Hold the loop in a garbage collection once a probe waits for it."""
+        nonlocal collected
         _SlowGarbage()
         assert probe_pending.wait(timeout=1)
         gc.collect()
+        collected = True
+        # Hold the loop until the monitor reads the clock twice after the
+        # collection: it checks the first read before it takes the second.
+        assert reads_after_collection.acquire(timeout=1)
+        assert reads_after_collection.acquire(timeout=1)
 
     await _run_monitored(
         collecting_handler, f"{EVENT_TASK_PREFIX}state.collecting|token|txid"

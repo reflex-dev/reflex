@@ -1,7 +1,7 @@
 import json
 import re
 import subprocess
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Any, cast
 
 import pandas as pd
@@ -12,6 +12,7 @@ from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import EventChain
 from reflex_base.utils.format import format_state_name
 from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.function import FunctionStringVar
 from reflex_base.vars.sequence import ArrayVar
 from reflex_components_dataeditor.dataeditor import DataEditor, GridSelection
 
@@ -152,6 +153,108 @@ def test_dataeditor_imports_image_overlay_stylesheet():
         "@glideapps/glide-data-grid/dist/index.css",
         "react-responsive-carousel/lib/styles/carousel.min.css",
     ]
+
+
+def test_dataeditor_vertical_border_mapping():
+    """Compile a per-column vertical border mapping to Glide's callback."""
+    editor = _create(vertical_border={0: False, 2: True})
+    callback = _prop(editor, "verticalBorder")
+
+    assert _run_node(
+        f"const callback = {callback}; "
+        "console.log(JSON.stringify([callback(0), callback(1), callback(2)]));"
+    ) == [False, True, True]
+
+
+def test_dataeditor_vertical_border_boolean_remains_unchanged():
+    """Keep the boolean form that toggles borders for every column."""
+    editor = _create(vertical_border=False)
+
+    assert _prop(editor, "verticalBorder") == "false"
+
+
+def test_dataeditor_vertical_border_callback_remains_unchanged():
+    """Forward an existing frontend callback directly to Glide."""
+    editor = _create(vertical_border=FunctionStringVar.create("verticalBorder"))
+
+    assert _prop(editor, "verticalBorder") == "verticalBorder"
+
+
+def test_dataeditor_vertical_border_state_mapping_uses_callback():
+    """Read a state-backed mapping from Glide's per-column callback."""
+    editor = _create(
+        vertical_border=Var(_js_expr="verticalBorders", _var_type=dict[int, bool])
+    )
+
+    callback = _prop(editor, "verticalBorder")
+    assert _run_node(
+        "const verticalBorders = { 0: false }; "
+        f"const callback = {callback}; "
+        "console.log(JSON.stringify([callback(0), callback(1)]));"
+    ) == [False, True]
+
+
+def test_dataeditor_vertical_border_mapping_contains_state_values():
+    """Compile nested state values and keep their state subscription."""
+
+    class GridState(BaseState):
+        show_border: bool = False
+
+    editor = _create(vertical_border={0: GridState.show_border})
+    assert (
+        _set_prop(editor, "vertical_border")._get_all_var_data()
+        == cast(Var, GridState.show_border)._get_all_var_data()
+    )
+
+    state_context = format_state_name(GridState.get_full_name())
+    state_values = json.dumps({"show_border" + FIELD_MARKER: False})
+    callback = _prop(editor, "verticalBorder")
+    assert _run_node(
+        f"const {state_context} = {state_values}; const callback = {callback}; "
+        "console.log(JSON.stringify([callback(0), callback(1)]));"
+    ) == [False, True]
+
+
+@pytest.mark.parametrize("use_callback", [False, True], ids=["boolean", "callback"])
+def test_dataeditor_conditional_vertical_border(use_callback: bool):
+    """Adapt the mapping branch and pass through Glide's native prop types.
+
+    Args:
+        use_callback: Whether the other branch uses a callback in place of a boolean.
+    """
+
+    class GridState(BaseState):
+        per_column: bool = False
+
+    native_border = (
+        Var(_js_expr="nativeBorder", _var_type=Callable[[int], bool])
+        if use_callback
+        else True
+    )
+    border = rx.cond(GridState.per_column, {0: False}, native_border)
+    editor = _create(vertical_border=border)
+    assert (
+        _set_prop(editor, "vertical_border")._get_all_var_data()
+        == cast(Var, GridState.per_column)._get_all_var_data()
+    )
+
+    state_context = format_state_name(GridState.get_full_name())
+    rendered = _prop(editor, "verticalBorder")
+    assert _run_node(
+        f"""
+const nativeBorder = (col) => col === 0;
+function resolveBorder(perColumn) {{
+  const {state_context} = {{ {json.dumps("per_column" + FIELD_MARKER)}: perColumn }};
+  return {rendered};
+}}
+const mappedBorder = resolveBorder(true);
+const native = resolveBorder(false);
+console.log(JSON.stringify([
+  [mappedBorder(0), mappedBorder(1)],
+  typeof native === "function" ? [native === nativeBorder, native(1)] : native,
+]));
+"""
+    ) == [[False, True], [True, False] if use_callback else True]
 
 
 def test_dataeditor_template_formats_image_cells():
