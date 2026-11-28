@@ -21,10 +21,7 @@ from typing_extensions import dataclass_transform
 
 from reflex_base import constants
 from reflex_base.breakpoints import Breakpoints
-from reflex_base.components.dynamic import (
-    is_rendering_dynamic_component,
-    load_dynamic_serializer,
-)
+from reflex_base.components.dynamic import load_dynamic_serializer
 from reflex_base.components.field import BaseField, FieldBasedMeta
 from reflex_base.components.tags import CommonTag, Tag
 from reflex_base.constants import Dirs, EventTriggers, Imports, MemoizationMode
@@ -332,7 +329,6 @@ class BaseComponentMeta(FieldBasedMeta, ABCMeta):
 _COMPILE_CACHE_ATTRS = (
     "_memo_analysis_key",
     "_cached_render_result",
-    "_cached_tag",
     "_vars_cache",
     "_imports_cache",
     "_hooks_internal_cache",
@@ -1493,36 +1489,6 @@ class Component(BaseComponent, ABC):
             else {}
         )
 
-    def _get_tag(self) -> CommonTag:
-        """Get the tag the component renders, built once per compile.
-
-        A component may render differently as a dynamic component, and one
-        held in state has its imports collected before it is serialized as
-        one: the tag is kept for the kind of code it was built for.
-
-        Returns:
-            The tag ``_render`` returns.
-        """
-        dynamic = is_rendering_dynamic_component()
-        cached = self.__dict__.get("_cached_tag")
-        if cached is not None and cached[0] is dynamic:
-            return cached[1]
-        tag = self._render()
-        self._cached_tag = (dynamic, tag)
-        return tag
-
-    def _renders_css_prop(self) -> bool:
-        """Whether the element this component renders has a ``css`` prop.
-
-        Only Emotion's ``jsx`` applies one, so the module the component is
-        compiled into imports it. The tag is what decides: it holds the style
-        of the component and whatever a subclass adds in ``_render``.
-
-        Returns:
-            True if the rendered tag has a ``css`` prop.
-        """
-        return "css" in self._get_tag().props
-
     def render(self) -> dict:
         """Render the component.
 
@@ -1533,7 +1499,7 @@ class Component(BaseComponent, ABC):
             return self._cached_render_result
         except AttributeError:
             pass
-        tag = self._get_tag()
+        tag = self._render()
         children = [child.render() for child in self.children]
         rendered_dict = tag.render(children)
         self._replace_prop_names(rendered_dict)
@@ -1930,9 +1896,6 @@ class Component(BaseComponent, ABC):
         # Get static imports required for event processing.
         event_imports = Imports.EVENTS if self.event_triggers else {}
 
-        # Only Emotion's element factory applies a ``css`` prop.
-        jsx_imports = Imports.EMOTION_JSX if self._renders_css_prop() else {}
-
         # Collect imports from Vars used directly by this component.
         var_imports = [
             dict(var_data.imports)
@@ -1956,7 +1919,6 @@ class Component(BaseComponent, ABC):
             self._get_hooks_imports(),
             imports_,
             event_imports,
-            jsx_imports,
             *var_imports,
             *added_import_dicts,
         )
@@ -2494,10 +2456,9 @@ class LiteralComponentVar(CachedVarOperation, LiteralVar[Component], ComponentVa
         return VarData.merge(
             self._var_data,
             VarData(
-                # The component asks for Emotion's ``jsx`` itself, through its
-                # own imports, when it renders a ``css`` prop.
                 imports={
-                    "react": [*Imports.REACT_JSX["react"], "Fragment"],
+                    "@emotion/react": ["jsx"],
+                    "react": ["Fragment"],
                 },
             ),
             VarData(

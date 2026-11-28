@@ -8,7 +8,6 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
 from reflex_base import constants
-from reflex_base.constants.compiler import Imports
 from reflex_base.utils import memo_paths
 from reflex_base.utils.format import json_dumps
 from reflex_base.vars.base import VarData
@@ -73,46 +72,57 @@ def _merge_state_hooks(
 # hand may spell it.
 _CSS_KEY = re.compile(r"""(?<![\w$-])css["']?\]?\s*:""")
 
-(_REACT_JSX,) = (var.name for var in Imports.REACT_JSX["react"])
-(_EMOTION_JSX,) = (var.name for var in Imports.EMOTION_JSX["@emotion/react"])
+# React's element factory, under the name generated code calls.
+_REACT_JSX = "createElement as jsx"
 
 
-def _with_emotion_jsx(imports: Iterable[_ImportDict]) -> list[_ImportDict]:
-    """Make ``jsx`` Emotion's in the imports of a module where it is React's.
+def resolve_jsx(imports: Iterable[_ImportDict], *code: str) -> list[_ImportDict]:
+    """Settle which element factory a module calls ``jsx``.
+
+    The imports of a module name Emotion's, the only one that applies a
+    ``css`` prop. A module whose code has no ``css`` key has no such prop to
+    apply, so it gets React's ``createElement`` under that name instead, and
+    stops depending on Emotion. The code is what decides, since it exists by
+    now: no component is asked, and whatever reached the module is seen.
 
     Args:
         imports: The imports of the module.
+        *code: The rest of the module.
 
     Returns:
-        The imports, unchanged for a module that does not import React's
-        ``createElement`` as ``jsx``.
+        The imports the module should have.
     """
-    swapped: list[_ImportDict] = []
-    emotion: int | None = None
-    is_react_jsx = False
+    if any(map(_CSS_KEY.search, code)):
+        return list(imports)
+    resolved: list[_ImportDict] = []
+    react: int | None = None
+    swap = False
     for module in imports:
-        if module["lib"] == "react" and _REACT_JSX in module["rest"]:
-            is_react_jsx = True
+        if module["lib"] == "@emotion/react" and "jsx" in module["rest"]:
+            swap = True
+            rest = [name for name in module["rest"] if name != "jsx"]
+            if not rest and not module["default"]:
+                continue
             module: _ImportDict = {
-                "lib": "react",
+                "lib": "@emotion/react",
                 "default": module["default"],
-                "rest": [name for name in module["rest"] if name != _REACT_JSX],
+                "rest": rest,
             }
-        elif module["lib"] == "@emotion/react":
-            emotion = len(swapped)
-        swapped.append(module)
-    if not is_react_jsx:
-        return swapped
-    if emotion is None:
-        swapped.append({"lib": "@emotion/react", "default": "", "rest": [_EMOTION_JSX]})
+        elif module["lib"] == "react":
+            react = len(resolved)
+        resolved.append(module)
+    if not swap:
+        return resolved
+    if react is None:
+        resolved.append({"lib": "react", "default": "", "rest": [_REACT_JSX]})
     else:
-        module = swapped[emotion]
-        swapped[emotion] = {
-            "lib": "@emotion/react",
+        module = resolved[react]
+        resolved[react] = {
+            "lib": "react",
             "default": module["default"],
-            "rest": [*module["rest"], _EMOTION_JSX],
+            "rest": sorted([*module["rest"], _REACT_JSX]),
         }
-    return swapped
+    return resolved
 
 
 class _RenderUtils:
@@ -190,12 +200,6 @@ class _RenderUtils:
     def get_imports(imports: Iterable[_ImportDict], *code: str) -> str:
         """Render the imports of a module, settling what it calls ``jsx``.
 
-        Components ask for Emotion's ``jsx`` through their imports when they
-        render a ``css`` prop. Code that reaches the module without its imports
-        cannot, so a ``css`` key anywhere in the module asks for it too: Emotion
-        behaves as React does for an element without the prop, while React
-        would drop the style of an element with it.
-
         Args:
             imports: The imports of the module.
             *code: The rest of the module.
@@ -203,9 +207,9 @@ class _RenderUtils:
         Returns:
             The import statements, one per line.
         """
-        if any(map(_CSS_KEY.search, code)):
-            imports = _with_emotion_jsx(imports)
-        return "\n".join([_RenderUtils.get_import(module) for module in imports])
+        return "\n".join([
+            _RenderUtils.get_import(module) for module in resolve_jsx(imports, *code)
+        ])
 
 
 def rxconfig_template(app_name: str):

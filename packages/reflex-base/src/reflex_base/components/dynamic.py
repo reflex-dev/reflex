@@ -278,7 +278,10 @@ def load_dynamic_serializer():
         module_imports = []
         bundled_declarations = []
         bundled_library_paths = set()
-        for module in utils.compile_imports(imports):
+        # Emotion is only loaded for code with a ``css`` prop to apply.
+        for module in templates.resolve_jsx(
+            utils.compile_imports(imports), *rendered_components
+        ):
             if module["lib"] not in libs_in_window and not module["lib"].startswith((
                 "$/",
                 "/",

@@ -31,7 +31,7 @@ from reflex_base.components.memo import (
     reset_memo_component_classes,
 )
 from reflex_base.config import get_config
-from reflex_base.constants.compiler import Imports, PageNames, ResetStylesheet
+from reflex_base.constants.compiler import PageNames, ResetStylesheet
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
 from reflex_base.event import EventHandler, EventSpec
@@ -83,17 +83,9 @@ def _set_progress_total(
 def _apply_common_imports(
     imports: dict[str, list[ImportVar]],
 ):
-    """Add the imports every generated module relies on.
-
-    ``jsx`` is React's ``createElement`` here. A component of the module that
-    renders a ``css`` prop asks for Emotion's instead, and
-    ``utils.compile_imports`` then keeps that one.
-
-    Args:
-        imports: The import dictionary of the module, updated in place.
-    """
+    imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
     imports.setdefault("react", []).extend(
-        [*Imports.REACT_JSX["react"], ImportVar("Fragment"), ImportVar("useEffect")],
+        [ImportVar("Fragment"), ImportVar("useEffect")],
     )
 
 

@@ -9,10 +9,6 @@ from typing import Any, ClassVar, TypedDict
 import pytest
 from reflex_base.compiler.templates import _render_hooks
 from reflex_base.components.component import Component, field
-from reflex_base.components.dynamic import (
-    _RENDERING_DYNAMIC_COMPONENT,
-    is_rendering_dynamic_component,
-)
 from reflex_base.components.tags import CommonTag, Tag
 from reflex_base.constants import EventTriggers
 from reflex_base.constants.state import FIELD_MARKER
@@ -2680,24 +2676,3 @@ def test_ref_hook_registers_through_state_helper():
     hook_imports = component._get_hooks_imports()
     assert list(hook_imports["$/utils/state"]) == [ImportVar(tag="useRegisteredRef")]
     assert "react" not in hook_imports
-
-
-def test_tag_is_rebuilt_for_a_dynamic_component():
-    """Imports collected for a page do not fix how a dynamic component renders."""
-
-    class ContextualComponent(Component):
-        tag = "Contextual"
-        library = "contextual"
-
-        def _render(self, props: dict[str, Any] | None = None):
-            tag = super()._render(props)
-            return tag.add_props(dynamic=is_rendering_dynamic_component())
-
-    component = ContextualComponent.create()
-    assert component._get_all_imports() == {"contextual": [ImportVar(tag="Contextual")]}
-    assert component._get_tag() is component._get_tag()
-    token = _RENDERING_DYNAMIC_COMPONENT.set(True)
-    try:
-        assert component.render()["props"] == ["dynamic:true"]
-    finally:
-        _RENDERING_DYNAMIC_COMPONENT.reset(token)

@@ -222,7 +222,7 @@ def test_dynamic_component_loads_emotion_only_for_a_css_prop():
     assert _dynamic_module_head(rx.el.div("x", style={"color": "red"})) == [
         '//__reflex_evaluate:["@emotion/react"]',
         "const React = window.__reflex.react;",
-        "const {Fragment,useEffect} = window.__reflex['react']",
         "const {jsx} = window.__reflex['@emotion/react']",
+        "const {Fragment,useEffect} = window.__reflex['react']",
         "const {pyOr} = window.__reflex['$/utils/state']",
     ]
