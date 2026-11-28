@@ -181,7 +181,6 @@ export function selectKeyDown(event) {
   const { trigger, popup, holder } = parts(select);
   if (!trigger || !popup || !holder) return;
   const { key } = event;
-  if (key === "Escape") popup.dataset.rxClosedBy = "escape";
   const options = /** @type {HTMLElement[]} */ ([
     ...select.querySelectorAll(ENABLED),
   ]);
@@ -202,6 +201,8 @@ export function selectKeyDown(event) {
     }
     return;
   }
+  // The browser closes the list: its toggle says that the key did.
+  if (key === "Escape") popup.dataset.rxClosedBy = "escape";
   const at = options.indexOf(
     /** @type {HTMLElement} */ (document.activeElement),
   );

@@ -457,6 +457,15 @@ test("the pointer gives the option under it the focus, and the list between opti
 
 test("a list says what closed it", () => {
   build();
+  // Escape on a closed select closes nothing, and is not remembered.
+  trigger.focus();
+  expect(press("Escape")).toBe(false);
+  trigger.click();
+  /** @type {HTMLElement} */ (document.activeElement).blur();
+  popup.hidePopover();
+  expect(heard).toEqual(["open true", "open false", "outside", "close"]);
+
+  heard.length = 0;
   trigger.click();
   press("Escape");
   popup.hidePopover();
