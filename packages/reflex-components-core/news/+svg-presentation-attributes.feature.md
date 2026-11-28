@@ -1,0 +1,2 @@
+The SVG containers, shapes and text elements of `rx.el.svg` take the presentation attributes (`fill`, `stroke`, `stroke_width`, `stroke_linecap`, `opacity`, `transform`, `clip_path`, `filter`, `font_size`, `text_anchor`, ...) as attributes instead of turning them into CSS, and the animation elements take `fill` (`animate_motion` and `animate_transform` also `calc_mode`).
+`rx.el.svg.filter` and the filter primitives (`rx.el.svg.fe_drop_shadow`, `rx.el.svg.fe_gaussian_blur`, `rx.el.svg.fe_color_matrix`, ...) are new.
