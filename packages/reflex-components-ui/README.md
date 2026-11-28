@@ -933,7 +933,7 @@ appearance) about 0.3 s. Keep interactive states to a sweep or a small group.
 | harness | box | 8 | 5 s + 1.1 s |
 | 1: layout and typography | 19, and `text.kbd` | 1011, 44 of them interactive | 27 s + 61 s |
 | 2: display and actions | 12 | 1379, 181 of them interactive | 56 s + 178 s for both waves, 115 s of it this one |
-| 3: form controls | 13 | 1514, 318 of them interactive | 106 s + 385 s for the three waves, 171 s of it this one |
+| 3: form controls | 13 | 1514, 318 of them interactive | 115 s + 403 s for the three waves, 177 s of it this one |
 
 ## Rules the tooling enforces
 
