@@ -4,6 +4,8 @@
     uv run python scripts/ui_parity.py                every component, in Chromium
     uv run python scripts/ui_parity.py --all-engines  and in Firefox and WebKit
     uv run python scripts/ui_parity.py differences    the intended differences, as markdown
+    uv run python scripts/ui_parity.py --fonts "Liberation Sans" "Liberation Mono"
+                                                      the look in other fonts than the theme's
 
 The checks are the tests of tests/integration/tests_playwright/test_ui_parity.py;
 this builds the pytest command for them.
@@ -79,6 +81,12 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         help=f"where the report goes (default: {PARITY / 'report'})",
     )
+    parser.add_argument(
+        "--fonts",
+        nargs=2,
+        metavar=("TEXT", "CODE"),
+        help="installed font families both systems render text and code in",
+    )
     args, extra = parser.parse_known_args(argv)
     if args.components == [DIFFERENCES]:
         sys.path.insert(0, str(PARITY))
@@ -89,6 +97,8 @@ def main(argv: list[str] | None = None) -> int:
     env = dict(os.environ)
     if args.report is not None:
         env["UI_PARITY_REPORT"] = str(args.report.resolve())
+    if args.fonts is not None:
+        env["UI_PARITY_FONTS"] = "|".join(args.fonts)
     engines: list[str] = (
         list(ENGINES) if args.all_engines else args.engine or [ENGINES[0]]
     )

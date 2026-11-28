@@ -12,6 +12,7 @@ from ui_parity.look import (
     _Excuses,
     _style_differences,
     split_a11y,
+    use_fonts,
 )
 from ui_parity.matrix import Matrix
 
@@ -205,3 +206,26 @@ def test_excuses_match_by_check_cell_and_property_and_report_the_unused():
     assert excuses.stale() == [arrow, unused]
     assert excuses.reasons("pixels", "base@open") == ["arrow"]
     assert excuses.stale() == [unused]
+
+
+def test_use_fonts_sets_the_fonts_of_both_systems_and_waits_for_them():
+    """The fonts are forced on every element, code apart, before a read."""
+    calls = []
+
+    class FakePage:
+        def add_style_tag(self, *, content: str) -> None:
+            calls.append(("style", content))
+
+        def evaluate(self, expression: str) -> None:
+            calls.append(("evaluate", expression))
+
+    use_fonts("DejaVu Sans", "Liberation Mono")(FakePage())  # pyright: ignore[reportArgumentType]
+    css = (
+        '* { font-family: "DejaVu Sans" !important; }\n'
+        "code, code *, kbd, kbd *, pre, pre * "
+        '{ font-family: "Liberation Mono" !important; }'
+    )
+    assert calls == [
+        ("style", css),
+        ("evaluate", "document.fonts.ready"),
+    ]
