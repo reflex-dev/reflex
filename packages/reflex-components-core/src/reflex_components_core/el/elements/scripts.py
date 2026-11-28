@@ -4,7 +4,7 @@ from reflex_base.components.component import field
 from reflex_base.vars.base import Var
 
 from reflex_components_core.el.elements.inline import ReferrerPolicy
-from reflex_components_core.el.elements.media import CrossOrigin
+from reflex_components_core.el.elements.media import CrossOrigin, FetchPriority
 
 from .base import BaseHTML, RawTextBaseHTML
 
@@ -38,6 +38,10 @@ class Script(RawTextBaseHTML):
 
     defer: Var[bool] = field(
         doc="Indicates that the script should be executed after the page has finished parsing"
+    )
+
+    fetch_priority: Var[FetchPriority] = field(
+        doc="Priority of fetching the external script relative to other scripts"
     )
 
     integrity: Var[str] = field(
