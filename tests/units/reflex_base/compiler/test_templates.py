@@ -193,65 +193,75 @@ def test_vite_config_template_two_vite_plugins():
     )
 
 
-REACT_IMPORTS: list = [
-    {"lib": "react", "default": "", "rest": ["Fragment", "createElement as jsx"]},
+# What a module is given before its code is looked at: Emotion's ``jsx``.
+EMOTION_IMPORTS: list = [
+    {"lib": "react", "default": "", "rest": ["useEffect", "Fragment"]},
+    {"lib": "@emotion/react", "default": "", "rest": ["jsx"]},
 ]
+EMOTION_JSX = (
+    'import {Fragment,useEffect} from "react"\nimport {jsx} from "@emotion/react"'
+)
+REACT_JSX = 'import {Fragment,createElement as jsx,useEffect} from "react"'
 
 
 @pytest.mark.parametrize(
     ("imports", "code", "expected"),
     [
         pytest.param(
-            REACT_IMPORTS,
+            EMOTION_IMPORTS,
             'jsx("div",{className:"css",style:{"--css":1}},"scss")',
-            'import {Fragment,createElement as jsx} from "react"',
+            REACT_JSX,
             id="no_css_key",
+        ),
+        pytest.param(
+            EMOTION_IMPORTS,
+            'jsx("div",{css:({ ["color"] : "red" })},)',
+            EMOTION_JSX,
+            id="css_prop",
+        ),
+        pytest.param(
+            EMOTION_IMPORTS, 'const props = {"css": style};', EMOTION_JSX, id="quoted"
+        ),
+        pytest.param(
+            EMOTION_IMPORTS,
+            'const props = {["css"] : style};',
+            EMOTION_JSX,
+            id="computed",
         ),
         pytest.param(
             # Text that reads like the key is taken for one: Emotion renders
             # the element as React would.
-            REACT_IMPORTS,
+            EMOTION_IMPORTS,
             'jsx("p",{},"css: the language of style")',
-            'import {Fragment} from "react"\nimport {jsx} from "@emotion/react"',
+            EMOTION_JSX,
             id="css_key_in_text",
         ),
         pytest.param(
-            REACT_IMPORTS,
-            'jsx("div",{css:({ ["color"] : "red" })},)',
-            'import {Fragment} from "react"\nimport {jsx} from "@emotion/react"',
-            id="css_prop",
-        ),
-        pytest.param(
-            REACT_IMPORTS,
-            'const props = {"css": style};',
-            'import {Fragment} from "react"\nimport {jsx} from "@emotion/react"',
-            id="quoted_css_key",
-        ),
-        pytest.param(
-            REACT_IMPORTS,
-            'const props = {["css"] : style};',
-            'import {Fragment} from "react"\nimport {jsx} from "@emotion/react"',
-            id="computed_css_key",
-        ),
-        pytest.param(
             [
-                *REACT_IMPORTS,
-                {"lib": "@emotion/react", "default": "", "rest": ["keyframes"]},
+                {"lib": "@emotion/react", "default": "", "rest": ["jsx", "keyframes"]},
+                {"lib": "react", "default": "", "rest": ["memo"]},
             ],
-            "jsx(Icon,{css:style},)",
-            'import {Fragment} from "react"\nimport {jsx,keyframes} from "@emotion/react"',
-            id="css_prop_beside_another_emotion_import",
+            "jsx(Icon,{className:name},)",
+            'import {keyframes} from "@emotion/react"\n'
+            'import {createElement as jsx,memo} from "react"',
+            id="another_emotion_import_stays",
+        ),
+        pytest.param(
+            [{"lib": "@emotion/react", "default": "", "rest": ["jsx"]}],
+            "jsx(Icon,{},)",
+            'import {createElement as jsx} from "react"',
+            id="module_without_react",
         ),
         pytest.param(
             [{"lib": "react", "default": "", "rest": ["memo"]}],
-            "const style = {css: 1};",
+            "const style = {};",
             'import {memo} from "react"',
             id="module_without_jsx",
         ),
     ],
 )
-def test_css_key_in_a_module_makes_its_jsx_emotion(
+def test_module_calls_emotion_only_for_a_css_key(
     imports: list, code: str, expected: str
 ):
-    """Code that carries no imports still gets the ``jsx`` that applies ``css``."""
+    """A module with no ``css`` key gets React's ``createElement`` as ``jsx``."""
     assert _RenderUtils.get_imports(imports, "", code) == expected

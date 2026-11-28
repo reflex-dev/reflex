@@ -3016,8 +3016,8 @@ def test_toaster_of_an_app_whose_backend_sends_a_toast(
 # prop does: only Emotion applies the prop.
 REACT_JSX = 'import {Fragment,createElement as jsx,useEffect} from "react"'
 EMOTION_JSX = [
-    'import {jsx} from "@emotion/react"',
     'import {Fragment,useEffect} from "react"',
+    'import {jsx} from "@emotion/react"',
 ]
 REACT_JSX_MEMO = 'import {Fragment,createElement as jsx,memo,useEffect} from "react"'
 EMOTION_JSX_MEMO = [
@@ -3118,8 +3118,8 @@ _RED = {"color": "red"}
             lambda: ThirdPartyPlain.create(fallback=rx.el.span("a", style=_RED)),
             None,
             [
-                'import {jsx} from "@emotion/react"',
                 THIRD_PARTY_PLAIN,
+                'import {jsx} from "@emotion/react"',
                 'import {Fragment,useEffect} from "react"',
                 'import {pyOr} from "$/utils/state"',
             ],
@@ -3163,8 +3163,9 @@ def test_page_imports_emotion_only_for_a_css_prop(
                 rx.cond(JsxImportState.on, rx.el.span("a", style=_RED), rx.el.span("b"))
             ),
             [
-                *EMOTION_JSX,
+                'import {Fragment,useEffect} from "react"',
                 'import {Cond_comp_<hash>} from "$/utils/components/Cond_comp_<hash>"',
+                'import {jsx} from "@emotion/react"',
             ],
             [
                 'import {isTrue} from "$/utils/state"',
@@ -3231,9 +3232,8 @@ def test_page_imports_emotion_only_for_a_css_prop(
             ],
             [
                 'import {isTrue,mergeSlotProps} from "$/utils/state"',
-                'import {jsx} from "@emotion/react"',
                 'import {useStateContext} from "$/utils/context-registry"',
-                'import {Fragment,memo,useEffect} from "react"',
+                *EMOTION_JSX_MEMO,
             ],
             id="style_bound_to_state",
         ),
@@ -3289,37 +3289,22 @@ def test_rx_memo_module_imports_emotion_only_for_a_css_prop(
 
 
 @pytest.mark.parametrize(
-    ("component", "expected"),
+    "component",
     [
-        pytest.param(
-            lambda: rx.el.div("x"),
-            [
-                {
-                    "lib": "react",
-                    "default": "",
-                    "rest": ["Fragment", "createElement as jsx", "useEffect"],
-                }
-            ],
-            id="no_style",
-        ),
-        pytest.param(
-            lambda: rx.el.div("x", style=_RED),
-            [
-                {"lib": "@emotion/react", "default": "", "rest": ["jsx"]},
-                {"lib": "react", "default": "", "rest": ["Fragment", "useEffect"]},
-            ],
-            id="style",
-        ),
+        pytest.param(lambda: rx.el.div("x"), id="no_style"),
+        pytest.param(lambda: rx.el.div("x", style=_RED), id="style"),
     ],
 )
-def test_module_built_from_the_imports_of_a_component_follows_the_rule(
-    component, expected: list[dict[str, Any]]
-):
-    """A plugin that writes a module of its own gets the right ``jsx`` too.
+def test_module_built_from_the_imports_of_a_component_ships_emotion(component):
+    """A plugin that writes a module of its own keeps the ``jsx`` that applies ``css``.
 
     It collects the imports of the components it renders and adds the common
-    ones, as the compiler does for a page.
+    ones. Only a template of the compiler, which sees the code of the module,
+    can tell that Emotion is not needed: imports alone always name it.
     """
     imports = component()._get_all_imports()
     compiler._apply_common_imports(imports)
-    assert utils.compile_imports(imports) == expected
+    assert utils.compile_imports(imports) == [
+        {"lib": "@emotion/react", "default": "", "rest": ["jsx"]},
+        {"lib": "react", "default": "", "rest": ["Fragment", "useEffect"]},
+    ]

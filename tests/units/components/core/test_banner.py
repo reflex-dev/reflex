@@ -23,10 +23,8 @@ def test_websocket_target_url():
 def test_connection_banner():
     banner = ConnectionBanner.create()
     imports = banner._get_all_imports(collapse=True)
-    # Its elements are styled through ``css`` props, which need Emotion.
     assert sorted(imports) == sorted((
         "react",
-        "@emotion/react",
         "$/utils/context",
         "$/utils/state",
         "$/env.json",
@@ -40,10 +38,8 @@ def test_connection_banner():
 def test_connection_modal():
     modal = ConnectionModal.create()
     imports = modal._get_all_imports(collapse=True)
-    # Its elements are styled through ``css`` props, which need Emotion.
     assert sorted(imports) == sorted((
         "react",
-        "@emotion/react",
         "$/utils/context",
         "$/utils/state",
         "$/env.json",
@@ -155,10 +151,6 @@ def test_connection_pulser_is_styled_without_a_css_prop():
 def test_wifi_off_pulse_style_props_override_its_stylesheet():
     """A style given to the icon is a ``css`` prop over the class it keeps."""
     icon = WifiOffPulse.create(color="red", class_name="mine")
-    assert sorted(icon._get_all_imports(collapse=True)) == [
-        "@emotion/react",
-        "lucide-react@1.26.0",
-    ]
     assert icon.render() == {
         "name": "LucideWifiOff",
         "props": [

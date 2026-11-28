@@ -632,15 +632,6 @@ class UIComponent(Component):
         """
         return {}
 
-    def _renders_css_prop(self) -> bool:
-        """Whether the element has a ``css`` prop.
-
-        Returns:
-            False, without rendering the element to find out: its imports are
-            also collected where it cannot be rendered.
-        """
-        return False
-
     def _exclude_props(self) -> list[str]:
         """Keep the props that are read as styles off the element.
 
