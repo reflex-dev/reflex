@@ -186,7 +186,9 @@ class Progress(UIComponent):
         elif props.get("duration") is not None:
             props[DURATION] = props["duration"]
         if maximum is not None:
-            props[MAX] = _css_number(maximum)
+            # The checked maximum, the one the bar is read out with: the
+            # indicator is scaled by what its value is a share of.
+            props[MAX] = _css_number(state["max"])
         if props.get("fill_color") is not None:
             props[FILL] = props["fill_color"]
         attrs = {

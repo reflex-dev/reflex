@@ -283,7 +283,7 @@ def test_progress_bound_to_state(
             f'"data-state":{state}',
             f'"data-value":{now}',
             'role:"progressbar"',
-            f'style:({{ "--v0": ({DONE}) ?? "initial", "--v1": ({TOTAL}) ?? "initial" }})',
+            f'style:({{ "--v0": ({DONE}) ?? "initial", "--v1": ({limit}) ?? "initial" }})',
         ],
         "children": [
             {
@@ -302,7 +302,7 @@ def test_progress_bound_to_state(
     assert {
         prop: str(value) if isinstance(value, Var) else value
         for prop, value in root.items()
-    } == track(**{"--progress-value": DONE, "--progress-max": TOTAL})
+    } == track(**{"--progress-value": DONE, "--progress-max": limit})
     assert inner == indicator()
 
 
@@ -317,7 +317,7 @@ def test_progress_checks_its_value_as_radix_does(
             '"aria-valuemax":100',
             '"aria-valuemin":0',
             '"aria-valuetext":"unknown"',
-            "className:sx_6d82c8dfbb_c",
+            "className:sx_9b58edc65a_c",
             '"data-max":100',
             '"data-state":"indeterminate"',
             'role:"progressbar"',
@@ -335,9 +335,13 @@ def test_progress_checks_its_value_as_radix_does(
         ],
     }
     assert declared_styles(component) == [
-        track(**{"--progress-value": "150", "--progress-max": "0"}),
+        # The maximum the bar is read out with, not the one given.
+        track(**{"--progress-value": "150", "--progress-max": "100"}),
         indicator(),
     ]
+    # A value that is one of the checked maximum is a share of it.
+    [root, _] = declared_styles(rx.ui.progress(value=25, max=-1))
+    assert root == track(**{"--progress-value": "25", "--progress-max": "100"})
     complete = rx.ui.progress(value=8, max=8).render()
     assert complete["props"] == [
         '"aria-valuemax":8',
