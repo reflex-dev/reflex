@@ -254,6 +254,168 @@ SWEEP_HARNESS = JS_SRC.parent / "tests" / "harness"
 SWEEP_SCRIPTS = "/__reflex_ui_sweep__/"
 
 
+# What the page of the form controls declares for the components bound to
+# state: a text field, and the parts of a select.
+CONTROLS_MEMO_DECLARATIONS = [
+    (
+        'const sx_ff3fb9d45c = stylex.create({ s: {"display": {"default": "flex",'
+        ' ":has(> input:is([hidden], [type=\'hidden\' i]))": "none"}, "alignItems":'
+        ' "stretch", "fontFamily": "var(--default-font-family)", "fontWeight": "v'
+        'ar(--font-weight-regular)", "fontStyle": "normal", "textAlign": "start",'
+        ' "boxSizing": "border-box", "height": "var(--text-field-height)", "paddi'
+        'ng": "var(--text-field-border-width)", "borderRadius": "var(--text-field'
+        '-border-radius)", "outlineWidth": {":has(> :is(input, textarea):focus)":'
+        ' "2px"}, "outlineStyle": {":has(> :is(input, textarea):focus)": "solid"}'
+        ', "outlineColor": {":has(> :is(input, textarea):focus)": "var(--text-fie'
+        'ld-focus-color)"}, "outlineOffset": {":has(> :is(input, textarea):focus)'
+        '": "-1px"}, "backgroundColor": {"default": "var(--color-surface)", "::se'
+        'lection": "var(--text-field-selection-color)"}, "--rx-text-field-indent"'
+        ': {"default": "var(--text-field-padding)", ":has(> [data-side=\'left\'])":'
+        ' "0"}, "--rx-text-field-padding-left": {"default": "var(--text-field-pad'
+        'ding)", ":has(> [data-side=\'left\'])": "0"}, "--rx-text-field-padding-rig'
+        'ht": {"default": "var(--text-field-padding)", ":has(> [data-side=\'right\''
+        '])": "0"}, "--rx-text-field-radius-left": {"default": "calc(var(--text-f'
+        'ield-border-radius) - var(--text-field-border-width))", ":has(> [data-si'
+        'de=\'left\'])": "0"}, "--rx-text-field-radius-right": {"default": "calc(va'
+        'r(--text-field-border-radius) - var(--text-field-border-width))", ":has('
+        '> [data-side=\'right\'])": "0"}, "--rx-text-field-slot-cursor": {"default"'
+        ': "text", ":has(> :is(input, textarea):is(:disabled, :read-only):placeho'
+        'lder-shown)": "var(--cursor-disabled)"}, "--text-field-height": "var(--s'
+        'pace-6)", "--text-field-padding": "calc(var(--space-2) - var(--text-fiel'
+        'd-border-width))", "--text-field-border-radius": "max(var(--radius-2), v'
+        'ar(--radius-full))", "--text-field-native-icon-size": "var(--space-4)", '
+        '"fontSize": "var(--font-size-2)", "letterSpacing": "var(--letter-spacing'
+        '-2)", "--rx-text-field-slot-gap": "var(--space-2)", "--rx-text-field-slo'
+        't-padding": "var(--space-2)", "--text-field-selection-color": {"default"'
+        ': "var(--focus-a5)", ":has(> :is(input, textarea):is(:disabled, :read-on'
+        'ly))": "var(--gray-a5)"}, "--text-field-focus-color": {"default": "var(-'
+        '-focus-8)", ":has(> :is(input, textarea):is(:disabled, :read-only))": "v'
+        'ar(--gray-8)"}, "--text-field-border-width": "1px", "color": "var(--gray'
+        '-12)", "--rx-text-field-slot-color": "var(--gray-a11)", "boxShadow": {"d'
+        'efault": "inset 0 0 0 var(--text-field-border-width) var(--gray-a7)", ":'
+        'has(> :is(input, textarea):is(:disabled, :read-only))": "inset 0 0 0 var'
+        '(--text-field-border-width) var(--gray-a6)", ":has(> :is(input, textarea'
+        '):autofill:not(:is(:disabled, :read-only)))": "inset 0 0 0 1px var(--foc'
+        'us-a5), inset 0 0 0 1px var(--gray-a5)"}, "backgroundImage": {":has(> :i'
+        's(input, textarea):is(:disabled, :read-only))": "linear-gradient(var(--g'
+        'ray-a2), var(--gray-a2))", ":has(> :is(input, textarea):autofill:not(:is'
+        '(:disabled, :read-only)))": "linear-gradient(var(--focus-a2), var(--focu'
+        's-a2))"}, "backgroundClip": "content-box"} });'
+    ),
+    "const sx_ff3fb9d45c_c = stylex.props(sx_ff3fb9d45c.s).className;",
+    (
+        'const sx_345c25de08 = stylex.create({ s: {"appearance": {"default": "non'
+        'e", "[type=\'number\']": "textfield", "::-webkit-inner-spin-button": "none'
+        '", "::-webkit-search-cancel-button": "none"}, "marginTop": "0", "marginR'
+        'ight": {"default": "0", "::-webkit-calendar-picker-indicator": "calc(var'
+        '(--space-1) * -1)"}, "marginBottom": "0", "marginLeft": {"default": "0",'
+        ' "::-webkit-calendar-picker-indicator": {"default": "var(--space-1)", "['
+        'type=\'time\']": "0"}}, "borderTopWidth": "0", "borderRightWidth": "0", "b'
+        'orderBottomWidth": "0", "borderLeftWidth": "0", "borderTopStyle": "none"'
+        ', "borderRightStyle": "none", "borderBottomStyle": "none", "borderLeftSt'
+        'yle": "none", "backgroundColor": {"default": "transparent", "::selection'
+        '": "var(--text-field-selection-color)"}, "backgroundImage": "none", "box'
+        'Sizing": {"default": "border-box", "::-webkit-calendar-picker-indicator"'
+        ': "content-box"}, "color": {"default": "inherit", ":is(:disabled, :read-'
+        'only)": "var(--gray-a11)", "::placeholder": "var(--gray-a10)"}, "fontFam'
+        'ily": "inherit", "fontSize": "inherit", "fontWeight": "normal", "fontSty'
+        'le": "normal", "lineHeight": "inherit", "letterSpacing": "inherit", "tex'
+        'tTransform": "inherit", "wordSpacing": "inherit", "outlineStyle": "none"'
+        ', "outlineWidth": "medium", "outlineColor": "currentcolor", "outlineOffs'
+        'et": "0", "whiteSpace": "pre-wrap", "WebkitTapHighlightColor": "transpar'
+        'ent", "cursor": {"default": "text", ":is(:disabled, :read-only):placehol'
+        'der-shown": "var(--cursor-disabled)"}, "WebkitTextFillColor": {":is(:dis'
+        'abled, :read-only)": "var(--gray-a11)", ":autofill": "var(--gray-12)"}, '
+        '"width": {"default": "100%", "::-webkit-calendar-picker-indicator": "var'
+        '(--text-field-native-icon-size)"}, "display": "flex", "alignItems": "cen'
+        'ter", "textAlign": "inherit", "borderRadius": {"::-webkit-calendar-picke'
+        'r-indicator": "calc(var(--text-field-border-radius) - 2px)"}, "borderTop'
+        'LeftRadius": "var(--rx-text-field-radius-left)", "borderBottomLeftRadius'
+        '": "var(--rx-text-field-radius-left)", "borderTopRightRadius": "var(--rx'
+        '-text-field-radius-right)", "borderBottomRightRadius": "var(--rx-text-fi'
+        'eld-radius-right)", "textIndent": {"default": "var(--rx-text-field-inden'
+        "t)\", \":is([type='date'], [type='datetime-local'], [type='time'], [type='"
+        'week\'], [type=\'month\'])": "0"}, "paddingTop": {"default": "0", "::-webki'
+        't-calendar-picker-indicator": "var(--space-1)"}, "paddingLeft": {"defaul'
+        "t\": \"0\", \":is([type='date'], [type='datetime-local'], [type='time'], [ty"
+        "pe='week'], [type='month'])\": \"var(--rx-text-field-padding-left)\", \"::-w"
+        'ebkit-calendar-picker-indicator": "var(--space-1)"}, "paddingRight": {"d'
+        "efault\": \"0\", \":is([type='date'], [type='datetime-local'], [type='time']"
+        ", [type='week'], [type='month'])\": \"var(--rx-text-field-padding-right)\","
+        ' "::-webkit-calendar-picker-indicator": "var(--space-1)"}, "height": {":'
+        ':-webkit-calendar-picker-indicator": "var(--text-field-native-icon-size)'
+        '"}, "paddingBottom": {"default": "0.5px", "::-webkit-calendar-picker-ind'
+        'icator": "var(--space-1)"}, "backgroundClip": {":autofill": "text"}, "us'
+        'erSelect": {"::placeholder": "none"}, "opacity": {"::placeholder": {"def'
+        'ault": 1, ":is(:disabled, :read-only)": 0.5}}} });'
+    ),
+    "const sx_345c25de08_c = stylex.props(sx_345c25de08.s).className;",
+    (
+        'const sx_872142009a = stylex.create({ s: {"appearance": "none", "marginT'
+        'op": "0", "marginRight": "0", "marginBottom": "0", "marginLeft": "0", "p'
+        'addingTop": "0", "paddingRight": "var(--space-3)", "paddingBottom": "0",'
+        ' "paddingLeft": "var(--space-3)", "borderTopWidth": "0", "borderRightWid'
+        'th": "0", "borderBottomWidth": "0", "borderLeftWidth": "0", "borderTopSt'
+        'yle": "none", "borderRightStyle": "none", "borderBottomStyle": "none", "'
+        'borderLeftStyle": "none", "backgroundColor": {"default": "var(--color-su'
+        'rface)", ":disabled": "var(--gray-a2)"}, "backgroundImage": "none", "tex'
+        'tTransform": "inherit", "textIndent": "initial", "wordSpacing": "inherit'
+        '", "cursor": {"default": "var(--cursor-button)", ":disabled": "var(--cur'
+        'sor-disabled)"}, "WebkitTapHighlightColor": "transparent", "display": "i'
+        'nline-flex", "alignItems": "center", "justifyContent": "space-between", '
+        '"flexShrink": 0, "userSelect": "none", "verticalAlign": "top", "fontFami'
+        'ly": "var(--default-font-family)", "fontWeight": "var(--font-weight-regu'
+        'lar)", "fontStyle": "normal", "textAlign": "start", "outlineStyle": {"de'
+        'fault": "none", ":focus-visible": "solid"}, "outlineWidth": {"default": '
+        '"medium", ":focus-visible": "2px"}, "outlineColor": {"default": "current'
+        'color", ":focus-visible": "var(--focus-8)"}, "outlineOffset": {"default"'
+        ': "0", ":focus-visible": "-1px"}, "--rx-select-icon-color": {":disabled"'
+        ': "var(--gray-a9)"}, "--select-trigger-height": "var(--space-6)", "gap":'
+        ' "calc(var(--space-1) * 1.5)", "fontSize": "var(--font-size-2)", "lineHe'
+        'ight": "var(--line-height-2)", "letterSpacing": "var(--letter-spacing-2)'
+        '", "borderRadius": "max(var(--radius-2), var(--radius-full))", "boxSizin'
+        'g": "border-box", "height": "var(--select-trigger-height)", "--rx-select'
+        '-shown-color": {"[data-placeholder]": "var(--gray-a10)"}, "color": {"def'
+        'ault": "var(--gray-12)", ":disabled": "var(--gray-a11)"}, "boxShadow": {'
+        '"default": "inset 0 0 0 1px var(--gray-a7)", "@media (hover: hover)": {"'
+        ':hover:not(:disabled)": "inset 0 0 0 1px var(--gray-a8)"}, ":is([data-st'
+        "ate='open'], :has(+ :popover-open)):not(:disabled)\": \"inset 0 0 0 1px va"
+        'r(--gray-a8)", ":disabled": "inset 0 0 0 1px var(--gray-a6)"}} });'
+    ),
+    "const sx_872142009a_c = stylex.props(sx_872142009a.s).className;",
+    (
+        'const sx_afbb711e7e = stylex.create({ s: {"display": "flex", "alignItems'
+        '": "center", "height": "var(--select-item-height)", "paddingLeft": "var('
+        '--select-item-indicator-width)", "paddingRight": "var(--select-item-indi'
+        'cator-width)", "userSelect": "none", "fontSize": "var(--rx-select-font-s'
+        'ize)", "lineHeight": "var(--rx-select-line-height)", "letterSpacing": "v'
+        'ar(--rx-select-letter-spacing)", "position": "relative", "boxSizing": "b'
+        'order-box", "outlineStyle": "none", "scrollMarginTop": "var(--select-con'
+        'tent-padding)", "scrollMarginBottom": "var(--select-content-padding)", "'
+        'borderRadius": "var(--rx-select-item-radius)", "cursor": {"default": "va'
+        'r(--cursor-menu-item)", "[aria-disabled=\'true\']": "default"}, "color": {'
+        '"default": "inherit", ":focus": "var(--rx-select-highlight-color, inheri'
+        't)", "[aria-disabled=\'true\']": "var(--gray-a8)"}, "backgroundColor": {":'
+        'focus": "var(--rx-select-highlight)"}, "--rx-select-check": {"default": '
+        '"none", "[aria-selected=\'true\']": "inline-flex"}} });'
+    ),
+    "const sx_afbb711e7e_c = stylex.props(sx_afbb711e7e.s).className;",
+    (
+        'const sx_b72d7382fd = stylex.create({ s: {"position": "absolute", "width'
+        '": "1px", "height": "1px", "marginTop": "0", "marginRight": "0", "margin'
+        'Bottom": "0", "marginLeft": "0", "paddingTop": "0", "paddingRight": "0",'
+        ' "paddingBottom": "0", "paddingLeft": "0", "borderTopWidth": "0", "borde'
+        'rRightWidth": "0", "borderBottomWidth": "0", "borderLeftWidth": "0", "op'
+        'acity": 0, "pointerEvents": "none"} });'
+    ),
+    "const sx_b72d7382fd_c = stylex.props(sx_b72d7382fd.s).className;",
+    'const sx_71b84cd269 = stylex.create({ s: {"display": "contents"} });',
+    "const sx_71b84cd269_c = stylex.props(sx_71b84cd269.s).className;",
+    'const sx_5073704993 = stylex.create({ s: {"width": "100%"} });',
+    "const sx_5073704993_c = stylex.props(sx_5073704993.s).className;",
+]
+
+
 def UIComponentsApp(radix: bool = False):
     """An app with a page for each thing the rx.ui tests look at.
 
@@ -573,6 +735,92 @@ def UIComponentsApp(radix: bool = False):
             ),
         )
 
+    class ControlState(rx.State):
+        """What the form controls are bound to."""
+
+        name: rx.Field[str] = rx.field("Ada")
+        plan: rx.Field[str] = rx.field("Free")
+        submitted: rx.Field[dict[str, Any]] = rx.field(default_factory=dict)
+
+        @rx.event
+        def set_name(self, name: str):
+            """Follow the text field.
+
+            Args:
+                name: What it holds.
+            """
+            self.name = name
+
+        @rx.event
+        def set_plan(self, plan: str):
+            """Follow the select.
+
+            Args:
+                plan: The chosen option.
+            """
+            self.plan = plan
+
+        @rx.event
+        def submit(self, data: dict[str, Any]):
+            """Keep what the form submitted.
+
+            Args:
+                data: The values of the form.
+            """
+            self.submitted = data
+
+    def controls():
+        cards, boxes = rx.ui.radio_cards, rx.ui.checkbox_cards
+        return rx.el.main(
+            rx.ui.form.root(
+                # A text field and a select bound to state.
+                rx.ui.input(
+                    name="name",
+                    value=ControlState.name,
+                    on_change=ControlState.set_name,
+                    id="name",
+                ),
+                rx.ui.select(
+                    ["Free", "Pro"],
+                    name="plan",
+                    value=ControlState.plan,
+                    on_change=ControlState.set_plan,
+                    id="plan",
+                ),
+                rx.ui.text_area(name="notes", default_value="None", id="notes"),
+                rx.ui.checkbox("Agree", name="agree", default_checked=True, id="agree"),
+                rx.ui.switch(name="alerts", id="alerts"),
+                rx.ui.radio(["a", "b"], name="letter", default_value="b"),
+                rx.ui.checkbox_group.root(
+                    rx.ui.checkbox_group.item("Ham", value="ham"),
+                    rx.ui.checkbox_group.item("Egg", value="egg"),
+                    name="toppings",
+                    default_value=["egg"],
+                ),
+                cards.root(
+                    cards.item("S", value="s"),
+                    cards.item("M", value="m"),
+                    name="size",
+                    default_value="m",
+                ),
+                boxes.root(boxes.item("Gift", value="gift"), name="extras"),
+                rx.ui.segmented_control.root(
+                    rx.ui.segmented_control.item("List", value="list"),
+                    rx.ui.segmented_control.item("Grid", value="grid"),
+                    default_value="grid",
+                    id="view",
+                ),
+                rx.ui.slider(name="volume", default_value=[30], id="volume"),
+                rx.el.button("Send", id="send"),
+                on_submit=ControlState.submit,
+                id="form",
+            ),
+            # Typing waits for the page to be hydrated.
+            rx.el.span(rx.cond(rx.State.is_hydrated, "ready", "loading"), id="ready"),
+            rx.el.span(ControlState.name, id="name-value"),
+            rx.el.span(ControlState.submitted.to_string(), id="submitted"),
+        )
+
     # The style of the app for a component of the wave, as an app writes it.
     app = rx.App(
         stylesheets=["unlayered.css"],
@@ -581,6 +829,7 @@ def UIComponentsApp(radix: bool = False):
     app.add_page(index)
     app.add_page(wave, route="/wave")
     app.add_page(actions, route="/actions")
+    app.add_page(controls, route="/controls")
     app.add_page(literal, route="/literal")
     app.add_page(styled, route="/styled")
     app.add_page(theme, route="/theme")
@@ -821,6 +1070,7 @@ def test_equal_styles_share_one_declaration(ui_app: AppHarness, page: Page):
     assert declarations(web / "app_components" / name / f"{name}.jsx") == [
         *WAVE_MEMO_DECLARATIONS,
         *ACTIONS_MEMO_DECLARATIONS,
+        *CONTROLS_MEMO_DECLARATIONS,
         *STYLED_MEMO_DECLARATIONS,
     ]
 
@@ -1526,3 +1776,53 @@ def test_display_and_action_components_work_in_an_app(ui_app: AppHarness, page: 
     page.locator("#done").click()
     expect(save).to_be_enabled()
     expect(save).to_have_text("Save")
+
+
+# What the page of the form controls computes to, by id.
+CONTROLS = {
+    "name": {"height": "30px", "font-size": "14px"},
+    "plan": {"height": "32px", "padding-left": "12px"},
+    "notes": {"padding-top": "5px", "resize": "none"},
+    "agree": {"width": "16px", "height": "20px"},
+    "alerts": {"width": "35px", "height": "20px"},
+    "view": {"height": "32px", "display": "inline-grid"},
+}
+
+
+def test_form_controls_work_in_an_app(ui_app: AppHarness, page: Page):
+    """The form controls work in a real app, in dev and prod."""
+    assert ui_app.frontend_url is not None
+    page.goto(ui_app.frontend_url.rstrip("/") + "/controls")
+    expect(page.locator("#ready")).to_have_text("ready")
+    name = page.locator("#name")
+    expect(name).to_have_value("Ada")
+    assert _computed_styles(page, CONTROLS) == CONTROLS
+
+    # A text field bound to state follows what is typed, and the state it.
+    name.press("End")
+    name.press_sequentially(" L")
+    expect(page.locator("#name-value")).to_have_text("Ada L")
+    expect(name).to_have_value("Ada L")
+
+    # The select opens a native popover, and its script chooses an option.
+    plan = page.locator("#plan")
+    expect(plan).to_have_text("Free")
+    plan.click()
+    page.get_by_role("option", name="Pro").click()
+    expect(plan).to_have_text("Pro")
+    expect(page.get_by_role("listbox")).to_be_hidden()
+
+    # Native inputs: a click, and the keys of the browser.
+    page.locator("#alerts").click()
+    page.get_by_text("S", exact=True).click()
+    page.get_by_text("Gift").click()
+    # An item draws its text twice, one over the other.
+    page.locator("#view").get_by_text("List").first.click(force=True)
+    page.locator("#volume").press("ArrowRight")
+
+    # The form hands over the value of every control that has a name.
+    page.locator("#send").click()
+    expect(page.locator("#submitted")).to_have_text(
+        '{"name":"Ada L","plan":"Pro","notes":"None","agree":true,"alerts":true,'
+        '"letter":"b","toppings":"egg","size":"s","extras":"gift","volume":"31"}'
+    )

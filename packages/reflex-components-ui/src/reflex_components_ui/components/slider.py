@@ -20,6 +20,7 @@ from reflex_components_core.el import elements
 from reflex_components_ui.base import Part, UIComponent
 from reflex_components_ui.components._group import literal
 from reflex_components_ui.constants import WEB_DIR
+from reflex_components_ui.props import style_before
 from reflex_components_ui.style import ComponentStyles
 from reflex_components_ui.styles.slider import END, SLIDER, START
 from reflex_components_ui.themes import LiteralAccentColor
@@ -302,13 +303,7 @@ class Slider(UIComponent):
         if several:
             handlers.setdefault("onMouseDown", _PRESS)
         placement = {"width": width, START: start, END: end}
-        style = props.get("style")
-        if style is None:
-            props["style"] = placement
-        elif isinstance(style, (list, tuple)):
-            props["style"] = [placement, *style]
-        else:
-            props["style"] = [placement, style]
+        style_before(props, placement)
         return super().create(
             Part.create(
                 Part.create(part="range", tag="span"), part="track", tag="span"

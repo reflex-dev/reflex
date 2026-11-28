@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 from reflex_base.vars.base import LiteralVar, Var
-from reflex_components_ui.props import style_props
+from reflex_components_ui.props import style_before, style_props
 from reflex_components_ui.style import StyleError
 
 import reflex as rx
@@ -71,3 +71,19 @@ def test_style_props_rejects_a_key_that_is_no_breakpoint():
         'a breakpoint. Use "initial", "xs", "sm", "md", "lg" or "xl", or set a '
         "style, which takes any media query."
     )
+
+
+def test_style_before_puts_styles_under_the_ones_given():
+    """What a component works out is the first style: the ones given win."""
+    worked_out = {"width": "1px"}
+    props: dict[str, Any] = {}
+    style_before(props, worked_out)
+    assert props == {"style": {"width": "1px"}}
+
+    props = {"style": {"width": "2px"}}
+    style_before(props, worked_out)
+    assert props == {"style": [{"width": "1px"}, {"width": "2px"}]}
+
+    props = {"style": [{"width": "2px"}, {"color": "red"}]}
+    style_before(props, worked_out)
+    assert props == {"style": [{"width": "1px"}, {"width": "2px"}, {"color": "red"}]}

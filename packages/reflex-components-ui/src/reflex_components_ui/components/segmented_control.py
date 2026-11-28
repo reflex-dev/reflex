@@ -22,6 +22,7 @@ from reflex_components_ui.components._group import (
     is_value,
 )
 from reflex_components_ui.constants import WEB_DIR
+from reflex_components_ui.props import style_before
 from reflex_components_ui.style import ComponentStyles
 from reflex_components_ui.styles.segmented_control import (
     COUNT,
@@ -150,13 +151,7 @@ class SegmentedControlRoot(GroupRoot):
                 for position in range(PLACED + 1, len(children) + 1)
             }
         props.setdefault("custom_attrs", {}).setdefault("onKeyDown", _ROVING_KEY_DOWN)
-        style = props.get("style")
-        if style is None:
-            props["style"] = placement
-        elif isinstance(style, (list, tuple)):
-            props["style"] = [placement, *style]
-        else:
-            props["style"] = [placement, style]
+        style_before(props, placement)
         return super().create(
             *children, Part.create(part="indicator", tag="div"), **props
         )

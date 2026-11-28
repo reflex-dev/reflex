@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import itertools
 from collections.abc import Iterator, Sequence
 from typing import Any, ClassVar, Literal
@@ -23,6 +24,7 @@ from reflex_components_core.el import elements
 from reflex_components_ui.base import Part, UIComponent
 from reflex_components_ui.components._group import descendants, is_value, literal
 from reflex_components_ui.constants import WEB_DIR
+from reflex_components_ui.props import style_before
 from reflex_components_ui.style import ComponentStyles
 from reflex_components_ui.styles.popup import OFFSET, SHIFT
 from reflex_components_ui.styles.select import (
@@ -39,6 +41,7 @@ from reflex_components_ui.themes import LiteralAccentColor
 _SCRIPT = f"$/{WEB_DIR}/behaviors/listbox.js"
 
 
+@functools.cache
 def _script(name: str) -> Var:
     """Name a function of the script of a select.
 
@@ -50,18 +53,6 @@ def _script(name: str) -> Var:
     """
     return Var(name, _var_data=VarData(imports={_SCRIPT: [ImportVar(tag=name)]}))
 
-
-# What the element around a select listens for: the keys that move through
-# the options, the click that chooses one, and the pointer that marks one.
-_KEY_DOWN = _script("selectKeyDown")
-_CLICK = _script("selectClick")
-_POINTER_MOVE = _script("selectPointerMove")
-# What follows the popup that opens and closes, shows the value on the
-# options and on the trigger, and hands the focus the input of the value is
-# given to the trigger.
-_TOGGLE = _script("selectToggle")
-_SYNC = _script("syncSelect")
-_FOCUS = _script("selectFocus")
 
 # The events of the popup as they are rendered, by the name the script
 # calls each under.
@@ -133,22 +124,6 @@ def _pixels(amount: Any) -> Any:
     return Var(
         f'(({amount!s}) + "px")', _var_type=str, _var_data=amount._get_all_var_data()
     )
-
-
-def _styled(props: dict[str, Any], style: dict[str, Any]) -> None:
-    """Put styles a component works out before the ones it is given.
-
-    Args:
-        props: The props the component is created with.
-        style: The styles it works out.
-    """
-    given = props.get("style")
-    if given is None:
-        props["style"] = style
-    elif isinstance(given, (list, tuple)):
-        props["style"] = [style, *given]
-    else:
-        props["style"] = [style, given]
 
 
 class SelectValue(UIComponent, elements.Input):
@@ -323,17 +298,17 @@ class SelectRoot(UIComponent):
                     f"((holder) => syncSelect(holder, {arguments[0]!s}, "
                     f"{arguments[1]!s}))",
                     _var_data=VarData.merge(
-                        _SYNC._get_all_var_data(),
+                        _script("syncSelect")._get_all_var_data(),
                         *(argument._get_all_var_data() for argument in arguments),
                     ),
                 ),
-                "onFocus": _FOCUS,
+                "onFocus": _script("selectFocus"),
             },
         )
         attributes = props.setdefault("custom_attrs", {})
-        attributes.setdefault("onKeyDown", _KEY_DOWN)
-        attributes.setdefault("onClick", _CLICK)
-        attributes.setdefault("onPointerMove", _POINTER_MOVE)
+        attributes.setdefault("onKeyDown", _script("selectKeyDown"))
+        attributes.setdefault("onClick", _script("selectClick"))
+        attributes.setdefault("onPointerMove", _script("selectPointerMove"))
         return super().create(*children, holder, **props)
 
     def _post_init(self, *args, **kwargs):
@@ -709,7 +684,7 @@ class SelectContent(UIComponent):
             if props.get(prop) is not None
         }
         if distances:
-            _styled(props, distances)
+            style_before(props, distances)
         return super().create(*children, **props)
 
     def _post_init(self, *args, **kwargs):
@@ -755,7 +730,7 @@ class SelectContent(UIComponent):
             Each var referenced by the component.
         """
         yield from super()._get_vars(include_children, ignore_ids)
-        yield _TOGGLE
+        yield _script("selectToggle")
 
     def _exclude_props(self) -> list[str]:
         """Keep the props that say where the popup goes off the element.
@@ -783,7 +758,7 @@ class SelectContent(UIComponent):
             for event, name in _POPUP_EVENTS.items()
             if event in tag.props
         }
-        toggle = _TOGGLE
+        toggle = _script("selectToggle")
         if handlers:
             called = ", ".join([
                 f"{name}: {handler!s}" for name, handler in handlers.items()
@@ -791,7 +766,7 @@ class SelectContent(UIComponent):
             toggle = Var(
                 f"((event) => selectToggle(event, ({{ {called} }})))",
                 _var_data=VarData.merge(
-                    _TOGGLE._get_all_var_data(),
+                    _script("selectToggle")._get_all_var_data(),
                     *(handler._get_all_var_data() for handler in handlers.values()),
                 ),
             )
