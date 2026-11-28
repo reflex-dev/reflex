@@ -854,7 +854,9 @@ registers it.
 
    A cell is named after what differs from the base: `size-1_variant-soft`,
    `base@dark@hover`. `target` and `parts` name the elements whose computed
-   style is read when it is not the first element, `stage` sizes the frame,
+   style is read when it is not the first element (a part is one selector,
+   or one for each system, and may end in `::before` or `::after` where one
+   system draws with a pseudo-element what the other has an element for), `stage` sizes the frame,
    `crop="stage"` compares the whole frame for what is drawn outside the
    element, and `states` adds a driver for a state the runner does not know,
    such as `open`. `ready` is a JavaScript expression a page must meet before

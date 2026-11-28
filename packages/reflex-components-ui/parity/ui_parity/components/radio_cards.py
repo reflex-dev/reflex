@@ -82,6 +82,11 @@ MATRIX = Matrix(
     stage=(360, 150),
     crop="stage",
     target=TARGET,
+    parts={
+        "root": "[role=radiogroup]",
+        "surface": ("button::before", "label::before"),
+        "outline": ("button::after", "label::after"),
+    },
     # The focus is on the card of Radix and on the input in the card here.
     states={FOCUS_VISIBLE: FOCUS_WITHIN},
     # Not held to zero. The translucent fill of a card, its rounded clip and

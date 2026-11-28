@@ -89,9 +89,27 @@ MATRIX = Matrix(
     stage=(420, 80),
     crop="stage",
     target=TARGET,
+    # What is inside an item, which has a radio button before it here.
     parts={
         "root": "[role=radiogroup]",
         "indicator": "[role=radiogroup] > div",
+        "pill": "[role=radiogroup] > div::before",
+        "separator": (
+            f"{TARGET[0]} > span:nth-of-type(1)",
+            f"{TARGET[1]} > span:nth-of-type(1)",
+        ),
+        "label": (
+            f"{TARGET[0]} > span:nth-of-type(2)",
+            f"{TARGET[1]} > span:nth-of-type(2)",
+        ),
+        "active": (
+            f"{TARGET[0]} > span > span:nth-of-type(1)",
+            f"{TARGET[1]} > span > span:nth-of-type(1)",
+        ),
+        "inactive": (
+            f"{TARGET[0]} > span > span:nth-of-type(2)",
+            f"{TARGET[1]} > span > span:nth-of-type(2)",
+        ),
     },
     # The focus is on the item of Radix and on the radio button in the item
     # here.

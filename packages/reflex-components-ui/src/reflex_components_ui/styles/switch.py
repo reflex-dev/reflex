@@ -256,7 +256,6 @@ SWITCH: ComponentStyles = {
                 "cubic-bezier(0.45, 0.05, 0.55, 0.95), ease-in-out"
             ),
             "transform": {_CHECKED: f"translateX(var({_TRAVEL}))"},
-            "pointer_events": "none",
         },
     }),
     "variants": {

@@ -197,7 +197,10 @@ class Matrix:
         target: The CSS selector, below the frame, of the element whose
             computed style is read: one string, or one per system. The default
             is the first element of the frame that renders.
-        parts: Inner elements whose computed style is compared too, by name.
+        parts: Inner elements whose computed style is compared too, by name:
+            a selector, or one per system, which may end in ``::before`` or
+            ``::after`` where a system draws with a pseudo-element what the
+            other has an element for.
         properties: The computed properties compared.
         threshold: How far a pixel's color may be off, from 0 to 1, before the
             pixel counts as differing.

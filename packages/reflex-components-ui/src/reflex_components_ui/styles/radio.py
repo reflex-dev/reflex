@@ -34,9 +34,10 @@ def _look(variant: str, high_contrast: bool) -> dict[str, Any]:
                 _CHECKED_ENABLED: fill,
                 DISABLED: gray.a[3],
             },
+            # The ring stays under the dot of a checked radio button, as it
+            # does on the button Radix Themes draws one with.
             "box_shadow": {
                 "default": f"inset 0 0 0 1px {gray.a[7]}",
-                _CHECKED_ENABLED: "none",
                 DISABLED: f"inset 0 0 0 1px {gray.a[6]}",
             },
         }

@@ -61,6 +61,15 @@ MATRIX = Matrix(
     stage=(160, 110),
     crop="stage",
     target=TARGET,
+    # The box and the check are drawn by the checkbox itself here, where
+    # Radix has an element for the check.
+    parts={
+        "root": "[role=group]",
+        "item": "label",
+        "inner": "label > span",
+        "box": ("button::before", "input::before"),
+        "check": ("button > svg", "input::after"),
+    },
     # Not held to zero, for the check alone, as the matrix of the checkbox
     # is not: it is a mask here and an svg element in Radix Themes.
     # At the default threshold 3 of the 74 cells differ, by at most 6 pixels

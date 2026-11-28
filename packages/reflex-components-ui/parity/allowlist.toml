@@ -303,3 +303,21 @@ component = "select"
 step = "the page behind an open list takes no click"
 system = "rx.ui"
 reason = "While its list is open rx.select takes the pointer off the rest of the page: a click outside closes the list and does nothing else. The list of rx.ui.select is a native popover: a click outside closes it and also reaches what is under the pointer, as with a native select, and the page behind it scrolls."
+
+[[look]]
+component = "checkbox"
+check = "style"
+properties = ["background-color", "vertical-align", "overflow-x", "overflow-y"]
+reason = "The check of rx.checkbox is an icon, an svg element drawn in its color. The check of rx.ui.checkbox is drawn by the checkbox itself: a box of the size and the color of the icon, cut to its shape by a mask. It paints the same."
+
+[[look]]
+component = "checkbox_group"
+check = "style"
+properties = ["background-color", "vertical-align", "overflow-x", "overflow-y"]
+reason = "The check of rx.checkbox_group is an icon, an svg element drawn in its color. The check of rx.ui.checkbox_group is drawn by the checkbox itself: a box of the size and the color of the icon, cut to its shape by a mask. It paints the same."
+
+[[look]]
+component = "checkbox_cards"
+check = "style"
+properties = ["background-color", "vertical-align", "overflow-x", "overflow-y"]
+reason = "The check of rx.checkbox_cards is an icon, an svg element drawn in its color. The check of rx.ui.checkbox_cards is drawn by the checkbox itself: a box of the size and the color of the icon, cut to its shape by a mask. It paints the same."

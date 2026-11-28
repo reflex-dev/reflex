@@ -19,7 +19,7 @@ def test_switch(
     assert component.render() == {
         "name": '"input"',
         "props": [
-            "className:sx_14daba69db_c",
+            "className:sx_fd86994bd3_c",
             "defaultChecked:true",
             'id:"wifi"',
             'name:"wifi"',
@@ -144,7 +144,6 @@ def test_switch(
             "transform": {
                 "::after": {":checked": "translateX(var(--switch-thumb-translate-x))"}
             },
-            "pointerEvents": {"::after": "none"},
             "--switch-height": "calc(var(--space-5) * 5 / 6)",
             "--switch-border-radius": "max(var(--radius-2), var(--radius-thumb))",
             "boxShadow": {
@@ -189,7 +188,7 @@ def test_switch_classic_high_contrast(
         "name": '"input"',
         "props": [
             "checked:true",
-            'className:sx_7350a6aadb_c + " " + reflexUIClasses_e201574881 + " " + reflexUIClasses_6d1e87c3d8',
+            'className:sx_c196716516_c + " " + reflexUIClasses_e201574881 + " " + reflexUIClasses_6d1e87c3d8',
             "disabled:true",
             "readOnly:true",
             "required:true",
@@ -315,7 +314,6 @@ def test_switch_classic_high_contrast(
             "transform": {
                 "::after": {":checked": "translateX(var(--switch-thumb-translate-x))"}
             },
-            "pointerEvents": {"::after": "none"},
             "--switch-height": {
                 "default": "var(--space-4)",
                 "@media (min-width: 1024px)": "var(--space-5)",
@@ -469,7 +467,6 @@ def test_switch_soft(
             "transform": {
                 "::after": {":checked": "translateX(var(--switch-thumb-translate-x))"}
             },
-            "pointerEvents": {"::after": "none"},
             "--switch-height": "calc(var(--space-5) * 5 / 6)",
             "--switch-border-radius": "max(var(--radius-2), var(--radius-thumb))",
             "boxShadow": {

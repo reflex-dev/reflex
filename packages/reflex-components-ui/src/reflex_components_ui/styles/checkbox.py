@@ -90,7 +90,12 @@ def _look(variant: str, high_contrast: bool, disabled: str) -> dict[str, Any]:
         check = accent[12] if high_contrast else accent.a[11]
     return {
         "_before": box,
-        "_after": {"background_color": {"default": check, DISABLED: gray.a[8]}},
+        # The check has the color Radix gives its icon, and is a mask
+        # filled with it.
+        "_after": {
+            "color": {"default": check, DISABLED: gray.a[8]},
+            "background_color": "currentcolor",
+        },
     }
 
 
