@@ -169,12 +169,14 @@ def _keyboard(run: Run) -> None:
     assert run.page.locator("#area").evaluate(
         f"(area) => ({SCROLLER})(area) === document.activeElement"
     )
-    run.page.keyboard.press("End")
+    # A page down and back up: the keys every engine scrolls a focused box
+    # with. WebKit leaves Home and End to the platform, which may not bind them.
+    run.page.keyboard.press("Space")
     run.page.wait_for_function(
         f"(() => {{ const scroller = ({SCROLLER})(document.getElementById('area'));"
         " return scroller.scrollTop > 0; })()"
     )
-    run.page.keyboard.press("Home")
+    run.page.keyboard.press("Shift+Space")
     run.page.wait_for_function(
         f"({SCROLLER})(document.getElementById('area')).scrollTop === 0"
     )
