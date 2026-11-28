@@ -27,7 +27,7 @@ def test_avatar_fallback_alone(
         "children": [
             {
                 "name": '"span"',
-                "props": ["className:sx_d9c345d227_c"],
+                "props": ["className:sx_2cb4e09027_c"],
                 "children": [{"contents": '"AB"'}],
             }
         ],
@@ -66,7 +66,7 @@ def test_avatar_fallback_alone(
             "borderBottomRightRadius": "inherit",
             "borderBottomLeftRadius": "inherit",
             "textTransform": "uppercase",
-            "flexShrink": 0,
+            "flexShrink": {":not(:only-child)": 0},
             "visibility": {"[data-status='loaded']": "hidden"},
             "fontSize": "var(--avatar-fallback-two-letters-font-size, "
             "var(--avatar-fallback-one-letter-font-size))",
@@ -101,7 +101,7 @@ def test_avatar_image_over_the_fallback(
         "children": [
             {
                 "name": '"span"',
-                "props": ["className:sx_a4a6b79df8_c"],
+                "props": ["className:sx_3102976db3_c"],
                 "children": [{"contents": '"A"'}],
             },
             {
@@ -149,7 +149,7 @@ def test_avatar_image_over_the_fallback(
             "borderBottomRightRadius": "inherit",
             "borderBottomLeftRadius": "inherit",
             "textTransform": "uppercase",
-            "flexShrink": 0,
+            "flexShrink": {":not(:only-child)": 0},
             "visibility": {"[data-status='loaded']": "hidden"},
             "fontSize": "var(--avatar-fallback-one-letter-font-size)",
             "backgroundColor": "var(--accent-12)",
@@ -186,7 +186,7 @@ def test_avatar_fallback_bound_to_state(
         "children": [
             {
                 "name": '"span"',
-                "props": ["className:sx_5204d15c1d_c"],
+                "props": ["className:sx_24751921fb_c"],
                 "children": [
                     {
                         "contents": "reflex___state____state__tests___units___reflex_components_ui___components___test_avatar____avatar_state.initials_rx_state_"
@@ -245,7 +245,7 @@ def test_avatar_fallback_bound_to_state(
             "borderBottomRightRadius": "inherit",
             "borderBottomLeftRadius": "inherit",
             "textTransform": "uppercase",
-            "flexShrink": 0,
+            "flexShrink": {":not(:only-child)": 0},
             "visibility": {"[data-status='loaded']": "hidden"},
             "backgroundColor": "var(--accent-a3)",
             "color": "var(--accent-a11)",

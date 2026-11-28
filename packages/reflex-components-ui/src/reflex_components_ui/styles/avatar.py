@@ -132,8 +132,9 @@ def _fallback(font_size: str | None) -> ComponentStyles:
         "line_height": 1,
         "border_radius": "inherit",
         "text_transform": "uppercase",
-        # Under the image, which is as large: neither gives way to the other.
-        "flex_shrink": 0,
+        # Under the image, which is as large: neither gives way to the
+        # other. Alone it is the fallback of Radix Themes, which may shrink.
+        "flex_shrink": {":not(:only-child)": 0},
         # An image that loaded is all there is to see, see-through or not.
         "visibility": {"[data-status='loaded']": "hidden"},
     }

@@ -689,7 +689,7 @@ def test_button_loading(
             },
             {
                 "name": '"span"',
-                "props": ["className:sx_0daea2e46b_c"],
+                "props": ["className:sx_fcdd32a514_c"],
                 "children": [{"contents": '"Save"'}],
             },
             {
@@ -846,9 +846,17 @@ def test_button_loading(
         {
             "position": "absolute",
             "borderTopWidth": "0",
+            "borderTopStyle": "none",
+            "borderTopColor": "currentcolor",
             "borderRightWidth": "0",
+            "borderRightStyle": "none",
+            "borderRightColor": "currentcolor",
             "borderBottomWidth": "0",
+            "borderBottomStyle": "none",
+            "borderBottomColor": "currentcolor",
             "borderLeftWidth": "0",
+            "borderLeftStyle": "none",
+            "borderLeftColor": "currentcolor",
             "width": "1px",
             "height": "1px",
             "paddingTop": "0",
@@ -940,7 +948,7 @@ def test_button_bound_to_state(
                                 },
                                 {
                                     "name": '"span"',
-                                    "props": ["className:sx_0daea2e46b_c"],
+                                    "props": ["className:sx_fcdd32a514_c"],
                                     "children": [{"contents": '"Save"'}],
                                 },
                                 {
