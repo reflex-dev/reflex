@@ -82,12 +82,6 @@ cells = "*type-always*"
 reason = "rx.ui.scroll_area scrolls natively and has the scrollbars of the browser, thin and in the grays of the theme, where rx.scroll_area draws scrollbars of its own with JavaScript. Their shape and where they show follow the browser and the system: they may take room beside the content or lie over it, and `type` \"hover\" and \"scroll\" and `scroll_hide_delay` are left to them."
 
 [[look]]
-component = "table"
-check = "style"
-properties = ["overflow-x", "overflow-y"]
-reason = "The box a table scrolls in is an rx.ui.scroll_area, which is itself the element that scrolls. In rx.table it is a clipped box around a viewport that scrolls and the scrollbars it draws."
-
-[[look]]
 component = "checkbox"
 check = "a11y"
 reason = "A checked rx.checkbox holds its check as an image without a name, which a screen reader may announce inside the checkbox. rx.ui.checkbox is one native input: its check is drawn by its styles and is nothing to the accessibility tree, which has the role, the name and the state of the checkbox alone."

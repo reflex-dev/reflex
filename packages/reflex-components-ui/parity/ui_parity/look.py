@@ -582,8 +582,10 @@ def _unmatched(
     """Find the elements whose insides the two systems build differently.
 
     The elements inside the compared one correspond while each has as many
-    element children in one system as in the other. Where it does not, what
-    is inside it cannot be told apart and is not compared.
+    element children in one system as in the other. One that does not is
+    another element standing in the same place, as the thumb of a Radix
+    slider stands where rx.ui has a range input: it is not compared, and
+    neither is what is inside it.
 
     Args:
         reference: The computed properties of the reference, by part.
@@ -602,8 +604,8 @@ def _unmatched(
         (count, tag), (their_count, _) = ours[path].split(), theirs[path].split()
         if count != their_count:
             unmatched[path] = (
-                f"inside {_describe_path(path, tag)}: rx has {count} element "
-                f"children, rx.ui {their_count}"
+                f"{'at and ' if path else ''}inside {_describe_path(path, tag)}: "
+                f"rx has {count} element children, rx.ui {their_count}"
             )
     return unmatched
 
@@ -656,10 +658,13 @@ def _style_differences(
         ours, theirs = reference.get(part), candidate.get(part)
         name = part
         if part.startswith(">"):
-            # Not one a system names as a part, nor inside what differs in shape.
+            # Not one a system names as a part, nor one the systems build
+            # differently, nor inside such a one: an element with other
+            # insides is another element that happens to stand in its place.
             if (
                 ours is None
                 or theirs is None
+                or part in unmatched
                 or any(_inside(part, root) for root in unmatched)
             ):
                 continue

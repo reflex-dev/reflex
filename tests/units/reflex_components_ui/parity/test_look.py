@@ -130,11 +130,11 @@ def test_style_differences_reach_the_elements_inside_that_correspond():
     assert _style_differences(reference, candidate) == [
         StyleDifference("> 1 <code>", "isolation", "isolate", "auto"),
         StyleDifference("> 1 > 1 <b>", "color", "red", "blue"),
-        StyleDifference("> 2 <span>", "color", "red", "green"),
         StyleDifference("icon", "(element)", None, "present"),
     ]
     assert _unmatched(reference, candidate) == {
-        "> 2": "inside > 2 <span>: rx has 2 element children, rx.ui 1"
+        # Built differently: neither it nor what is inside it is compared.
+        "> 2": "at and inside > 2 <span>: rx has 2 element children, rx.ui 1"
     }
     # Nothing inside an element that differs at its root is compared.
     assert _style_differences(
