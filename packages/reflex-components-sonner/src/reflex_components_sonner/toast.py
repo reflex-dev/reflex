@@ -47,7 +47,9 @@ toast_ref = Var(
     _js_expr="refs['__toast']",
     _var_data=VarData(
         imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag="refs")]},
-        app_wraps=[(44, ToasterRequest.create())],
+        # Not create(): that imports reflex-components-core, which depends on
+        # this package and so is absent when it is installed or built alone.
+        app_wraps=[(44, ToasterRequest._create([]))],
     ),
 )
 
