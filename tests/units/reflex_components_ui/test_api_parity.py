@@ -165,6 +165,7 @@ def test_every_wave_is_in_the_namespace():
         "segmented_control.root",
         "separator",
         "skeleton",
+        "slider",
         "spacer",
         "spinner",
         "stack",

@@ -218,7 +218,10 @@ def _focus_within(page: Page, target: Locator, point: Point) -> None:
         """element => {
             const control = element.matches(
                 'button, input, select, textarea, [tabindex]'
-            ) ? element : element.querySelector('input, button, select, textarea');
+            ) ? element : element.querySelector(
+                'input:not([type=hidden], [aria-hidden]), button, select, textarea,'
+                + ' [tabindex]:not([tabindex="-1"])'
+            );
             control.focus();
             try {
                 control.setSelectionRange?.(0, 0);

@@ -24,6 +24,7 @@ from reflex_base.vars.base import LiteralVar, Var, VarData
 from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.cond import Cond
+from reflex_components_core.core.foreach import Foreach
 
 from reflex_components_ui.plugin import UIPlugin
 from reflex_components_ui.style import (
@@ -814,7 +815,7 @@ class Part(UIComponent):
 
 
 # What renders no element of its own, between a component and its parts.
-_NO_ELEMENT = (Fragment, Cond)
+_NO_ELEMENT = (Fragment, Cond, Foreach)
 
 
 def _bind_parts(
@@ -842,7 +843,8 @@ def _bind_parts(
             child._merged = merged
             _bind_parts(child.children, parts, name)
         elif type(child) in _NO_ELEMENT:
-            # A part that is only rendered under a condition.
+            # A part that is only rendered under a condition, or once for
+            # each item of a list.
             _bind_parts(child.children, parts, name)
 
 

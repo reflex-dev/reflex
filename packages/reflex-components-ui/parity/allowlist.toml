@@ -206,3 +206,30 @@ component = "segmented_control"
 step = "chooses an item with JavaScript disabled"
 system = "rx"
 reason = "The items of rx.segmented_control are buttons that JavaScript turns into radio buttons: until it has run, a click does nothing. An item of rx.ui.segmented_control is a label around a native radio button, which the browser checks with or without JavaScript."
+
+[[look]]
+component = "slider"
+check = "a11y"
+reason = "A thumb of rx.ui.slider is a native range input, which says its value to the accessibility tree as every such input does. A thumb of rx.slider has its value in `aria-valuenow` alone."
+
+[[contract]]
+component = "slider"
+step = "moves with the keyboard with JavaScript disabled"
+system = "rx"
+reason = "rx.slider is drawn and moved by JavaScript: until it has run, its thumb takes no focus and no key. The thumbs of rx.ui.slider are native range inputs, which the keyboard and the pointer move with or without JavaScript; only the filled part of the track waits for it."
+
+[[contract]]
+component = "slider"
+step = "the thumb of a slider has the name the slider is given"
+system = "rx"
+reason = "An `aria_label` of rx.slider names the element around its thumb, so the thumb, which is what a screen reader lands on, has no name. rx.ui.slider gives the label to the thumb."
+
+[[contract]]
+component = "slider"
+step = "Shift and an arrow key move a thumb by ten steps"
+reason = "The thumbs of rx.ui.slider are native range inputs: the browser moves one by one step for an arrow key, with or without Shift, and by ten for Page Up and Page Down, as rx.slider does for those."
+
+[[contract]]
+component = "slider"
+step = "a thumb can be moved past the one after it"
+reason = "A thumb of rx.ui.slider stops at the thumbs beside it, where a thumb of rx.slider passes them and the two change places. Home and End move the thumb that has the focus, where rx.slider moves the first and the last whichever has it."

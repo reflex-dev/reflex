@@ -27,6 +27,7 @@ _SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = {
     "components.segmented_control": ["segmented_control"],
     "components.separator": ["divider", "separator"],
     "components.skeleton": ["skeleton"],
+    "components.slider": ["slider"],
     "components.spinner": ["spinner"],
     "components.switch": ["switch"],
     "components.table": ["table"],
