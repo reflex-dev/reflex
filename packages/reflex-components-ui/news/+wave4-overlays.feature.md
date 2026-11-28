@@ -1,0 +1,1 @@
+Add the overlays and the disclosure components to `rx.ui`: `tabs`, with the members of its namespace. Each takes the arguments of the component of the same name in `rx` and looks the same. Tabs are buttons and panels the server renders in the state they start in; a small script selects a tab on a press, on the focus and with the arrow keys.

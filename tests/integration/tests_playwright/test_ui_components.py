@@ -821,6 +821,22 @@ def UIComponentsApp(radix: bool = False):
             rx.el.span(ControlState.submitted.to_string(), id="submitted"),
         )
 
+    def overlays():
+        tabs = rx.ui.tabs
+        return rx.el.main(
+            # Panels an app lays out: the one that is not selected stays hidden.
+            tabs.root(
+                tabs.list(
+                    tabs.trigger("First", value="first"),
+                    tabs.trigger("Second", value="second"),
+                ),
+                tabs.content("One", value="first", display="flex", id="first-panel"),
+                tabs.content("Two", value="second", display="flex", id="second-panel"),
+                default_value="first",
+            ),
+            rx.el.span(rx.cond(rx.State.is_hydrated, "ready", "loading"), id="ready"),
+        )
+
     # The style of the app for a component of the wave, as an app writes it.
     app = rx.App(
         stylesheets=["unlayered.css"],
@@ -830,6 +846,7 @@ def UIComponentsApp(radix: bool = False):
     app.add_page(wave, route="/wave")
     app.add_page(actions, route="/actions")
     app.add_page(controls, route="/controls")
+    app.add_page(overlays, route="/overlays")
     app.add_page(literal, route="/literal")
     app.add_page(styled, route="/styled")
     app.add_page(theme, route="/theme")
@@ -1826,3 +1843,22 @@ def test_form_controls_work_in_an_app(ui_app: AppHarness, page: Page):
         '{"name":"Ada L","plan":"Pro","notes":"None","agree":true,"alerts":true,'
         '"letter":"b","toppings":"egg","size":"s","extras":"gift","volume":"31"}'
     )
+
+
+def test_overlays_and_disclosure_work_in_an_app(ui_app: AppHarness, page: Page):
+    """The overlays, the tabs and the accordion work in a real app, in dev and prod."""
+    assert ui_app.frontend_url is not None
+    page.goto(ui_app.frontend_url.rstrip("/") + "/overlays")
+    expect(page.locator("#ready")).to_have_text("ready")
+
+    # The panel of the selected tab alone is shown, whatever display an app
+    # gives the panels.
+    first, second = page.locator("#first-panel"), page.locator("#second-panel")
+    expect(first).to_have_css("display", "flex")
+    expect(second).to_have_css("display", "none")
+    page.get_by_role("tab", name="Second").click()
+    expect(first).to_have_css("display", "none")
+    expect(second).to_have_css("display", "flex")
+    page.keyboard.press("ArrowLeft")
+    expect(first).to_be_visible()
+    expect(page.get_by_role("tab", name="First")).to_be_focused()

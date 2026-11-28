@@ -32,6 +32,7 @@ _SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = {
     "components.spinner": ["spinner"],
     "components.switch": ["switch"],
     "components.table": ["table"],
+    "components.tabs": ["tabs"],
     "components.text_area": ["text_area"],
     "components.text_field": ["input", "text_field"],
     "layout.box": ["box"],

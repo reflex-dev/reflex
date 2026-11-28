@@ -1,6 +1,6 @@
 // The keys of a group that is one stop for Tab: the arrow keys, Home and End
 // move the focus between its radio buttons without choosing one, and Enter
-// chooses.
+// chooses. The triggers of tabs move the same way, along their list.
 import { beforeEach, expect, test } from "vitest";
 
 import { rovingKeyDown } from "$/reflex-ui/behaviors/roving-focus.js";
@@ -118,4 +118,63 @@ test("other keys, keys with a modifier and other controls are left to the browse
   expect(press("ArrowRight")).toBe(false);
   expect(press("Enter")).toBe(false);
   expect(document.activeElement?.id).toBe("text");
+});
+
+/**
+ * Render a list of tabs in place of the group.
+ *
+ * @param {string} [attributes] The attributes of the list.
+ * @returns {void}
+ */
+function tabs(attributes = "") {
+  document.body.innerHTML = `
+    <div id="group" role="tablist" ${attributes}>
+      <button role="tab" value="a"><span>A</span></button>
+      <button role="tab" value="b" disabled>B</button>
+      <button role="tab" value="c">C</button>
+      <button id="other">Other</button>
+    </div>`;
+  group = /** @type {HTMLElement} */ (document.getElementById("group"));
+}
+
+test("the triggers of tabs move along a horizontal list, and Enter is theirs", () => {
+  tabs('aria-orientation="horizontal"');
+  radio("a").focus();
+  expect(press("ArrowDown")).toBe(false);
+  expect(press("ArrowUp")).toBe(false);
+  expect(press("Enter")).toBe(false);
+  expect(focused()).toBe("a");
+  expect(press("ArrowRight")).toBe(true);
+  expect(focused()).toBe("c");
+  expect(press("ArrowRight")).toBe(true);
+  expect(focused()).toBe("a");
+  expect(press("End")).toBe(true);
+  expect(focused()).toBe("c");
+  /** @type {HTMLElement} */ (document.getElementById("other")).focus();
+  expect(press("ArrowRight")).toBe(false);
+  expect(document.activeElement?.id).toBe("other");
+});
+
+test("the triggers of vertical tabs move with up and down alone", () => {
+  tabs('aria-orientation="vertical" dir="rtl" style="direction: rtl"');
+  radio("a").focus();
+  expect(press("ArrowRight")).toBe(false);
+  expect(press("ArrowLeft")).toBe(false);
+  expect(focused()).toBe("a");
+  expect(press("ArrowDown")).toBe(true);
+  expect(focused()).toBe("c");
+  expect(press("ArrowUp")).toBe(true);
+  expect(focused()).toBe("a");
+});
+
+test("a list that does not loop stops at its ends", () => {
+  tabs('data-loop="false"');
+  radio("a").focus();
+  expect(press("ArrowLeft")).toBe(true);
+  expect(focused()).toBe("a");
+  expect(press("ArrowUp")).toBe(true);
+  expect(focused()).toBe("a");
+  expect(press("ArrowRight")).toBe(true);
+  expect(press("ArrowDown")).toBe(true);
+  expect(focused()).toBe("c");
 });

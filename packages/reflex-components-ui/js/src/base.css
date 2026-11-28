@@ -118,6 +118,14 @@ html.dark {
     margin-top: var(--space-2);
   }
 
+  /*
+   * The panel of a tab that is not selected is not shown, whatever display
+   * the app gives a panel.
+   */
+  [data-rx-tabs-content][hidden] {
+    display: none !important;
+  }
+
   /* The thumb of the scrollbar of a text area, under the pointer. */
   @media (hover: hover) {
     [data-rx-text-area-input]:not(:disabled)::-webkit-scrollbar-thumb:hover {

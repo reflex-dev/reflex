@@ -278,3 +278,9 @@ component = "select"
 step = "the page behind an open list takes no click"
 system = "rx.ui"
 reason = "While its list is open rx.select takes the pointer off the rest of the page: a click outside closes the list and does nothing else. The list of rx.ui.select is a native popover: a click outside closes it and also reaches what is under the pointer, as with a native select, and the page behind it scrolls."
+
+[[contract]]
+component = "tabs"
+step = "a trigger and a panel given ids of their own name each other"
+system = "rx"
+reason = "A trigger of rx.tabs names its panel, and the panel its trigger, by an id rx.tabs makes up, so giving either an `id` breaks the link and a screen reader no longer says which tab a panel belongs to. rx.ui.tabs names each by the id it was given."

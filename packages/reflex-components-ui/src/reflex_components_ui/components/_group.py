@@ -65,12 +65,15 @@ class GroupRoot(UIComponent):
         """Work out what the items of the group are given, before they join."""
 
 
-def descendants(component: BaseComponent, kind: type[T]) -> Iterator[T]:
+def descendants(
+    component: BaseComponent, kind: type[T], root: type = GroupRoot
+) -> Iterator[T]:
     """Find the items of a group below its root, at any depth.
 
     Args:
         component: The root of the group, or what is searched below it.
         kind: The class of the items.
+        root: The class of the roots.
 
     Yields:
         Each item, in the order of the tree. What is below the root of
@@ -79,8 +82,8 @@ def descendants(component: BaseComponent, kind: type[T]) -> Iterator[T]:
     for child in component.children:
         if isinstance(child, kind):
             yield child
-        if not isinstance(child, GroupRoot):
-            yield from descendants(child, kind)
+        if not isinstance(child, root):
+            yield from descendants(child, kind, root)
 
 
 class GroupMember:
