@@ -49,6 +49,7 @@ class Area(VoidBaseHTML):
 
 
 CrossOrigin = Literal["anonymous", "use-credentials", ""]
+FetchPriority = Literal["auto", "high", "low"]
 
 
 class Audio(BaseHTML):
@@ -91,6 +92,10 @@ class Img(VoidBaseHTML):
     )
 
     decoding: Var[ImageDecoding] = field(doc="How the image should be decoded")
+
+    fetch_priority: Var[FetchPriority] = field(
+        doc="Priority of fetching the image relative to other images"
+    )
 
     loading: Var[ImageLoading] = field(
         doc="Specifies the loading behavior of the image"
@@ -257,6 +262,10 @@ class Source(VoidBaseHTML):
 
     tag = "source"
 
+    height: Var[str | int] = field(
+        doc="Intrinsic height of the image in pixels, for a source of a picture element"
+    )
+
     media: Var[str] = field(
         doc="Media query indicating what device the linked resource is optimized for"
     )
@@ -272,6 +281,10 @@ class Source(VoidBaseHTML):
     )
 
     type: Var[str] = field(doc="Media type of the source")
+
+    width: Var[str | int] = field(
+        doc="Intrinsic width of the image in pixels, for a source of a picture element"
+    )
 
 
 class Svg(BaseHTML):

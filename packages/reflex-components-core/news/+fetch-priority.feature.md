@@ -1,0 +1,1 @@
+`rx.el.img`, `rx.el.link` and `rx.el.script` take `fetch_priority` (`"high"`, `"low"` or `"auto"`), rendered as the `fetchpriority` attribute, and `rx.el.source` takes the `width` and `height` of its image.

@@ -5,7 +5,7 @@ from reflex_base.vars.base import Var
 
 from reflex_components_core.el.element import Element
 from reflex_components_core.el.elements.inline import ReferrerPolicy
-from reflex_components_core.el.elements.media import CrossOrigin
+from reflex_components_core.el.elements.media import CrossOrigin, FetchPriority
 
 from .base import BaseHTML, VoidBaseHTML
 
@@ -32,6 +32,10 @@ class Link(VoidBaseHTML):
 
     cross_origin: Var[CrossOrigin] = field(
         doc="Specifies the CORS settings for the linked resource"
+    )
+
+    fetch_priority: Var[FetchPriority] = field(
+        doc="Priority of fetching the linked resource relative to others of its type"
     )
 
     href: Var[str] = field(doc="Specifies the URL of the linked document/resource")
