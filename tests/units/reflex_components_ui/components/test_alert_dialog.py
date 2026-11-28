@@ -32,7 +32,7 @@ def test_alert_dialog(
             force_mount=True,
             on_escape_key_down=rx.console_log("escape"),
         ),
-        on_open_change=rx.console_log,
+        on_open_change=rx.console_log("changed"),
     )
     assert component.render() == {
         "name": '"div"',
@@ -61,17 +61,21 @@ def test_alert_dialog(
                     '"aria-describedby":"rx-dialog-1-describedby"',
                     '"aria-labelledby":"rx-dialog-1-labelledby"',
                     "className:sx_bf687cb34b_c",
+                    '"data-rx-keep":"outside"',
                     '"data-rx-popup":""',
                     'id:"rx-dialog-1"',
                     "onCancel:dialogEvent",
                     "onClose:dialogEvent",
-                    'ref:((dialog) => dialogSync(dialog, null, ({ open: ((_ev_0) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : (() => (console?.["log"](_ev_0))), ["callback"] : null }), ({  })))], [_ev_0], ({  })))), escape: ((...args) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : (() => (console?.["log"]("escape"))), ["callback"] : null }), ({  })))], args, ({  })))) })))',
+                    'ref:((dialog) => dialogSync(dialog, null, ({ open: ((_ev_0) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : (() => (console?.["log"]("changed"))), ["callback"] : null }), ({  })))], [_ev_0], ({  })))), escape: ((...args) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : (() => (console?.["log"]("escape"))), ["callback"] : null }), ({  })))], args, ({  })))) })))',
                     'role:"alertdialog"',
                 ],
                 "children": [
                     {
                         "name": '"div"',
-                        "props": ["className:sx_18e4ad36e3_c"],
+                        "props": [
+                            "className:sx_18e4ad36e3_c",
+                            '"data-rx-dialog-pad":""',
+                        ],
                         "children": [
                             {
                                 "name": '"div"',

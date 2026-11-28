@@ -208,6 +208,12 @@ class DialogSlot(DialogPart):
                 an element.
         """
         super()._post_init(*args, **kwargs)
+        if "as_child" in self.get_fields():
+            # The part says itself whether it is its child, and is a button
+            # around its children otherwise.
+            if not self._as_child:
+                self.tag = "button"
+            return
         children = self.children
         if (
             len(children) != 1
@@ -318,6 +324,10 @@ class DialogSurface(DialogPart):
     # The role of the dialog, when it is not the one the element has.
     _role: ClassVar[str | None] = None
 
+    # What does not dismiss the dialog: ``outside`` for a press beside its
+    # panel, ``all`` for that and Escape.
+    _keeps: ClassVar[str | None] = None
+
     def _post_init(self, *args, **kwargs):
         """Initialize the dialog, as one that is not bound to state.
 
@@ -386,6 +396,7 @@ class DialogSurface(DialogPart):
         tag = tag.add_props(**{
             "data-rx-popup": "",
             "role": self._role,
+            "data-rx-keep": self._keeps,
             **self._dialog,
             # Called whenever the page renders: a dialog bound to state
             # takes whether it is open from there.
@@ -414,7 +425,15 @@ def surface(
     Returns:
         The dialog: the room around the panel is what scrolls a tall one.
     """
-    return kind.create(Part.create(content, part="pad", tag="div"), **events)
+    return kind.create(
+        Part.create(
+            content,
+            part="pad",
+            tag="div",
+            custom_attrs={"data-rx-dialog-pad": ""},
+        ),
+        **events,
+    )
 
 
 class DialogTitleBase(DialogPart):

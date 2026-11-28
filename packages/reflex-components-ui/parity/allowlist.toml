@@ -373,3 +373,39 @@ reason = "rx.alert_dialog is opened by JavaScript: until it has run, a press on 
 component = "alert_dialog"
 step = "Tab stays inside an open alert dialog"
 reason = "rx.ui.alert_dialog is a native modal dialog: the page behind it is inert, and Tab goes from its last element to the browser's own controls and back to its first, as in every native dialog. rx.alert_dialog keeps the focus from leaving the dialog at all."
+
+[[look]]
+component = "drawer"
+check = "style"
+cells = "*@open"
+properties = ["pointer-events"]
+reason = "While it is open rx.drawer takes the pointer off the rest of the page with a style on the body. rx.ui.drawer is a native modal dialog: the browser makes the page behind it inert, which takes the pointer, the keyboard and assistive technology off it without a style."
+
+[[contract]]
+component = "drawer"
+step = "what it holds is in the server render"
+system = "rx"
+reason = "rx.drawer renders what it holds when it opens: the page the server sends has only its trigger. What rx.ui.drawer holds is in the page from the start, in a dialog that is closed, and it keeps its state between two openings."
+
+[[contract]]
+component = "drawer"
+step = "opens and closes with JavaScript disabled"
+system = "rx"
+reason = "rx.drawer is opened by JavaScript: until it has run, a press on its trigger does nothing. The trigger and the close button of rx.ui.drawer are buttons that command a native dialog, which a browser with invoker commands opens and closes with or without JavaScript."
+
+[[contract]]
+component = "drawer"
+step = "the focus moves into the drawer, and back to its trigger"
+system = "rx"
+reason = "rx.drawer leaves the focus on its trigger while the drawer is open, so the keyboard and a screen reader start behind it. rx.ui.drawer is a native modal dialog: the focus moves to the first control inside it, and back to the trigger when it closes."
+
+[[contract]]
+component = "drawer"
+step = "Tab does not reach the page behind an open drawer"
+system = "rx"
+reason = "With rx.drawer open, Tab goes on through the page behind it. rx.ui.drawer is a native modal dialog: the page behind it is inert, and Tab moves through the drawer and the browser's own controls."
+
+[[contract]]
+component = "drawer"
+step = "is dragged out of the page by its panel"
+reason = "rx.ui.drawer is not dragged: it is closed by Escape, by a press beside its panel and by its close button, and `snap_points`, `fade_from_index`, `handle_only`, `close_threshold`, `scroll_lock_timeout`, `prevent_scroll_restoration` and `should_scale_background`, which all describe the drag of rx.drawer, have nothing to say. The handle is drawn and does nothing."

@@ -47,8 +47,10 @@ class AlertDialogTrigger(DialogTriggerBase):
 class AlertDialogOverlay(DialogSurface):
     """The native dialog around the content of an alert dialog."""
 
-    # A press beside the panel of an alert dialog does not dismiss it.
     _role: ClassVar[str | None] = "alertdialog"
+
+    # A press beside the panel of an alert dialog does not dismiss it.
+    _keeps: ClassVar[str | None] = "outside"
 
     on_open_change: EventHandler[passthrough_event_spec(bool)] = field(
         doc="Fired when the open state changes."

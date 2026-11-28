@@ -74,7 +74,10 @@ def test_dialog(
                 "children": [
                     {
                         "name": '"div"',
-                        "props": ["className:sx_18e4ad36e3_c"],
+                        "props": [
+                            "className:sx_18e4ad36e3_c",
+                            '"data-rx-dialog-pad":""',
+                        ],
                         "children": [
                             {
                                 "name": '"div"',
@@ -323,7 +326,10 @@ def test_dialog_in_a_dialog(ui_plugin: UIPlugin):
                 "children": [
                     {
                         "name": '"div"',
-                        "props": ["className:sx_18e4ad36e3_c"],
+                        "props": [
+                            "className:sx_18e4ad36e3_c",
+                            '"data-rx-dialog-pad":""',
+                        ],
                         "children": [
                             {
                                 "name": '"div"',
@@ -364,7 +370,8 @@ def test_dialog_in_a_dialog(ui_plugin: UIPlugin):
                                                     {
                                                         "name": '"div"',
                                                         "props": [
-                                                            "className:sx_18e4ad36e3_c"
+                                                            "className:sx_18e4ad36e3_c",
+                                                            '"data-rx-dialog-pad":""',
                                                         ],
                                                         "children": [
                                                             {
@@ -429,7 +436,10 @@ def test_dialog_parts_alone(ui_plugin: UIPlugin):
                 "children": [
                     {
                         "name": '"div"',
-                        "props": ["className:sx_18e4ad36e3_c"],
+                        "props": [
+                            "className:sx_18e4ad36e3_c",
+                            '"data-rx-dialog-pad":""',
+                        ],
                         "children": [
                             {
                                 "name": '"div"',

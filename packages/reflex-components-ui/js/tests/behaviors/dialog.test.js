@@ -40,12 +40,12 @@ function render(attributes = "") {
     <div id="root" data-rx-dialog-root>
       <button id="open" data-rx-dialog-trigger aria-expanded="false" data-state="closed"><span id="open-text">Open</span></button>
       <dialog id="dialog" ${attributes}>
-        <div id="pad">
+        <div id="pad" data-rx-dialog-pad>
           <div id="panel">
             <button id="close" data-rx-dialog-close>Close</button>
             <div id="inner-root" data-rx-dialog-root>
               <button id="inner-open" data-rx-dialog-trigger aria-expanded="false">Inner</button>
-              <dialog id="inner"><div id="inner-pad"><button id="inner-close" data-rx-dialog-close>Back</button></div></dialog>
+              <dialog id="inner"><div id="inner-pad" data-rx-dialog-pad><button id="inner-close" data-rx-dialog-close>Back</button></div></dialog>
             </div>
           </div>
         </div>
@@ -202,7 +202,7 @@ test("a press beside the panel and Escape dismiss the dialog, and say what did",
 });
 
 test("a press beside the panel of an alert dialog does not dismiss it", () => {
-  render('role="alertdialog"');
+  render('role="alertdialog" data-rx-keep="outside"');
   const cancel = /** @type {HTMLElement} */ (document.getElementById("close"));
   cancel.setAttribute("data-rx-dialog-close", "cancel");
   press("open");
@@ -239,6 +239,25 @@ test("a dialog bound to state says what is asked of it, and shows its state", ()
     "open:false",
     "closeAutoFocus",
   ]);
+});
+
+test("a drawer that is not dismissible stays until its state says, and one that is not modal is shown beside the page", () => {
+  /** @type {string[]} */
+  const shown = [];
+  HTMLDialogElement.prototype.show = function () {
+    shown.push(this.id);
+    this.open = true;
+  };
+  render('data-rx-keep="all" data-modal="false"');
+  const { on, seen } = handlers();
+  dialogSync(dialog, null, on);
+  press("open");
+  expect(shown).toEqual(["dialog"]);
+  expect(escape()).toBe(true);
+  press("dialog");
+  press("close");
+  expect(dialog.open).toBe(true);
+  expect(seen).toEqual(["open:true", "openAutoFocus"]);
 });
 
 test("a dialog that starts open opens once", () => {

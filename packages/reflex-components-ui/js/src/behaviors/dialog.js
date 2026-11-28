@@ -41,7 +41,9 @@ function mark(dialog, open) {
  * @returns {void}
  */
 function show(dialog) {
-  dialog.showModal();
+  // A drawer that is not modal leaves the page as it is.
+  if (dialog.dataset.modal === "false") dialog.show();
+  else dialog.showModal();
   // The browser scrolls to what it gives the focus: a tall dialog starts
   // at its top, as in Radix.
   dialog.scrollTop = 0;
@@ -59,12 +61,17 @@ function show(dialog) {
  *
  * @param {HTMLDialogElement} dialog The dialog.
  * @param {boolean} open Whether to open it.
- * @param {...("escape" | "outside" | "interact")} why What dismissed it.
+ * @param {...("close" | "escape" | "outside" | "interact")} why What asked
+ *   to close it: its button, Escape, or a press beside its panel.
  * @returns {void}
  */
 function ask(dialog, open, ...why) {
   const { on, bound } = dialogs.get(dialog) ?? {};
-  for (const name of why) on?.[name]?.();
+  // An alert dialog keeps a press beside its panel from closing it, and
+  // a drawer that is not dismissible everything but its state.
+  const { rxKeep } = dialog.dataset;
+  if (why[0] && (rxKeep === "all" || rxKeep === why[0])) return;
+  for (const name of why) if (name !== "close") on?.[name]?.();
   if (bound || open) on?.open?.(open);
   if (bound) return;
   if (open) show(dialog);
@@ -111,10 +118,12 @@ export function dialogClick(event) {
   if (part?.closest(ROOT) === root) {
     // The script does what the command of a button asks the browser for.
     event.preventDefault();
-    ask(dialog, part.hasAttribute("data-rx-dialog-trigger"));
+    if (part.hasAttribute("data-rx-dialog-trigger")) ask(dialog, true);
+    else ask(dialog, false, "close");
   } else if (
-    (target === dialog || target.parentElement === dialog) &&
-    dialog.role !== "alertdialog"
+    target === dialog ||
+    (target.parentElement === dialog &&
+      target.hasAttribute("data-rx-dialog-pad"))
   )
     ask(dialog, false, "outside", "interact");
 }
