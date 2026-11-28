@@ -416,7 +416,9 @@ What the display and action wave settled, for the waves after it:
   fallback of an avatar and the scrollbars of a scroll area some time after
   the page is ready, so a screenshot has them or not. Leave such a cell out
   with a comment that says so, and cover the state in the contract, which
-  waits for it.
+  waits for it. What settles for good is waited for instead, with the
+  `ready` of its matrix: an avatar of Radix is empty until JavaScript has
+  run, and so is the trigger of its select.
 - **An animation is compared by the contract.** A screenshot is taken with
   animations off, and an animation that never ends is cancelled for it. A
   step reads `element.getAnimations()` on both systems and asserts the
@@ -535,7 +537,7 @@ reuse: placed by CSS anchor positioning, turned over by
 | `slider.js` | 660 B | the filled part of the track, the order of several thumbs, a press on the track |
 | `popup.js` | 386 B | says on a trigger that its popover is open, and gives the popups of a loop their own ids |
 | `popup-position.js` | 404 B | places a popover in a browser without anchor positioning; loaded only there |
-| `listbox.js` | 1,538 B | the value of a select, the keys of its list, typing to find an option |
+| `listbox.js` | 1,536 B | the value of a select, the keys of its list, typing to find an option |
 
 What the form controls wave settled:
 
@@ -931,7 +933,7 @@ appearance) about 0.3 s. Keep interactive states to a sweep or a small group.
 | harness | box | 8 | 5 s + 1.1 s |
 | 1: layout and typography | 19, and `text.kbd` | 1011, 44 of them interactive | 27 s + 61 s |
 | 2: display and actions | 12 | 1379, 181 of them interactive | 56 s + 178 s for both waves, 115 s of it this one |
-| 3: form controls | 13 | 1514, 318 of them interactive | 110 s + 404 s for the three waves, 179 s of it this one |
+| 3: form controls | 13 | 1514, 318 of them interactive | 106 s + 385 s for the three waves, 171 s of it this one |
 
 ## Rules the tooling enforces
 

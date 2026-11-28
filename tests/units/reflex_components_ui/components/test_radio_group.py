@@ -596,15 +596,23 @@ def test_radio_group_without_a_name(
     """Each group without a name is given one of its own: it is what groups its items."""
     monkeypatch.setattr(_group, "_names", itertools.count(7))
     names = [
-        [item.render()["props"][1] for item in group.children]
+        [item.render()["props"] for item in group.children]
         for group in (
             rx.ui.radio.root(rx.ui.radio.item(value="1"), rx.ui.radio.item(value="2")),
             rx.ui.radio.root(rx.ui.radio.item(value="1")),
         )
     ]
     assert names == [
-        ['name:"rx-radio-7"', 'name:"rx-radio-7"'],
-        ['name:"rx-radio-8"'],
+        [
+            [
+                "className:sx_8f60d95144_c",
+                f'name:"rx-radio-{number}"',
+                'type:"radio"',
+                f'value:"{value}"',
+            ]
+            for value in values
+        ]
+        for number, values in ((7, "12"), (8, "1"))
     ]
 
 

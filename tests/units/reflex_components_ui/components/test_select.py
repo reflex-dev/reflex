@@ -1496,9 +1496,15 @@ def test_select_bound_to_state(ui_plugin: UIPlugin):
     assert str(content._element_styles().style.style["--rx-popup-offset"]) == (  # pyright: ignore[reportAttributeAccessIssue]
         f'(({STATE}.offset_rx_state_) + "px")'
     )
-    assert [item.render()["props"][0] for item in content.children] == [
-        f'"aria-selected":(({fruit} === "apple") ? "true" : "false")',
-        f'"aria-selected":(({fruit} === "pear") ? "true" : "false")',
+    assert [item.render()["props"] for item in content.children] == [
+        [
+            f'"aria-selected":(({fruit} === "{value}") ? "true" : "false")',
+            "className:sx_afbb711e7e_c",
+            f'"data-value":"{value}"',
+            'role:"option"',
+            "tabIndex:-1",
+        ]
+        for value in ("apple", "pear")
     ]
     assert holder.render()["props"] == [
         '"aria-hidden":true',
@@ -1547,9 +1553,13 @@ def test_select_shows_what_it_knows(ui_plugin: UIPlugin):
             trigger(*trigger_children, placeholder="Pick"), content(*options), **props
         )
         rendered = root.children[0].children[0].render()
-        return rendered["props"][1:], rendered["children"]
+        return rendered["props"], rendered["children"]
 
-    mark = ['"data-placeholder":"Pick"', '"data-rx-select-shown":""']
+    mark = [
+        "className:sx_94480a599d_c",
+        '"data-placeholder":"Pick"',
+        '"data-rx-select-shown":""',
+    ]
     assert shown(item("A", value="a")) == (mark, [{"contents": '"Pick"'}])
     assert shown(item("A", value="a"), default_value="b") == (
         mark,
@@ -1565,7 +1575,7 @@ def test_select_shows_what_it_knows(ui_plugin: UIPlugin):
     )
     assert shown(
         item("A", value="a"), trigger_children=("Custom",), default_value="a"
-    ) == ([], [{"contents": '"Custom"'}])
+    ) == (["className:sx_94480a599d_c"], [{"contents": '"Custom"'}])
 
 
 def test_select_script(ui_plugin: UIPlugin):
