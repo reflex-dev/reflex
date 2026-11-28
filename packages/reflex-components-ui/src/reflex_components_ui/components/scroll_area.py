@@ -45,7 +45,10 @@ class ScrollArea(UIComponent):
         """Create a scroll area around its children.
 
         The area scrolls natively, with the scrollbars of the browser: no
-        script runs, and it scrolls with JavaScript disabled.
+        script runs, and it scrolls with JavaScript disabled. The area is a
+        tab stop, so the keyboard scrolls it in every browser: Safari focuses
+        no scrolling box of its own accord. A ``tabIndex`` in ``custom_attrs``
+        overrides that.
 
         Args:
             *children: What the area scrolls.
@@ -54,6 +57,7 @@ class ScrollArea(UIComponent):
         Returns:
             The scroll area.
         """
+        props["custom_attrs"] = {"tabIndex": 0, **props.get("custom_attrs", {})}
         return super().create(
             Part.create(*children, part="content", tag="div"), **props
         )

@@ -16,7 +16,12 @@ def test_scroll_area_plain(
     component = rx.ui.scroll_area(rx.el.p("One"), rx.el.p("Two"), id="area")
     assert component.render() == {
         "name": '"div"',
-        "props": ["className:sx_d0de57eb68_c", 'id:"area"', "ref:ref_area"],
+        "props": [
+            "className:sx_d0de57eb68_c",
+            'id:"area"',
+            "ref:ref_area",
+            "tabIndex:0",
+        ],
         "children": [
             {
                 "name": '"div"',
@@ -70,7 +75,7 @@ def test_scroll_area_vertical_always(
     )
     assert component.render() == {
         "name": '"div"',
-        "props": ["className:sx_b6352d4ad5_c"],
+        "props": ["className:sx_b6352d4ad5_c", "tabIndex:0"],
         "children": [
             {
                 "name": '"div"',
@@ -137,4 +142,19 @@ def test_scroll_area_horizontal(
             "minWidth": "100%",
             "flexGrow": 1,
         },
+    ]
+
+
+def test_scroll_area_tab_stop_can_be_overridden(ui_plugin: UIPlugin):
+    """The area is a tab stop unless the caller gives it another tab index."""
+    assert rx.ui.scroll_area("Text").render()["props"] == [
+        "className:sx_d0de57eb68_c",
+        "tabIndex:0",
+    ]
+    assert rx.ui.scroll_area(
+        "Text", custom_attrs={"tabIndex": -1, "data-kind": "log"}
+    ).render()["props"] == [
+        "className:sx_d0de57eb68_c",
+        '"data-kind":"log"',
+        "tabIndex:-1",
     ]
