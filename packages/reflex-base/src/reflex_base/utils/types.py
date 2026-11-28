@@ -86,6 +86,7 @@ StateVarTypes = (*PrimitiveTypes, type(None))
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
+    from sqlalchemy.orm import Relationship
 
     from reflex_base.vars.base import Var
 
@@ -1027,7 +1028,9 @@ def is_unserialized_property(
     )
 
 
-def _get_mapped_annotation(cls: type, name: str) -> GenericType | None:
+def _get_mapped_annotation(
+    cls: type, name: str, *, relationship_target: type | None = None
+) -> GenericType | None:
     """Get the type that a SQLAlchemy model declares for an attribute with ``Mapped[...]``.
 
     Only the annotation of ``name`` is resolved, in the module of the class that
@@ -1037,11 +1040,13 @@ def _get_mapped_annotation(cls: type, name: str) -> GenericType | None:
     Args:
         cls: The mapped class.
         name: The attribute name.
+        relationship_target: The mapped target of a relationship. It can resolve
+            a reference to a locally defined class and preserves None in the hint.
 
     Returns:
-        The type ``T`` of a resolvable ``Mapped[T]`` annotation without ``None``, as
-        the column decides nullability, else None, also when ``T`` is ``Any`` or
-        ``object``.
+        The type ``T`` of a resolvable ``Mapped[T]`` annotation, or None when
+        unknown. For columns, the type excludes ``None`` because the column decides
+        nullability.
     """
     from sqlalchemy.orm import Mapped
 
@@ -1051,14 +1056,18 @@ def _get_mapped_annotation(cls: type, name: str) -> GenericType | None:
             break
     else:
         return None
-    hint = _resolve_annotation(
-        annotations[name],
-        getattr(sys.modules.get(klass.__module__), "__dict__", None),
-    )
+    namespace = getattr(sys.modules.get(klass.__module__), "__dict__", None)
+    if relationship_target is not None:
+        target_name = relationship_target.__name__
+        if namespace is None or namespace.get(target_name) is not relationship_target:
+            namespace = {**(namespace or {}), target_name: relationship_target}
+    hint = _resolve_annotation(annotations[name], namespace)
     origin = get_origin(hint)
     if not (isinstance(origin, type) and issubclass(origin, Mapped)):
         return None
-    type_ = value_inside_optional(resolve_type_alias(get_args(hint)[0]))
+    type_ = resolve_type_alias(get_args(hint)[0])
+    if relationship_target is None:
+        type_ = value_inside_optional(type_)
     # `Mapped[Any]` defers to the column type.
     return None if type_ is Any or type_ is object else type_
 
@@ -1127,6 +1136,40 @@ def _get_column_access_type(cls: type, name: str) -> GenericType | None:
     return type_
 
 
+@lru_cache(maxsize=1024)
+def _has_required_foreign_key(relationship: Relationship[Any]) -> bool:
+    """Check whether a scalar relationship joins on a non-null foreign key.
+
+    Args:
+        relationship: The configured SQLAlchemy relationship.
+
+    Returns:
+        Whether the join follows a complete, non-nullable foreign key constraint.
+    """
+    from sqlalchemy import and_
+    from sqlalchemy.orm import MANYTOONE
+
+    pairs = relationship.local_remote_pairs
+    if (
+        relationship.direction is not MANYTOONE
+        or not pairs
+        or any(
+            getattr(column, "nullable", True) for column in relationship.local_columns
+        )
+    ):
+        return False
+
+    # Extra join predicates can exclude the referenced row despite a non-null key.
+    source, _ = pairs[0]
+    return any(
+        relationship.primaryjoin.compare(
+            and_(*(key.parent == key.column for key in constraint.elements))
+        )
+        for foreign_key in source.foreign_keys
+        if (constraint := foreign_key.constraint) is not None
+    )
+
+
 def get_attribute_access_type(
     cls: GenericType, name: str, descriptor: Any = _NO_DESCRIPTOR
 ) -> GenericType | None:
@@ -1189,8 +1232,20 @@ def get_attribute_access_type(
                     prop = descriptor.property
                     if isinstance(prop, Relationship):
                         type_ = prop.mapper.class_
-                        # TODO: check for nullable?
-                        return list[type_] if prop.uselist else type_ | None
+                        if prop.uselist:
+                            return list[type_]
+                        if (
+                            _has_required_foreign_key(prop)
+                            and (
+                                declared := _get_mapped_annotation(
+                                    cls, name, relationship_target=type_
+                                )
+                            )
+                            is not None
+                            and not is_optional(declared)
+                        ):
+                            return type_
+                        return type_ | None
                 if isinstance(attr, AssociationProxyInstance):
                     return list[
                         get_attribute_access_type(
