@@ -54,7 +54,7 @@ class Constants(SimpleNamespace):
 
 def configuration_with_loc(
     *,
-    config: SitemapLinkConfiguration,
+    config: SitemapLinkConfiguration | SitemapLink,
     deploy_url: str | None,
     loc: Location,
     trailing_slash: TrailingSlashOption,
@@ -230,6 +230,7 @@ def sitemap_task(
     unevaluated_pages: Sequence["UnevaluatedPage"],
     trailing_slash: TrailingSlashOption,
     file_path: Path = Constants.FILE_PATH,
+    extra_links: Sequence[SitemapLink] = (),
 ) -> tuple[str, str]:
     """Task to generate the sitemap XML file.
 
@@ -237,14 +238,26 @@ def sitemap_task(
         unevaluated_pages: Sequence of unevaluated pages.
         trailing_slash: Option for handling trailing slashes in URLs.
         file_path: Where to write the sitemap, relative to the frontend directory.
+        extra_links: More links after the pages', with absolute URLs or paths below deploy_url.
 
     Returns:
         A tuple containing the file path and the generated XML content.
     """
-    return (
-        str(file_path),
-        generate_xml(generate_links_for_sitemap(unevaluated_pages, trailing_slash)),
-    )
+    from reflex_base.config import get_config
+
+    links = generate_links_for_sitemap(unevaluated_pages, trailing_slash)
+    if extra_links:
+        deploy_url = get_config().frontend_url
+        links.extend(
+            configuration_with_loc(
+                config=link,
+                deploy_url=deploy_url,
+                loc=link["loc"],
+                trailing_slash="preserve",
+            )
+            for link in extra_links
+        )
+    return (str(file_path), generate_xml(links))
 
 
 def sitemap_index_task(
@@ -311,8 +324,9 @@ class SitemapPlugin(PluginBase):
     """Sitemap plugin for Reflex.
 
     Attributes:
-        trailing_slash: Option for handling trailing slashes in the sitemap's URLs.
+        trailing_slash: Option for handling trailing slashes in the URLs of the sitemap's pages.
         path: The sitemap's path below the frontend's root URL, where it is written in the build.
+        extra_links: More links for the sitemap after the pages', e.g. files the build writes besides them; a loc is an absolute URL or a path below deploy_url, which trailing_slash leaves as it is.
         index_path: If set, the path of a sitemap index listing the sitemap followed by index_sitemaps.
         index_sitemaps: More sitemaps for the index, as absolute URLs or paths below deploy_url.
     """
@@ -320,6 +334,8 @@ class SitemapPlugin(PluginBase):
     trailing_slash: TrailingSlashOption = "preserve"
 
     path: str = Constants.FILE_PATH.name
+
+    extra_links: Sequence[SitemapLink] = ()
 
     index_path: str | None = None
 
@@ -364,7 +380,11 @@ class SitemapPlugin(PluginBase):
         """
         unevaluated_pages = context.get("unevaluated_pages", [])
         context["add_save_task"](
-            sitemap_task, unevaluated_pages, self.trailing_slash, self.file_path
+            sitemap_task,
+            unevaluated_pages,
+            self.trailing_slash,
+            self.file_path,
+            self.extra_links,
         )
         if self.index_path is not None:
             context["add_save_task"](

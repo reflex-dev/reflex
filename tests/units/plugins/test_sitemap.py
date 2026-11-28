@@ -847,6 +847,54 @@ def test_sitemap_plugin_writes_its_path_and_index(mock_get_config, frontend_path
     ]
 
 
+@patch("reflex_base.config.get_config")
+def test_sitemap_plugin_lists_extra_links_after_the_pages(mock_get_config):
+    """Extra links follow the pages' as given, a path made absolute against deploy_url."""
+    mock_get_config.return_value.frontend_url = "https://example.com"
+    mock_get_config.return_value.frontend_path = ""
+    plugin = SitemapPlugin(
+        trailing_slash="always",
+        extra_links=[
+            {"loc": "/blog/feed"},
+            {
+                "loc": "https://cms.example.com/news",
+                "changefreq": "daily",
+                "priority": 2.0,
+            },
+        ],
+    )
+    written = []
+
+    plugin.pre_compile(
+        **_pre_compile_context(
+            lambda task, *args: written.append(task(*args)),
+            [MagicMock(route="about", context={})],
+        )
+    )
+
+    assert written == [
+        (
+            str(Path("public/sitemap.xml")),
+            (
+                "<?xml version='1.0' encoding='utf-8'?>\n"
+                '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+                "  <url>\n"
+                "    <loc>https://example.com/about/</loc>\n"
+                "  </url>\n"
+                "  <url>\n"
+                "    <loc>https://example.com/blog/feed</loc>\n"
+                "  </url>\n"
+                "  <url>\n"
+                "    <loc>https://cms.example.com/news</loc>\n"
+                "    <changefreq>daily</changefreq>\n"
+                "    <priority>1.0</priority>\n"
+                "  </url>\n"
+                "</urlset>"
+            ),
+        ),
+    ]
+
+
 def test_sitemap_plugin_defaults_to_sitemap_xml():
     """Without options the plugin writes only public/sitemap.xml."""
     plugin = SitemapPlugin()

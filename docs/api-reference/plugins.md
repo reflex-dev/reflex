@@ -81,6 +81,12 @@ config = rx.Config(
 )
 ```
 
+`extra_links` adds links that are no pages after the pages' links, e.g. a feed the build writes. Each takes the keys of a page's sitemap configuration with a required `loc`, an absolute URL or a path resolved against `deploy_url`, which `trailing_slash` leaves as it is:
+
+```python
+rx.plugins.SitemapPlugin(extra_links=[{"loc": "/blog/feed.xml", "changefreq": "daily"}])
+```
+
 ### TailwindV4Plugin
 
 The `TailwindV4Plugin` provides support for Tailwind CSS v4, which is the recommended version for new projects and includes performance improvements and new features.
