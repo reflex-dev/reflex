@@ -121,7 +121,8 @@ class UIPlugin(Plugin):
         """
         return [
             (WEB_DIR / path.relative_to(JS_SRC), path.read_text(encoding="utf-8"))
-            for path in sorted(JS_SRC.rglob("*"))
+            # By name as on any system: Windows orders paths without case.
+            for path in sorted(JS_SRC.rglob("*"), key=Path.as_posix)
             if path.is_file()
         ]
 

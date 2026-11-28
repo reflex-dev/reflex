@@ -165,12 +165,16 @@ def test_failures_name_the_cell_and_where_its_images_are():
         passes=1,
         stale=[stale],
     )
+    # The images are named as the system names a path.
+    images = (
+        Path("/report") / "chromium/button/size-1@hover.{reference,candidate,diff}.png"
+    )
     assert matrix.failures(Path("/report")) == [
         (
             "button [chromium] cell size-1@hover:\n"
             "  - 400 of 5000 pixels differ (8.00%, 0.50% allowed)\n"
             "  - height: rx '32px', rx.ui '30px'\n"
-            "  images: /report/chromium/button/size-1@hover.{reference,candidate,diff}.png"
+            f"  images: {images}"
         ),
         (
             "button [chromium]: nothing differs as the allowlist.toml entry says "

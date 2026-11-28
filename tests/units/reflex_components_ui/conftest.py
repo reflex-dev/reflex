@@ -1,6 +1,7 @@
 """Fixtures for the tests of reflex-components-ui."""
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -63,7 +64,10 @@ def pyright(tmp_path: Path) -> Callable[[str], list[tuple[int, str, str]]]:
             check=False,
         )
         diagnostics = json.loads(result.stdout)["generalDiagnostics"]
-        assert {diagnostic["file"] for diagnostic in diagnostics} <= {str(target)}
+        # Pyright names a Windows drive in lower case.
+        assert {os.path.normcase(diagnostic["file"]) for diagnostic in diagnostics} <= {
+            os.path.normcase(target)
+        }
         return [
             (
                 diagnostic["range"]["start"]["line"] + 1,
