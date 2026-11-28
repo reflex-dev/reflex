@@ -15,6 +15,7 @@ from reflex_base.vars.object import ObjectVar
 pytest.importorskip("sqlalchemy")
 
 from sqlalchemy import ForeignKey, create_engine, event, select
+from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import (
     DeclarativeBase,
     DynamicMapped,
@@ -111,6 +112,63 @@ def test_declarative_base_serializer_handles_loaded_and_unloaded_attributes():
     assert "private_note" not in unloaded_payload
 
     engine.dispose()
+
+
+def test_declarative_base_serializer_includes_loaded_scalar_proxy_values():
+    """Expose scalar proxies only when their relationship and value are available."""
+
+    class Base(DeclarativeBase):
+        """Base for the serializer test models."""
+
+    class Profile(Base):
+        """A profile with a readily available name and a deferred note."""
+
+        __tablename__ = "serializer_proxy_profile"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        name: Mapped[str]
+        note: Mapped[str] = mapped_column(deferred=True)
+
+    class User(Base):
+        """A user exposing the name and note of an optional profile."""
+
+        __tablename__ = "serializer_proxy_user"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        profile_id: Mapped[int | None] = mapped_column(
+            ForeignKey("serializer_proxy_profile.id")
+        )
+        profile: Mapped[Profile | None] = relationship()
+        profile_name = association_proxy("profile", "name")
+        profile_note = association_proxy("profile", "note")
+
+    engine = create_engine("sqlite://")
+    Base.metadata.create_all(engine)
+    with Session(engine) as session:
+        session.add(User(id=1, profile=Profile(id=1, name="Ada", note="Deferred")))
+        session.commit()
+        loaded = session.scalar(select(User).options(selectinload(User.profile)))
+        assert loaded is not None
+        session.expunge_all()
+        unloaded = session.scalar(select(User))
+        assert unloaded is not None
+        session.expunge(unloaded)
+    engine.dispose()
+
+    assert json.loads(json_dumps(loaded)) == {
+        "id": 1,
+        "profile_id": 1,
+        "profile": {"id": 1, "name": "Ada"},
+        "profile_name": "Ada",
+    }
+    assert json.loads(json_dumps(unloaded)) == {"id": 1, "profile_id": 1}
+    assert json.loads(json_dumps(User(id=2, profile=None))) == {
+        "id": 2,
+        "profile_id": None,
+        "profile": None,
+        "profile_name": None,
+        "profile_note": None,
+    }
 
 
 def test_declarative_base_serializer_handles_bidirectional_relationships():
