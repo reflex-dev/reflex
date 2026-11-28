@@ -492,6 +492,10 @@ from reflex_i18n import pgettext_noop
 app.add_page(pricing, title=pgettext_noop("page title", "Pricing"))
 ```
 
+`rx.i18n.translate(message)` translates a message marked either way where you
+render it yourself, e.g. in a page function's own `<meta>` tags: in its
+context if it has one, else as `gettext` does.
+
 Notes:
 
 - A head text given as `rx.t` resolves in the default locale (the document

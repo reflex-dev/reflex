@@ -78,3 +78,4 @@ def test_reflex_i18n_exposes_server_side_helpers():
         reflex.i18n.N_ is reflex.i18n.gettext_noop is reflex_i18n.runtime.gettext_noop
     )
     assert reflex.i18n.pgettext_noop is reflex_i18n.runtime.pgettext_noop
+    assert reflex.i18n.translate is reflex_i18n.runtime.translate

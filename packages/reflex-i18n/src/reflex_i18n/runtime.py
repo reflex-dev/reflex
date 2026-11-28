@@ -295,6 +295,26 @@ def pgettext_noop(context: str, message: str) -> str:
     return marked
 
 
+def translate(message: str) -> str:
+    """Translate a message :func:`gettext_noop` or :func:`pgettext_noop` marked.
+
+    A message carrying a ``context``, as :func:`pgettext_noop` marks one, is
+    translated in it, any other as :func:`gettext` does.
+
+    Args:
+        message: The source-locale message.
+
+    Returns:
+        The message in the active locale, an empty one unchanged.
+    """
+    # gettext("") would return the catalog's header.
+    if not message:
+        return message
+    if context := getattr(message, "context", None):
+        return pgettext(context, message)
+    return gettext(message)
+
+
 def match_locale(requested: Iterable[str], supported: Iterable[str]) -> str | None:
     """Find the supported locale that best serves a list of requested ones.
 

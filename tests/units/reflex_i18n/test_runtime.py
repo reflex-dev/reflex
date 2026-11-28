@@ -26,8 +26,10 @@ from reflex_i18n.runtime import (
     negotiate_locale,
     ngettext,
     pgettext,
+    pgettext_noop,
     pick_translation,
     pick_translation_locale,
+    translate,
     use_locale,
 )
 
@@ -253,6 +255,25 @@ def test_pgettext_context(tmp_path: Path, monkeypatch):
 
     with use_locale("de"):
         assert pgettext("menu", "Open") == "Öffnen"
+
+
+def test_translate_marked_messages(tmp_path: Path, monkeypatch):
+    """A message pgettext_noop marks is translated in its context, others as gettext."""
+    monkeypatch.chdir(tmp_path)
+    _write_po(
+        tmp_path / "locales",
+        "de",
+        'msgid "Open"\nmsgstr "Öffnen"\n\n'
+        'msgctxt "status"\nmsgid "Open"\nmsgstr "Geöffnet"\n',
+    )
+    set_active_i18n_config(I18nConfig(locales=["en", "de"], default_locale="en"))
+
+    with use_locale("de"):
+        assert [
+            translate(pgettext_noop("status", "Open")),
+            translate(gettext_noop("Open")),
+            translate(""),
+        ] == ["Geöffnet", "Öffnen", ""]
 
 
 def test_negotiate_locale_exact_match():

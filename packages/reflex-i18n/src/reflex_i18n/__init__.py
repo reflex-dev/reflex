@@ -53,6 +53,7 @@ from .runtime import (
     pgettext_noop,
     pick_translation,
     pick_translation_locale,
+    translate,
     use_locale,
 )
 from .vars import pick, pick_locale, t
@@ -116,6 +117,7 @@ __all__ = [
     "set_locale",
     "source_locale",
     "t",
+    "translate",
     "use_locale",
     "validate_locale",
     "weekday",
