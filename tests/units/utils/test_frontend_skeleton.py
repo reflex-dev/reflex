@@ -271,6 +271,10 @@ def test_compile_vite_config_renders_plugin_entries():
             ),
         ),
         (
+            VitePluginEntry(imports=None, call="a()"),  # pyright: ignore[reportArgumentType]
+            "has imports=None, which must be a sequence of import statements",
+        ),
+        (
             VitePluginEntry(imports=['import a from "a"', "a"], call="a()"),
             "has 'a' in imports, which is not an import statement",
         ),

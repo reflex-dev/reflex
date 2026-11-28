@@ -1044,6 +1044,21 @@ def test_button_as_child(
     }
 
 
+def test_button_as_child_literal_var(ui_plugin: UIPlugin):
+    """A literal Var for as_child is read as its value, loading or not."""
+    child = rx.el.a("Docs", href="/docs")
+    expected = rx.ui.button(child, as_child=True, loading=False).render()
+    assert expected["name"] == "ReactRouterLink"
+    assert (
+        rx.ui.button(child, as_child=rx.Var.create(True), loading=False).render()
+        == expected
+    )
+    assert (
+        rx.ui.button("Save", as_child=rx.Var.create(False), loading=False).render()
+        == rx.ui.button("Save", loading=False).render()
+    )
+
+
 @pytest.mark.parametrize(
     ("props", "error", "message"),
     [

@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 from reflex_base.breakpoints import breakpoints_values, set_breakpoints
-from reflex_base.vars.base import LiteralVar
+from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_ui.style.lower import Lowered, StyleError
 from reflex_components_ui.style.merge import (
     Alternatives,
@@ -747,6 +747,18 @@ def test_over_lays_the_styles_of_a_child_on_those_of_its_parent():
     assert merged.style.inline is SIZE
     assert merged.dynamic == ()
     assert merged.parts == {"icon": Merged(Lowered({"width": "1em"}))}
+
+
+def test_over_keeps_the_whole_style_of_the_child_over_that_of_its_parent():
+    """A whole style bound to state is a Var: it is chosen without its truth."""
+    parent = merge("rx.ui.flex", {"base": {"color": "red"}}, {}, SIZE)
+    other = Var(_js_expr="other", _var_type=dict)
+    child = merge("rx.ui.text", {"base": {"top": "2px"}}, {}, other)
+    assert over(parent, child).style.inline is other
+    assert over(child, parent).style.inline is SIZE
+    plain = merge("rx.ui.text", {"base": {"top": "2px"}})
+    assert over(parent, plain).style.inline is SIZE
+    assert over(plain, child).style.inline is other
 
 
 def test_unchecked_passes_a_style_a_type_checker_cannot_read():

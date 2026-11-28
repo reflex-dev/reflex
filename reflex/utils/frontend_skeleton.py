@@ -4,7 +4,7 @@ import json
 import logging
 import re
 import uuid
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from pathlib import Path
 from typing import Literal
 
@@ -660,6 +660,11 @@ def _vite_plugin_entry_problem(entry: object) -> str | None:
         return (
             f"has imports={entry.imports!r}, which must be a sequence of import "
             "statements, not a single string"
+        )
+    if not isinstance(entry.imports, Iterable):
+        return (
+            f"has imports={entry.imports!r}, which must be a sequence of import "
+            "statements"
         )
     for statement in entry.imports:
         if not isinstance(statement, str) or not _VITE_IMPORT_STATEMENT.match(
