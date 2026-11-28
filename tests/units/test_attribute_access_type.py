@@ -10,6 +10,7 @@ from typing import Any, Generic, List, NotRequired, TypedDict, TypeVar  # noqa: 
 import attrs
 import pytest
 import typing_extensions
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import types as types_module
 from reflex_base.utils.exceptions import VarAttributeError
 from reflex_base.utils.types import GenericType, get_attribute_access_type
@@ -431,6 +432,75 @@ def test_get_attribute_access_type_no_default(cls: type) -> None:
     assert get_attribute_access_type(cls, "no_default") == int | None
 
 
+def test_required_sqlalchemy_relationship_on_state_var(
+    clean_registration_context: RegistrationContext,
+) -> None:
+    """Expose a required many-to-one relationship with its required type.
+
+    Args:
+        clean_registration_context: Isolate the state class created by this test.
+    """
+
+    class RelationshipState(rx.State):
+        """A state Var whose model contains a required relationship."""
+
+        label: rx.Field[SQLALabel | None] = rx.field(None)
+
+    assert get_attribute_access_type(SQLALabel, "test_dataclass") is SQLAClassDataclass
+    assert RelationshipState.label.test_dataclass._var_type is SQLAClassDataclass
+    name = RelationshipState.label.test_dataclass.name
+    assert name._var_type is str
+    assert str(name) == f'{RelationshipState.label!s}?.["test_dataclass"]?.["name"]'
+
+
+def test_sqlalchemy_scalar_relationships_that_can_be_absent() -> None:
+    """Preserve optionality when the annotation or join allows a missing row."""
+
+    class Base(DeclarativeBase):
+        """Base for models testing optional relationship types."""
+
+    class Profile(Base):
+        """A profile that might have no matching member on the inverse side."""
+
+        __tablename__ = "relationship_type_profile"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        active: Mapped[bool]
+        member: Mapped[Member] = relationship(
+            back_populates="profile", foreign_keys="Member.profile_id"
+        )
+
+    class Member(Base):
+        """A member with a required profile and a nullable backup foreign key."""
+
+        __tablename__ = "relationship_type_member"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        profile_id: Mapped[int] = mapped_column(
+            sqlalchemy.ForeignKey(Profile.id), unique=True
+        )
+        backup_profile_id: Mapped[int | None] = mapped_column(
+            sqlalchemy.ForeignKey(Profile.id)
+        )
+        profile: Mapped[Profile] = relationship(
+            back_populates="member", foreign_keys=[profile_id]
+        )
+        backup_profile: Mapped[Profile] = relationship(foreign_keys=[backup_profile_id])
+        optional_profile: Mapped[Profile | None] = relationship(
+            foreign_keys=[profile_id], viewonly=True
+        )
+        filtered_profile: Mapped[Profile] = relationship(
+            primaryjoin=lambda: sqlalchemy.and_(
+                Member.profile_id == Profile.id, Profile.active.is_(True)
+            ),
+            viewonly=True,
+        )
+
+    assert get_attribute_access_type(Member, "profile") is Profile
+    assert get_attribute_access_type(Member, "backup_profile") == Profile | None
+    assert get_attribute_access_type(Member, "optional_profile") == Profile | None
+    assert get_attribute_access_type(Member, "filtered_profile") == Profile | None
+    assert get_attribute_access_type(Profile, "member") == Member | None
+
+
 def test_get_attribute_access_type_sqlalchemy_synonyms() -> None:
     """A synonym has the type of its annotated getter, else of its target attribute."""
 
@@ -465,7 +535,7 @@ def test_get_attribute_access_type_sqlalchemy_synonyms() -> None:
     assert get_attribute_access_type(SynonymMember, "nick") is str
     assert get_attribute_access_type(SynonymMember, "remark") == str | None
     assert get_attribute_access_type(SynonymMember, "alias") is str
-    assert get_attribute_access_type(SynonymMember, "author") == SynonymWriter | None
+    assert get_attribute_access_type(SynonymMember, "author") is SynonymWriter
     assert get_attribute_access_type(SynonymMember, "status_size") is int
     assert get_attribute_access_type(SynonymMember, "shout") is str
 
