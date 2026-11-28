@@ -274,6 +274,26 @@ class UIComponent(Component):
             if prop in cls._get_defaulted_props()
         }
 
+    @classmethod
+    def _given_or_default(cls, prop: str, kwargs: Mapping[str, Any]) -> Any:
+        """Read a prop that is a theme of the element, as given or by default.
+
+        Args:
+            prop: The prop.
+            kwargs: The keyword arguments the component is created with.
+
+        Returns:
+            The value the element is given, else the default of the field,
+            else None: so is the value of a prop the component does not have.
+        """
+        fields = cls.get_fields()
+        if prop not in fields:
+            return None
+        value = kwargs.get(prop)
+        if value is None and prop in cls._get_defaulted_props():
+            return fields[prop].default_value()
+        return value
+
     def _check_literals(self, kwargs: Mapping[str, Any]) -> None:
         """Fail on a value a prop does not take, naming the ones it does.
 
@@ -355,16 +375,14 @@ class UIComponent(Component):
         )
         # Before the props are checked against their types: the error of an
         # unknown color lists the accent colors and suggests the closest.
-        color_scheme = kwargs.get("color_scheme") if "color_scheme" in fields else None
+        color_scheme = self._given_or_default("color_scheme", kwargs)
         self._accent = (
             None
             if color_scheme is None
             else color_scheme_styles(self._display_name(), color_scheme)
         )
         # The same for a radius of its own.
-        radius = (
-            kwargs.get("radius") if self._own_radius and "radius" in fields else None
-        )
+        radius = self._given_or_default("radius", kwargs) if self._own_radius else None
         self._radius = (
             None if radius is None else radius_styles(self._display_name(), radius)
         )
