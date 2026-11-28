@@ -2,6 +2,13 @@
 
 <!-- towncrier release notes start -->
 
+## v0.1.2 (2026-11-23)
+
+### Features
+
+- New `reflex_build_sdk.triggers` module for receiving Reflex Build trigger deliveries: `parse_delivery` verifies the Standard Webhooks signature against `REFLEX_TRIGGER_SECRET` and reads the batch, `EntryPoints` declares the functions that turn an event into a workflow row (and lists them for the platform with `manifest()`), and `reply` formats the per-event `Result`. It uses the standard library only. ([#7926](https://github.com/reflex-dev/reflex/issues/7926))
+
+
 ## v0.1.1 (2026-10-26)
 
 ### Features

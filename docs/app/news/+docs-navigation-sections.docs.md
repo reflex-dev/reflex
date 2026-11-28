@@ -1,0 +1,1 @@
+Docs pages now mark the correct navbar tab and sidebar section in their served HTML, and every section uses one name: Framework, Components, Cloud. The Cloud overview moved to `/docs/hosting/overview/`, and the old URL redirects there. Exception Handlers is now listed in the sidebar. Integrations are grouped by category, with legacy integrations listed last.
