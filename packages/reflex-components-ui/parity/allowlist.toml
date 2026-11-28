@@ -104,3 +104,14 @@ reason = "rx.ui.switch is a native checkbox, which the browser toggles on Space 
 component = "switch"
 step = "Enter on a switch does not submit its form"
 reason = "rx.ui.switch is a native input, and the browser submits a form when Enter is pressed in one of its inputs. rx.switch toggles on that key instead."
+
+[[contract]]
+component = "radio_group"
+step = "checks one item of a group with JavaScript disabled"
+system = "rx"
+reason = "The items of rx.radio_group are buttons that JavaScript turns into radio buttons: until it has run, a click does nothing. The items of rx.ui.radio_group are native radio buttons that share a name, which the browser checks one at a time with or without JavaScript."
+
+[[contract]]
+component = "radio_group"
+step = "Enter on a radio button does not submit its form"
+reason = "The items of rx.ui.radio_group are native inputs, and the browser submits a form when Enter is pressed in one of its inputs, a radio button included. rx.radio_group swallows the key. Space and the arrow keys check an item in both."

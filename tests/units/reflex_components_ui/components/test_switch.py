@@ -59,9 +59,7 @@ def test_switch(
             "backgroundImage": {
                 "default": "none",
                 "::before": {
-                    "default": "linear-gradient(to right, "
-                    "var(--accent-track) 40%, "
-                    "transparent 60%)",
+                    "default": "linear-gradient(to right, var(--accent-track) 40%, transparent 60%)",
                     ":disabled": "none",
                 },
             },
@@ -99,10 +97,8 @@ def test_switch(
             },
             "--switch-width": "calc(var(--switch-height) * 1.75)",
             "--switch-thumb-inset": "1px",
-            "--switch-thumb-size": "calc(var(--switch-height) - "
-            "var(--switch-thumb-inset) * 2)",
-            "--switch-thumb-translate-x": "calc(var(--switch-width) - "
-            "var(--switch-height))",
+            "--switch-thumb-size": "calc(var(--switch-height) - var(--switch-thumb-inset) * 2)",
+            "--switch-thumb-translate-x": "calc(var(--switch-width) - var(--switch-height))",
             "cursor": {
                 ":disabled": "var(--cursor-disabled)",
                 "::before": {
@@ -120,8 +116,7 @@ def test_switch(
             },
             "borderRadius": {
                 "::before": "var(--switch-border-radius)",
-                "::after": "calc(var(--switch-border-radius) - "
-                "var(--switch-thumb-inset))",
+                "::after": "calc(var(--switch-border-radius) - var(--switch-thumb-inset))",
             },
             "transitionProperty": {
                 "::before": "background-position, background-color, box-shadow, filter",
@@ -158,28 +153,15 @@ def test_switch(
                     ":disabled": "inset 0 0 0 1px var(--gray-a3)",
                 },
                 "::after": {
-                    "default": "0 0 1px 1px var(--black-a2), 0 1px 1px "
-                    "var(--black-a1), 0 2px 4px -1px "
-                    "var(--black-a1)",
-                    ":checked:not(:disabled)": "0 1px 3px "
-                    "var(--black-a2), 0 2px "
-                    "4px -1px "
-                    "var(--black-a1), 0 0 0 "
-                    "1px var(--black-a1), 0 "
-                    "0 0 1px "
-                    "var(--accent-a4), -1px "
-                    "0 1px var(--black-a2)",
+                    "default": "0 0 1px 1px var(--black-a2), 0 1px 1px var(--black-a1), 0 2px 4px -1px var(--black-a1)",
+                    ":checked:not(:disabled)": "0 1px 3px var(--black-a2), 0 2px 4px -1px var(--black-a1), 0 0 0 1px var(--black-a1), 0 0 0 1px var(--accent-a4), -1px 0 1px var(--black-a2)",
                     ":disabled": "0 0 0 1px var(--gray-a2), 0 1px 3px var(--black-a1)",
                 },
             },
             "filter": {
                 "::before": {
                     "default": "none",
-                    ":checked:active:not(:disabled)": "var(--rx-if-light, "
-                    "brightness(0.92) "
-                    "saturate(1.1)) "
-                    "var(--rx-if-dark, "
-                    "brightness(1.08))",
+                    ":checked:active:not(:disabled)": "var(--rx-if-light, brightness(0.92) saturate(1.1)) var(--rx-if-dark, brightness(1.08))",
                 }
             },
         }
@@ -207,8 +189,7 @@ def test_switch_classic_high_contrast(
         "name": '"input"',
         "props": [
             "checked:true",
-            'className:sx_7350a6aadb_c + " " + reflexUIClasses_e201574881 + " " '
-            "+ reflexUIClasses_6d1e87c3d8",
+            'className:sx_7350a6aadb_c + " " + reflexUIClasses_e201574881 + " " + reflexUIClasses_6d1e87c3d8',
             "disabled:true",
             "readOnly:true",
             "required:true",
@@ -249,12 +230,7 @@ def test_switch_classic_high_contrast(
             "backgroundImage": {
                 "default": "none",
                 "::before": {
-                    "default": "linear-gradient(to right, "
-                    "light-dark(var(--black-a8), "
-                    "transparent) 40%, transparent "
-                    "60%), linear-gradient(to right, "
-                    "var(--accent-track) 40%, "
-                    "transparent 60%)",
+                    "default": "linear-gradient(to right, light-dark(var(--black-a8), transparent) 40%, transparent 60%), linear-gradient(to right, var(--accent-track) 40%, transparent 60%)",
                     ":disabled": "none",
                 },
             },
@@ -292,10 +268,8 @@ def test_switch_classic_high_contrast(
             },
             "--switch-width": "calc(var(--switch-height) * 1.75)",
             "--switch-thumb-inset": "1px",
-            "--switch-thumb-size": "calc(var(--switch-height) - "
-            "var(--switch-thumb-inset) * 2)",
-            "--switch-thumb-translate-x": "calc(var(--switch-width) - "
-            "var(--switch-height))",
+            "--switch-thumb-size": "calc(var(--switch-height) - var(--switch-thumb-inset) * 2)",
+            "--switch-thumb-translate-x": "calc(var(--switch-width) - var(--switch-height))",
             "cursor": {
                 ":disabled": "var(--cursor-disabled)",
                 "::before": {
@@ -313,8 +287,7 @@ def test_switch_classic_high_contrast(
             },
             "borderRadius": {
                 "::before": "var(--switch-border-radius)",
-                "::after": "calc(var(--switch-border-radius) - "
-                "var(--switch-thumb-inset))",
+                "::after": "calc(var(--switch-border-radius) - var(--switch-thumb-inset))",
             },
             "transitionProperty": {
                 "::before": "background-position, background-color, box-shadow, filter",
@@ -349,27 +322,16 @@ def test_switch_classic_high_contrast(
             },
             "--switch-border-radius": {
                 "default": "max(var(--radius-1), var(--radius-thumb))",
-                "@media (min-width: 1024px)": "max(var(--radius-2), "
-                "var(--radius-thumb))",
+                "@media (min-width: 1024px)": "max(var(--radius-2), var(--radius-thumb))",
             },
             "boxShadow": {
                 "::before": {
-                    "default": "inset 0 0 0 1px var(--gray-a3), inset "
-                    "0 0 0 1px var(--black-a2), inset 0 "
-                    "1.5px 2px 0 var(--black-a2)",
+                    "default": "inset 0 0 0 1px var(--gray-a3), inset 0 0 0 1px var(--black-a2), inset 0 1.5px 2px 0 var(--black-a2)",
                     ":disabled": "var(--shadow-1)",
                 },
                 "::after": {
-                    "default": "0 1px 3px var(--black-a3), 0 2px 4px "
-                    "-1px var(--black-a1), 0 0 0 1px "
-                    "var(--black-a2)",
-                    ":checked:not(:disabled)": "0 1px 3px "
-                    "var(--black-a2), 0 2px "
-                    "4px -1px "
-                    "var(--black-a1), 0 0 0 "
-                    "1px var(--black-a2), "
-                    "-1px 0 1px "
-                    "var(--black-a2)",
+                    "default": "0 1px 3px var(--black-a3), 0 2px 4px -1px var(--black-a1), 0 0 0 1px var(--black-a2)",
+                    ":checked:not(:disabled)": "0 1px 3px var(--black-a2), 0 2px 4px -1px var(--black-a1), 0 0 0 1px var(--black-a2), -1px 0 1px var(--black-a2)",
                     ":disabled": "0 0 0 1px var(--gray-a2), 0 1px 3px var(--black-a1)",
                 },
             },
@@ -377,12 +339,7 @@ def test_switch_classic_high_contrast(
             "filter": {
                 "::before": {
                     "default": "none",
-                    ":checked:active:not(:disabled)": "var(--rx-if-light, "
-                    "contrast(0.82) "
-                    "saturate(1.2) "
-                    "brightness(1.16)) "
-                    "var(--rx-if-dark, "
-                    "brightness(1.08))",
+                    ":checked:active:not(:disabled)": "var(--rx-if-light, contrast(0.82) saturate(1.2) brightness(1.16)) var(--rx-if-dark, brightness(1.08))",
                 }
             },
         }
@@ -427,18 +384,7 @@ def test_switch_soft(
             "backgroundImage": {
                 "default": "none",
                 "::before": {
-                    "default": "linear-gradient(to right, "
-                    "var(--accent-a4) 40%, "
-                    "transparent 60%), "
-                    "linear-gradient(to right, "
-                    "var(--accent-a4) 40%, "
-                    "transparent 60%), "
-                    "linear-gradient(to right, "
-                    "var(--accent-a4) 40%, "
-                    "var(--white-a1) 60%), "
-                    "linear-gradient(to right, "
-                    "var(--gray-a2) 40%, "
-                    "var(--gray-a3) 60%)",
+                    "default": "linear-gradient(to right, var(--accent-a4) 40%, transparent 60%), linear-gradient(to right, var(--accent-a4) 40%, transparent 60%), linear-gradient(to right, var(--accent-a4) 40%, var(--white-a1) 60%), linear-gradient(to right, var(--gray-a2) 40%, var(--gray-a3) 60%)",
                     ":disabled": "none",
                 },
             },
@@ -476,10 +422,8 @@ def test_switch_soft(
             },
             "--switch-width": "calc(var(--switch-height) * 1.75)",
             "--switch-thumb-inset": "1px",
-            "--switch-thumb-size": "calc(var(--switch-height) - "
-            "var(--switch-thumb-inset) * 2)",
-            "--switch-thumb-translate-x": "calc(var(--switch-width) - "
-            "var(--switch-height))",
+            "--switch-thumb-size": "calc(var(--switch-height) - var(--switch-thumb-inset) * 2)",
+            "--switch-thumb-translate-x": "calc(var(--switch-width) - var(--switch-height))",
             "cursor": {
                 ":disabled": "var(--cursor-disabled)",
                 "::before": {
@@ -497,8 +441,7 @@ def test_switch_soft(
             },
             "borderRadius": {
                 "::before": "var(--switch-border-radius)",
-                "::after": "calc(var(--switch-border-radius) - "
-                "var(--switch-thumb-inset))",
+                "::after": "calc(var(--switch-border-radius) - var(--switch-thumb-inset))",
             },
             "transitionProperty": {
                 "::before": "background-position, background-color, box-shadow, filter",
@@ -531,17 +474,8 @@ def test_switch_soft(
             "--switch-border-radius": "max(var(--radius-2), var(--radius-thumb))",
             "boxShadow": {
                 "::after": {
-                    "default": "0 0 0 1px var(--black-a1), 0 1px 3px "
-                    "var(--black-a1), 0 1px 3px "
-                    "var(--black-a1), 0 2px 4px -1px "
-                    "var(--black-a1)",
-                    ":checked:not(:disabled)": "0 0 0 1px "
-                    "var(--black-a1), 0 1px "
-                    "3px var(--black-a2), 0 "
-                    "1px 3px "
-                    "var(--accent-a3), 0 "
-                    "2px 4px -1px "
-                    "var(--accent-a3)",
+                    "default": "0 0 0 1px var(--black-a1), 0 1px 3px var(--black-a1), 0 1px 3px var(--black-a1), 0 2px 4px -1px var(--black-a1)",
+                    ":checked:not(:disabled)": "0 0 0 1px var(--black-a1), 0 1px 3px var(--black-a2), 0 1px 3px var(--accent-a3), 0 2px 4px -1px var(--accent-a3)",
                     ":disabled": "0 0 0 1px var(--gray-a2), 0 1px 3px var(--black-a1)",
                 }
             },

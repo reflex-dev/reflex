@@ -18,6 +18,7 @@ _SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = {
     "components.icon_button": ["icon_button"],
     "components.inset": ["inset"],
     "components.progress": ["progress"],
+    "components.radio_group": ["radio", "radio_group"],
     "components.scroll_area": ["scroll_area"],
     "components.separator": ["divider", "separator"],
     "components.skeleton": ["skeleton"],

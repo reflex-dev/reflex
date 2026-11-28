@@ -137,6 +137,12 @@ def test_every_wave_is_in_the_namespace():
         "list_item",
         "ordered_list",
         "progress",
+        "radio",
+        "radio.item",
+        "radio.root",
+        "radio_group",
+        "radio_group.item",
+        "radio_group.root",
         "scroll_area",
         "section",
         "separator",
@@ -164,7 +170,19 @@ def test_every_wave_is_in_the_namespace():
     ]
 
 
-@pytest.mark.parametrize("namespace", ["callout", "data_list", "list", "table", "text"])
+@pytest.mark.parametrize(
+    "namespace",
+    [
+        "callout",
+        "checkbox",
+        "data_list",
+        "list",
+        "radio",
+        "radio_group",
+        "table",
+        "text",
+    ],
+)
 def test_namespace_has_the_members_of_its_radix_counterpart(namespace: str):
     assert members(getattr(reflex_components_ui, namespace)) == members(
         getattr(rx, namespace)
