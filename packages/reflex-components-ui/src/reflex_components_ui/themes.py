@@ -358,6 +358,37 @@ def literal_option(value: Any) -> Any:
     return value
 
 
+def _matching_gray(
+    builder: _Builder, accent_color: Any, app_theme: Theme | None
+) -> str | None:
+    """Find the gray that matches the accent color of an element.
+
+    Args:
+        builder: What collects the themes of the element.
+        accent_color: The accent color of the element: None when it is
+            inherited, or a Var.
+        app_theme: The theme of the app, whose accent an element inherits.
+
+    Returns:
+        The expression of the gray, or None when no accent color is known.
+    """
+    matching = _radix_tokens.MATCHING_GRAY
+    if isinstance(accent_color, Var):
+        return builder.lookup(
+            _MATCHING_GRAY_MAP,
+            {
+                accent: _radix_tokens.GRAY_THEMES[gray]
+                for accent, gray in matching.items()
+            },
+            accent_color,
+        )
+    if accent_color is None:
+        if app_theme is None:
+            return None
+        accent_color = app_theme.accent_color
+    return builder.add(_radix_tokens.GRAY_THEMES[matching[accent_color]])
+
+
 def theme_styles(
     name: str,
     *,
@@ -430,28 +461,23 @@ def theme_styles(
 
     builder.pick("accent_color", accent_color, tokens.ACCENT_THEMES, _ACCENT_MAP)
     if gray_color.__class__ is str and gray_color == "auto":
-        matching = tokens.MATCHING_GRAY
-        if isinstance(accent_color, Var):
-            builder.refs.append(
-                builder.lookup(
-                    _MATCHING_GRAY_MAP,
-                    {
-                        accent: tokens.GRAY_THEMES[gray]
-                        for accent, gray in matching.items()
-                    },
-                    accent_color,
-                )
+        matching = _matching_gray(builder, accent_color, app_theme)
+        if matching is None:
+            msg = (
+                f'{name}: gray_color "auto" is the gray that matches an '
+                "accent color. Give accent_color too, or name the gray."
             )
-        else:
-            if accent_color is None:
-                if app_theme is None:
-                    msg = (
-                        f'{name}: gray_color "auto" is the gray that matches an '
-                        "accent color. Give accent_color too, or name the gray."
-                    )
-                    raise ThemeError(msg)
-                accent_color = app_theme.accent_color
-            builder.refs.append(builder.add(tokens.GRAY_THEMES[matching[accent_color]]))
+            raise ThemeError(msg)
+        builder.refs.append(matching)
+    elif isinstance(gray_color, Var):
+        # "auto" is no gray of the map: it is the one that matches the accent.
+        matching = _matching_gray(builder, accent_color, app_theme)
+        chosen = builder.lookup(_GRAY_MAP, tokens.GRAY_THEMES, gray_color)
+        builder.refs.append(
+            chosen
+            if matching is None
+            else f'({gray_color!s} === "auto" ? {matching} : {chosen})'
+        )
     else:
         builder.pick("gray_color", gray_color, tokens.GRAY_THEMES, _GRAY_MAP)
     builder.pick("radius", radius, tokens.RADIUS_THEMES, _RADIUS_MAP)

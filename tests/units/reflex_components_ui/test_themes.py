@@ -507,6 +507,51 @@ def test_accent_bound_to_state_imports_every_accent():
     )
 
 
+GRAY_MAP = _map(
+    "reflexUIGrays",
+    {name: f"gray{name.capitalize()}" for name in sorted(_radix_tokens.GRAY_THEMES)},
+)
+
+
+def test_gray_bound_to_state_can_be_auto():
+    """A gray of "auto" in state is the gray that matches the accent color."""
+    gray, accent = str(ThemeState.gray), str(ThemeState.accent)
+    start = (
+        '"reflex-ui-theme " + reflexUIClassName(spaceScope, radiusScope, '
+        "typographyScope, shadowScope, colorScope, focusScope, "
+    )
+    # An accent color of its own, known when the app is compiled.
+    styles = theme_styles("rx.ui.theme", accent_color="red", gray_color=ThemeState.gray)
+    assert styles.classes == (
+        f'{start}accentRed, ({gray} === "auto" ? grayMauve : reflexUIGrays[{gray}]), '
+        "reflexUITheme.root)"
+    )
+    assert styles.declarations == (GRAY_MAP,)
+    # An accent color in state too: its gray is looked up as well.
+    styles = theme_styles(
+        "rx.ui.theme", accent_color=ThemeState.accent, gray_color=ThemeState.gray
+    )
+    assert styles.classes == (
+        f"{start}reflexUIAccents[{accent}], "
+        f'({gray} === "auto" ? reflexUIMatchingGrays[{accent}] : '
+        f"reflexUIGrays[{gray}]), reflexUITheme.root)"
+    )
+    assert styles.declarations == (
+        ACCENT_MAP,
+        _map(
+            "reflexUIMatchingGrays",
+            {
+                name: f"gray{matching.capitalize()}"
+                for name, matching in sorted(_radix_tokens.MATCHING_GRAY.items())
+            },
+        ),
+        GRAY_MAP,
+    )
+    # With no accent color to match, the gray is one of the map or none.
+    styles = theme_styles("rx.ui.theme", gray_color=ThemeState.gray)
+    assert styles.classes == f"{start}reflexUIGrays[{gray}], reflexUITheme.root)"
+
+
 def test_every_option_can_be_bound_to_state():
     state = ThemeState
     styles = theme_styles(
@@ -523,7 +568,9 @@ def test_every_option_can_be_bound_to_state():
     assert styles.classes == (
         '"reflex-ui-theme " + reflexUIClassName(spaceScope, radiusScope, '
         "typographyScope, shadowScope, colorScope, focusScope, "
-        f"reflexUIGrays[{state.gray!s}], reflexUIRadii[{state.radius!s}], "
+        # "auto" is the gray of the accent, which is the one of the app here.
+        f'({state.gray!s} === "auto" ? graySlate : reflexUIGrays[{state.gray!s}]), '
+        f"reflexUIRadii[{state.radius!s}], "
         f"reflexUIScalings[{state.scaling!s}], reflexUIPanels[{state.panel!s}], "
         f"reflexUITheme.root, ({state.background!s}) && reflexUITheme.background, "
         f"reflexUITheme[{appearance}])"
