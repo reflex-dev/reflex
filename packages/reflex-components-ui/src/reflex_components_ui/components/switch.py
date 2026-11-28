@@ -73,7 +73,10 @@ class Switch(CheckedInput):
             The values of each such prop, the radius among them: a switch has
             fewer than a theme.
         """
-        return {**super()._literal_props(), "radius": ("none", "small", "full")}
+        return {
+            **super()._literal_props(),  # pyright: ignore[reportAttributeAccessIssue]
+            "radius": ("none", "small", "full"),
+        }
 
     def _render(self, props: dict[str, Any] | None = None) -> CommonTag:
         """Render the input as a switch.

@@ -940,7 +940,7 @@ def test_slider_soft(
 def test_slider_unknown_radius(ui_plugin: UIPlugin):
     """A radius a slider does not have is an error that lists the ones it has."""
     with pytest.raises(StyleError) as error:
-        rx.ui.slider(radius="large")
+        rx.ui.slider(radius="large")  # pyright: ignore[reportArgumentType]
     assert (
         str(error.value)
         == 'rx.ui.slider: unknown radius "large". The values are "none", "small", "full".'

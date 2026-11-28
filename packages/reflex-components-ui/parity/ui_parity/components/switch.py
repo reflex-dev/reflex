@@ -77,10 +77,10 @@ MATRIX = Matrix(
 class SwitchState(rx.State):
     """What the switches of the contract are bound to."""
 
-    bound: bool = False
-    seen: list[bool] = []
-    submitted: dict[str, str] = {}
-    submissions: int = 0
+    bound: rx.Field[bool] = rx.field(False)
+    seen: rx.Field[list[bool]] = rx.field(default_factory=list)
+    submitted: rx.Field[dict[str, str]] = rx.field(default_factory=dict)
+    submissions: rx.Field[int] = rx.field(0)
 
     @rx.event
     def set_bound(self, checked: bool):

@@ -9,6 +9,7 @@ from reflex_components_ui.style import ComponentStyles, unchecked
 from reflex_components_ui.styles.appearance import by_appearance
 from reflex_components_ui.styles.button import _CLASSIC_DISABLED_SHADOW
 from reflex_components_ui.styles.popup import OPENS, POPUP, placements
+from reflex_components_ui.tokens import Step9
 
 accent, gray, white, black = tokens.accent, tokens.gray, tokens.white, tokens.black
 
@@ -61,7 +62,7 @@ _CLASSIC_FILL_RAISED = (
 )
 
 
-def _trigger_size(height: str, gap: str, step: int, radius: str) -> dict[str, Any]:
+def _trigger_size(height: str, gap: str, step: Step9, radius: str) -> dict[str, Any]:
     """Make the styles of a trigger of one size.
 
     Args:
@@ -292,7 +293,8 @@ def _content_size(
     indicator: str,
     separator: str,
     radius: str,
-    step: int,
+    step: Step9,
+    label_step: Step9,
     item_radius: str,
     check: str,
 ) -> dict[str, Any]:
@@ -304,7 +306,9 @@ def _content_size(
         indicator: The room before the text of an item, for its check.
         separator: The room after a separator.
         radius: The radius of the corners of the list.
-        step: The step of the type scale.
+        step: The step of the type scale of an item.
+        label_step: The one of the label of a group, and of the height of
+            the lines of both: no larger than the text of size 2.
         item_radius: The radius of the corners of an item.
         check: The side of the check of the chosen item.
 
@@ -318,11 +322,10 @@ def _content_size(
         _SEPARATOR: separator,
         "border_radius": radius,
         _FONT_SIZE: tokens.font_size[step],
-        _LINE_HEIGHT: tokens.line_height[min(step, 2)],
+        _LINE_HEIGHT: tokens.line_height[label_step],
         _LETTER_SPACING: tokens.letter_spacing[step],
-        # The label of a group is no larger than the text of size 2.
-        _LABEL_SIZE: tokens.font_size[min(step, 2)],
-        _LABEL_SPACING: tokens.letter_spacing[min(step, 2)],
+        _LABEL_SIZE: tokens.font_size[label_step],
+        _LABEL_SPACING: tokens.letter_spacing[label_step],
         _ITEM_RADIUS: item_radius,
         _CHECK: f"calc({check} * {tokens.scaling})",
     }
@@ -375,12 +378,13 @@ SELECT_CONTENT: ComponentStyles = {
                     tokens.space[2],
                     tokens.radius[3],
                     1,
+                    1,
                     tokens.radius[1],
                     "8px",
                 )
             ),
-            "2": unchecked(_content_size(*_LARGE, 2, tokens.radius[2], "10px")),
-            "3": unchecked(_content_size(*_LARGE, 3, tokens.radius[2], "10px")),
+            "2": unchecked(_content_size(*_LARGE, 2, 2, tokens.radius[2], "10px")),
+            "3": unchecked(_content_size(*_LARGE, 3, 2, tokens.radius[2], "10px")),
         },
         "variant": {
             "solid": unchecked({_MARK: accent[9], _MARK_COLOR: accent.contrast}),

@@ -12,6 +12,7 @@ from reflex_components_ui.styles.text_field import (
     INPUT_RESET,
     OFF,
 )
+from reflex_components_ui.tokens import Step9
 
 accent, gray, focus = tokens.accent, tokens.gray, tokens.focus
 
@@ -41,7 +42,7 @@ def _ring(color: str) -> dict[str, Any]:
     }
 
 
-def _input_size(y: str, x: str, step: int) -> dict[str, Any]:
+def _input_size(y: str, x: str, step: Step9) -> dict[str, Any]:
     """Make the styles of the textarea of one size.
 
     Args:

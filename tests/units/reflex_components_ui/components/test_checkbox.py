@@ -461,7 +461,7 @@ def test_checkbox_spacing_and_gap(
 def test_checkbox_unknown_variant(ui_plugin: UIPlugin):
     """A variant a checkbox does not have is an error that lists the ones it has."""
     with pytest.raises(StyleError) as error:
-        rx.ui.checkbox("Agree", variant="solid")
+        rx.ui.checkbox("Agree", variant="solid")  # pyright: ignore[reportArgumentType]
     assert (
         str(error.value)
         == 'rx.ui.checkbox: unknown variant "solid". The values are "classic", "surface", "soft".'
@@ -471,7 +471,7 @@ def test_checkbox_unknown_variant(ui_plugin: UIPlugin):
 def test_checkbox_unknown_size(ui_plugin: UIPlugin):
     """So is a size."""
     with pytest.raises(StyleError) as error:
-        rx.ui.checkbox("Agree", size="4")
+        rx.ui.checkbox("Agree", size="4")  # pyright: ignore[reportArgumentType]
     assert (
         str(error.value)
         == 'rx.ui.checkbox: unknown size "4". The values are "1", "2", "3".'

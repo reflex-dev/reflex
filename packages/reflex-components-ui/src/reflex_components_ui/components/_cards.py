@@ -90,7 +90,7 @@ class CardsItem(GroupMember, UIComponent):
         """
         self._variant = group.variant
         self._high_contrast = group.high_contrast
-        self._merge_styles()
+        self._merge_styles()  # pyright: ignore[reportAttributeAccessIssue]
 
     def _exclude_props(self) -> list[str]:
         """Keep the props that are the ones of the input off the label.

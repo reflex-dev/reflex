@@ -72,10 +72,10 @@ MATRIX = Matrix(
 class CheckboxGroupState(rx.State):
     """What the checkbox groups of the contract are bound to."""
 
-    bound: list[str] = ["a"]
-    seen: list[list[str]] = []
-    submitted: dict[str, Any] = {}
-    submissions: int = 0
+    bound: rx.Field[list[str]] = rx.field(["a"])
+    seen: rx.Field[list[list[str]]] = rx.field(default_factory=list)
+    submitted: rx.Field[dict[str, Any]] = rx.field(default_factory=dict)
+    submissions: rx.Field[int] = rx.field(0)
 
     @rx.event
     def set_bound(self, values: list[str]):

@@ -219,12 +219,12 @@ MATRIX = Matrix(
 class SelectState(rx.State):
     """What the selects of the contract are bound to."""
 
-    bound: str = "banana"
-    seen: list[str] = []
-    opened: list[bool] = []
-    clicks: int = 0
-    submitted: dict[str, str] = {}
-    submissions: int = 0
+    bound: rx.Field[str] = rx.field("banana")
+    seen: rx.Field[list[str]] = rx.field(default_factory=list)
+    opened: rx.Field[list[bool]] = rx.field(default_factory=list)
+    clicks: rx.Field[int] = rx.field(0)
+    submitted: rx.Field[dict[str, str]] = rx.field(default_factory=dict)
+    submissions: rx.Field[int] = rx.field(0)
 
     @rx.event
     def set_bound(self, value: str):

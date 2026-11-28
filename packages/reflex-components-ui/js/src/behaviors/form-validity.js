@@ -46,7 +46,10 @@ function report(form, control, known) {
   const field = control.closest("[data-rx-form-field]");
   const validity = control.validity;
   const invalid = known && !validity.valid;
-  const marked = [control, ...(field ? [field, ...field.querySelectorAll("label")] : [])];
+  const marked = [
+    control,
+    ...(field ? [field, ...field.querySelectorAll("label")] : []),
+  ];
   for (const element of marked) {
     if (element !== field || !field.hasAttribute("data-server-invalid")) {
       element.toggleAttribute("data-invalid", invalid);
@@ -57,11 +60,15 @@ function report(form, control, known) {
   for (const message of form.querySelectorAll("[data-rx-form-message]")) {
     if (!(message instanceof HTMLElement)) continue;
     const name = message.dataset.name;
-    const own = name ? name === control.name : field !== null && field.contains(message);
+    const own = name
+      ? name === control.name
+      : field !== null && field.contains(message);
     if (!own) continue;
     const match = message.dataset.match;
     if (match && !("force" in message.dataset)) {
-      message.hidden = !(known && /** @type {Record<string, any>} */ (validity)[match]);
+      message.hidden = !(
+        known && /** @type {Record<string, any>} */ (validity)[match]
+      );
     }
     if (!message.hidden) {
       message.id ||= `rx-form-message-${++ids}`;
@@ -155,7 +162,10 @@ export function focusInvalid(field) {
   if (!form) return;
   for (const element of form.elements) {
     const control = controlOf(element);
-    if (control && (control.ariaInvalid === "true" || !control.validity.valid)) {
+    if (
+      control &&
+      (control.ariaInvalid === "true" || !control.validity.valid)
+    ) {
       control.focus();
       return;
     }

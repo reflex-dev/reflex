@@ -35,7 +35,10 @@ function toggle(popupToggle, popup, newState) {
  * @returns {(string | null)[]} Its `aria-expanded` and its `data-state`.
  */
 function said(trigger) {
-  return [trigger.getAttribute("aria-expanded"), trigger.getAttribute("data-state")];
+  return [
+    trigger.getAttribute("aria-expanded"),
+    trigger.getAttribute("data-state"),
+  ];
 }
 
 beforeEach(() => {
@@ -47,7 +50,9 @@ afterEach(() => {
 });
 
 test("the trigger says whether its popup is open, and the browser places it", async () => {
-  vi.stubGlobal("CSS", { supports: (/** @type {string} */ rule) => rule === "position-area: bottom" });
+  vi.stubGlobal("CSS", {
+    supports: (/** @type {string} */ rule) => rule === "position-area: bottom",
+  });
   const { popupToggle } = await import("$/reflex-ui/behaviors/popup.js");
   const { trigger, popup } = build();
 
@@ -60,9 +65,13 @@ test("the trigger says whether its popup is open, and the browser places it", as
 });
 
 test("a popup nothing opens is followed without a trigger", async () => {
-  const { popupToggle, opener } = await import("$/reflex-ui/behaviors/popup.js");
+  const { popupToggle, opener } = await import(
+    "$/reflex-ui/behaviors/popup.js"
+  );
   document.body.innerHTML = `<div popover id="alone"></div><div popover></div>`;
-  const [alone, unnamed] = /** @type {HTMLElement[]} */ ([...document.querySelectorAll("[popover]")]);
+  const [alone, unnamed] = /** @type {HTMLElement[]} */ ([
+    ...document.querySelectorAll("[popover]"),
+  ]);
 
   expect(opener(alone)).toBe(null);
   expect(opener(unnamed)).toBe(null);
@@ -72,14 +81,23 @@ test("a popup nothing opens is followed without a trigger", async () => {
 test("the popups a loop renders with one id are told apart", async () => {
   const { opener, pair } = await import("$/reflex-ui/behaviors/popup.js");
   document.body.innerHTML = [1, 2]
-    .map(() => `<span><button popovertarget="list"></button><div popover id="list"></div></span>`)
+    .map(
+      () =>
+        `<span><button popovertarget="list"></button><div popover id="list"></div></span>`,
+    )
     .join("");
   const spans = [...document.querySelectorAll("span")];
   for (const span of spans) {
-    pair(/** @type {Element} */ (span.querySelector("[popover]")), span.querySelector("button"));
+    pair(
+      /** @type {Element} */ (span.querySelector("[popover]")),
+      span.querySelector("button"),
+    );
   }
   // A second sync of the first changes nothing.
-  pair(/** @type {Element} */ (spans[0].querySelector("[popover]")), spans[0].querySelector("button"));
+  pair(
+    /** @type {Element} */ (spans[0].querySelector("[popover]")),
+    spans[0].querySelector("button"),
+  );
   pair(/** @type {Element} */ (spans[1].querySelector("[popover]")), null);
 
   expect(
@@ -92,9 +110,9 @@ test("the popups a loop renders with one id are told apart", async () => {
     ["list-1", "list-1", "list-1"],
     ["list-2", "list-2", "list-2"],
   ]);
-  expect(opener(/** @type {Element} */ (spans[1].querySelector("[popover]")))).toBe(
-    spans[1].querySelector("button"),
-  );
+  expect(
+    opener(/** @type {Element} */ (spans[1].querySelector("[popover]"))),
+  ).toBe(spans[1].querySelector("button"));
 });
 
 test("a browser without anchor positioning has the popup placed by a script", async () => {

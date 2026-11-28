@@ -72,10 +72,10 @@ MATRIX = Matrix(
 class TextAreaState(rx.State):
     """What the text areas of the contract are bound to."""
 
-    bound: str = "start"
-    seen: list[str] = []
-    submitted: dict[str, Any] = {}
-    submissions: int = 0
+    bound: rx.Field[str] = rx.field("start")
+    seen: rx.Field[list[str]] = rx.field(default_factory=list)
+    submitted: rx.Field[dict[str, Any]] = rx.field(default_factory=dict)
+    submissions: rx.Field[int] = rx.field(0)
 
     @rx.event
     def set_bound(self, value: str):

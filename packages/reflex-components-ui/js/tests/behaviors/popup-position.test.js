@@ -26,8 +26,14 @@ beforeEach(() => {
   popup = /** @type {HTMLElement} */ (document.querySelector("[popover]"));
   box = { left: 40, top: 100, bottom: 132, width: 120 };
   anchor.getBoundingClientRect = () => /** @type {DOMRect} */ (box);
-  Object.defineProperty(popup, "offsetHeight", { value: 200, configurable: true });
-  Object.defineProperty(popup, "offsetWidth", { value: 160, configurable: true });
+  Object.defineProperty(popup, "offsetHeight", {
+    value: 200,
+    configurable: true,
+  });
+  Object.defineProperty(popup, "offsetWidth", {
+    value: 160,
+    configurable: true,
+  });
   vi.stubGlobal("innerWidth", 800);
   vi.stubGlobal("innerHeight", 600);
 });

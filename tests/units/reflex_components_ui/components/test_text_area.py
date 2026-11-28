@@ -490,7 +490,7 @@ def test_text_area_bound_to_state(
 def test_text_area_unknown_resize(ui_plugin: UIPlugin):
     """A resize behavior a text area does not have is an error that lists the ones it has."""
     with pytest.raises(StyleError) as error:
-        rx.ui.text_area(resize="diagonal")
+        rx.ui.text_area(resize="diagonal")  # pyright: ignore[reportArgumentType]
     assert (
         str(error.value)
         == 'rx.ui.text_area: unknown resize "diagonal". The values are "none", "vertical", "horizontal", "both".'

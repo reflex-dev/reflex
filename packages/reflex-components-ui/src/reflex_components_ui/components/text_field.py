@@ -313,7 +313,7 @@ class TextFieldSlot(UIComponent):
             side: The side.
         """
         self._side = side
-        self._merge_styles()
+        self._merge_styles()  # pyright: ignore[reportAttributeAccessIssue]
 
     def _exclude_props(self) -> list[str]:
         """Keep the side off the element as a prop: it is rendered as data.

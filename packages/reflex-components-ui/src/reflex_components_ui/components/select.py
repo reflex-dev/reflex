@@ -528,8 +528,8 @@ class SelectTrigger(UIComponent):
         self._select = attributes
         # The parts take their styles again: the size is one of theirs.
         for part in descendants(self, Part):
-            part._merged = None
-        self._merge_styles()
+            part._merged = None  # pyright: ignore[reportAttributeAccessIssue]
+        self._merge_styles()  # pyright: ignore[reportAttributeAccessIssue]
 
     def _get_vars(
         self, include_children: bool = False, ignore_ids: set[int] | None = None
@@ -714,7 +714,7 @@ class SelectContent(UIComponent):
             self.id = LiteralVar.create(popup)
         if on_open_change is not None:
             self.event_triggers["on_open_change"] = on_open_change
-        self._merge_styles()
+        self._merge_styles()  # pyright: ignore[reportAttributeAccessIssue]
         return self.id
 
     def _get_vars(
@@ -753,11 +753,13 @@ class SelectContent(UIComponent):
             to the script of the select, and through it to the events.
         """
         tag = super()._render(props)
+        rendered = dict(tag.props)
         handlers = {
-            name: LiteralVar.create(tag.props.pop(event))
+            name: LiteralVar.create(rendered.pop(event))
             for event, name in _POPUP_EVENTS.items()
-            if event in tag.props
+            if event in rendered
         }
+        tag = tag.set(props=rendered)
         toggle = _script("selectToggle")
         if handlers:
             called = ", ".join([

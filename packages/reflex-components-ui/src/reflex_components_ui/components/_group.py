@@ -105,7 +105,7 @@ class GroupItemLabel(GroupMember, Text):
         """
         # The size Radix Themes gives a group that is not given one.
         self.size = LiteralVar.create("2") if group.size is None else group.size
-        self._merge_styles()
+        self._merge_styles()  # pyright: ignore[reportAttributeAccessIssue]
 
     def add_style(self) -> dict[str, Any]:
         """Lay the input and its text out in a row.
@@ -200,7 +200,7 @@ class GroupInput(GroupMember, UIComponent):
             if checked is not False:
                 attributes["default_checked"] = checked
         self._group = attributes
-        self._merge_styles()
+        self._merge_styles()  # pyright: ignore[reportAttributeAccessIssue]
 
     def _variant_of(self, group: Any) -> Any:
         """Get the variant the input has in a group.

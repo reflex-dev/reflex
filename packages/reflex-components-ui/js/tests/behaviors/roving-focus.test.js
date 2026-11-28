@@ -27,7 +27,9 @@ beforeEach(() => {
  * @returns {HTMLInputElement} The radio button.
  */
 function radio(value) {
-  return /** @type {HTMLInputElement} */ (group.querySelector(`[value=${value}]`));
+  return /** @type {HTMLInputElement} */ (
+    group.querySelector(`[value=${value}]`)
+  );
 }
 
 /**
@@ -63,7 +65,13 @@ function focused() {
 test("the arrow keys move the focus past a disabled item and around the ends", () => {
   radio("a").focus();
   const visited = [];
-  for (const key of ["ArrowRight", "ArrowDown", "ArrowRight", "ArrowLeft", "ArrowUp"]) {
+  for (const key of [
+    "ArrowRight",
+    "ArrowDown",
+    "ArrowRight",
+    "ArrowLeft",
+    "ArrowUp",
+  ]) {
     expect(press(key)).toBe(true);
     visited.push(focused());
   }

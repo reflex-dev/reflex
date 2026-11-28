@@ -37,7 +37,9 @@ function parts(select) {
  * @returns {string} Its text, without what marks it as chosen.
  */
 function textOf(option) {
-  return (option.querySelector("[data-rx-select-text]") ?? option).textContent ?? "";
+  return (
+    (option.querySelector("[data-rx-select-text]") ?? option).textContent ?? ""
+  );
 }
 
 /**
@@ -55,7 +57,9 @@ function textOf(option) {
  * @returns {void}
  */
 export function syncSelect(holder, value, open) {
-  const select = /** @type {HTMLElement | null | undefined} */ (holder?.closest("[data-rx-select]"));
+  const select = /** @type {HTMLElement | null | undefined} */ (
+    holder?.closest("[data-rx-select]")
+  );
   if (!select) return;
   const { trigger, popup } = parts(select);
   if (!trigger || !popup || !(holder instanceof HTMLInputElement)) return;
@@ -116,9 +120,10 @@ function choose(select, option) {
     popup.hidePopover();
   }
   if (!trigger || !holder || holder.value === value) return;
-  const setter = /** @type {(this: HTMLInputElement, value: string) => void} */ (
-    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set
-  );
+  const setter =
+    /** @type {(this: HTMLInputElement, value: string) => void} */ (
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set
+    );
   setter.call(holder, value);
   // As a user types it, so that React hears of it.
   holder.dispatchEvent(new Event("input", { bubbles: true }));
@@ -147,10 +152,16 @@ function find(options, key, from) {
   const search = repeated ? typed[0] : typed;
   const start = options.indexOf(/** @type {HTMLElement} */ (from));
   const order = [...options.slice(start + 1), ...options.slice(0, start + 1)];
-  if (!repeated && from && textOf(from).trim().toLowerCase().startsWith(search)) {
+  if (
+    !repeated &&
+    from &&
+    textOf(from).trim().toLowerCase().startsWith(search)
+  ) {
     return /** @type {HTMLElement} */ (from);
   }
-  return order.find((option) => textOf(option).trim().toLowerCase().startsWith(search));
+  return order.find((option) =>
+    textOf(option).trim().toLowerCase().startsWith(search),
+  );
 }
 
 /**
@@ -171,8 +182,11 @@ export function selectKeyDown(event) {
   if (!trigger || !popup || !holder) return;
   const { key } = event;
   if (key === "Escape") popup.dataset.rxClosedBy = "escape";
-  const options = /** @type {HTMLElement[]} */ ([...select.querySelectorAll(ENABLED)]);
-  const letter = key.length === 1 && !event.altKey && !event.ctrlKey && !event.metaKey;
+  const options = /** @type {HTMLElement[]} */ ([
+    ...select.querySelectorAll(ENABLED),
+  ]);
+  const letter =
+    key.length === 1 && !event.altKey && !event.ctrlKey && !event.metaKey;
   if (!popup.matches(":popover-open")) {
     if (event.target !== trigger || trigger.matches(":disabled")) return;
     if (key === "ArrowDown" || key === "ArrowUp") {
@@ -180,13 +194,17 @@ export function selectKeyDown(event) {
       trigger.click();
     } else if (letter && (key !== " " || typed)) {
       event.preventDefault();
-      const current = options.find((option) => option.dataset.value === holder.value);
+      const current = options.find(
+        (option) => option.dataset.value === holder.value,
+      );
       const found = find(options, key, current ?? null);
       if (found) choose(select, found);
     }
     return;
   }
-  const at = options.indexOf(/** @type {HTMLElement} */ (document.activeElement));
+  const at = options.indexOf(
+    /** @type {HTMLElement} */ (document.activeElement),
+  );
   /** @type {HTMLElement | undefined} */
   let next;
   if (key === "ArrowDown") next = options[Math.min(at + 1, options.length - 1)];
@@ -214,7 +232,8 @@ export function selectKeyDown(event) {
  * @returns {void}
  */
 export function selectClick(event) {
-  const option = event.target instanceof Element ? event.target.closest(ENABLED) : null;
+  const option =
+    event.target instanceof Element ? event.target.closest(ENABLED) : null;
   if (option) choose(event.currentTarget, option);
 }
 
@@ -229,7 +248,8 @@ export function selectPointerMove(event) {
   const target = event.target instanceof Element ? event.target : null;
   const option = target?.closest(ENABLED);
   if (option instanceof HTMLElement) {
-    if (option !== document.activeElement) option.focus({ preventScroll: true });
+    if (option !== document.activeElement)
+      option.focus({ preventScroll: true });
   } else if (target?.closest("[popover]")) {
     parts(event.currentTarget).popup?.focus({ preventScroll: true });
   }
@@ -256,11 +276,20 @@ export function selectToggle(event, on) {
   typed = "";
   on?.open?.(open);
   if (open) {
-    const options = /** @type {HTMLElement[]} */ ([...popup.querySelectorAll(ENABLED)]);
-    (options.find((option) => option.getAttribute("aria-selected") === "true") ?? options[0] ?? popup).focus();
+    const options = /** @type {HTMLElement[]} */ ([
+      ...popup.querySelectorAll(ENABLED),
+    ]);
+    (
+      options.find(
+        (option) => option.getAttribute("aria-selected") === "true",
+      ) ??
+      options[0] ??
+      popup
+    ).focus();
     return;
   }
-  if (popup.contains(document.activeElement)) /** @type {HTMLElement | null} */ (opener(popup))?.focus();
+  if (popup.contains(document.activeElement))
+    /** @type {HTMLElement | null} */ (opener(popup))?.focus();
   if (by === "escape") on?.escape?.();
   else if (!by) on?.outside?.();
   on?.close?.();

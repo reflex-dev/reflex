@@ -1364,7 +1364,7 @@ def test_select_ghost_styles(
 def test_select_unknown_variant(ui_plugin: UIPlugin):
     """A variant a trigger does not have is an error that lists the ones it has."""
     with pytest.raises(StyleError) as error:
-        rx.ui.select.trigger(variant="solid")
+        rx.ui.select.trigger(variant="solid")  # pyright: ignore[reportArgumentType]
     assert (
         str(error.value)
         == 'rx.ui.select_trigger: unknown variant "solid". The values are "classic", "surface", "soft", "ghost".'
@@ -1374,7 +1374,7 @@ def test_select_unknown_variant(ui_plugin: UIPlugin):
 def test_select_unknown_side(ui_plugin: UIPlugin):
     """A side a list cannot be on is an error that lists the sides."""
     with pytest.raises(StyleError) as error:
-        rx.ui.select.content(side="above")
+        rx.ui.select.content(side="above")  # pyright: ignore[reportArgumentType]
     assert (
         str(error.value)
         == 'rx.ui.select_content: unknown side "above". The values are "top", "right", "bottom", "left".'
@@ -1384,7 +1384,7 @@ def test_select_unknown_side(ui_plugin: UIPlugin):
 def test_select_of_a_list_unknown_variant(ui_plugin: UIPlugin):
     """The select of a list of words fails as its trigger does."""
     with pytest.raises(StyleError) as error:
-        rx.ui.select(["a"], variant="outline")
+        rx.ui.select(["a"], variant="outline")  # pyright: ignore[reportArgumentType]
     assert (
         str(error.value)
         == 'rx.ui.select_trigger: unknown variant "outline". The values are "classic", "surface", "soft", "ghost".'
@@ -1493,7 +1493,7 @@ def test_select_bound_to_state(ui_plugin: UIPlugin):
         (f'style:({{ "--v0": ((({STATE}.offset_rx_state_) + "px")) ?? "initial" }})'),
         "tabIndex:-1",
     ]
-    assert str(content._element_styles().style.style["--rx-popup-offset"]) == (
+    assert str(content._element_styles().style.style["--rx-popup-offset"]) == (  # pyright: ignore[reportAttributeAccessIssue]
         f'(({STATE}.offset_rx_state_) + "px")'
     )
     assert [item.render()["props"][0] for item in content.children] == [

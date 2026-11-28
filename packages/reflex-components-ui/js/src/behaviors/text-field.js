@@ -17,7 +17,8 @@
  */
 export function focusField(event) {
   const target = event.target;
-  if (!(target instanceof Element) || target.closest("input, button, a")) return;
+  if (!(target instanceof Element) || target.closest("input, button, a"))
+    return;
   const input = event.currentTarget.querySelector("input");
   if (!input) return;
   const caret = target.closest("[data-side='right']") ? input.value.length : 0;

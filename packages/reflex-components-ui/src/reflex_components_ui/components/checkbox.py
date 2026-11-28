@@ -105,7 +105,9 @@ class HighLevelCheckbox(Checkbox):
         doc="The gap between the checkbox and the label."
     )
 
-    size: Var[LiteralCheckboxSize] = field(doc='The size of the checkbox "1" - "3".')
+    size: Var[LiteralCheckboxSize] = field(  # pyright: ignore[reportIncompatibleVariableOverride]
+        doc='The size of the checkbox "1" - "3".'
+    )
 
     @classmethod
     def create(cls, text: Var[str] = Var.create(""), **props) -> Component:

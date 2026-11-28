@@ -482,7 +482,7 @@ def test_form_control_child_is_a_native_control(ui_plugin: UIPlugin):
 def test_form_message_unknown_match(ui_plugin: UIPlugin):
     """A condition a message cannot have is an error."""
     with pytest.raises(TypeError) as error:
-        rx.ui.form.message("x", match="wrong")
+        rx.ui.form.message("x", match="wrong")  # pyright: ignore[reportArgumentType]
     assert (
         str(error.value)
         == "Invalid var passed for prop FormMessage.match, expected type typing.Literal['badInput', 'patternMismatch', 'rangeOverflow', 'rangeUnderflow', 'stepMismatch', 'tooLong', 'tooShort', 'typeMismatch', 'valid', 'valueMissing'], got value 'wrong' of type <class 'str'>."

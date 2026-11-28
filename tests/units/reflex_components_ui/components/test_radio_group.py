@@ -533,7 +533,7 @@ def test_radio_group_not_a_list(ui_plugin: UIPlugin):
 def test_radio_group_unknown_variant(ui_plugin: UIPlugin):
     """A variant a group does not have is an error that lists the ones it has."""
     with pytest.raises(TypeError) as error:
-        rx.ui.radio.root(variant="solid")
+        rx.ui.radio.root(variant="solid")  # pyright: ignore[reportArgumentType]
     assert (
         str(error.value)
         == "Invalid var passed for prop RadioGroupRoot.variant, expected type typing.Literal['classic', 'surface', 'soft'], got value 'solid' of type <class 'str'>."
@@ -583,7 +583,7 @@ def test_radio_group_bound_to_state(ui_plugin: UIPlugin):
     }
     # The compiler finds the state an item reads through its group.
     item = component.children[0]
-    assert [str(var) for var in item._get_vars()] == [
+    assert [str(var) for var in item._get_vars()] == [  # pyright: ignore[reportAttributeAccessIssue]
         '"a"',
         '"pick"',
         f'({picked} === "a")',
@@ -613,8 +613,8 @@ def test_radio_group_inside_another(ui_plugin: UIPlugin):
     inner = rx.ui.radio.root(rx.ui.radio.item(value="1"), name="inner", size="1")
     rx.ui.radio.root(rx.ui.radio.item(value="2"), inner, name="outer", size="3")
     item = inner.children[0]
-    assert item._group == {"name": inner.name}
-    assert item._element_styles().style.style["--radio-size"] == (
+    assert item._group == {"name": inner.name}  # pyright: ignore[reportAttributeAccessIssue]
+    assert item._element_styles().style.style["--radio-size"] == (  # pyright: ignore[reportAttributeAccessIssue]
         "calc(var(--space-4) * 0.875)"
     )
 

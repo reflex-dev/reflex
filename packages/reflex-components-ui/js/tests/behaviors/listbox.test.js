@@ -39,7 +39,12 @@ let heard;
  *   attributes of the element around it, and the id of its popup.
  * @returns {void}
  */
-function build({ value = "", disabled = "", attributes = "", id = "list" } = {}) {
+function build({
+  value = "",
+  disabled = "",
+  attributes = "",
+  id = "list",
+} = {}) {
   const container = document.createElement("div");
   container.innerHTML = `<span data-rx-select ${attributes}>
     <button type="button" role="combobox" popovertarget="${id}"><span data-rx-select-shown data-placeholder="Pick">${value}</span></button>
@@ -53,7 +58,9 @@ function build({ value = "", disabled = "", attributes = "", id = "list" } = {})
     <input data-rx-select-value value="${value}" />
   </span>`;
   document.body.append(container);
-  select = /** @type {HTMLElement} */ (container.querySelector("[data-rx-select]"));
+  select = /** @type {HTMLElement} */ (
+    container.querySelector("[data-rx-select]")
+  );
   trigger = /** @type {HTMLElement} */ (select.querySelector("button"));
   popup = /** @type {HTMLElement} */ (select.querySelector("[popover]"));
   holder = /** @type {HTMLInputElement} */ (select.querySelector("input"));
@@ -101,7 +108,9 @@ function press(key, more = {}) {
  * @returns {HTMLElement} The option.
  */
 function option(value) {
-  return /** @type {HTMLElement} */ (select.querySelector(`[data-value="${value}"]`));
+  return /** @type {HTMLElement} */ (
+    select.querySelector(`[data-value="${value}"]`)
+  );
 }
 
 /**
@@ -116,9 +125,11 @@ function state() {
     value: holder.value,
     shown: trigger.textContent,
     empty: trigger.hasAttribute("data-placeholder"),
-    chosen: [...select.querySelectorAll('[aria-selected="true"][data-state="checked"]')].map(
-      (element) => element.getAttribute("data-value") ?? "",
-    ),
+    chosen: [
+      ...select.querySelectorAll(
+        '[aria-selected="true"][data-state="checked"]',
+      ),
+    ].map((element) => element.getAttribute("data-value") ?? ""),
     open: popup.matches(":popover-open"),
   };
 }
@@ -142,7 +153,13 @@ beforeEach(() => {
 test("a select without a value shows its placeholder, and every option unchosen", () => {
   build();
 
-  expect(state()).toEqual({ value: "", shown: "Pick", empty: true, chosen: [], open: false });
+  expect(state()).toEqual({
+    value: "",
+    shown: "Pick",
+    empty: true,
+    chosen: [],
+    open: false,
+  });
   expect(
     [...select.querySelectorAll("[role=option]")].map((element) => [
       element.getAttribute("aria-selected"),
@@ -166,7 +183,13 @@ test("a select with a value shows the text of its option", () => {
 test("a value no option has shows the placeholder", () => {
   build({ value: "kiwi" });
 
-  expect(state()).toEqual({ value: "kiwi", shown: "Pick", empty: true, chosen: [], open: false });
+  expect(state()).toEqual({
+    value: "kiwi",
+    shown: "Pick",
+    empty: true,
+    chosen: [],
+    open: false,
+  });
 });
 
 test("a trigger without the element that shows the value is left as it is", () => {
@@ -197,14 +220,23 @@ test("nothing is done for what is not a select", () => {
   syncSelect(holder);
   press("ArrowDown");
 
-  expect(document.body.innerHTML).toBe(before.replace(/<button.*<\/button>/, ""));
+  expect(document.body.innerHTML).toBe(
+    before.replace(/<button.*<\/button>/, ""),
+  );
 });
 
 test("opening gives the focus to the chosen option, or to the first", () => {
   build({ value: "banana" });
   trigger.click();
-  expect([state().open, focused(), heard]).toEqual([true, "banana", ["open true"]]);
-  expect([trigger.getAttribute("aria-expanded"), trigger.getAttribute("data-state")]).toEqual(["true", "open"]);
+  expect([state().open, focused(), heard]).toEqual([
+    true,
+    "banana",
+    ["open true"],
+  ]);
+  expect([
+    trigger.getAttribute("aria-expanded"),
+    trigger.getAttribute("data-state"),
+  ]).toEqual(["true", "open"]);
 
   build({ disabled: "apple" });
   trigger.click();
@@ -213,7 +245,8 @@ test("opening gives the focus to the chosen option, or to the first", () => {
 
 test("a list without options takes the focus itself", () => {
   build();
-  for (const element of select.querySelectorAll("[role=option]")) element.remove();
+  for (const element of select.querySelectorAll("[role=option]"))
+    element.remove();
   trigger.click();
 
   expect(document.activeElement).toBe(popup);
@@ -222,27 +255,44 @@ test("a list without options takes the focus itself", () => {
 test("the arrow keys open the list from the trigger", () => {
   build();
   trigger.focus();
-  expect([press("ArrowDown"), state().open, focused()]).toEqual([true, true, "apple"]);
+  expect([press("ArrowDown"), state().open, focused()]).toEqual([
+    true,
+    true,
+    "apple",
+  ]);
   popup.hidePopover();
   expect([press("ArrowUp"), state().open]).toEqual([true, true]);
 });
 
 test("a key on anything but the trigger of a closed select is left alone", () => {
   build();
-  expect([press("ArrowDown", { target: holder }), state().open]).toEqual([false, false]);
+  expect([press("ArrowDown", { target: holder }), state().open]).toEqual([
+    false,
+    false,
+  ]);
   trigger.setAttribute("disabled", "");
-  expect([press("ArrowDown", { target: trigger }), state().open]).toEqual([false, false]);
-  expect([press("Enter", { target: trigger }), state().open]).toEqual([false, false]);
+  expect([press("ArrowDown", { target: trigger }), state().open]).toEqual([
+    false,
+    false,
+  ]);
+  expect([press("Enter", { target: trigger }), state().open]).toEqual([
+    false,
+    false,
+  ]);
 });
 
 test("the arrow keys, Home and End move through the options that can be chosen", () => {
   build({ disabled: "apricot" });
   trigger.click();
-  const moves = ["ArrowDown", "ArrowDown", "ArrowDown", "ArrowUp", "Home", "ArrowUp", "End"].map((key) => [
-    key,
-    press(key),
-    focused(),
-  ]);
+  const moves = [
+    "ArrowDown",
+    "ArrowDown",
+    "ArrowDown",
+    "ArrowUp",
+    "Home",
+    "ArrowUp",
+    "End",
+  ].map((key) => [key, press(key), focused()]);
 
   expect(moves).toEqual([
     ["ArrowDown", true, "banana"],
@@ -259,8 +309,16 @@ test("Tab stays in an open list, and other keys are left to the browser", () => 
   build();
   trigger.click();
 
-  expect([press("Tab"), focused(), state().open]).toEqual([true, "apple", true]);
-  expect([press("Shift"), press("a", { ctrlKey: true }), focused()]).toEqual([false, false, "apple"]);
+  expect([press("Tab"), focused(), state().open]).toEqual([
+    true,
+    "apple",
+    true,
+  ]);
+  expect([press("Shift"), press("a", { ctrlKey: true }), focused()]).toEqual([
+    false,
+    false,
+    "apple",
+  ]);
 });
 
 test("Enter and Space choose the option that has the focus", () => {
@@ -292,15 +350,26 @@ test("Enter with the focus on the list itself chooses nothing", () => {
   trigger.click();
   popup.focus();
 
-  expect([press("Enter"), state().value, state().open]).toEqual([true, "", true]);
+  expect([press("Enter"), state().value, state().open]).toEqual([
+    true,
+    "",
+    true,
+  ]);
 });
 
 test("choosing the chosen option closes the list and changes nothing", () => {
   build({ value: "banana" });
   trigger.click();
-  selectClick({ target: option("banana").lastElementChild, currentTarget: select });
+  selectClick({
+    target: option("banana").lastElementChild,
+    currentTarget: select,
+  });
 
-  expect([state().value, state().open, heard]).toEqual(["banana", false, ["open true", "open false", "close"]]);
+  expect([state().value, state().open, heard]).toEqual([
+    "banana",
+    false,
+    ["open true", "open false", "close"],
+  ]);
 });
 
 test("a click chooses an option, and nothing anywhere else or on a disabled one", () => {
@@ -311,8 +380,15 @@ test("a click chooses an option, and nothing anywhere else or on a disabled one"
   selectClick({ target: null, currentTarget: select });
   expect([state().value, state().open]).toEqual(["", true]);
 
-  selectClick({ target: option("cherry").lastElementChild, currentTarget: select });
-  expect([state().value, state().shown, state().open]).toEqual(["cherry", "Cherry", false]);
+  selectClick({
+    target: option("cherry").lastElementChild,
+    currentTarget: select,
+  });
+  expect([state().value, state().shown, state().open]).toEqual([
+    "cherry",
+    "Cherry",
+    false,
+  ]);
 });
 
 test("typing in the list goes to the option that starts with it", () => {
@@ -328,7 +404,12 @@ test("typing in the list goes to the option that starts with it", () => {
   expect([press("a"), focused()]).toEqual([true, "apple"]);
   vi.advanceTimersByTime(1000);
   // Several letters are a search, which stays where it matches.
-  expect([press("a"), press("p"), press("r"), focused()]).toEqual([true, true, true, "apricot"]);
+  expect([press("a"), press("p"), press("r"), focused()]).toEqual([
+    true,
+    true,
+    true,
+    "apricot",
+  ]);
   // A space is part of what is typed, and chooses nothing.
   expect([press(" "), state().open, state().value]).toEqual([true, true, ""]);
   vi.advanceTimersByTime(1000);
@@ -341,7 +422,11 @@ test("typing on the trigger chooses the next option that starts with it", () => 
   build({ value: "apple" });
   trigger.focus();
 
-  expect([press("a"), state().value, state().open]).toEqual([true, "apricot", false]);
+  expect([press("a"), state().value, state().open]).toEqual([
+    true,
+    "apricot",
+    false,
+  ]);
   vi.advanceTimersByTime(1000);
   expect([press("c"), state().value]).toEqual([true, "cherry"]);
   vi.advanceTimersByTime(1000);
@@ -355,7 +440,10 @@ test("typing on the trigger chooses the next option that starts with it", () => 
 test("the pointer gives the option under it the focus, and the list between options", () => {
   build({ disabled: "banana" });
   trigger.click();
-  selectPointerMove({ target: option("cherry").lastElementChild, currentTarget: select });
+  selectPointerMove({
+    target: option("cherry").lastElementChild,
+    currentTarget: select,
+  });
   expect(focused()).toBe("cherry");
   selectPointerMove({ target: option("cherry"), currentTarget: select });
   expect(focused()).toBe("cherry");
@@ -429,7 +517,10 @@ test("a choice the state does not follow leaves the select as it was", () => {
 
 test("a select that starts open opens once", () => {
   build({ attributes: 'data-default-open="true"' });
-  expect([state().open, select.hasAttribute("data-default-open")]).toEqual([true, false]);
+  expect([state().open, select.hasAttribute("data-default-open")]).toEqual([
+    true,
+    false,
+  ]);
 
   popup.hidePopover();
   syncSelect(holder);

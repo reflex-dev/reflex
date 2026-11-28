@@ -36,7 +36,7 @@ class TextAreaInput(UIComponent, elements.Textarea):
             The layout props and the variants. The rows of a textarea are
             its lines, an attribute, and not the rows of a grid.
         """
-        layout_props, variants = super()._style_props()
+        layout_props, variants = super()._style_props()  # pyright: ignore[reportAttributeAccessIssue]
         return tuple(prop for prop in layout_props if prop != "rows"), variants
 
     def _post_init(self, *args, **kwargs):

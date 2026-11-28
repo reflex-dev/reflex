@@ -570,12 +570,30 @@ only plugin is `UIPlugin()`, against the same page without the components:
 | a button with a `color_scheme` | +659 B | +2,081 B | one shared chunk of 188 B |
 | a button with a `radius` | +621 B | +1,031 B | one shared chunk of 287 B |
 | the 12 components of wave 2, one accent | +3,374 B | +5,295 B | Lucide's icon chunk (783 B), as `rx.icon` alone adds |
+| the 13 form controls of wave 3, one accent | +11,326 B | +10,639 B | one chunk of 404 B, `popup-position.js`, that a browser with anchor positioning never loads |
 
 The page without components is 146,124 B of JavaScript and 6,109 B of CSS,
 4.6 kB of it the theme. The script of an avatar is 231 B of the page's own
 chunk. Each further literal `color_scheme` on a page is about 1.05 kB of
 CSS, the scale of that color, and some 20 B of JavaScript: a page with six
 colors is 5.4 kB of CSS over the one with none, and still one chunk.
+
+The form controls were measured against a page that is 145,768 B of
+JavaScript and 6,464 B of CSS. Some 4.3 kB of their JavaScript is the
+scripts of the table above, and the rest the elements of the page.
+
+Opening a select of 50 options with the keyboard, in a production build,
+as the median of 15 runs of the main thread's task time (the
+`TaskDuration` of the Chrome DevTools protocol, from the key to two frames
+after an option has the focus):
+
+| | main thread | of it script | at a CPU four times slower |
+| --- | --- | --- | --- |
+| `rx.select` | 38.8 ms | 12.5 ms | 172.5 ms |
+| `rx.ui.select` | 15.6 ms | 0.7 ms | 63.7 ms |
+
+The page of that `rx.select` loads 192,201 B of JavaScript and 88,099 B of
+CSS, the one of `rx.ui.select` 151,165 B and 8,581 B.
 
 ## Themes and tokens
 
@@ -913,6 +931,7 @@ appearance) about 0.3 s. Keep interactive states to a sweep or a small group.
 | harness | box | 8 | 5 s + 1.1 s |
 | 1: layout and typography | 19, and `text.kbd` | 1011, 44 of them interactive | 27 s + 61 s |
 | 2: display and actions | 12 | 1379, 181 of them interactive | 56 s + 178 s for both waves, 115 s of it this one |
+| 3: form controls | 13 | 1514, 318 of them interactive | 110 s + 404 s for the three waves, 179 s of it this one |
 
 ## Rules the tooling enforces
 

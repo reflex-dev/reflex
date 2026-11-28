@@ -19,7 +19,9 @@ let ids = 0;
  * @returns {Element | null} The first element whose `popovertarget` it is.
  */
 export function opener(popup) {
-  return popup.id ? document.querySelector(`[popovertarget="${popup.id}"]`) : null;
+  return popup.id
+    ? document.querySelector(`[popovertarget="${popup.id}"]`)
+    : null;
 }
 
 /**
@@ -58,7 +60,9 @@ export function popupToggle(event) {
     trigger.setAttribute("data-state", open ? "open" : "closed");
   }
   if (!ANCHORED && trigger) {
-    import("./popup-position.js").then(({ place }) => place(popup, trigger, open));
+    import("./popup-position.js").then(({ place }) =>
+      place(popup, trigger, open),
+    );
   }
   return open;
 }

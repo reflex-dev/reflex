@@ -41,7 +41,7 @@ def test_text_field(
         margin="1px",
         class_name="mine",
         on_blur=FieldState.set_text,
-        auto_complete=True,
+        auto_complete=True,  # pyright: ignore[reportArgumentType]
         aria_label="Query",
         spell_check=True,
     )
@@ -550,7 +550,7 @@ def test_text_field_bound_to_state(
         value=FieldState.text,
         on_change=FieldState.set_text,
         id="bound",
-        size=rx.breakpoints(initial="1", md="3"),
+        size=rx.breakpoints(initial="1", md="3"),  # pyright: ignore[reportArgumentType]
         variant="classic",
     )
     assert component.render() == {
@@ -581,7 +581,9 @@ def test_text_field_optional_value(
 ):
     """A value that may be None is an empty string to React, and an autocomplete bound to a bool is on or off."""
     component = rx.ui.input(
-        value=FieldState.maybe, auto_complete=FieldState.complete, read_only=True
+        value=FieldState.maybe,
+        auto_complete=FieldState.complete,  # pyright: ignore[reportArgumentType]
+        read_only=True,
     )
     assert component.render() == {
         "name": '"div"',
@@ -606,7 +608,7 @@ def test_text_field_optional_value(
 def test_text_field_unknown_variant(ui_plugin: UIPlugin):
     """A variant a text field does not have is an error that lists the ones it has."""
     with pytest.raises(StyleError) as error:
-        rx.ui.input(variant="solid")
+        rx.ui.input(variant="solid")  # pyright: ignore[reportArgumentType]
     assert (
         str(error.value)
         == 'rx.ui.text_field_root: unknown variant "solid". The values are "classic", "surface", "soft".'
@@ -616,7 +618,7 @@ def test_text_field_unknown_variant(ui_plugin: UIPlugin):
 def test_text_field_unknown_slot_side(ui_plugin: UIPlugin):
     """So is the side of a slot."""
     with pytest.raises(TypeError) as error:
-        rx.ui.input.slot("a", side="top")
+        rx.ui.input.slot("a", side="top")  # pyright: ignore[reportArgumentType]
     assert (
         str(error.value)
         == "Invalid var passed for prop TextFieldSlot.side, expected type typing.Literal['left', 'right'], got value 'top' of type <class 'str'>."

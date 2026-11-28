@@ -624,7 +624,7 @@ def test_parts_a_foreach_or_a_cond_renders_are_styled_too(ui_plugin: UIPlugin):
         while not isinstance(thumb, Part):
             thumb = thumb.children[0]
         # Without a size the thumb is one em wide.
-        assert thumb._element_styles().style.style == {"width": "1em"}
+        assert thumb._element_styles().style.style == {"width": "1em"}  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_part_outside_its_component_says_where_it_belongs(ui_plugin: UIPlugin):

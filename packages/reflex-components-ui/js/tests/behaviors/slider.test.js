@@ -15,10 +15,17 @@ function slider(values, attributes = "") {
   document.body.innerHTML = `<span id="slider">${values
     .map((value) => `<input type="range" value="${value}" ${attributes} />`)
     .join("")}</span>`;
-  const element = /** @type {HTMLElement} */ (document.getElementById("slider"));
+  const element = /** @type {HTMLElement} */ (
+    document.getElementById("slider")
+  );
   // jsdom lays nothing out: the track is 200 pixels long, from 100.
   element.getBoundingClientRect = () =>
-    /** @type {DOMRect} */ ({ left: 100, width: 200, bottom: 300, height: 200 });
+    /** @type {DOMRect} */ ({
+      left: 100,
+      width: 200,
+      bottom: 300,
+      height: 200,
+    });
   return element;
 }
 
@@ -41,7 +48,9 @@ function filled(element) {
  * @returns {number[]} The value of each thumb.
  */
 function values(element) {
-  return [...element.querySelectorAll("input")].map((input) => input.valueAsNumber);
+  return [...element.querySelectorAll("input")].map(
+    (input) => input.valueAsNumber,
+  );
 }
 
 /**
@@ -163,7 +172,9 @@ test("one thumb, a thumb under the pointer and a disabled slider are left to the
   expect(pointer(one, { clientX: 250 })).toBe(false);
   expect(values(one)).toEqual([20]);
   const two = slider([20, 60]);
-  expect(pointer(two, { clientX: 250, target: two.querySelector("input") ?? two })).toBe(false);
+  expect(
+    pointer(two, { clientX: 250, target: two.querySelector("input") ?? two }),
+  ).toBe(false);
   const off = slider([20, 60], "disabled");
   expect(pointer(off, { clientX: 250 })).toBe(false);
   expect(values(off)).toEqual([20, 60]);

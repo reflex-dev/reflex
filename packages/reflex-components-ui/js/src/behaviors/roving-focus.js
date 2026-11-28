@@ -41,7 +41,9 @@ export function rovingKeyDown(event) {
   else if (key === "End") index = last;
   else if (key in STEPS) {
     const flipped =
-      key !== "ArrowUp" && key !== "ArrowDown" && getComputedStyle(currentTarget).direction === "rtl";
+      key !== "ArrowUp" &&
+      key !== "ArrowDown" &&
+      getComputedStyle(currentTarget).direction === "rtl";
     index += flipped ? -STEPS[key] : STEPS[key];
     index = index < 0 ? last : index > last ? 0 : index;
   } else return;

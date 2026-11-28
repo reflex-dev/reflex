@@ -14,9 +14,13 @@ const matches = Element.prototype.matches;
  */
 export function installPopover() {
   Element.prototype.matches = function (/** @type {string} */ selector) {
-    return selector === ":popover-open" ? open.has(this) : matches.call(this, selector);
+    return selector === ":popover-open"
+      ? open.has(this)
+      : matches.call(this, selector);
   };
-  HTMLElement.prototype.togglePopover = function (/** @type {unknown} */ force) {
+  HTMLElement.prototype.togglePopover = function (
+    /** @type {unknown} */ force,
+  ) {
     const next = typeof force === "boolean" ? force : !open.has(this);
     if (next === open.has(this)) return next;
     if (next) open.add(this);

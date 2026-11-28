@@ -6,6 +6,7 @@ from typing import Any
 
 from reflex_components_ui import tokens
 from reflex_components_ui.style import ComponentStyles, unchecked
+from reflex_components_ui.tokens import Step9
 
 accent, gray, focus = tokens.accent, tokens.gray, tokens.focus
 
@@ -46,7 +47,7 @@ _INNER_RADIUS = f"calc(var({_RADIUS}) - var({_BORDER}))"
 
 
 def _size(
-    height: str, padding: str, radius: str, icon: str, step: int, slot: str
+    height: str, padding: str, radius: str, icon: str, step: Step9, slot: str
 ) -> dict[str, Any]:
     """Make the styles of one size.
 

@@ -71,10 +71,10 @@ MATRIX = Matrix(
 class FormState(rx.State):
     """What the form of the contract is bound to."""
 
-    taken: bool = False
-    cleared: int = 0
-    submitted: dict[str, Any] = {}
-    submissions: int = 0
+    taken: rx.Field[bool] = rx.field(False)
+    cleared: rx.Field[int] = rx.field(0)
+    submitted: rx.Field[dict[str, Any]] = rx.field(default_factory=dict)
+    submissions: rx.Field[int] = rx.field(0)
 
     @rx.event
     def take(self):

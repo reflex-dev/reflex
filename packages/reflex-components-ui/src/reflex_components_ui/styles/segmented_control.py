@@ -6,6 +6,7 @@ from typing import Any
 
 from reflex_components_ui import tokens
 from reflex_components_ui.style import ComponentStyles, unchecked
+from reflex_components_ui.tokens import Step9
 
 gray, focus = tokens.gray, tokens.focus
 
@@ -56,7 +57,7 @@ def chosen(position: int) -> str:
 
 
 def _size(
-    radius: str, height: str, step: int, padding: str, gap: str
+    radius: str, height: str, step: Step9, padding: str, gap: str
 ) -> dict[str, Any]:
     """Make the styles of one size.
 

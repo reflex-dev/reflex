@@ -97,10 +97,10 @@ MATRIX = Matrix(
 class RadioCardsState(rx.State):
     """What the radio cards of the contract are bound to."""
 
-    bound: str = "a"
-    seen: list[str] = []
-    submitted: dict[str, str] = {}
-    submissions: int = 0
+    bound: rx.Field[str] = rx.field("a")
+    seen: rx.Field[list[str]] = rx.field(default_factory=list)
+    submitted: rx.Field[dict[str, str]] = rx.field(default_factory=dict)
+    submissions: rx.Field[int] = rx.field(0)
 
     @rx.event
     def set_bound(self, value: str):

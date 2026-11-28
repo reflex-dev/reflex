@@ -706,7 +706,7 @@ def test_checkbox_group_bound_to_state(
 def test_checkbox_group_unknown_variant(ui_plugin: UIPlugin):
     """A variant a group does not have is an error that lists the ones it has."""
     with pytest.raises(TypeError) as error:
-        rx.ui.checkbox_group.root(variant="solid")
+        rx.ui.checkbox_group.root(variant="solid")  # pyright: ignore[reportArgumentType]
     assert (
         str(error.value)
         == "Invalid var passed for prop CheckboxGroupRoot.variant, expected type typing.Literal['classic', 'surface', 'soft'], got value 'solid' of type <class 'str'>."

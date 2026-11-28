@@ -13,6 +13,7 @@ from reflex_components_ui.styles.card import (
     _CLASSIC_OUTER,
     _mix,
 )
+from reflex_components_ui.tokens import Step9
 
 accent, gray, focus = tokens.accent, tokens.gray, tokens.focus
 
@@ -23,6 +24,10 @@ _TOUCH = "@media (pointer: coarse)"
 CHECKED = ":has(:checked)"
 FOCUSED = ":has(:focus-visible)"
 DISABLED = ":has(:disabled)"
+
+
+# The step of the type scale the text of each size is on.
+_STEPS: dict[str, Step9] = {"1": 2, "2": 2, "3": 3}
 
 
 def _root(columns: str, sizes: dict[str, dict[str, str]]) -> ComponentStyles:
@@ -56,7 +61,7 @@ def _root(columns: str, sizes: dict[str, dict[str, str]]) -> ComponentStyles:
                     "--letter-spacing": tokens.letter_spacing[step],
                     **sizes[size],
                 })
-                for size, step in (("1", 2), ("2", 2), ("3", 3))
+                for size, step in _STEPS.items()
             },
         },
         "defaults": {"size": "2"},

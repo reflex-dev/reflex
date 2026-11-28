@@ -475,7 +475,7 @@ def test_segmented_control(
 def test_segmented_control_unknown_variant(ui_plugin: UIPlugin):
     """A variant a segmented control does not have is an error that lists the ones it has."""
     with pytest.raises(StyleError) as error:
-        rx.ui.segmented_control.root(variant="soft")
+        rx.ui.segmented_control.root(variant="soft")  # pyright: ignore[reportArgumentType]
     assert (
         str(error.value)
         == 'rx.ui.segmented_control_root: unknown variant "soft". The values are "classic", "surface".'
@@ -496,7 +496,7 @@ def test_segmented_control_from_a_foreach(ui_plugin: UIPlugin):
         "reflex___state____state__tests___units___reflex_components_ui"
         "___components___test_segmented_control____segmented_state"
     )
-    style = control._element_styles().style.style
+    style = control._element_styles().style.style  # pyright: ignore[reportAttributeAccessIssue]
     assert str(style["--rx-segmented-count"]) == f"{state}.views_rx_state_.length"
     # The name of the argument of the function is made up anew each run.
     index = re.sub(
@@ -526,7 +526,7 @@ def test_segmented_control_places_every_item(ui_plugin: UIPlugin):
     twelve = rx.ui.segmented_control.root(*[
         item(str(number), value=str(number)) for number in range(12)
     ])
-    index = twelve._element_styles().style.style["--rx-segmented-index"]
+    index = twelve._element_styles().style.style["--rx-segmented-index"]  # pyright: ignore[reportAttributeAccessIssue]
     assert index == {
         "default": "var(--rx-segmented-index-of-value, 0)",
         **{
@@ -534,7 +534,7 @@ def test_segmented_control_places_every_item(ui_plugin: UIPlugin):
             for position in range(1, 13)
         },
     }
-    assert twelve._element_styles().style.style["--rx-segmented-count"] == 12
+    assert twelve._element_styles().style.style["--rx-segmented-count"] == 12  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_segmented_control_script(ui_plugin: UIPlugin):

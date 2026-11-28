@@ -83,11 +83,11 @@ MATRIX = Matrix(
 class SliderState(rx.State):
     """What the sliders of the contract are bound to."""
 
-    bound: list[int] = [10]
-    seen: list[list[float]] = []
-    committed: list[list[float]] = []
-    submitted: dict[str, Any] = {}
-    submissions: int = 0
+    bound: rx.Field[list[int]] = rx.field([10])
+    seen: rx.Field[list[list[float]]] = rx.field(default_factory=list)
+    committed: rx.Field[list[list[float]]] = rx.field(default_factory=list)
+    submitted: rx.Field[dict[str, Any]] = rx.field(default_factory=dict)
+    submissions: rx.Field[int] = rx.field(0)
 
     @rx.event
     def set_bound(self, values: list[float]):

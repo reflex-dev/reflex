@@ -568,7 +568,7 @@ def test_radio_cards_bound_to_state(
 def test_radio_cards_unknown_variant(ui_plugin: UIPlugin):
     """A variant a group of cards does not have is an error that lists the ones it has."""
     with pytest.raises(TypeError) as error:
-        rx.ui.radio_cards.root(variant="soft")
+        rx.ui.radio_cards.root(variant="soft")  # pyright: ignore[reportArgumentType]
     assert (
         str(error.value)
         == "Invalid var passed for prop RadioCardsRoot.variant, expected type typing.Literal['classic', 'surface'], got value 'soft' of type <class 'str'>."

@@ -783,7 +783,7 @@ def test_checkbox_cards_bound_to_state(
 def test_checkbox_cards_unknown_variant(ui_plugin: UIPlugin):
     """A variant a group of cards does not have is an error that lists the ones it has."""
     with pytest.raises(TypeError) as error:
-        rx.ui.checkbox_cards.root(variant="soft")
+        rx.ui.checkbox_cards.root(variant="soft")  # pyright: ignore[reportArgumentType]
     assert (
         str(error.value)
         == "Invalid var passed for prop CheckboxCardsRoot.variant, expected type typing.Literal['classic', 'surface'], got value 'soft' of type <class 'str'>."

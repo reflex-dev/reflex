@@ -13,7 +13,9 @@
  * @returns {HTMLInputElement[]} Its range inputs, in the order of its thumbs.
  */
 function thumbs(slider) {
-  return /** @type {HTMLInputElement[]} */ ([...slider.querySelectorAll("input")]);
+  return /** @type {HTMLInputElement[]} */ ([
+    ...slider.querySelectorAll("input"),
+  ]);
 }
 
 /**
@@ -36,9 +38,10 @@ function share(input) {
  * @returns {void}
  */
 function assign(input, value) {
-  const setter = /** @type {(this: HTMLInputElement, value: string) => void} */ (
-    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set
-  );
+  const setter =
+    /** @type {(this: HTMLInputElement, value: string) => void} */ (
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set
+    );
   setter.call(input, String(value));
   input.dispatchEvent(new Event("input", { bubbles: true }));
 }
@@ -64,7 +67,10 @@ export function slide(event) {
   const high = inputs[index + 1]?.valueAsNumber ?? Infinity;
   const kept = Math.min(Math.max(moved.valueAsNumber, low), high);
   if (kept !== moved.valueAsNumber) moved.value = String(kept);
-  slider.style.setProperty("--rx-slider-start", inputs.length > 1 ? share(inputs[0]) : "0%");
+  slider.style.setProperty(
+    "--rx-slider-start",
+    inputs.length > 1 ? share(inputs[0]) : "0%",
+  );
   slider.style.setProperty("--rx-slider-end", share(inputs[inputs.length - 1]));
 }
 
@@ -84,7 +90,12 @@ export function press(event) {
   const slider = event.currentTarget;
   const inputs = thumbs(slider);
   const first = inputs[0];
-  if (inputs.length < 2 || event.target instanceof HTMLInputElement || first.disabled) return;
+  if (
+    inputs.length < 2 ||
+    event.target instanceof HTMLInputElement ||
+    first.disabled
+  )
+    return;
   const box = slider.getBoundingClientRect();
   const vertical = slider.dataset.orientation === "vertical";
   const along = vertical
@@ -97,7 +108,10 @@ export function press(event) {
   const value = Math.min(max, min + Math.round((reached - min) / step) * step);
   let nearest = first;
   for (const input of inputs) {
-    if (Math.abs(input.valueAsNumber - value) < Math.abs(nearest.valueAsNumber - value)) {
+    if (
+      Math.abs(input.valueAsNumber - value) <
+      Math.abs(nearest.valueAsNumber - value)
+    ) {
       nearest = input;
     }
   }

@@ -217,7 +217,10 @@ class Slider(UIComponent):
             The values of each such prop, the radius among them: a slider
             has fewer than a theme.
         """
-        return {**super()._literal_props(), "radius": ("none", "small", "full")}
+        return {
+            **super()._literal_props(),  # pyright: ignore[reportAttributeAccessIssue]
+            "radius": ("none", "small", "full"),
+        }
 
     @classmethod
     def create(
@@ -284,7 +287,7 @@ class Slider(UIComponent):
             several = len(values) > 1
             if name is not None and several:
                 # As Radix names the inputs of a slider with several values.
-                name = Var.create(name) + "[]"
+                name = Var.create(name) + "[]"  # pyright: ignore[reportOperatorIssue]
             if name is not None:
                 shared["name"] = name
             thumbs = [

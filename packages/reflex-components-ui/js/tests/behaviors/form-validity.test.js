@@ -65,7 +65,9 @@ function shown() {
  */
 function marks(id) {
   const element = /** @type {HTMLElement} */ (document.getElementById(id));
-  return ["data-valid", "data-invalid"].filter((mark) => element.hasAttribute(mark));
+  return ["data-valid", "data-invalid"].filter((mark) =>
+    element.hasAttribute(mark),
+  );
 }
 
 /**
@@ -98,12 +100,9 @@ test("a control found invalid shows its reasons, is described by them and takes 
   expect(marks("email-label")).toEqual(["data-invalid"]);
   expect(email.hasAttribute("data-invalid")).toBe(true);
   const described = (email.getAttribute("aria-describedby") ?? "").split(" ");
-  expect(described.map((id) => document.getElementById(id)?.textContent)).toEqual([
-    "needed",
-    "always",
-    "forced",
-    "outside",
-  ]);
+  expect(
+    described.map((id) => document.getElementById(id)?.textContent),
+  ).toEqual(["needed", "always", "forced", "outside"]);
 });
 
 test("only the first invalid control of the form takes the focus", () => {

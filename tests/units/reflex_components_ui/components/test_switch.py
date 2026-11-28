@@ -487,7 +487,7 @@ def test_switch_soft(
 def test_switch_unknown_variant(ui_plugin: UIPlugin):
     """A variant a switch does not have is an error that lists the ones it has."""
     with pytest.raises(StyleError) as error:
-        rx.ui.switch(variant="solid")
+        rx.ui.switch(variant="solid")  # pyright: ignore[reportArgumentType]
     assert (
         str(error.value)
         == 'rx.ui.switch: unknown variant "solid". The values are "classic", "surface", "soft".'
@@ -497,7 +497,7 @@ def test_switch_unknown_variant(ui_plugin: UIPlugin):
 def test_switch_unknown_radius(ui_plugin: UIPlugin):
     """So is a radius: a switch has three."""
     with pytest.raises(StyleError) as error:
-        rx.ui.switch(radius="large")
+        rx.ui.switch(radius="large")  # pyright: ignore[reportArgumentType]
     assert (
         str(error.value)
         == 'rx.ui.switch: unknown radius "large". The values are "none", "small", "full".'
