@@ -756,6 +756,7 @@ register_implicit_dependency(
         gettext,
         ngettext,
         pgettext,
+        translate,
         fallback_chain,
         pick_translation,
         pick_translation_locale,

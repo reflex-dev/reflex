@@ -130,6 +130,33 @@ def test_get_locale_computed_var_gains_locale_dependency(
     assert deps.get(I18nState.get_full_name()) == {"locale"}
 
 
+def test_translate_computed_var_gains_locale_dependency(
+    clean_registry: dict[object, Callable[[], Var | None]],
+):
+    # A message marked with pgettext_noop and translated in a cached getter
+    # must follow a locale switch, like one calling gettext.
+    from reflex_i18n import pgettext_noop, translate
+    from reflex_i18n.state import I18nState
+
+    import reflex as rx
+
+    _implicit_dependency_providers.update(clean_registry)
+    label = pgettext_noop("button", "Open")
+
+    class MarkedLabelState(rx.State):
+        @rx.var
+        def label(self) -> str:
+            """The marked label in the active locale.
+
+            Returns:
+                The label.
+            """
+            return translate(label)
+
+    deps = MarkedLabelState.computed_vars["label"]._deps(objclass=MarkedLabelState)
+    assert deps.get(I18nState.get_full_name()) == {"locale"}
+
+
 def test_no_registration_no_extra_dependency():
     import reflex as rx
 
