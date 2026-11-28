@@ -945,7 +945,7 @@ def test_tabs_import_their_scripts(ui_plugin: UIPlugin):
 def test_tabs_refuse_a_size_they_do_not_have(ui_plugin: UIPlugin):
     """A value a prop does not take fails with the name of the component and the values."""
     with pytest.raises(StyleError) as error:
-        rx.ui.tabs.list(size="3")
+        rx.ui.tabs.list(size="3")  # pyright: ignore[reportArgumentType]
     assert str(error.value) == (
         'rx.ui.tabs_list: unknown size "3". The values are "1", "2".'
     )

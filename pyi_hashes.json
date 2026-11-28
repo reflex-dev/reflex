@@ -122,6 +122,7 @@
   "packages/reflex-components-ui/src/reflex_components_ui/base.pyi": "80d9f33c5a73df61e18ee58f80b9f0e7",
   "packages/reflex-components-ui/src/reflex_components_ui/components/_cards.pyi": "2e639571eea0f8788a8186355444332a",
   "packages/reflex-components-ui/src/reflex_components_ui/components/_group.pyi": "61cffb40e8f047c944b54e51ac36cbc7",
+  "packages/reflex-components-ui/src/reflex_components_ui/components/accordion.pyi": "4cc79be854600aa47acc3899e4d7f12c",
   "packages/reflex-components-ui/src/reflex_components_ui/components/aspect_ratio.pyi": "19678f0d00dd9133d7fabeb086d9cd72",
   "packages/reflex-components-ui/src/reflex_components_ui/components/avatar.pyi": "296a02d4f7a276a0548ec473a6c761a9",
   "packages/reflex-components-ui/src/reflex_components_ui/components/badge.pyi": "f54c7d6d2a403389eb7424f7024bb847",
