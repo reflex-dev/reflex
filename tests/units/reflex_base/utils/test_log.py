@@ -32,7 +32,8 @@ def clean_pipeline(monkeypatch):
         None.
     """
     monkeypatch.delenv("REFLEX_LOG_JSON", raising=False)
-    monkeypatch.delenv("REFLEX_LOGLEVEL", raising=False)
+    # A bare delenv would not undo the level a test's set_log_level exports.
+    monkeypatch.setenv("REFLEX_LOGLEVEL", LogLevel.INFO.value)
     monkeypatch.setenv(log._MANAGED_ENV_VAR, "true")
     monkeypatch.setattr(log, "_log_level", LogLevel.INFO)
     log._dedupe_filter().seen.clear()
