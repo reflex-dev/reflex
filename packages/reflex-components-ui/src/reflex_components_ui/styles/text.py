@@ -4,6 +4,7 @@ from typing import Any
 
 from reflex_components_ui import tokens
 from reflex_components_ui.style import ComponentStyles, StyleProps, unchecked
+from reflex_components_ui.styles.appearance import by_appearance
 from reflex_components_ui.styles.typography import (
     ALIGN,
     COLOR,
@@ -82,22 +83,26 @@ EM: ComponentStyles = _inline(tokens.em, **_BOXED)
 STRONG: ComponentStyles = _inline(tokens.strong)
 QUOTE: ComponentStyles = _inline(tokens.quote, **_BOXED)
 
-# The layers of the shadow of a key in both appearances: where one appearance
-# has a layer of another size, the layer is transparent in the other.
-_NONE = "transparent"
-_KEY_SHADOW = ", ".join([
-    f"{layer} light-dark({light}, {dark})"
-    for layer, light, dark in (
-        ("inset 0 -0.05em 0.5em", tokens.gray.a[2], tokens.gray.a[3]),
-        ("inset 0 0.05em", tokens.white.a[12], tokens.gray.a[11]),
-        ("inset 0 0.25em 0.5em", tokens.gray.a[2], tokens.gray.a[2]),
-        ("inset 0 -0.05em", tokens.gray.a[6], _NONE),
-        ("inset 0 -0.1em", _NONE, tokens.black.a[11]),
-        ("0 0 0 0.05em", tokens.gray.a[5], _NONE),
-        ("0 0 0 0.075em", _NONE, tokens.gray.a[7]),
-        ("0 0.08em 0.17em", tokens.gray.a[7], tokens.black.a[12]),
-    )
-])
+# The layers of the shadow of a key, of the one appearance alone: a layer the
+# other appearance has, left in as transparent, still rounds what is under it.
+_KEY_SHADOW = by_appearance(
+    ", ".join([
+        f"inset 0 -0.05em 0.5em {tokens.gray.a[2]}",
+        f"inset 0 0.05em {tokens.white.a[12]}",
+        f"inset 0 0.25em 0.5em {tokens.gray.a[2]}",
+        f"inset 0 -0.05em {tokens.gray.a[6]}",
+        f"0 0 0 0.05em {tokens.gray.a[5]}",
+        f"0 0.08em 0.17em {tokens.gray.a[7]}",
+    ]),
+    ", ".join([
+        f"inset 0 -0.05em 0.5em {tokens.gray.a[3]}",
+        f"inset 0 0.05em {tokens.gray.a[11]}",
+        f"inset 0 0.25em 0.5em {tokens.gray.a[2]}",
+        f"inset 0 -0.1em {tokens.black.a[11]}",
+        f"0 0 0 0.075em {tokens.gray.a[7]}",
+        f"0 0.08em 0.17em {tokens.black.a[12]}",
+    ]),
+)
 
 KBD: ComponentStyles = {
     "base": {

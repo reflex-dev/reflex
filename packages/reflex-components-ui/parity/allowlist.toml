@@ -25,12 +25,6 @@
 #   engines     as above
 
 [[look]]
-component = "kbd"
-check = "style"
-properties = ["box-shadow"]
-reason = "The shadow of rx.ui.text.kbd lists the layers of the light and the dark appearance, and the ones of the other appearance are transparent, so one value serves both. It paints the same."
-
-[[look]]
 component = "data_list"
 check = "style"
 cells = "*orientation-responsive*"
