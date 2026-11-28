@@ -832,9 +832,13 @@ def _leaf(
             for target in targets:
                 _put(out, target, path, value)
             return
-    _put(out, camel, path, value)
     if replaces is not None and not path:
+        # A longhand wins over the shorthand wherever StyleX finds it, so the
+        # ones written before the shorthand go, in this style as in earlier ones.
+        for longhand in replaces:
+            out.pop(longhand, None)
         replaced.extend(replaces)
+    _put(out, camel, path, value)
 
 
 def _value(

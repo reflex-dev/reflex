@@ -1570,3 +1570,30 @@ def test_keyframes_are_the_value_of_animation_name_alone():
         'rx.ui.box: style "animation_duration" is given keyframes, which are '
         "the value of animation_name."
     )
+
+
+def test_shorthand_kept_whole_replaces_the_longhands_written_before_it():
+    """Within one style too, the later of a shorthand and its longhands wins."""
+    # The shorthand cannot be split, so the longhand before it has to go:
+    # StyleX would let a longhand win over the shorthand wherever it is.
+    assert lower_layer(
+        "rx.ui.box",
+        {
+            "margin_top": "1em",
+            "_hover": {"margin_left": "2px"},
+            "margin": "var(--gap)",
+            "margin_bottom": "0",
+        },
+    ) == (
+        {"margin": "var(--gap)", "marginBottom": "0"},
+        _REPLACES["margin"],
+    )
+    # A layout prop is lowered first, and a style after it wins the same way.
+    assert lower_layer("rx.ui.box", {"margin": "var(--gap)"}, {"mt": "2"}) == (
+        {"margin": "var(--gap)"},
+        _REPLACES["margin"],
+    )
+    # Under a condition the shorthand replaces nothing: the longhand stays.
+    assert lower_layer(
+        "rx.ui.box", {"margin_top": "1em", "_hover": {"margin": "var(--gap)"}}
+    ) == ({"marginTop": "1em", "margin": {":hover": "var(--gap)"}}, ())
