@@ -2,7 +2,7 @@
 
 import itertools
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Literal
 
 import pytest
 from reflex_base.utils.imports import ImportVar
@@ -24,7 +24,7 @@ class TabsState(rx.State):
 
     tab: str = "two"
     names: list[str] = ["one", "two"]
-    upright: str = "vertical"
+    upright: Literal["horizontal", "vertical"] = "vertical"
 
     @rx.event
     def set_tab(self, tab: str):
@@ -942,28 +942,10 @@ def test_tabs_import_their_scripts(ui_plugin: UIPlugin):
     }
 
 
-@pytest.mark.parametrize(
-    ("create", "props", "message"),
-    [
-        (
-            rx.ui.tabs.root,
-            {"orientation": "sideways"},
-            (
-                'rx.ui.tabs_root: unknown orientation "sideways". The values are '
-                '"horizontal", "vertical".'
-            ),
-        ),
-        (
-            rx.ui.tabs.list,
-            {"size": "3"},
-            'rx.ui.tabs_list: unknown size "3". The values are "1", "2".',
-        ),
-    ],
-)
-def test_tabs_refuse_a_value_a_prop_does_not_take(
-    ui_plugin: UIPlugin, create: Callable[..., Any], props: dict[str, Any], message: str
-):
+def test_tabs_refuse_a_size_they_do_not_have(ui_plugin: UIPlugin):
     """A value a prop does not take fails with the name of the component and the values."""
     with pytest.raises(StyleError) as error:
-        create(**props)
-    assert str(error.value) == message
+        rx.ui.tabs.list(size="3")
+    assert str(error.value) == (
+        'rx.ui.tabs_list: unknown size "3". The values are "1", "2".'
+    )

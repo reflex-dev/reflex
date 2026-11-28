@@ -126,6 +126,32 @@ html.dark {
     display: none !important;
   }
 
+  /*
+   * The icon of an item of an accordion is turned over while the item is
+   * open, and its panel grows and shrinks where the browser can animate the
+   * height of what a `details` holds, for whoever has not asked for less
+   * motion. The accordion says how long it takes.
+   */
+  [data-rx-accordion-icon] {
+    transform: var(--rx-accordion-turn, none);
+    transition: transform var(--animation-duration) var(--animation-easing);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    [data-rx-accordion-item] {
+      interpolate-size: allow-keywords;
+    }
+    [data-rx-accordion-item]::details-content {
+      height: 0;
+      overflow: hidden;
+      transition:
+        height var(--animation-duration) var(--animation-easing),
+        content-visibility var(--animation-duration) allow-discrete;
+    }
+    [data-rx-accordion-item][open]::details-content {
+      height: auto;
+    }
+  }
+
   /* The thumb of the scrollbar of a text area, under the pointer. */
   @media (hover: hover) {
     [data-rx-text-area-input]:not(:disabled)::-webkit-scrollbar-thumb:hover {

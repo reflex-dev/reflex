@@ -7,6 +7,7 @@ from reflex_base.utils import lazy_loader
 _SUBMODULES: set[str] = {"tokens"}
 
 _SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = {
+    "components.accordion": ["accordion"],
     "components.aspect_ratio": ["aspect_ratio"],
     "components.avatar": ["avatar"],
     "components.badge": ["badge"],

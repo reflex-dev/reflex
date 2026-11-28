@@ -103,6 +103,12 @@ def differences(component: str) -> list[ApiDifference]:
 
 def test_every_wave_is_in_the_namespace():
     assert COMPONENTS == [
+        "accordion.content",
+        "accordion.header",
+        "accordion.icon",
+        "accordion.item",
+        "accordion.root",
+        "accordion.trigger",
         "aspect_ratio",
         "avatar",
         "badge",
@@ -208,6 +214,7 @@ def test_every_wave_is_in_the_namespace():
 @pytest.mark.parametrize(
     "namespace",
     [
+        "accordion",
         "callout",
         "checkbox",
         "data_list",

@@ -305,6 +305,25 @@ def is_value(selected: Var, value: Var | None) -> Var | bool:
     )
 
 
+def choose(condition: Var | bool, on: Any, off: Any) -> Any:
+    """Choose between two values by a condition.
+
+    Args:
+        condition: The condition: a bool when it is known while compiling.
+        on: The value when it holds.
+        off: The value when it does not.
+
+    Returns:
+        One of the values, or the expression that chooses in the browser.
+    """
+    if not isinstance(condition, Var):
+        return on if condition else off
+    return Var(
+        f"({condition!s} ? {LiteralVar.create(on)!s} : {LiteralVar.create(off)!s})",
+        _var_data=condition._get_all_var_data(),
+    )
+
+
 def has_value(selected: Var, value: Var | None) -> Var | bool:
     """Say whether an item is among the ones a group has selected.
 

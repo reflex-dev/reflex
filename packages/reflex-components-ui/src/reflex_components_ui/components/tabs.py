@@ -13,7 +13,12 @@ from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.core.breakpoints import Responsive
 
 from reflex_components_ui.base import Part, UIComponent
-from reflex_components_ui.components._group import descendants, is_value, literal
+from reflex_components_ui.components._group import (
+    choose,
+    descendants,
+    is_value,
+    literal,
+)
 from reflex_components_ui.components._script import listen, script
 from reflex_components_ui.style import ComponentStyles
 from reflex_components_ui.styles.tabs import TABS, TABS_CONTENT, TABS_LIST, TABS_TRIGGER
@@ -21,25 +26,6 @@ from reflex_components_ui.themes import LiteralAccentColor
 
 # Numbers the tabs of an app: a trigger and its panel name each other by id.
 _ids = itertools.count(1)
-
-
-def _choose(condition: Var | bool, on: Any, off: Any) -> Any:
-    """Choose between two values by whether a tab is the selected one.
-
-    Args:
-        condition: Whether it is: a bool when it is known while compiling.
-        on: The value of the selected tab.
-        off: The value of the others.
-
-    Returns:
-        One of the values, or the expression that chooses in the browser.
-    """
-    if not isinstance(condition, Var):
-        return on if condition else off
-    return Var(
-        f"({condition!s} ? {LiteralVar.create(on)!s} : {LiteralVar.create(off)!s})",
-        _var_data=condition._get_all_var_data(),
-    )
 
 
 def _part_id(tabs: TabsRoot, part: str, value: Var | None) -> Any:
@@ -113,9 +99,10 @@ class TabsRoot(UIComponent):
         parts = list(descendants(self, TabsPart, TabsRoot))
         # The ids an app gave a trigger or a panel, which the other names.
         self._ids = {
-            (part._kind, literal(part.value)): part.id
+            (part._kind, value): part.id
             for part in parts
-            if part.id is not None and not isinstance(literal(part.value), Var)
+            if part.id is not None
+            and not isinstance(value := literal(getattr(part, "value", None)), Var)
         }
         for part in parts:
             part._join(self)
@@ -181,9 +168,6 @@ class TabsPart(UIComponent):
 
     # Which part it is, in the id the tabs give a trigger or a panel.
     _kind: ClassVar[str] = ""
-
-    # The value of the tab of a trigger or of a panel.
-    value: ClassVar[Any] = None
 
     def _post_init(self, *args, **kwargs):
         """Initialize the part, as the one of horizontal tabs with no value.
@@ -362,8 +346,8 @@ class TabsTrigger(TabsPart):
         attributes: dict[str, Any] = {
             "aria-controls": _part_id(tabs, "content", self.value),
             "aria-selected": selected,
-            "data-state": _choose(selected, "active", "inactive"),
-            "tabIndex": _choose(stop, 0, -1),
+            "data-state": choose(selected, "active", "inactive"),
+            "tabIndex": choose(stop, 0, -1),
         }
         if self.id is None:
             attributes["id"] = _part_id(tabs, "trigger", self.value)
@@ -430,8 +414,8 @@ class TabsContent(TabsPart):
         )
         attributes: dict[str, Any] = {
             "aria-labelledby": _part_id(tabs, "trigger", self.value),
-            "data-state": _choose(selected, "active", "inactive"),
-            "hidden": _choose(selected, False, True),
+            "data-state": choose(selected, "active", "inactive"),
+            "hidden": choose(selected, False, True),
         }
         if self.id is None:
             attributes["id"] = _part_id(tabs, "content", self.value)

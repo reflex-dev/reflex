@@ -834,6 +834,19 @@ def UIComponentsApp(radix: bool = False):
                 tabs.content("Two", value="second", display="flex", id="second-panel"),
                 default_value="first",
             ),
+            # An accordion left to the browser, and one whose open item stays.
+            rx.ui.accordion.root(
+                rx.ui.accordion.item(header="Shipping", content="Two days."),
+                rx.ui.accordion.item(header="Returns", content="Thirty days."),
+                type="multiple",
+                id="faq",
+            ),
+            rx.ui.accordion.root(
+                rx.ui.accordion.item(header="Plan", content="Free.", value="plan"),
+                rx.ui.accordion.item(header="Seats", content="Five.", value="seats"),
+                default_value="plan",
+                id="account",
+            ),
             rx.el.span(rx.cond(rx.State.is_hydrated, "ready", "loading"), id="ready"),
         )
 
@@ -1862,3 +1875,16 @@ def test_overlays_and_disclosure_work_in_an_app(ui_app: AppHarness, page: Page):
     page.keyboard.press("ArrowLeft")
     expect(first).to_be_visible()
     expect(page.get_by_role("tab", name="First")).to_be_focused()
+
+    # Items are native: the browser opens them, and the script of an
+    # accordion that does not collapse keeps its open item open.
+    faq, account = page.locator("#faq"), page.locator("#account")
+    faq.get_by_text("Shipping").click()
+    faq.get_by_text("Returns").click()
+    expect(faq.locator("details[open]")).to_have_count(2)
+    expect(faq.get_by_text("Two days.")).to_be_visible()
+    account.get_by_text("Plan").click()
+    expect(account.get_by_text("Free.")).to_be_visible()
+    account.get_by_text("Seats").click()
+    expect(account.get_by_text("Five.")).to_be_visible()
+    expect(account.locator("details[open]")).to_have_count(1)

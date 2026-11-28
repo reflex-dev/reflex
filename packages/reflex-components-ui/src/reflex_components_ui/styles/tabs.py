@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from reflex_components_ui import tokens
-from reflex_components_ui.style import ComponentStyles, unchecked
+from reflex_components_ui.style import ComponentStyles, StyleProps, unchecked
 from reflex_components_ui.tokens import Step9
 
 accent, gray, focus = tokens.accent, tokens.gray, tokens.focus
@@ -31,7 +31,7 @@ _POINTER = "@media (hover: hover)"
 _FOCUS = ":focus-visible"
 SELECTED = "[aria-selected='true']"
 
-_VERTICAL = {"vertical": {"width": "100%"}}
+_VERTICAL: dict[str, StyleProps] = {"vertical": {"width": "100%"}}
 
 
 def _size(
