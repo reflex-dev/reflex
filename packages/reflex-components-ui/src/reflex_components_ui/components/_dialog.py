@@ -176,6 +176,9 @@ class DialogSlot(DialogPart):
     # The attribute the script finds the part by.
     _mark: ClassVar[str] = "data-rx-dialog-close"
 
+    # What the attribute says of the part.
+    _marked: ClassVar[str] = ""
+
     @classmethod
     def create(cls, *children: Any, **props: Any) -> Component:
         """Create a part that is rendered as its child.
@@ -211,9 +214,10 @@ class DialogSlot(DialogPart):
             or not isinstance(children[0], Component)
             or type(children[0]).render not in (Component.render, UIComponent.render)
         ):
+            name = self._display_name()  # pyright: ignore[reportAttributeAccessIssue]
             msg = (
-                f"{self._display_name()}: it is rendered as its child, so it "
-                "needs exactly one child that is an element, such as a button."
+                f"{name}: it is rendered as its child, so it needs exactly one "
+                "child that is an element, such as a button."
             )
             raise StyleError(msg)
         self._as_child = True
@@ -251,7 +255,11 @@ class DialogSlot(DialogPart):
         Returns:
             The tag: its child, marked for the script of the dialog.
         """
-        return super()._render(props).add_props(**{self._mark: "", **self._dialog})
+        return (
+            super()
+            ._render(props)
+            .add_props(**{self._mark: self._marked, **self._dialog})
+        )
 
 
 class DialogTriggerBase(DialogSlot):
@@ -310,6 +318,17 @@ class DialogSurface(DialogPart):
     # The role of the dialog, when it is not the one the element has.
     _role: ClassVar[str | None] = None
 
+    def _post_init(self, *args, **kwargs):
+        """Initialize the dialog, as one that is not bound to state.
+
+        Args:
+            *args: Args to initialize the component.
+            **kwargs: Kwargs to initialize the component.
+        """
+        # Whether the dialog is open, when its state says.
+        self._open: Var | None = None
+        super()._post_init(*args, **kwargs)
+
     def _join(
         self,
         root: DialogRootBase,
@@ -348,7 +367,7 @@ class DialogSurface(DialogPart):
         yield from super()._get_vars(include_children, ignore_ids)
         yield script("dialog", "dialogSync")
         yield script("dialog", "dialogEvent")
-        if getattr(self, "_open", None) is not None:
+        if self._open is not None:
             yield self._open
 
     def _render(self, props: dict[str, Any] | None = None) -> CommonTag:
@@ -362,7 +381,7 @@ class DialogSurface(DialogPart):
             follows the state it is bound to and says what happens to it.
         """
         tag, on = handlers(super()._render(props), _EVENTS)
-        bound = LiteralVar.create(getattr(self, "_open", None))
+        bound = LiteralVar.create(self._open)
         sync = script("dialog", "dialogSync")
         tag = tag.add_props(**{
             "data-rx-popup": "",

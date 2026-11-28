@@ -45,6 +45,10 @@ function show(dialog) {
   // The browser scrolls to what it gives the focus: a tall dialog starts
   // at its top, as in Radix.
   dialog.scrollTop = 0;
+  // An alert dialog starts on what cancels it, wherever that is in it.
+  /** @type {HTMLElement | null} */ (
+    dialog.querySelector("[data-rx-dialog-close=cancel]")
+  )?.focus({ preventScroll: true });
   mark(dialog, true);
   dialogs.get(dialog)?.on?.openAutoFocus?.();
 }

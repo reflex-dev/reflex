@@ -16,7 +16,7 @@ from ui_parity.samples import PARAGRAPH, focused, wait_for_text
 SIZES = ["1", "2", "3", "4"]
 OPEN = "open"
 # A dialog that is open, in either system.
-SHOWN = "[role=dialog]:visible, dialog[open]"
+SHOWN = "[role=dialog]:visible, [role=alertdialog]:visible, dialog[open]"
 
 
 def body(namespace: Any, kind: Any, long: bool = False) -> list[Any]:

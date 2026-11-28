@@ -140,7 +140,7 @@ DIALOG_CONTENT: ComponentStyles = {
 # whose first line starts at the top of its box.
 DIALOG_TITLE: ComponentStyles = {
     **HEADING,
-    "base": unchecked({**HEADING["base"], "margin_bottom": tokens.space[3]}),
+    "base": unchecked({**HEADING.get("base", {}), "margin_bottom": tokens.space[3]}),
     "defaults": {"size": "5", "trim": "start"},
 }
 

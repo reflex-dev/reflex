@@ -203,7 +203,10 @@ test("a press beside the panel and Escape dismiss the dialog, and say what did",
 
 test("a press beside the panel of an alert dialog does not dismiss it", () => {
   render('role="alertdialog"');
+  const cancel = /** @type {HTMLElement} */ (document.getElementById("close"));
+  cancel.setAttribute("data-rx-dialog-close", "cancel");
   press("open");
+  expect(document.activeElement).toBe(cancel);
   press("pad");
   press("dialog");
   expect(dialog.open).toBe(true);

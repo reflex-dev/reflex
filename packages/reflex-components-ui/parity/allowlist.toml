@@ -349,3 +349,27 @@ component = "dialog"
 step = "the dark appearance of a theme around a dialog reaches its panel"
 system = "rx"
 reason = "rx.theme around part of a page does not take an appearance of its own: what is inside follows the color mode of the app, a dialog included. rx.ui.theme does, and a dialog declared inside a dark rx.ui.theme is dark: its panel, what it holds and what is drawn over the page behind it."
+
+[[look]]
+component = "alert_dialog"
+check = "style"
+cells = "*@open"
+properties = ["pointer-events"]
+reason = "While it is open rx.alert_dialog takes the pointer off the rest of the page with a style on the body. rx.ui.alert_dialog is a native modal dialog: the browser makes the page behind it inert, which takes the pointer, the keyboard and assistive technology off it without a style."
+
+[[contract]]
+component = "alert_dialog"
+step = "what it holds is in the server render"
+system = "rx"
+reason = "rx.alert_dialog renders what it holds when it opens: the page the server sends has only its trigger. What rx.ui.alert_dialog holds is in the page from the start, in a dialog that is closed, and it keeps its state between two openings."
+
+[[contract]]
+component = "alert_dialog"
+step = "opens and closes with JavaScript disabled"
+system = "rx"
+reason = "rx.alert_dialog is opened by JavaScript: until it has run, a press on its trigger does nothing. The trigger, the action and the cancel button of rx.ui.alert_dialog are buttons that command a native dialog, which a browser with invoker commands opens and closes with or without JavaScript."
+
+[[contract]]
+component = "alert_dialog"
+step = "Tab stays inside an open alert dialog"
+reason = "rx.ui.alert_dialog is a native modal dialog: the page behind it is inert, and Tab goes from its last element to the browser's own controls and back to its first, as in every native dialog. rx.alert_dialog keeps the focus from leaving the dialog at all."
