@@ -10,7 +10,7 @@ import reflex as rx
 from ui_parity.contract import NO_JAVASCRIPT, SERVER, Contract, Run
 from ui_parity.look import FOCUS_WITHIN
 from ui_parity.matrix import ACTIVE, DARK, FOCUS_VISIBLE, HOVER, LIGHT, Matrix
-from ui_parity.samples import ACCENTS, focused, wait_for_text
+from ui_parity.samples import ACCENTS, focused, wait_for_text, wait_for_value
 
 VARIANTS = ["surface", "classic"]
 SIZES = ["1", "2", "3"]
@@ -208,7 +208,7 @@ CHECKED = (
     ".map(card => card.textContent)"
 )
 # The text of the card that has the focus.
-FOCUSED_CARD = f"document.activeElement.closest('{CARDS}')?.textContent"
+FOCUSED_CARD = f"(document.activeElement.closest('{CARDS}')?.textContent ?? null)"
 # How long a key is held, in milliseconds.
 HELD = 60
 
@@ -221,10 +221,17 @@ def _wait_for_checked(run: Run, group: str, cards: list[str]) -> None:
         group: The id of the frame of the group.
         cards: The text of each card that is to be checked.
     """
-    run.page.wait_for_function(
-        f"([id, cards]) => JSON.stringify(({CHECKED})(id)) === cards",
-        arg=[group, json.dumps(cards)],
-    )
+    wait_for_value(run.page, f"({CHECKED})({json.dumps(group)})", cards)
+
+
+def _wait_for_focus(run: Run, card: str) -> None:
+    """Wait until a card has the focus.
+
+    Args:
+        run: The run, on a page.
+        card: The text of the card.
+    """
+    wait_for_value(run.page, FOCUSED_CARD, card)
 
 
 @CONTRACT.step("its cards are in the server render", on=SERVER)
@@ -275,21 +282,36 @@ def _arrows(run: Run) -> None:
     for key, card in (
         ("ArrowDown", "Two"),
         ("ArrowRight", "Three"),
-        ("ArrowDown", "One"),
-        ("ArrowUp", "Three"),
-        ("ArrowLeft", "Two"),
+        ("ArrowUp", "Two"),
+        ("ArrowLeft", "One"),
     ):
         # Held as long as a finger holds it: Radix checks the card the focus
         # moves to only while the key is still down.
         page.keyboard.press(key, delay=HELD)
-        page.wait_for_function(f"{FOCUSED_CARD} === '{card}'")
+        _wait_for_focus(run, card)
         _wait_for_checked(run, "pick", [card])
-    wait_for_text(page, "seen", '["Two","Three","One","Three","Two"]')
+    wait_for_text(page, "seen", '["Two","Three","Two","One"]')
     page.keyboard.press("Tab")
+    _wait_for_focus(run, "Red")
     page.keyboard.press("ArrowDown", delay=HELD)
+    _wait_for_focus(run, "Blue")
     _wait_for_checked(run, "colors", ["Blue"])
-    page.keyboard.press("ArrowDown", delay=HELD)
+    page.keyboard.press("ArrowUp", delay=HELD)
+    _wait_for_focus(run, "Red")
     _wait_for_checked(run, "colors", ["Red"])
+
+
+@CONTRACT.step("the arrow keys go round at the ends of a group")
+def _arrows_round(run: Run) -> None:
+    page = run.page
+    page.keyboard.press("Tab")
+    _wait_for_focus(run, "One")
+    page.keyboard.press("ArrowUp", delay=HELD)
+    _wait_for_focus(run, "Three")
+    _wait_for_checked(run, "pick", ["Three"])
+    page.keyboard.press("ArrowDown", delay=HELD)
+    _wait_for_focus(run, "One")
+    _wait_for_checked(run, "pick", ["One"])
 
 
 @CONTRACT.step("Space and a click check a card, and say so")
