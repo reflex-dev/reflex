@@ -306,3 +306,20 @@ def test_text_inline(
             "color": "inherit",
         },
     ]
+
+
+def test_kbd_shadow_has_the_layers_of_one_appearance(
+    ui_plugin: UIPlugin, declared_styles: Callable[[Any], list[dict[str, Any]]]
+):
+    """The shadow of a key is the one of Radix Themes in each appearance."""
+    [style] = declared_styles(rx.ui.text.kbd("K"))
+    assert style["boxShadow"] == (
+        "var(--rx-if-light, inset 0 -0.05em 0.5em var(--gray-a2), "
+        "inset 0 0.05em var(--white-a12), inset 0 0.25em 0.5em var(--gray-a2), "
+        "inset 0 -0.05em var(--gray-a6), 0 0 0 0.05em var(--gray-a5), "
+        "0 0.08em 0.17em var(--gray-a7)) "
+        "var(--rx-if-dark, inset 0 -0.05em 0.5em var(--gray-a3), "
+        "inset 0 0.05em var(--gray-a11), inset 0 0.25em 0.5em var(--gray-a2), "
+        "inset 0 -0.1em var(--black-a11), 0 0 0 0.075em var(--gray-a7), "
+        "0 0.08em 0.17em var(--black-a12))"
+    )
