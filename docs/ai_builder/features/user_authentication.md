@@ -11,7 +11,7 @@ Nothing is generated for you to maintain. Your app talks to Reflex as a standard
 
 ```md alert info
 # Plan availability
-Sign-in itself is available on every plan. **Choosing who can sign in** requires the Pro or Enterprise plan: on lower plans an app signs in anyone with a Reflex account, and the other options are shown with a Pro badge. If they are marked unavailable on a plan that should carry them, [contact sales](https://reflex.dev/pricing/).
+Building apps in the AI Builder requires the Enterprise plan; a Free account cannot build or deploy apps in the AI Builder. The Enterprise plan includes **choosing who can sign in**. If those options are marked unavailable on your plan, [contact sales](https://reflex.dev/pricing/).
 ```
 
 ## Add sign-in to your app
@@ -42,8 +42,8 @@ Either route sets two environment variables on the app, `OIDC_ISSUER_URI` and `O
 Once it is on, the tab shows the app's issuer and client id, the callback addresses the app signs in at, and the sections below.
 
 ```md alert warning
-# On the Free plan, anyone with a Reflex account can sign in
-"Add sign-in" means the app knows who someone is, not that it admits only people you chose. Until you narrow the audience, every Reflex account is allowed in, so adding sign-in on its own does not make an app private. Narrowing it requires the Pro or Enterprise plan.
+# By default, anyone with a Reflex account can sign in
+"Add sign-in" means the app knows who someone is, not that it admits only people you chose. Adding sign-in on its own does not make an app private: choose who can sign in below.
 ```
 
 ## Choose who can sign in
@@ -57,12 +57,12 @@ The **Who can sign in** setting decides which accounts the app will admit:
 | **Invite only** | The addresses you invite, plus anyone who can edit the app |
 | **Just the team** | Only people who can edit the app |
 
-**Anyone** is what every app starts on. The other three require the Pro or Enterprise plan.
+**Anyone** is what every app starts on. The other three require the Enterprise plan.
 
 ```python eval
 rx.image(
     src="https://web.reflex-assets.dev/app_auth_audience_picker.webp",
-    alt="The open 'Who can sign in' menu, listing Anyone, Project members, Invite only and Just the team. Anyone is selected with a tick; the other three are dimmed and each carries a small Pro badge.",
+    alt="The open 'Who can sign in' menu, listing Anyone, Project members, Invite only and Just the team. Anyone is selected with a tick; the other three are dimmed and each carries a small Enterprise badge.",
     class_name="rounded-md h-auto mb-4",
     border=f"0.81px solid {rx.color('slate', 5)}",
 )
@@ -111,7 +111,7 @@ Neither timestamp means "signed in". A person appears here when they approve the
 
 Blocking refuses a person whatever else would admit them, and ends the sessions they are holding. Unblocking lets them sign in again; it does not restore the old session.
 
-Use it to remove somebody who is abusing an app. Blocking is available on every plan.
+Use it to remove somebody who is abusing an app. Blocking is available on every plan that can build apps.
 
 ```md alert warning
 # A block can take up to 30 minutes to reach a running session
