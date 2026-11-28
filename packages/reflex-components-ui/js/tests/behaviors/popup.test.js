@@ -19,10 +19,11 @@ function build(id = "list") {
 /**
  * Send a popup the toggle the browser sends.
  *
- * @param {(event: { currentTarget: HTMLElement, newState?: string }) => boolean} popupToggle The script.
+ * @template T
+ * @param {(event: { currentTarget: HTMLElement, newState?: string }) => T} popupToggle The script.
  * @param {HTMLElement} popup The popup.
- * @param {string} newState What it is now.
- * @returns {boolean} What the script answers.
+ * @param {string} newState What it is now, or is about to be.
+ * @returns {T} What the script answers.
  */
 function toggle(popupToggle, popup, newState) {
   return popupToggle({ currentTarget: popup, newState });
@@ -43,6 +44,10 @@ function said(trigger) {
 
 beforeEach(() => {
   vi.resetModules();
+  // The frame a popup is first drawn in comes at once.
+  vi.stubGlobal("requestAnimationFrame", (/** @type {() => void} */ frame) =>
+    frame(),
+  );
 });
 
 afterEach(() => {
@@ -61,6 +66,102 @@ test("the trigger says whether its popup is open, and the browser places it", as
   expect(toggle(popupToggle, popup, "closed")).toBe(false);
   expect(said(trigger)).toEqual(["false", "closed"]);
   await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(popup.getAttribute("style")).toBe(null);
+});
+
+/**
+ * Lay a popup out as a browser does: where it is told, moved by what its
+ * script found it off whole pixels.
+ *
+ * @param {HTMLElement} popup The popover.
+ * @param {{ x: number, y: number }} laid Where it is laid out, unmoved.
+ * @param {{ drawn?: { x: number, y: number }, turned?: boolean }} [how]
+ *   How far its transform draws it from there, and whether the browser
+ *   turned it over, its margins with it.
+ * @returns {void}
+ */
+function layOut(popup, laid, { drawn = { x: 0, y: 0 }, turned = false } = {}) {
+  const moved = (/** @type {string} */ axis) =>
+    (Number.parseFloat(
+      popup.style.getPropertyValue(`--rx-popup-snap-${axis}`),
+    ) || 0) * (turned ? -1 : 1);
+  popup.getBoundingClientRect = () =>
+    /** @type {DOMRect} */ ({
+      x: laid.x + moved("x") + drawn.x,
+      y: laid.y + moved("y") + drawn.y,
+    });
+}
+
+test("a popup that opens is laid out on whole pixels before it is drawn", async () => {
+  vi.stubGlobal("CSS", { supports: () => true });
+  const { popupBeforeToggle } = await import("$/reflex-ui/behaviors/popup.js");
+  const { popup } = build();
+
+  layOut(popup, { x: 34.640625, y: 52 });
+  toggle(popupBeforeToggle, popup, "open");
+  expect(popup.getAttribute("style")).toBe("--rx-popup-snap-x: 0.359375px;");
+
+  // What it was moved by before is forgotten when it opens again.
+  layOut(popup, { x: 60.3125, y: 51.75 });
+  toggle(popupBeforeToggle, popup, "open");
+  expect(popup.getAttribute("style")).toBe(
+    "--rx-popup-snap-x: -0.3125px; --rx-popup-snap-y: 0.25px;",
+  );
+
+  // A popup on whole pixels is left where it is, and one that closes too.
+  layOut(popup, { x: 40, y: 50 });
+  toggle(popupBeforeToggle, popup, "open");
+  expect(popup.getAttribute("style")).toBe("");
+  layOut(popup, { x: 40.5, y: 50 });
+  toggle(popupBeforeToggle, popup, "closed");
+  expect(popup.getAttribute("style")).toBe("");
+});
+
+test("a popup is laid out on whole pixels whatever it comes in with", async () => {
+  vi.stubGlobal("CSS", { supports: () => true });
+  const { popupBeforeToggle } = await import("$/reflex-ui/behaviors/popup.js");
+  const { popup } = build();
+  // Halfway in: half its size about a point inside it, and four pixels up.
+  popup.style.transform = "matrix(0.5, 0, 0, 0.5, 0, -4)";
+  popup.style.transformOrigin = "10px 20px";
+  layOut(popup, { x: 35.25, y: 44.5 }, { drawn: { x: 5, y: 6 } });
+
+  toggle(popupBeforeToggle, popup, "open");
+  expect([
+    popup.style.getPropertyValue("--rx-popup-snap-x"),
+    popup.style.getPropertyValue("--rx-popup-snap-y"),
+  ]).toEqual(["-0.25px", "0.5px"]);
+});
+
+test("a popup the browser turned over is moved the other way", async () => {
+  vi.stubGlobal("CSS", { supports: () => true });
+  const { popupBeforeToggle } = await import("$/reflex-ui/behaviors/popup.js");
+  const { popup } = build();
+  layOut(popup, { x: 34.640625, y: 52.25 }, { turned: true });
+
+  toggle(popupBeforeToggle, popup, "open");
+  expect(popup.getAttribute("style")).toBe(
+    "--rx-popup-snap-x: -0.359375px; --rx-popup-snap-y: 0.25px;",
+  );
+});
+
+test("a screen with more pixels has the popup on its pixels", async () => {
+  vi.stubGlobal("CSS", { supports: () => true });
+  vi.stubGlobal("devicePixelRatio", 2);
+  const { popupBeforeToggle } = await import("$/reflex-ui/behaviors/popup.js");
+  const { popup } = build();
+  layOut(popup, { x: 10.3, y: 20.5 });
+
+  toggle(popupBeforeToggle, popup, "open");
+  expect(popup.getAttribute("style")).toBe("--rx-popup-snap-x: 0.203125px;");
+});
+
+test("a browser that does not place popups moves none before it is drawn", async () => {
+  const { popupBeforeToggle } = await import("$/reflex-ui/behaviors/popup.js");
+  const { popup } = build();
+  layOut(popup, { x: 34.640625, y: 52 });
+
+  toggle(popupBeforeToggle, popup, "open");
   expect(popup.getAttribute("style")).toBe(null);
 });
 

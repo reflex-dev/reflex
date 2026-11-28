@@ -262,6 +262,12 @@ cells = "size-responsive*"
 properties = ["width", "height"]
 reason = "When the size of rx.select goes from \"3\" at one breakpoint to a smaller one at the next, Radix Themes keeps the larger icon size \"3\" has. The icon of rx.ui.select has the size of the select at each breakpoint, so the trigger is two pixels narrower there."
 
+[[look]]
+component = "select"
+check = "pixels"
+cells = "size-responsive"
+reason = "When the size of rx.select goes from \"3\" at one breakpoint to a smaller one at the next, Radix Themes keeps the larger icon size \"3\" has. The icon of rx.ui.select has the size of the select at each breakpoint, so the trigger is two pixels narrower there."
+
 [[contract]]
 component = "select"
 step = "shows the chosen option in the server render"

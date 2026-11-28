@@ -1,9 +1,8 @@
 """Tests for reflex_components_ui.components.select."""
 
 import itertools
-import re
 from collections.abc import Callable
-from typing import Any, Literal, get_args
+from typing import Any
 
 import pytest
 from reflex_base.utils.imports import ImportVar
@@ -156,9 +155,10 @@ def test_select(
             {
                 "name": '"div"',
                 "props": [
-                    'className:sx_222d3d03d6_c + " " + reflexUIClasses_f97593a337',
+                    'className:sx_c23b44fd7f_c + " " + reflexUIClasses_f97593a337',
                     '"data-rx-popup":""',
                     'id:"rx-select-2"',
+                    "onBeforeToggle:popupBeforeToggle",
                     "onToggle:selectToggle",
                     'popover:"auto"',
                     'role:"listbox"',
@@ -476,10 +476,10 @@ def test_select(
             "right": "auto",
             "bottom": "auto",
             "left": "auto",
-            "marginTop": "var(--rx-popup-offset, 4px)",
-            "marginRight": "var(--rx-popup-shift, 0px)",
-            "marginBottom": "var(--rx-popup-offset, 4px)",
-            "marginLeft": "0",
+            "marginTop": "calc(var(--rx-popup-offset, 4px) + var(--rx-popup-snap-y, 0px))",
+            "marginRight": "calc(var(--rx-popup-shift, 0px) - var(--rx-popup-snap-x, 0px))",
+            "marginBottom": "calc(var(--rx-popup-offset, 4px) - var(--rx-popup-snap-y, 0px))",
+            "marginLeft": "var(--rx-popup-snap-x, 0px)",
             "padding": "var(--select-content-padding)",
             "borderTopWidth": "0",
             "borderRightWidth": "0",
@@ -802,9 +802,10 @@ def test_select_of_a_list(
             {
                 "name": '"div"',
                 "props": [
-                    'className:sx_d08c2fb679_c + " " + reflexUIClasses_e201574881',
+                    'className:sx_51e4617267_c + " " + reflexUIClasses_e201574881',
                     '"data-rx-popup":""',
                     'id:"rx-select-2"',
+                    "onBeforeToggle:popupBeforeToggle",
                     "onToggle:selectToggle",
                     'popover:"auto"',
                     'role:"listbox"',
@@ -1038,10 +1039,10 @@ def test_select_default_styles(
             "right": "auto",
             "bottom": "auto",
             "left": "auto",
-            "marginTop": "var(--rx-popup-offset, 4px)",
-            "marginRight": "0",
-            "marginBottom": "var(--rx-popup-offset, 4px)",
-            "marginLeft": "var(--rx-popup-shift, 0px)",
+            "marginTop": "calc(var(--rx-popup-offset, 4px) + var(--rx-popup-snap-y, 0px))",
+            "marginRight": "calc(0px - var(--rx-popup-snap-x, 0px))",
+            "marginBottom": "calc(var(--rx-popup-offset, 4px) - var(--rx-popup-snap-y, 0px))",
+            "marginLeft": "calc(var(--rx-popup-shift, 0px) + var(--rx-popup-snap-x, 0px))",
             "padding": "var(--select-content-padding)",
             "borderTopWidth": "0",
             "borderRightWidth": "0",
@@ -1268,10 +1269,10 @@ def test_select_ghost_styles(
             "right": "auto",
             "bottom": "auto",
             "left": "auto",
-            "marginTop": "0",
-            "marginRight": "var(--rx-popup-offset, 4px)",
-            "marginBottom": "0",
-            "marginLeft": "var(--rx-popup-offset, 4px)",
+            "marginTop": "var(--rx-popup-snap-y, 0px)",
+            "marginRight": "calc(var(--rx-popup-offset, 4px) - var(--rx-popup-snap-x, 0px))",
+            "marginBottom": "calc(0px - var(--rx-popup-snap-y, 0px))",
+            "marginLeft": "calc(var(--rx-popup-offset, 4px) + var(--rx-popup-snap-x, 0px))",
             "padding": "var(--select-content-padding)",
             "borderTopWidth": "0",
             "borderRightWidth": "0",
@@ -1376,14 +1377,9 @@ def test_select_unknown_side(ui_plugin: UIPlugin):
     """A side a list cannot be on is an error that lists the sides."""
     with pytest.raises(StyleError) as error:
         rx.ui.select.content(side="above")  # pyright: ignore[reportArgumentType]
-    # In the order of the Literal Python keeps for these four values, which
-    # is the one of whichever module first wrote them.
-    sides = ", ".join(
-        f'"{side}"' for side in get_args(Literal["top", "right", "bottom", "left"])
-    )
     assert (
         str(error.value)
-        == f'rx.ui.select_content: unknown side "above". The values are {sides}.'
+        == 'rx.ui.select_content: unknown side "above". The values are "top", "right", "bottom", "left".'
     )
 
 
@@ -1486,9 +1482,10 @@ def test_select_bound_to_state(ui_plugin: UIPlugin):
         ],
     }
     assert content.render()["props"] == [
-        "className:sx_bb2bcf4a84_c",
+        "className:sx_58b8db244a_c",
         '"data-rx-popup":""',
         'id:"rx-select-1"',
+        "onBeforeToggle:popupBeforeToggle",
         (
             "onToggle:((event) => selectToggle(event, ({ "
             f"open: {_event('set_is_open', 'is_open')}, "
@@ -1533,10 +1530,6 @@ def test_select_of_a_list_in_state(ui_plugin: UIPlugin):
     (group,) = content.children
     (options,) = group.children
     item = options.children[0]
-    # Named after the bytecode of the function that renders an option, which
-    # differs from one Python version to the next.
-    index = options.render()["index_var_name"]
-    assert re.fullmatch(r"index_[0-9a-f]{32}", index)
     assert item.render()["props"] == [
         (
             f'"aria-selected":(({STATE}.fruit_rx_state_ === item_rx_state_) '
@@ -1544,7 +1537,7 @@ def test_select_of_a_list_in_state(ui_plugin: UIPlugin):
         ),
         "className:sx_afbb711e7e_c",
         '"data-value":item_rx_state_',
-        f"key:{index}",
+        "key:index_d6d6157c99650830f12a866606ea87b7",
         'role:"option"',
         "tabIndex:-1",
     ]
@@ -1598,4 +1591,7 @@ def test_select_script(ui_plugin: UIPlugin):
         ImportVar(tag="selectToggle"),
         ImportVar(tag="syncSelect"),
         ImportVar(tag="selectFocus"),
+    ]
+    assert select._get_all_imports()["$/reflex-ui/behaviors/popup.js"] == [
+        ImportVar(tag="popupBeforeToggle")
     ]

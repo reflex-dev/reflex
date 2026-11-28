@@ -42,6 +42,58 @@ export function pair(popup, trigger) {
   trigger.setAttribute("aria-controls", popup.id);
 }
 
+/** What says how far a popup is from whole pixels, across and down. */
+const SNAP = ["--rx-popup-snap-x", "--rx-popup-snap-y"];
+
+/**
+ * Say how far a popup is laid out from whole pixels.
+ *
+ * Where it is laid out is read from where it is drawn, less the transform
+ * it comes in with.
+ *
+ * @param {HTMLElement} popup The popover.
+ * @returns {number[]} What brings it to whole pixels, across and down.
+ */
+function off(popup) {
+  const { transform, transformOrigin } = getComputedStyle(popup);
+  const [a = 1, , , d = 1, e = 0, f = 0] = (
+    transform.match(/-?[\d.]+(e-?\d+)?/g) ?? []
+  ).map(Number);
+  const [x = 0, y = 0] = transformOrigin
+    .split(" ")
+    .map((length) => Number.parseFloat(length) || 0);
+  const box = popup.getBoundingClientRect();
+  const ratio = globalThis.devicePixelRatio || 1;
+  return [box.x - x * (1 - a) - e, box.y - y * (1 - d) - f].map((at) => {
+    // In the units a browser lays out in: a sixty-fourth of a pixel, or
+    // close to it, and what is left of one is nothing.
+    const by = Math.round((Math.round(at * ratio) / ratio - at) * 64) / 64;
+    return Math.abs(by) < 0.02 ? 0 : by;
+  });
+}
+
+/**
+ * Put an open popup on whole pixels, as Radix puts the ones it places.
+ *
+ * A popup that ends at the end of its anchor, or is centered on it, starts
+ * on a fraction of a pixel when its width has one. Its styles move it by
+ * what is written here, in its margins: it is laid out there, not drawn
+ * there by a transform, which would blur it.
+ *
+ * @param {HTMLElement} popup The popover.
+ * @returns {void}
+ */
+function snap(popup) {
+  const { style } = popup;
+  for (const name of SNAP) style.removeProperty(name);
+  const wanted = off(popup);
+  wanted.forEach((by, axis) => by && style.setProperty(SNAP[axis], `${by}px`));
+  // A popup the browser turned over has its margins turned over with it.
+  off(popup).forEach(
+    (left, axis) => left && style.setProperty(SNAP[axis], `${-wanted[axis]}px`),
+  );
+}
+
 /**
  * Follow a popup that opens or closes: the `onToggle` of the popover.
  *
@@ -65,4 +117,22 @@ export function popupToggle(event) {
     );
   }
   return open;
+}
+
+/**
+ * Put a popup that is about to open on whole pixels before it is first
+ * drawn: the `onBeforeToggle` of the popover.
+ *
+ * The browser keeps the fraction of a pixel a popover is first drawn at, in
+ * the edges of its letters, so moving it once it has been seen is too late:
+ * it is moved in the frame that shows it.
+ *
+ * @param {{ currentTarget: HTMLElement, newState?: string }} event The toggle to come.
+ * @returns {void}
+ */
+export function popupBeforeToggle(event) {
+  const popup = event.currentTarget;
+  if (ANCHORED && event.newState === "open") {
+    requestAnimationFrame(() => snap(popup));
+  }
 }
