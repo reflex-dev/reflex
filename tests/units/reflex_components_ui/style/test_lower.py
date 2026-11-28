@@ -1570,3 +1570,45 @@ def test_keyframes_are_the_value_of_animation_name_alone():
         'rx.ui.box: style "animation_duration" is given keyframes, which are '
         "the value of animation_name."
     )
+
+
+def test_shorthand_under_a_condition_is_written_before_its_longhands():
+    """StyleX takes a whole shorthand written after its longhands to cancel them."""
+    lowered = lower(
+        "rx.ui.box",
+        {
+            "color": "red",
+            "border_top_left_radius": "var(--radius)",
+            "border_top_right_radius": "2px",
+            "padding_left": {"default": "1px", ":hover": "2px"},
+            "_before": {"border_radius": "calc(var(--radius) - 1px)"},
+            ":hover": {"padding": "var(--space)"},
+            "width": "1px",
+        },
+    )
+    assert list(lowered.style.items()) == [
+        ("color", "red"),
+        ("borderRadius", {"::before": "calc(var(--radius) - 1px)"}),
+        ("borderTopLeftRadius", "var(--radius)"),
+        ("borderTopRightRadius", "2px"),
+        ("padding", {":hover": "var(--space)"}),
+        ("paddingLeft", {"default": "1px", ":hover": "2px"}),
+        ("width", "1px"),
+    ]
+
+
+def test_shorthand_that_applies_everywhere_stays_after_its_longhands():
+    """A whole shorthand written last wins over the longhands before it."""
+    style = {"padding_left": "1px", "padding": "var(--space)", "margin": "1px"}
+    lowered = lower("rx.ui.box", style)
+    assert list(lowered.style.items()) == [
+        ("paddingLeft", "1px"),
+        ("padding", "var(--space)"),
+        ("marginTop", "1px"),
+        ("marginRight", "1px"),
+        ("marginBottom", "1px"),
+        ("marginLeft", "1px"),
+    ]
+    # A style in which nothing moves is not copied.
+    conditional = {"padding": {":hover": "var(--space)"}, "padding_left": "1px"}
+    assert list(lower("rx.ui.box", conditional).style) == ["padding", "paddingLeft"]

@@ -212,10 +212,20 @@ def _focus_within(page: Page, target: Locator, point: Point) -> None:
         point: The middle of the element.
     """
     page.keyboard.press("Tab")
+    # The key may have landed on the control itself and selected its text,
+    # which a focus alone does not: the caret goes back to the start.
     target.evaluate(
-        "element => (element.matches('button, input, select, textarea, [tabindex]')"
-        " ? element : element.querySelector('input, button, select, textarea'))"
-        ".focus()"
+        """element => {
+            const control = element.matches(
+                'button, input, select, textarea, [tabindex]'
+            ) ? element : element.querySelector('input, button, select, textarea');
+            control.focus();
+            try {
+                control.setSelectionRange?.(0, 0);
+            } catch {
+                // A control without text has no selection to collapse.
+            }
+        }"""
     )
 
 
