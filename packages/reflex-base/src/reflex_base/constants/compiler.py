@@ -177,15 +177,6 @@ class Imports(SimpleNamespace):
         f"$/{Dirs.CONTEXTS_PATH}": [ImportVar(tag="EventLoopContext")],
     }
 
-    # Emotion's element factory, the only one that applies a ``css`` prop. A
-    # component whose element has one asks for it, and the module it is
-    # compiled into then imports ``jsx`` from here.
-    EMOTION_JSX = {"@emotion/react": [ImportVar(tag="jsx")]}
-
-    # React's element factory under the name generated code calls. It is what
-    # ``jsx`` is in a module where nothing asked for Emotion's.
-    REACT_JSX = {"react": [ImportVar(tag="createElement", alias="jsx")]}
-
 
 class Hooks(SimpleNamespace):
     """Common sets of hook declarations."""

@@ -140,15 +140,6 @@ class Foreach(Component):
             ).with_traceback(e.__traceback__) from None
         return component
 
-    def _renders_css_prop(self) -> bool:
-        """Whether the component renders an element with a ``css`` prop.
-
-        Returns:
-            False: a loop renders no element of its own, and its children
-            answer for theirs.
-        """
-        return False
-
     def _render(self) -> IterTag:
         props = {}
 

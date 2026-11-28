@@ -293,15 +293,6 @@ class Match(Component):
             ),
         )
 
-    def _renders_css_prop(self) -> bool:
-        """Whether the component renders an element with a ``css`` prop.
-
-        Returns:
-            False: a match renders no element of its own, and its children
-            answer for theirs.
-        """
-        return False
-
     def _render(self) -> CommonTag:
         # Reconstruct match_cases and default from self.children, which may have
         # been updated by the compiler walker to include memoized wrappers.

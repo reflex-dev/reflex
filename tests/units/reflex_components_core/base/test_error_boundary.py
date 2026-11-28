@@ -61,11 +61,12 @@ FALLBACK = (
 
 
 def test_default_fallback_is_styled_without_a_css_prop():
-    """The boundary wraps every app: its fallback does not need Emotion."""
+    """The boundary wraps every app: its fallback has no ``css`` prop."""
     boundary = ErrorBoundary.create(rx.el.div("page"))
     assert sorted(boundary._get_all_imports(collapse=True)) == [
         "$/utils/context",
         "$/utils/state",
+        "@emotion/react",
         "react",
         "react-error-boundary@6.1.6",
         "react-router",

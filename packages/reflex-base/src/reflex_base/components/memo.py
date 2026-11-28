@@ -39,7 +39,6 @@ from reflex_base.components.memoize_helpers import (
     get_memoization_strategy,
 )
 from reflex_base.constants.compiler import (
-    Imports,
     MemoizationDisposition,
     MemoizationMode,
     SpecialAttributes,
@@ -854,7 +853,7 @@ def _component_import_var(name: str, source_module: str | None = None) -> Var:
         _var_data=VarData(
             imports={
                 library: [ImportVar(tag=symbol)],
-                **Imports.REACT_JSX,
+                "@emotion/react": [ImportVar(tag="jsx")],
             }
         ),
     )
