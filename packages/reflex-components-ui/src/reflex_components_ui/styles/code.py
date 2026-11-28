@@ -9,6 +9,7 @@ from reflex_components_ui.styles.typography import (
     ACCENT_SCOPE_HIGH_CONTRAST,
     ACCENT_TEXT,
     LINK_CODE_FILTER,
+    LINK_CODE_ISOLATION,
     LINK_CODE_OUTLINE,
     LINK_CODE_SOFT,
     LINK_CODE_SOLID,
@@ -47,7 +48,11 @@ def _hover(inside_link: str, otherwise: str) -> dict[str, Any]:
 
 _OUTLINE = "inset 0 0 0 max(1px, 0.033em)"
 
+# Inside a link, code with a background is a stacking context.
+_ISOLATION = f"var({LINK_CODE_ISOLATION}, auto)"
+
 _SOFT: Any = {
+    "isolation": _ISOLATION,
     "background_color": _hover(LINK_CODE_SOFT, tokens.accent.a[3]),
     "color": tokens.accent.a[11],
 }
@@ -82,6 +87,7 @@ CODE: ComponentStyles = {
                 "padding": "0",
             }),
             "solid": {
+                "isolation": _ISOLATION,
                 "background_color": _hover(LINK_CODE_SOLID, tokens.accent.a[9]),
                 "color": tokens.accent.contrast,
                 "_selection": {
@@ -91,6 +97,7 @@ CODE: ComponentStyles = {
             },
             "soft": _SOFT,
             "outline": {
+                "isolation": _ISOLATION,
                 "box_shadow": f"{_OUTLINE} {tokens.accent.a[8]}",
                 "color": tokens.accent.a[11],
                 "background_color": {

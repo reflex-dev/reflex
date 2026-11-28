@@ -15,7 +15,7 @@ def test_link_internal(
     component = rx.ui.link("a", href="/docs")
     assert component.render() == {
         "name": "ReactRouterLink",
-        "props": ["className:sx_b8b1ea03e8_c", 'to:"/docs"'],
+        "props": ["className:sx_cdf188a346_c", 'to:"/docs"'],
         "children": [{"contents": '"a"'}],
     }
     assert declared_styles(component) == [
@@ -79,6 +79,7 @@ def test_link_internal(
                 "var(--rx-if-light, contrast(0.88) saturate(1.1) brightness(1.1)) "
                 "var(--rx-if-dark, contrast(0.88) saturate(1.3) brightness(1.18))"
             ),
+            "--rx-link-code-isolation": "isolate",
             "textDecorationLine": {
                 "default": "var(--rx-accent-link-line, none)",
                 ":focus-visible": "none",
@@ -100,7 +101,7 @@ def test_link_no_href(
     )
     assert component.render() == {
         "name": '"a"',
-        "props": ["className:sx_ee879616af_c", 'href:"#"'],
+        "props": ["className:sx_79d67b2b83_c", 'href:"#"'],
         "children": [{"contents": '"a"'}],
     }
     assert declared_styles(component) == [
@@ -174,6 +175,7 @@ def test_link_no_href(
                 "var(--rx-if-light, contrast(0.88) saturate(1.1) brightness(1.1)) "
                 "var(--rx-if-dark, contrast(0.88) saturate(1.3) brightness(1.18))"
             ),
+            "--rx-link-code-isolation": "isolate",
             "fontSize": "var(--font-size-2)",
             "--line-height": "var(--line-height-2)",
             "--letter-spacing": "var(--letter-spacing-2)",
@@ -209,7 +211,7 @@ def test_link_external(
     assert component.render() == {
         "name": "ReactRouterLink",
         "props": [
-            'className:sx_271b4725e7_c + " " + reflexUIClasses_e201574881',
+            'className:sx_c5b4444cf2_c + " " + reflexUIClasses_e201574881',
             'id:"home"',
             "ref:ref_home",
             "reloadDocument:true",
@@ -275,6 +277,7 @@ def test_link_external(
                 "var(--rx-if-light, contrast(0.88) saturate(1.1) brightness(1.1)) "
                 "var(--rx-if-dark, contrast(0.88) saturate(1.3) brightness(1.18))"
             ),
+            "--rx-link-code-isolation": "isolate",
             "textDecorationLine": {
                 "default": "none",
                 ":focus-visible": "none",
@@ -301,7 +304,7 @@ def test_link_as_child(
     )
     assert component.render() == {
         "name": '"button"',
-        "props": ["className:sx_8321e25311_c", 'href:"#"'],
+        "props": ["className:sx_643fe02bad_c", 'href:"#"'],
         "children": [{"contents": '"a"'}],
     }
     assert declared_styles(component) == [
@@ -364,6 +367,7 @@ def test_link_as_child(
                 "var(--rx-if-light, contrast(0.88) saturate(1.1) brightness(1.1)) "
                 "var(--rx-if-dark, contrast(0.88) saturate(1.3) brightness(1.18))"
             ),
+            "--rx-link-code-isolation": "isolate",
             "textDecorationLine": "none",
         }
     ]

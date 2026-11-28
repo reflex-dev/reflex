@@ -12,6 +12,7 @@ from reflex_components_ui.styles.typography import (
     ACCENT_LINK_LINE_COLOR,
     ACCENT_SCOPE,
     LINK_CODE_FILTER,
+    LINK_CODE_ISOLATION,
     LINK_CODE_OUTLINE,
     LINK_CODE_SOFT,
     LINK_CODE_SOLID,
@@ -89,6 +90,7 @@ LINK: ComponentStyles = {
         LINK_CODE_SOFT: tokens.accent.a[4],
         LINK_CODE_OUTLINE: tokens.accent.a[2],
         LINK_CODE_FILTER: SOLID_HIGH_CONTRAST_HOVER_FILTER,
+        LINK_CODE_ISOLATION: "isolate",
     }),
     "variants": {
         "size": SIZE,
