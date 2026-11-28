@@ -48,6 +48,18 @@ Property of a column dict:
 - `width`: The width of the column.
 - `type`: The type of the columns, default to `"str"`.
 
+## Vertical borders
+
+Set `vertical_border` to a boolean to show or hide every column's left border. For per-column control, pass a mapping from zero-based column indices to booleans. Columns omitted from the mapping keep their borders. You can use state values in the mapping or supply a frontend callback that takes a column index and returns a boolean.
+
+```python
+rx.data_editor(
+    columns=columns,
+    data=data,
+    vertical_border={0: False, 2: True},
+)
+```
+
 ## Data
 
 The `data` props of `rx.data_editor` accept a `list` of `list`, where each `list` represent a row of data to display in the table.

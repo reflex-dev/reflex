@@ -37,7 +37,7 @@
   "packages/reflex-components-core/src/reflex_components_core/el/elements/tables.pyi": "7b4c2eaff78f6a412f804457570014c4",
   "packages/reflex-components-core/src/reflex_components_core/el/elements/typography.pyi": "a3d0d5b0ad9d896261091603df6d2c03",
   "packages/reflex-components-core/src/reflex_components_core/react_router/dom.pyi": "7617635157b816f70354e2db98b38642",
-  "packages/reflex-components-dataeditor/src/reflex_components_dataeditor/dataeditor.pyi": "18d20f941d43e5641c66029bd0a986a7",
+  "packages/reflex-components-dataeditor/src/reflex_components_dataeditor/dataeditor.pyi": "a1e9487baeac90d67f9322b7c8d5bf1b",
   "packages/reflex-components-gridjs/src/reflex_components_gridjs/datatable.pyi": "2ce1c076ecf5c2fa4945b4abdbf2f91d",
   "packages/reflex-components-lucide/src/reflex_components_lucide/icon.pyi": "78d8643641b2338f59bf0212a30b025a",
   "packages/reflex-components-markdown/src/reflex_components_markdown/markdown.pyi": "6759daf6e242e209d9298045c7b4456a",
