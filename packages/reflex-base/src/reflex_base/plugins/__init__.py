@@ -23,6 +23,7 @@ if TYPE_CHECKING:
         PostCompileContext,
         PreCompileContext,
         RegisterRouteContext,
+        VitePluginEntry,
         get_plugin,
     )
     from .compiler import (
@@ -55,6 +56,7 @@ if TYPE_CHECKING:
         "SitemapPlugin",
         "TailwindV3Plugin",
         "TailwindV4Plugin",
+        "VitePluginEntry",
         "_ScreenshotPlugin",
         "embed",
         "get_plugin",
@@ -83,6 +85,7 @@ _SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = {
         "PostCompileContext",
         "PreCompileContext",
         "RegisterRouteContext",
+        "VitePluginEntry",
         "get_plugin",
     ],
     "compiler": [

@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import collections
+import contextlib
 import dataclasses
 import json
 import logging
+import sys
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getattr_static, getmodule
 from pathlib import Path
+from types import CodeType, FunctionType, ModuleType
 from typing import TYPE_CHECKING, Any, cast
 
 from reflex_base import constants, otel
@@ -31,8 +34,9 @@ from reflex_base.config import get_config
 from reflex_base.constants.compiler import PageNames, ResetStylesheet
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
+from reflex_base.event import EventHandler, EventSpec
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
-from reflex_base.registry import RegistrationContext, _default_bundled_libraries
+from reflex_base.registry import RegistrationContext, _eager_bundled_libraries
 from reflex_base.utils import log, memo_paths
 from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.format import to_title_case
@@ -41,11 +45,13 @@ from reflex_base.utils.imports import (
     ImportVar,
     ParsedImportDict,
 )
+from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_core.base.app_wrap import AppWrap
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_radix.plugin import RadixThemesPlugin
+from reflex_components_sonner.toast import ToasterRequest, toast
 from rich.progress import Progress
 
 from reflex.compiler import templates, utils
@@ -57,6 +63,10 @@ from reflex.utils.exec import get_compile_context, is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
 
 logger = logging.getLogger(__name__)
+
+# The toaster of an app that passes none. An app's toaster is told from one it
+# configured by identity, and this one is bundled only when a toast is sent.
+DEFAULT_TOASTER = toast.provider()
 
 RADIX_THEMES_STYLESHEET = "@radix-ui/themes/styles.css"
 
@@ -165,8 +175,44 @@ def _get_window_libraries() -> list[tuple[str, str]]:
     return window_libraries
 
 
+def _split_window_libraries(
+    dynamic_components: bool,
+) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
+    """Split the bundled libraries into those root.jsx imports and those it defers.
+
+    A deferred library costs a chunk of its whole namespace, so one the compiler
+    registered is only kept when the app renders a dynamic component. A library
+    the app registered itself is always kept. Emotion is deferred like any
+    other: a dynamic component loads it when it renders a ``css`` prop.
+
+    Args:
+        dynamic_components: Whether the app renders a dynamic component.
+
+    Returns:
+        The eagerly imported libraries and the lazily loaded libraries, each
+        as aliases paired with module paths.
+    """
+    window_libraries = _get_window_libraries()
+    if not get_config().frontend_lazy_bundled_libraries:
+        return window_libraries, []
+    core_libraries = set(_eager_bundled_libraries())
+    explicit_libraries = (
+        RegistrationContext.ensure_context()._explicit_bundled_libraries
+    )
+    eager: list[tuple[str, str]] = []
+    lazy: list[tuple[str, str]] = []
+    for library in window_libraries:
+        if library[1] in core_libraries:
+            eager.append(library)
+        elif dynamic_components or library[1] in explicit_libraries:
+            lazy.append(library)
+    return eager, lazy
+
+
 def _compile_app(
-    app_root: Component, hydrate_fallback_export: str | None = None
+    app_root: Component,
+    hydrate_fallback_export: str | None = None,
+    dynamic_components: bool = True,
 ) -> str:
     """Compile the app template component.
 
@@ -174,20 +220,14 @@ def _compile_app(
         app_root: The app root to compile.
         hydrate_fallback_export: The exported name of the hydrate-fallback memo
             component to re-export as ``HydrateFallback``, or None for no fallback.
+        dynamic_components: Whether the app renders a dynamic component.
 
     Returns:
         The compiled app.
     """
-    window_libraries = _get_window_libraries()
-    lazy_window_libraries = []
-    if get_config().frontend_lazy_bundled_libraries:
-        core_libraries = set(_default_bundled_libraries())
-        lazy_window_libraries = [
-            library for library in window_libraries if library[1] not in core_libraries
-        ]
-        window_libraries = [
-            library for library in window_libraries if library[1] in core_libraries
-        ]
+    window_libraries, lazy_window_libraries = _split_window_libraries(
+        dynamic_components
+    )
 
     app_root_imports = app_root._get_all_imports()
     _apply_common_imports(app_root_imports)
@@ -720,7 +760,10 @@ def compile_document_root(
 
 
 def compile_app_root(
-    app_root: Component, hydrate_fallback_export: str | None = None
+    app_root: Component,
+    hydrate_fallback_export: str | None = None,
+    *,
+    dynamic_components: bool = True,
 ) -> tuple[str, str]:
     """Compile the app root.
 
@@ -728,6 +771,9 @@ def compile_app_root(
         app_root: The app root component to compile.
         hydrate_fallback_export: The exported name of the hydrate-fallback memo
             component to re-export as ``HydrateFallback``, or None for no fallback.
+        dynamic_components: Whether the app renders a dynamic component. Without
+            one, only the libraries the app registered itself are made available
+            to load.
 
     Returns:
         The path and code of the compiled app wrapper.
@@ -738,8 +784,29 @@ def compile_app_root(
     )
 
     # Compile the document root.
-    code = _compile_app(app_root, hydrate_fallback_export)
+    code = _compile_app(app_root, hydrate_fallback_export, dynamic_components)
     return output_path, code
+
+
+def compile_dynamic_libraries(
+    *, dynamic_components: bool = True
+) -> list[tuple[str, str]]:
+    """Compile the modules the app root loads dynamic-component libraries from.
+
+    Args:
+        dynamic_components: Whether the app renders a dynamic component.
+
+    Returns:
+        The path and code of the module of each lazily loaded library.
+    """
+    output_dir = get_web_dir() / constants.Dirs.DYNAMIC_LIBRARIES_PATH
+    return [
+        (
+            str(output_dir / (alias + constants.Ext.JS)),
+            templates.dynamic_library_template(library),
+        )
+        for alias, library in _split_window_libraries(dynamic_components)[1]
+    ]
 
 
 def compile_theme(style: ComponentStyle) -> tuple[str, str]:
@@ -1071,6 +1138,219 @@ def compile_unevaluated_page(
         return component
 
 
+class _PlainToast(Fragment):
+    """App wrap that shows toasts as plain notices, without the toaster.
+
+    It takes the place of the toaster the compiler left out of an app with
+    state, so a toast the backend sends anyway and a connection error still
+    show. A toaster a page mounts itself keeps precedence.
+    """
+
+    def add_hooks(self) -> list[str | Var]:
+        """Install the plain notice unless a toaster already did.
+
+        Returns:
+            The hook installing the plain notice.
+        """
+        return [
+            Var(
+                "refs['__toast'] ??= plainToast",
+                _var_data=VarData(
+                    imports={
+                        f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="refs")],
+                        f"$/{constants.Dirs.UTILS}/helpers/plain_toast": [
+                            ImportVar(tag="plainToast", is_default=True)
+                        ],
+                    }
+                ),
+            )
+        ]
+
+
+def _is_reflex_module(name: str) -> bool:
+    """Check whether a module is part of Reflex itself.
+
+    Args:
+        name: The dotted name of the module.
+
+    Returns:
+        Whether the module belongs to one of the packages of this repository.
+    """
+    top_level = name.partition(".")[0]
+    return top_level in ("reflex", "reflex_base") or top_level.startswith(
+        "reflex_components_"
+    )
+
+
+def _is_app_module(name: str) -> bool:
+    """Check whether a module is the app's own code.
+
+    Args:
+        name: The dotted name of the module.
+
+    Returns:
+        False for the standard library, Reflex, and installed distributions.
+    """
+    if name.partition(".")[0] in sys.stdlib_module_names or _is_reflex_module(name):
+        return False
+    file = getattr(sys.modules.get(name), "__file__", None)
+    return file is not None and not {"site-packages", "dist-packages"}.intersection(
+        Path(file).parts
+    )
+
+
+def _references_toast(roots: Iterable[Any]) -> bool:
+    """Check whether code reachable from the given objects refers to ``rx.toast``.
+
+    Follows the names a function refers to: a global, a closure variable or an
+    attribute of a module it imported. A reference counts when its name is
+    ``toast`` or it resolves to something the toast module defines. Functions
+    and classes of the app's own modules are followed in turn; installed
+    distributions are not, which keeps the walk off their call graphs.
+
+    This reads names, it does not run code: a toast reached through a name
+    computed at runtime, or through an object the code is handed rather than
+    names, is not found. Reflex's own functions are not read.
+
+    Args:
+        roots: The functions, event handlers and classes to start from.
+
+    Returns:
+        Whether a reference to ``rx.toast`` was found.
+    """
+    pending = list(roots)
+    seen: set[int] = set()
+    while pending:
+        obj = pending.pop()
+        if isinstance(obj, (staticmethod, classmethod)):
+            obj = obj.__func__
+        elif isinstance(obj, EventHandler):
+            obj = obj.fn
+        if id(obj) in seen:
+            continue
+        seen.add(id(obj))
+        if isinstance(obj, type):
+            pending.extend(vars(obj).values())
+            continue
+        # Reflex's own code is not read: its default handler for a backend
+        # exception falls back to an alert, and to a plain notice here. A
+        # function is judged by its own module, since a state class defined
+        # inside a function is moved to one of Reflex's.
+        if not isinstance(obj, FunctionType) or _is_reflex_module(obj.__module__):
+            continue
+        names: set[str] = set()
+        codes = [obj.__code__]
+        while codes:
+            code = codes.pop()
+            names.update(code.co_names)
+            codes.extend(
+                const for const in code.co_consts if isinstance(const, CodeType)
+            )
+        if "toast" in names:
+            return True
+        referenced = [
+            obj.__globals__[name] for name in names if name in obj.__globals__
+        ]
+        for cell in obj.__closure__ or ():
+            with contextlib.suppress(ValueError):
+                referenced.append(cell.cell_contents)
+        for value in referenced:
+            if isinstance(value, ModuleType):
+                if value.__name__ == ToasterRequest.__module__:
+                    return True
+                if _is_app_module(value.__name__):
+                    pending.extend(
+                        vars(value)[name] for name in names if name in vars(value)
+                    )
+                continue
+            module = getattr(value, "__module__", None)
+            if module == ToasterRequest.__module__:
+                return True
+            if isinstance(module, str) and _is_app_module(module):
+                # An object is as good as its class: its methods are read.
+                pending.append(
+                    value if isinstance(value, (type, FunctionType)) else type(value)
+                )
+    return False
+
+
+def _backend_sends_toast(app: App) -> bool:
+    """Check whether the backend of the app may send a toast.
+
+    The frontend is compiled before any event handler runs, so this looks at
+    what the handlers refer to instead: see ``_references_toast``. An ``on_load``
+    event is sent by the backend too, and its toast call says so itself.
+
+    Args:
+        app: The app being compiled.
+
+    Returns:
+        Whether a toast sent from the backend was found.
+    """
+    roots: list[Any] = [
+        app.backend_exception_handler,
+        app.frontend_exception_handler,
+    ]
+    for events in app._load_events.values():
+        for event in events:
+            if not isinstance(event, EventSpec):
+                roots.append(event)
+                continue
+            for _, arg in event.args:
+                var_data = arg._get_all_var_data()
+                if var_data is not None and any(
+                    isinstance(wrapper, ToasterRequest)
+                    for _, wrapper in var_data.app_wraps
+                ):
+                    return True
+    states = [app._state] if app._state is not None else []
+    while states:
+        state = states.pop()
+        states.extend(state.get_substates())
+        roots.extend(state.__mro__)
+    return _references_toast(roots)
+
+
+def _resolve_toaster(
+    app: App, app_wrappers: dict[tuple[int, str], Component]
+) -> Component | None:
+    """Resolve the toast provider to put in the app wrap, if any.
+
+    A toaster the app configured is always used. The default one costs every
+    page its library, so it is used only when the app sends a toast: from the
+    frontend, where the compiled toast call asks for it with a
+    ``ToasterRequest``, or from the backend, as far as ``_backend_sends_toast``
+    can tell. Where it cannot tell, an app with state gets plain notices in
+    place of the toaster, so no toast is lost.
+
+    Args:
+        app: The app being compiled.
+        app_wrappers: The app wraps collected from the pages and the other wraps.
+
+    Returns:
+        The app wrap providing toasts, or None for an app that gets none.
+    """
+    toaster = app.toaster
+    if toaster is None:
+        return None
+    if (
+        toaster is DEFAULT_TOASTER
+        and not any(
+            isinstance(wrapper, ToasterRequest) for wrapper in app_wrappers.values()
+        )
+        and not _backend_sends_toast(app)
+    ):
+        return _PlainToast.create() if app._state is not None else None
+
+    from reflex_base.components.memo import memo
+
+    @memo
+    def memoized_toast_provider() -> Component:
+        return toaster
+
+    return Fragment.create(memoized_toast_provider())
+
+
 def _resolve_app_wrap_components(
     app: App,
     page_app_wrap_components: dict[tuple[int, str], Component],
@@ -1096,15 +1376,6 @@ def _resolve_app_wrap_components(
 
         app_wrappers[200, "StrictMode"] = StrictMode.create()
 
-    if (toaster := app.toaster) is not None:
-        from reflex_base.components.memo import memo
-
-        @memo
-        def memoized_toast_provider() -> Component:
-            return toaster
-
-        app_wrappers[44, "ToasterProvider"] = Fragment.create(memoized_toast_provider())
-
     for wrap_mapping in (app.app_wraps, app.extra_app_wraps):
         for key, app_wrap in wrap_mapping.items():
             component = app_wrap(app._state is not None)
@@ -1115,16 +1386,23 @@ def _resolve_app_wrap_components(
     # own subtrees (e.g. ``ErrorBoundary``'s fallback render). Surface their
     # Var-declared ``app_wraps`` here, fixpoint-iterating because newly added
     # wraps may themselves contain further declarations.
-    pending: list[Component] = list(app_wrappers.values())
-    while pending:
-        next_pending: list[Component] = []
-        for wrapper in pending:
-            before = set(app_wrappers)
-            collect_var_app_wraps_in_subtree(app_wrappers, wrapper)
-            next_pending.extend(
-                app_wrappers[key] for key in app_wrappers.keys() - before
-            )
-        pending = next_pending
+    def surface_var_app_wraps(pending: list[Component]) -> None:
+        while pending:
+            next_pending: list[Component] = []
+            for wrapper in pending:
+                before = set(app_wrappers)
+                collect_var_app_wraps_in_subtree(app_wrappers, wrapper)
+                next_pending.extend(
+                    app_wrappers[key] for key in app_wrappers.keys() - before
+                )
+            pending = next_pending
+
+    surface_var_app_wraps(list(app_wrappers.values()))
+
+    # Decided last: only now is every toast call in the frontend accounted for.
+    if (toaster := _resolve_toaster(app, app_wrappers)) is not None:
+        app_wrappers[44, "ToasterProvider"] = toaster
+        surface_var_app_wraps([toaster])
 
     return app_wrappers
 
@@ -1592,7 +1870,19 @@ def compile_app(
     ])
     progress.advance(task)
 
-    compile_results.append(compile_app_root(app_root, hydrate_fallback_export))
+    # A dynamic component is evaluated by evalReactComponent, wherever it renders.
+    dynamic_components = any(
+        field.tag == "evalReactComponent"
+        for field in all_imports.get(f"$/{constants.Dirs.STATE_PATH}", ())
+    )
+    compile_results.extend(
+        compile_dynamic_libraries(dynamic_components=dynamic_components)
+    )
+    compile_results.append(
+        compile_app_root(
+            app_root, hydrate_fallback_export, dynamic_components=dynamic_components
+        )
+    )
     progress.advance(task)
 
     progress.stop()

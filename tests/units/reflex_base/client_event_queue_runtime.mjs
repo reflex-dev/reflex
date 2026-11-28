@@ -1,6 +1,12 @@
+import fs from "node:fs";
+import path from "node:path";
 import { SourceTextModule, SyntheticModule } from "node:vm";
 
-/** Evaluate the complete frontend module with isolated dependency stubs. */
+// The modules next to utils/state.js that make up the runtime of an app with
+// state: the connection to the backend, and what the two share.
+const SIBLINGS = ["event_loop", "socket"];
+
+/** Evaluate the complete frontend runtime with isolated dependency stubs. */
 export async function createQueueRuntime(
   source,
   {
@@ -78,17 +84,23 @@ export async function createQueueRuntime(
     },
     ...dependencyOverrides,
   };
-  // Let Node parse the unchanged module; only expose private state to tests.
-  const module = new SourceTextModule(
-    `import { window, document, localStorage, sessionStorage } from "test:browser";
-${source}
-export { event_queue };
+  // Let Node parse the unchanged modules, with the browser globals in scope.
+  const browserModule = (text) =>
+    new SourceTextModule(
+      `import { window, document, localStorage, sessionStorage } from "test:browser";
+${text}
 `,
-  );
+    );
+  const utils = path.dirname(process.argv[2]);
+  const modules = { "$/utils/state": browserModule(source) };
+  for (const name of SIBLINGS) {
+    modules[`$/utils/${name}`] = browserModule(
+      fs.readFileSync(path.join(utils, `${name}.js`), "utf8"),
+    );
+  }
   const linked = new Map();
-  await module.link((specifier) => {
-    // state.js imports itself to hand its exports to server-provided scripts.
-    if (specifier === "$/utils/state") return module;
+  await modules["$/utils/socket"].link((specifier) => {
+    if (modules[specifier]) return modules[specifier];
     if (!linked.has(specifier)) {
       const exports = dependencies[specifier];
       if (!exports)
@@ -104,6 +116,10 @@ export { event_queue };
     }
     return linked.get(specifier);
   });
-  await module.evaluate();
-  return module.namespace;
+  await modules["$/utils/socket"].evaluate();
+  // What compiled code imports, and the private queue for the tests to read.
+  return {
+    ...modules["$/utils/state"].namespace,
+    event_queue: modules["$/utils/event_loop"].namespace.event_queue,
+  };
 }

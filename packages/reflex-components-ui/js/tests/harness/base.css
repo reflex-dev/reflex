@@ -1,0 +1,9 @@
+/* What the stylesheet every page loads has to say for the themes to work. The
+   stylesheet itself belongs to the app's build, not to these modules. */
+html,
+html.light {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}

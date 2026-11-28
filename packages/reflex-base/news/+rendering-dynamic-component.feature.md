@@ -1,0 +1,1 @@
+Add `reflex_base.components.dynamic.is_rendering_dynamic_component()`, which a component can call while it renders to learn that its code will be evaluated in the browser at runtime and skip what depends on the frontend build.

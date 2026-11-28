@@ -468,3 +468,132 @@ def test_frontend_package_is_where_the_build_hook_looks():
     frontend = REFLEX_BASE.parent / "reflex-frontend"
     assert (frontend / "src" / "utils" / "state.js").is_file()
     assert (frontend / "package.json").is_file()
+
+
+REFLEX_COMPONENTS_UI = REPO_ROOT / "packages" / "reflex-components-ui"
+UI_JS_SRC = "reflex_components_ui/js/src"
+
+
+@pytest.fixture
+def reflex_components_ui_checkout(tmp_path: Path) -> Path:
+    """Lay out reflex-components-ui around its javascript package.
+
+    The project is the real one — its build config and its hook — with a fixed
+    version, since a temporary directory has no tags to derive one from, and
+    without the stub generator, which other tests cover.
+
+    Args:
+        tmp_path: The temporary directory.
+
+    Returns:
+        The reflex-components-ui project root.
+    """
+    root = tmp_path / "packages" / "reflex-components-ui"
+    (root / "src" / "reflex_components_ui").mkdir(parents=True)
+    (root / "src" / "reflex_components_ui" / "__init__.py").touch()
+    (root / "README.md").write_text("reflex-components-ui")
+    shutil.copy(REFLEX_COMPONENTS_UI / "hatch_build.py", root)
+    config = tomlkit.parse((REFLEX_COMPONENTS_UI / "pyproject.toml").read_text())
+    config["project"]["version"] = "0.0.0"
+    config["project"]["dynamic"].remove("version")
+    del config["tool"]["hatch"]["version"]
+    del config["tool"]["hatch"]["build"]["hooks"]["reflex-pyi"]
+    (root / "pyproject.toml").write_text(tomlkit.dumps(config))
+
+    js = root / "js"
+    (js / "src" / "tokens").mkdir(parents=True)
+    (js / "src" / "tokens" / "space.stylex.js").write_text("// space")
+    (js / "src" / "base.css").write_text("/* base */")
+    (js / "tests").mkdir()
+    (js / "tests" / "lint.test.js").write_text("// test")
+    (js / "node_modules" / "eslint").mkdir(parents=True)
+    (js / "node_modules" / "eslint" / "index.js").write_text("// eslint")
+    (js / "package.json").write_text("{}")
+    return root
+
+
+def test_reflex_components_ui_wheel_embeds_the_javascript(
+    reflex_components_ui_checkout: Path, tmp_path: Path
+):
+    """A wheel carries the javascript package's `src`, and only that of it."""
+    names = build_wheel(reflex_components_ui_checkout, tmp_path / "dist")
+    # The whole wheel: the javascript package's tests, manifest and installed
+    # dependencies, and the build hook, are not in it.
+    assert names == {
+        "reflex_components_ui/__init__.py",
+        f"{UI_JS_SRC}/base.css",
+        f"{UI_JS_SRC}/tokens/space.stylex.js",
+        "reflex_components_ui-0.0.0.dist-info/METADATA",
+        "reflex_components_ui-0.0.0.dist-info/RECORD",
+        "reflex_components_ui-0.0.0.dist-info/WHEEL",
+    }
+
+
+def test_reflex_components_ui_wheel_builds_from_its_sdist(
+    reflex_components_ui_checkout: Path, tmp_path: Path
+):
+    """The sdist carries `js/src` where the repository has it, and no tooling."""
+    builder = SdistBuilder(str(reflex_components_ui_checkout))
+    artifact = next(builder.build(directory=str(tmp_path / "dist")))
+    with tarfile.open(artifact) as archive:
+        names = set(archive.getnames())
+        archive.extractall(tmp_path / "unpacked", filter="data")
+    assert names == {
+        "reflex_components_ui-0.0.0/PKG-INFO",
+        "reflex_components_ui-0.0.0/README.md",
+        "reflex_components_ui-0.0.0/hatch_build.py",
+        "reflex_components_ui-0.0.0/pyproject.toml",
+        "reflex_components_ui-0.0.0/src/reflex_components_ui/__init__.py",
+        "reflex_components_ui-0.0.0/js/src/base.css",
+        "reflex_components_ui-0.0.0/js/src/tokens/space.stylex.js",
+    }
+
+    unpacked = tmp_path / "unpacked" / "reflex_components_ui-0.0.0"
+    assert build_wheel(unpacked, tmp_path / "from-sdist") == build_wheel(
+        reflex_components_ui_checkout, tmp_path / "from-checkout"
+    )
+
+
+def test_reflex_components_ui_embeds_only_in_a_standard_wheel(
+    reflex_components_ui_checkout: Path,
+):
+    """An editable install reads `js/src` in place, and an sdist ships it as it is."""
+    root = reflex_components_ui_checkout
+    spec = importlib.util.spec_from_file_location(
+        "reflex_components_ui_hatch_build", root / "hatch_build.py"
+    )
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    builder = WheelBuilder(str(root))
+
+    def force_include(target: str, version: str) -> dict[str, str]:
+        hook = module.JavascriptBuildHook(
+            str(root), {}, builder.config, builder.metadata, "", target
+        )
+        build_data = {"force_include": {}}
+        hook.initialize(version, build_data)
+        return build_data["force_include"]
+
+    assert force_include("wheel", "editable") == {}
+    assert force_include("sdist", "standard") == {}
+    assert force_include("wheel", "standard") == {str(root / "js" / "src"): UI_JS_SRC}
+
+
+def test_reflex_components_ui_refuses_to_build_without_javascript(
+    reflex_components_ui_checkout: Path, tmp_path: Path
+):
+    """A wheel with no javascript could not compile a component."""
+    js_src = reflex_components_ui_checkout / "js" / "src"
+    shutil.rmtree(js_src)
+    with pytest.raises(FileNotFoundError) as raised:
+        build_wheel(reflex_components_ui_checkout, tmp_path / "dist")
+    assert str(raised.value) == f"No javascript to embed: {js_src} does not exist."
+
+
+def test_javascript_package_is_where_the_build_hook_looks():
+    """The hook and the checkout fallback both assume this location."""
+    js = REFLEX_COMPONENTS_UI / "js"
+    assert (js / "src" / "README.md").is_file()
+    assert (js / "package.json").is_file()

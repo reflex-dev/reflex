@@ -1,10 +1,10 @@
 /**
- * The connection lifecycle of `utils/state.js`, with the socket replaced by a
+ * The connection lifecycle of `utils/socket.js`, with the socket replaced by a
  * fake the test drives: what happens to queued events when the connection
  * drops at an awkward moment, and what a torn-down event loop leaves behind.
  *
- * `state.js` keeps its event queue, token and socket bookkeeping in module
- * scope, so every test loads a fresh copy of the module.
+ * The event queue, token and socket bookkeeping are kept in module scope, so
+ * every test loads a fresh copy of the modules.
  */
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
@@ -95,6 +95,8 @@ beforeEach(async () => {
   looseSockets = [];
   sessionStorage.clear();
   state = await import("$/utils/state");
+  // An app with state loads the connection from its compiled context module.
+  await import("$/utils/socket");
   registry = await import("$/utils/context-registry");
   // Let the import's speculative transport warmup see an app without state,
   // then give it one: an app with a single substate never connects.

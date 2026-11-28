@@ -70,3 +70,8 @@ def test_register_route_default_is_noop():
         )
         is None
     )
+
+
+def test_get_vite_plugins_defaults_to_none():
+    """A plugin contributes no Vite plugins unless it overrides the hook."""
+    assert Plugin().get_vite_plugins() == []

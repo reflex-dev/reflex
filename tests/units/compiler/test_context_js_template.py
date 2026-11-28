@@ -12,6 +12,13 @@ from reflex_base.constants import Templates
 
 requires_node = pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
 
+# Stands in for the connection to the backend, which the context of an app
+# with state imports.
+_SOCKET_STUB = """
+export const hydrateClientStorage = () => ({});
+export const useEventLoop = () => [];
+"""
+
 # Stand-ins for the modules context.js imports, keyed by the specifier they
 # replace. Server tests fail if a client-only hook runs without a dispatcher.
 _STUB_MODULES = {
@@ -46,10 +53,9 @@ export const createContext = (value) => {
     "$/utils/state": """
 export const applyDelta = () => {};
 export const ReflexEvent = () => ({});
-export const hydrateClientStorage = () => ({});
-export const useEventLoop = () => [];
 export const refs = {};
 """,
+    "$/utils/socket": _SOCKET_STUB,
     "$/utils/context-registry": """
 export const ColorModeContext = {};
 export const UploadFilesContext = {};
@@ -61,7 +67,6 @@ export const useStateContext = () => ({});
 export const registerApp = () => {};
 export const eventLoop = {};
 """,
-    "@emotion/react": "export const jsx = () => null;\n",
 }
 
 # Renders ``StateProvider`` around a leaf and resolves its fixed-depth wrapper.
@@ -109,6 +114,45 @@ def _event_loop_provider_body() -> str:
     start = rendered.index("export function EventLoopProvider")
     end = rendered.index("function createStateStore", start)
     return rendered[start:end]
+
+
+def _imports(rendered: str) -> list[str]:
+    """Get the import statements of a rendered context module.
+
+    Args:
+        rendered: The source of the context module.
+
+    Returns:
+        Its import statements, in order.
+    """
+    return [line for line in rendered.splitlines() if line.startswith("import ")]
+
+
+def test_stateful_context_imports_the_backend_connection() -> None:
+    """An app with state loads the socket and what syncs browser storage."""
+    rendered = context_template(
+        is_dev_mode=False,
+        default_color_mode='"light"',
+        initial_state={"state": {}},
+        state_name="state",
+    )
+    assert _imports(rendered) == [
+        'import { useContext, useMemo, useState, createElement, useEffect } from "react"',
+        'import { applyDelta, ReflexEvent, refs } from "$/utils/state"',
+        'import { hydrateClientStorage, useEventLoop } from "$/utils/socket"',
+        'import { ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext, registerApp, eventLoop } from "$/utils/context-registry"',
+    ]
+
+
+def test_stateless_context_does_not_import_the_backend_connection() -> None:
+    """An app without state bundles no socket: its context never names it."""
+    rendered = context_template(is_dev_mode=False, default_color_mode='"light"')
+    assert _imports(rendered) == [
+        'import { useContext, useMemo, useState, createElement, useEffect } from "react"',
+        'import { applyDelta, useEventLoop, refs } from "$/utils/state"',
+        'import { ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext, registerApp, eventLoop } from "$/utils/context-registry"',
+    ]
+    assert "utils/socket" not in rendered
 
 
 def test_event_loop_provider_memoizes_its_element() -> None:
@@ -247,8 +291,6 @@ export const applyDelta = (state, delta) => {
   return out ?? state;
 };
 export const ReflexEvent = () => ({});
-export const hydrateClientStorage = () => ({});
-export const useEventLoop = () => [];
 export const refs = {};
 """
     registry_path = Templates.Dirs.WEB_TEMPLATE / "utils" / "context-registry.js"
@@ -258,8 +300,8 @@ export const refs = {};
     for specifier, source in (
         ("react", react_stub),
         ("$/utils/state", state_stub),
+        ("$/utils/socket", _SOCKET_STUB),
         ("$/utils/context-registry", registry_source),
-        ("@emotion/react", "export const jsx = () => null;\n"),
     ):
         stub = tmp_path / (
             "registry.mjs"

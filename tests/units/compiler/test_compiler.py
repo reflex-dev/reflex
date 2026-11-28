@@ -6,12 +6,18 @@ import re
 import shutil
 import sys
 from pathlib import Path, PureWindowsPath
+from typing import Any
 
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.components.app_wraps import collect_subtree_app_wraps
 from reflex_base.components.component import BaseComponent, Component
-from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
+from reflex_base.components.dynamic import (
+    _bundle_library,
+    bundle_library,
+    reset_bundled_libraries,
+)
 from reflex_base.components.memo import MEMOS
 from reflex_base.constants.base import LiteralColorMode
 from reflex_base.constants.compiler import PageNames
@@ -19,6 +25,7 @@ from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.plugins.sitemap import SitemapPlugin
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils import memo_paths
 from reflex_base.utils.console import PoorProgress
 from reflex_base.utils.exceptions import (
     DynamicRouteArgShadowsStateVarError,
@@ -34,10 +41,16 @@ from reflex_components_core.el.elements.metadata import Head, Link, Meta
 from reflex_components_core.el.elements.other import Html
 
 import reflex as rx
+from reflex.app import default_backend_exception_handler
 from reflex.compiler import compiler, utils
 from reflex.compiler.plugins import default_page_plugins
 from reflex.state import BaseState
 from reflex.utils import prerequisites
+from reflex.utils.misc import preload_color_theme
+from tests.units.compiler.test_dynamic_components_codegen import (
+    app_root_loaders,
+    loader,
+)
 
 
 @pytest.mark.parametrize("with_plugin", [False, True])
@@ -627,8 +640,12 @@ def test_compile_preserves_app_bundle_registrations(
         assert all("d3-format" in libraries for libraries in seen)
         assert "d3-format" in context.bundled_libraries
         _, code = compiler.compile_app_root(rx.el.div())
-        assert 'import * as d3_format from "d3-format";' in code
-        assert '"d3-format": d3_format' in code
+        assert app_root_loaders(code) == [
+            loader("@emotion/react", "emotion_react"),
+            loader("d3-format", "d3_format"),
+            loader("compile-only-library", "compile_only_library"),
+            loader("@radix-ui/themes", "radix_ui_themes"),
+        ]
         assert "compile-only-library" in context.bundled_libraries
         assert "@radix-ui/themes" in context.bundled_libraries
 
@@ -704,8 +721,14 @@ def test_compile_app_root_uses_unique_window_library_aliases(
         _, code = compiler.compile_app_root(rx.el.div("hello"))
 
     if lazy:
-        assert '"foo.bar": () => import("foo.bar")' in code
-        assert '"foo/bar.mjs": () => import("foo/bar.mjs")' in code
+        loader = (
+            '    "{}": () => import("$/utils/dynamic_libraries/{}")'
+            ".then((module) => module.default),"
+        )
+        lines = code.splitlines()
+        assert loader.format("foo.bar", "foo_bar") in lines
+        assert loader.format("foo_bar", "foo_bar_2") in lines
+        assert loader.format("foo/bar.mjs", "foo_bar_mjs") in lines
     else:
         assert 'import * as foo_bar from "foo.bar";' in code
         assert 'import * as foo_bar_2 from "foo_bar";' in code
@@ -737,7 +760,9 @@ def test_compile_app_root_includes_radix_window_library_when_bundled(mocker):
     """Bundled Radix libraries should be exposed to window.__reflex."""
     mocker.patch(
         "reflex.compiler.compiler.get_config",
-        return_value=rx.Config(app_name="eager_libraries"),
+        return_value=rx.Config(
+            app_name="eager_libraries", frontend_lazy_bundled_libraries=False
+        ),
     )
     reset_bundled_libraries()
     try:
@@ -751,25 +776,274 @@ def test_compile_app_root_includes_radix_window_library_when_bundled(mocker):
         reset_bundled_libraries()
 
 
-def test_compile_app_root_can_defer_optional_window_libraries(mocker):
-    """Dynamic libraries need not force their entire exports into every page."""
+_APP_ROOT_HEAD = """
+import {Fragment,createElement as jsx,useEffect} from "react"
+
+import { defaultColorMode } from "$/utils/context";
+import { ThemeProvider } from '$/utils/react-theme';
+import { Layout as AppLayout } from './_document';
+import { Outlet } from 'react-router';
+import * as React from "react";
+import * as utils_context from "$/utils/context";
+import * as utils_context_registry from "$/utils/context-registry";
+import * as utils_state from "$/utils/state";
+"""
+
+_APP_ROOT_TAIL = """
+  return jsx(ThemeProvider, {defaultTheme: defaultColorMode, attribute: "class"},
+    jsx(AppWrap, {}, children)
+  );
+}
+
+
+function AppWrap({children}) {
+
+return (jsx("div",{},"hello"))
+}
+
+export function Layout({children}) {
+  return jsx(AppLayout, {}, jsx(ReflexProviders, {}, children));
+}
+
+// Used by entry.client.js when mount_target is configured: skips the document
+// shell (which renders react-router's <Meta>/<Scripts>/<Links> and requires a
+// framework router context) but keeps the runtime providers.
+export function EmbedLayout({children}) {
+  return jsx(ReflexProviders, {}, children);
+}
+
+export default function App() {
+  return jsx(Outlet, {});
+}
+
+"""
+
+_APP_ROOT_WITHOUT_LOADERS = (
+    _APP_ROOT_HEAD
+    + """
+
+
+
+function ReflexProviders({children}) {
+  useEffect(() => {
+    // Make contexts and state objects available globally for dynamic eval'd components
+    window.__reflex = {
+          "react": React,
+    "$/utils/context": utils_context,
+    "$/utils/context-registry": utils_context_registry,
+    "$/utils/state": utils_state,
+    };
+  }, []);
+"""
+    + _APP_ROOT_TAIL
+)
+
+
+def _app_root_with_loaders(*loaders: str) -> str:
+    """Build the root.jsx that loads optional libraries on demand.
+
+    Args:
+        *loaders: The loader entry of each optional library, in order.
+
+    Returns:
+        The complete expected module.
+    """
+    return (
+        _APP_ROOT_HEAD
+        + """
+if (typeof window !== "undefined") {
+  window.__reflex = { ...window.__reflex,
+        "react": React,
+    "$/utils/context": utils_context,
+    "$/utils/context-registry": utils_context_registry,
+    "$/utils/state": utils_state,
+  };
+  const loaders = {
+"""
+        + "".join(f"    {loader}\n" for loader in loaders)
+        + """  };
+  const pending = Object.create(null);
+  window.__reflex_load = (libraries = Object.keys(loaders)) => {
+    return Promise.all(libraries.filter((name) => Object.hasOwn(loaders, name) && !Object.hasOwn(window.__reflex, name)).map((name) => {
+      if (!pending[name]) {
+        pending[name] = loaders[name]().then((module) => {
+          window.__reflex[name] = module;
+        }).catch((error) => {
+          delete pending[name];
+          throw error;
+        });
+      }
+      return pending[name];
+    }));
+  };
+}
+
+
+
+
+function ReflexProviders({children}) {
+  \n"""
+        + _APP_ROOT_TAIL
+    )
+
+
+_EMOTION_LOADER = '"@emotion/react": () => import("$/utils/dynamic_libraries/emotion_react").then((module) => module.default),'
+_RADIX_LOADER = '"@radix-ui/themes": () => import("$/utils/dynamic_libraries/radix_ui_themes").then((module) => module.default),'
+_D3_LOADER = '"d3-format": () => import("$/utils/dynamic_libraries/d3_format").then((module) => module.default),'
+_EMOTION_MODULE = (
+    "emotion_react.js",
+    'import * as library from "@emotion/react";\nexport default library;\n',
+)
+_RADIX_MODULE = (
+    "radix_ui_themes.js",
+    'import * as library from "@radix-ui/themes";\nexport default library;\n',
+)
+_D3_MODULE = (
+    "d3_format.js",
+    'import * as library from "d3-format";\nexport default library;\n',
+)
+
+
+@pytest.mark.parametrize(
+    ("app_libraries", "dynamic_components", "expected_root", "expected_modules"),
+    [
+        pytest.param(
+            (),
+            True,
+            _app_root_with_loaders(_EMOTION_LOADER, _RADIX_LOADER),
+            [_EMOTION_MODULE, _RADIX_MODULE],
+            id="dynamic_components",
+        ),
+        pytest.param(
+            (), False, _APP_ROOT_WITHOUT_LOADERS, [], id="no_dynamic_components"
+        ),
+        pytest.param(
+            ("d3-format@3.1.0",),
+            True,
+            _app_root_with_loaders(_EMOTION_LOADER, _RADIX_LOADER, _D3_LOADER),
+            [_EMOTION_MODULE, _RADIX_MODULE, _D3_MODULE],
+            id="dynamic_components_and_app_library",
+        ),
+        pytest.param(
+            ("d3-format@3.1.0",),
+            False,
+            _app_root_with_loaders(_D3_LOADER),
+            [_D3_MODULE],
+            id="app_library_only",
+        ),
+    ],
+)
+def test_compile_app_root_loads_optional_libraries_on_demand(
+    app_libraries: tuple[str, ...],
+    dynamic_components: bool,
+    expected_root: str,
+    expected_modules: list[tuple[str, str]],
+    mocker: MockerFixture,
+):
+    """Keep optional library namespaces out of root.jsx, in modules of their own.
+
+    A library the compiler registered is only loadable when the app renders a
+    dynamic component, a library the app registered is always loadable. Emotion
+    is one of the former: only a dynamic component with a ``css`` prop calls it.
+
+    Args:
+        app_libraries: The libraries the app registers with bundle_library.
+        dynamic_components: Whether the app renders a dynamic component.
+        expected_root: The complete expected root.jsx.
+        expected_modules: The expected file name and code of each library module.
+        mocker: Fixture for configuring the app.
+    """
     mocker.patch(
-        "reflex.compiler.compiler.get_config",
+        "reflex_base.config._get_config",
+        return_value=rx.Config(app_name="lazy_libraries"),
+    )
+    with RegistrationContext():
+        _bundle_library("@radix-ui/themes")
+        for library in app_libraries:
+            bundle_library(library)
+        root_path, code = compiler.compile_app_root(
+            rx.el.div("hello"), dynamic_components=dynamic_components
+        )
+        modules = compiler.compile_dynamic_libraries(
+            dynamic_components=dynamic_components
+        )
+
+    assert root_path == str(prerequisites.get_web_dir() / "app" / "root.jsx")
+    assert code == expected_root
+    assert modules == [
+        (
+            str(prerequisites.get_web_dir() / "utils" / "dynamic_libraries" / name),
+            module_code,
+        )
+        for name, module_code in expected_modules
+    ]
+
+
+def test_compile_dynamic_libraries_is_empty_for_eager_libraries(mocker: MockerFixture):
+    """Write no library modules when root.jsx imports the namespaces itself.
+
+    Args:
+        mocker: Fixture for configuring the app.
+    """
+    mocker.patch(
+        "reflex_base.config._get_config",
         return_value=rx.Config(
-            app_name="lazy_libraries", frontend_lazy_bundled_libraries=True
+            app_name="eager_libraries", frontend_lazy_bundled_libraries=False
         ),
     )
     with RegistrationContext():
-        bundle_library("@radix-ui/themes@3.3.0")
-        bundle_library("constructor")
-        _, code = compiler.compile_app_root(rx.el.div("hello"))
+        bundle_library("d3-format@3.1.0")
+        assert compiler.compile_dynamic_libraries() == []
 
-    assert 'import * as radix_ui_themes from "@radix-ui/themes"' not in code
-    assert '() => import("@radix-ui/themes")' in code
-    assert '"constructor": () => import("constructor")' in code
-    assert 'import * as React from "react"' in code
-    assert 'import * as utils_context from "$/utils/context"' in code
-    assert "window.__reflex_load" in code
+
+@pytest.mark.parametrize("dynamic", [False, True])
+def test_compile_detects_dynamic_components(
+    dynamic: bool,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+):
+    """Tell the app root whether any page renders a dynamic component.
+
+    Args:
+        dynamic: Whether the page renders a component held in state.
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory.
+        mocker: Fixture for configuring the test app.
+    """
+    monkeypatch.chdir(tmp_path)
+    with RegistrationContext():
+        mocker.patch(
+            "reflex_base.config._get_config",
+            return_value=rx.Config(app_name="dynamic_detection", plugins=[]),
+        )
+
+        class DynamicDetectionState(rx.State):
+            """A state holding a component and a plain value."""
+
+            component: rx.Component = rx.el.div("dynamic")
+            text: str = "static"
+
+        def index() -> rx.Component:
+            """Render the component or the plain value from state.
+
+            Returns:
+                The page.
+            """
+            return rx.el.div(
+                DynamicDetectionState.component
+                if dynamic
+                else DynamicDetectionState.text
+            )
+
+        app = rx.App()
+        app.add_page(index)
+        compile_root = mocker.spy(compiler, "compile_app_root")
+        compile_libraries = mocker.spy(compiler, "compile_dynamic_libraries")
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+
+    assert compile_root.call_args.kwargs == {"dynamic_components": dynamic}
+    assert compile_libraries.call_args == mocker.call(dynamic_components=dynamic)
 
 
 def _mock_config_color_mode(mocker: MockerFixture, mode: LiteralColorMode) -> None:
@@ -891,6 +1165,39 @@ def test_compile_document_root_bakes_default_color_mode(mocker: MockerFixture):
     )
 
     assert "|| 'dark'" in code
+
+
+def test_compile_document_root_prod(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """A production document preloads its stylesheet and no script of its own.
+
+    Its scripts are the Reflex wrapper of react-router's, which starts them
+    after the first paint on a prerendered page.
+    """
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.PROD.value)
+    mocker.patch(
+        "reflex.compiler.compiler.get_web_dir",
+        return_value=Path("/tmp/does_not_matter"),
+    )
+
+    path, code = compiler.compile_document_root([], default_color_mode="system")
+
+    theme_script = preload_color_theme("system").render()["children"][0]["contents"]
+    assert path == str(Path("/tmp/does_not_matter/app/_document.js"))
+    assert (
+        code
+        == f"""import {{Links,Meta,ScrollRestoration}} from "react-router"
+import reflexGlobalStyles from "$/styles/__reflex_global_styles.css?url"
+import {{Scripts}} from "$/utils/scripts"
+import {{Fragment,createElement as jsx,useEffect}} from "react"
+
+export function Layout({{children}}) {{
+  return (
+    jsx("html",{{lang:"en"}},jsx("head",{{}},jsx("script",{{}},{theme_script}),jsx("meta",{{charSet:"utf-8"}},),jsx("meta",{{content:"width=device-width, initial-scale=1",name:"viewport"}},),jsx(Meta,{{}},),jsx("link",{{as:"style",href:reflexGlobalStyles,rel:"preload"}},),jsx("link",{{href:reflexGlobalStyles,rel:"stylesheet",type:"text/css"}},),jsx(Links,{{}},)),jsx("body",{{}},children,jsx(ScrollRestoration,{{}},),jsx(Scripts,{{}},)))
+  )
+}}"""
+    )
 
 
 def test_compile_nonexistent_stylesheet(tmp_path, mocker: MockerFixture):
@@ -2402,3 +2709,608 @@ def test_custom_code_may_declare_refs(auto_memoize: bool):
     assert any("const refs = {};" in code for _, code in memo_files)
     for code in modules:
         assert not _IMPORTS_REFS.search(code), code
+
+
+def _notify(message: str) -> rx.event.EventSpec:
+    """Send a toast, as a helper an event handler calls.
+
+    Args:
+        message: The text of the toast.
+
+    Returns:
+        The toast event.
+    """
+    return rx.toast.info(message)
+
+
+def _log(message: str) -> None:
+    """Do something other than sending a toast.
+
+    Args:
+        message: The text to print.
+    """
+    print(message)
+
+
+class _Notifier:
+    """A class whose method sends a toast."""
+
+    @staticmethod
+    def warn(message: str) -> rx.event.EventSpec:
+        """Send a warning toast.
+
+        Args:
+            message: The text of the toast.
+
+        Returns:
+            The toast event.
+        """
+        return rx.toast.warning(message)
+
+
+def _closing_over(send: Any) -> Any:
+    """Build a function that reaches ``send`` through its closure only.
+
+    Args:
+        send: The function to close over.
+
+    Returns:
+        A function calling ``send``.
+    """
+
+    def inner() -> Any:
+        return send("closed over")
+
+    return inner
+
+
+_send_error = rx.toast.error
+_notifier = _Notifier()
+_this_module = sys.modules[__name__]
+_closes_over_a_toast = _closing_over(rx.toast.success)
+_closes_over_print = _closing_over(print)
+
+
+@pytest.mark.parametrize(
+    ("root", "expected"),
+    [
+        (lambda: rx.toast("direct"), True),
+        (lambda: rx.toast.error("a level"), True),
+        (lambda: [(lambda text: rx.toast(text))(text) for text in "ab"], True),
+        (lambda: _send_error("an alias of a toast function"), True),
+        (lambda: _notify("a helper function"), True),
+        (lambda: _Notifier.warn("a helper class"), True),
+        (lambda: _notifier.warn("an instance of a helper class"), True),
+        (lambda: _this_module._notify("a helper reached through its module"), True),
+        (_closes_over_a_toast, True),
+        (_Notifier, True),
+        (staticmethod(_notify), True),
+        (rx.event.EventHandler(fn=_notify), True),
+        (lambda: _log("no toast"), False),
+        (lambda: rx.redirect("/elsewhere"), False),
+        (lambda: json.dumps({"module": "of the standard library"}), False),
+        (lambda: pytest.fail("an installed distribution is not followed"), False),
+        (_closes_over_print, False),
+        (dataclasses.dataclass, False),
+        ("not code", False),
+    ],
+)
+def test_references_toast(root: Any, expected: bool):
+    """A toast is found through the names code refers to, in the app's modules.
+
+    Args:
+        root: The function, handler or class to start from.
+        expected: Whether it reaches ``rx.toast``.
+    """
+    assert compiler._references_toast([root]) is expected
+
+
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        (__name__, True),
+        ("json", False),
+        ("reflex.app", False),
+        ("reflex_base.event", False),
+        ("reflex_components_sonner.toast", False),
+        ("pytest", False),
+        ("a_module_nothing_imported", False),
+    ],
+)
+def test_is_app_module(name: str, expected: bool):
+    """The app's modules are what is neither Reflex, standard nor installed.
+
+    Args:
+        name: The dotted name of a module.
+        expected: Whether it is the app's own code.
+    """
+    assert compiler._is_app_module(name) is expected
+
+
+def _toast_wrap(app: rx.App, page: Component | None = None) -> str | None:
+    """Resolve what an app puts in its app wrap to show toasts.
+
+    Args:
+        app: The app to resolve the app wraps of.
+        page: A page of the app, or None for an app with no toast call in a page.
+
+    Returns:
+        "toaster" for the toaster, "plain" for plain notices, None for neither.
+    """
+    wraps = compiler._resolve_app_wrap_components(
+        app, collect_subtree_app_wraps(page) if page is not None else {}
+    )
+    wrap = wraps.get((44, "ToasterProvider"))
+    if wrap is None:
+        return None
+    if isinstance(wrap, compiler._PlainToast):
+        return "plain"
+    assert [child.tag for child in wrap.children if isinstance(child, Component)] == [
+        memo_paths.mirrored_symbol("MemoizedToastProvider", compiler.__name__)
+    ]
+    return "toaster"
+
+
+def _toast_button() -> Component:
+    """Build a page that sends a toast from the frontend.
+
+    Returns:
+        A button whose click sends a toast.
+    """
+    return rx.el.button("Notify", on_click=rx.toast("Hello"))
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_toaster_of_an_app_without_state(mocker: MockerFixture):
+    """Without state, only a toast call in the frontend can send a toast."""
+    mocker.patch(
+        "reflex_base.config._get_config", return_value=rx.Config(app_name="testing")
+    )
+    app = rx.App(enable_state=False)
+
+    assert _toast_wrap(app) is None
+    assert _toast_wrap(app, rx.el.div("Static")) is None
+    assert _toast_wrap(app, _toast_button()) == "toaster"
+
+    app.extra_app_wraps[1, "Notify"] = lambda _stateful: _toast_button()
+    assert _toast_wrap(app) == "toaster"
+    del app.extra_app_wraps[1, "Notify"]
+
+    app.add_page(lambda: rx.el.div("Static"), route="/", on_load=rx.toast("Hi"))
+    assert _toast_wrap(app) == "toaster"
+    app._load_events["index"] = [lambda: _notify("From a function")]
+    assert _toast_wrap(app) == "toaster"
+    app._load_events["index"] = [lambda: rx.redirect("/elsewhere")]
+    assert _toast_wrap(app) is None
+    app._load_events.clear()
+
+    app.toaster = rx.toast.provider()
+    assert _toast_wrap(app) == "toaster"
+
+    app.toaster = None
+    assert _toast_wrap(app) is None
+    assert _toast_wrap(app, _toast_button()) is None
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_toaster_of_an_app_whose_handlers_send_no_toast(mocker: MockerFixture):
+    """With state and no toast found, toasts and connection errors show plainly."""
+    mocker.patch(
+        "reflex_base.config._get_config", return_value=rx.Config(app_name="testing")
+    )
+
+    class QuietState(rx.State):
+        """A state whose handlers send no toast."""
+
+        count: int = 0
+
+        @rx.event
+        def increment(self):
+            """Count up, then go elsewhere.
+
+            Returns:
+                The redirect event.
+            """
+            self.count += 1
+            return rx.redirect("/elsewhere")
+
+    app = rx.App()
+
+    assert _toast_wrap(app) == "plain"
+    assert _toast_wrap(app, rx.el.div(QuietState.count)) == "plain"
+    assert _toast_wrap(app, _toast_button()) == "toaster"
+
+    app.backend_exception_handler = lambda exception: _notify(str(exception))
+    assert _toast_wrap(app) == "toaster"
+    app.backend_exception_handler = default_backend_exception_handler
+
+    app.toaster = rx.toast.provider()
+    assert _toast_wrap(app) == "toaster"
+
+    app.toaster = None
+    assert _toast_wrap(app) is None
+
+
+@pytest.mark.parametrize("where", ["handler", "helper", "mixin", "substate"])
+@pytest.mark.usefixtures("clean_registration_context")
+def test_toaster_of_an_app_whose_backend_sends_a_toast(
+    where: str, mocker: MockerFixture
+):
+    """A toast an event handler can send bundles the toaster.
+
+    Args:
+        where: The code of the state tree that refers to the toast.
+        mocker: Fixture for configuring the test app.
+    """
+    mocker.patch(
+        "reflex_base.config._get_config", return_value=rx.Config(app_name="testing")
+    )
+
+    if where == "handler":
+
+        class HandlerState(rx.State):
+            """A state whose handler sends a toast."""
+
+            @rx.event
+            def notify(self):
+                """Send a toast.
+
+                Returns:
+                    The toast event.
+                """
+                return rx.toast("From the handler")
+
+    elif where == "helper":
+
+        class HelperState(rx.State):
+            """A state whose handler sends a toast through a method."""
+
+            @rx.event
+            def notify(self):
+                """Send what the helper method builds.
+
+                Returns:
+                    The toast event.
+                """
+                return self._build()
+
+            def _build(self):
+                return _notify("From a helper")
+
+    elif where == "mixin":
+
+        class Mixin(rx.State, mixin=True):
+            """A mixin whose handler sends a toast."""
+
+            @rx.event
+            def notify(self):
+                """Send a toast.
+
+                Returns:
+                    The toast event.
+                """
+                return rx.toast.success("From a mixin")
+
+        class MixedState(Mixin, rx.State):
+            """A state that takes its handler from the mixin."""
+
+    else:
+
+        class ParentState(rx.State):
+            """A state that sends no toast."""
+
+            @rx.event
+            def quiet(self):
+                """Do nothing."""
+
+        class ChildState(ParentState):
+            """A substate that sends a toast."""
+
+            @rx.event
+            def notify(self):
+                """Send a toast.
+
+                Returns:
+                    The toast event.
+                """
+                return rx.toast("From a substate")
+
+    assert _toast_wrap(rx.App()) == "toaster"
+
+
+# What a module with no ``css`` prop calls ``jsx``, and what one with a ``css``
+# prop does: only Emotion applies the prop.
+REACT_JSX = 'import {Fragment,createElement as jsx,useEffect} from "react"'
+EMOTION_JSX = [
+    'import {Fragment,useEffect} from "react"',
+    'import {jsx} from "@emotion/react"',
+]
+REACT_JSX_MEMO = 'import {Fragment,createElement as jsx,memo,useEffect} from "react"'
+EMOTION_JSX_MEMO = [
+    'import {jsx} from "@emotion/react"',
+    'import {Fragment,memo,useEffect} from "react"',
+]
+
+_MEMO_NAME_HASH = re.compile(r"_[0-9a-f]{32}|_[0-9a-f]{8}\b")
+
+
+def _module_imports(code: str) -> list[str]:
+    """Get the import statements of a generated module.
+
+    Args:
+        code: The source of the module.
+
+    Returns:
+        Its import statements in order, with the hashes that name memos
+        replaced by a placeholder.
+    """
+    return [
+        _MEMO_NAME_HASH.sub("_<hash>", line)
+        for line in code.splitlines()
+        if line.startswith("import ")
+    ]
+
+
+class JsxImportState(BaseState):
+    """What the pages of the ``jsx`` import tests are bound to."""
+
+    color: str = "red"
+    items: list[str] = ["a"]
+    on: bool = True
+
+
+class ThirdPartyPlain(Component):
+    """A component of another package, with no style of its own."""
+
+    library = "third-party"
+    tag = "Plain"
+
+    fallback: Var[Component]
+
+
+class ThirdPartyThemed(ThirdPartyPlain):
+    """A component of another package that adds a ``css`` prop as it renders."""
+
+    tag = "Themed"
+
+    def _render(self, props: dict[str, Any] | None = None):
+        return super()._render(props).add_props(css=Var(_js_expr="theme"))
+
+
+THIRD_PARTY_PLAIN = 'import {Plain} from "third-party"'
+
+_RED = {"color": "red"}
+
+
+@pytest.mark.parametrize(
+    ("page", "style", "expected"),
+    [
+        pytest.param(lambda: rx.el.div("x"), None, [REACT_JSX], id="no_style"),
+        pytest.param(lambda: rx.el.div("x", style=_RED), None, EMOTION_JSX, id="style"),
+        pytest.param(
+            lambda: rx.box("x", color="red"),
+            None,
+            ['import {Box as RadixThemesBox} from "@radix-ui/themes"', *EMOTION_JSX],
+            id="style_keyword",
+        ),
+        pytest.param(
+            lambda: rx.el.div("x"), {rx.el.div: _RED}, EMOTION_JSX, id="app_style"
+        ),
+        pytest.param(
+            lambda: rx.el.div("x"),
+            {rx.el.span: _RED},
+            [REACT_JSX],
+            id="app_style_of_another_component",
+        ),
+        pytest.param(
+            lambda: ThirdPartyPlain.create(),
+            None,
+            [THIRD_PARTY_PLAIN, REACT_JSX],
+            id="third_party",
+        ),
+        pytest.param(
+            lambda: ThirdPartyThemed.create(),
+            None,
+            ['import {Themed} from "third-party"', *EMOTION_JSX],
+            id="third_party_css_added_in_render",
+        ),
+        pytest.param(
+            lambda: ThirdPartyPlain.create(custom_attrs={"css": _RED}),
+            None,
+            [THIRD_PARTY_PLAIN, *EMOTION_JSX],
+            id="css_as_custom_attribute",
+        ),
+        pytest.param(
+            lambda: ThirdPartyPlain.create(fallback=rx.el.span("a", style=_RED)),
+            None,
+            [
+                THIRD_PARTY_PLAIN,
+                'import {jsx} from "@emotion/react"',
+                'import {Fragment,useEffect} from "react"',
+                'import {pyOr} from "$/utils/state"',
+            ],
+            id="style_in_a_component_prop",
+        ),
+        pytest.param(
+            lambda: ThirdPartyPlain.create(fallback=rx.el.span("a")),
+            None,
+            [THIRD_PARTY_PLAIN, REACT_JSX, 'import {pyOr} from "$/utils/state"'],
+            id="component_prop",
+        ),
+        pytest.param(
+            # A component that reaches the page as code carries no imports.
+            lambda: ThirdPartyPlain.create(
+                custom_attrs={"render": Var(f"() => {rx.el.i('a', style=_RED)!s}")}
+            ),
+            None,
+            [
+                THIRD_PARTY_PLAIN,
+                'import {Fragment,useEffect} from "react"',
+                'import {jsx} from "@emotion/react"',
+            ],
+            id="style_in_code_without_imports",
+        ),
+    ],
+)
+def test_page_imports_emotion_only_for_a_css_prop(
+    page, style, expected: list[str], compile_page
+):
+    """A page calls React's ``createElement`` unless something in it has a ``css`` prop."""
+    code = compile_page(page, style=style).compiled_pages["/"].output_code
+    assert _module_imports(code) == expected
+
+
+@pytest.mark.parametrize(
+    ("page", "expected_page", "expected_memo"),
+    [
+        pytest.param(
+            # The branches of a condition stay in the page.
+            lambda: rx.el.div(
+                rx.cond(JsxImportState.on, rx.el.span("a", style=_RED), rx.el.span("b"))
+            ),
+            [
+                'import {Fragment,useEffect} from "react"',
+                'import {Cond_comp_<hash>} from "$/utils/components/Cond_comp_<hash>"',
+                'import {jsx} from "@emotion/react"',
+            ],
+            [
+                'import {isTrue} from "$/utils/state"',
+                'import {useStateContext} from "$/utils/context-registry"',
+                REACT_JSX_MEMO,
+            ],
+            id="cond_with_style",
+        ),
+        pytest.param(
+            lambda: rx.el.div(
+                rx.cond(JsxImportState.on, rx.el.span("a"), rx.el.span("b"))
+            ),
+            [
+                REACT_JSX,
+                'import {Cond_comp_<hash>} from "$/utils/components/Cond_comp_<hash>"',
+            ],
+            [
+                'import {isTrue} from "$/utils/state"',
+                'import {useStateContext} from "$/utils/context-registry"',
+                REACT_JSX_MEMO,
+            ],
+            id="cond",
+        ),
+        pytest.param(
+            # The body of a loop moves into the module of the loop.
+            lambda: rx.el.div(
+                rx.foreach(JsxImportState.items, lambda i: rx.el.span(i, style=_RED))
+            ),
+            [
+                'import {Foreach_comp_<hash>} from "$/utils/components/Foreach_comp_<hash>"',
+                REACT_JSX,
+            ],
+            [
+                'import {isTrue} from "$/utils/state"',
+                'import {useStateContext} from "$/utils/context-registry"',
+                *EMOTION_JSX_MEMO,
+            ],
+            id="foreach_with_style",
+        ),
+        pytest.param(
+            lambda: rx.el.div(
+                rx.foreach(JsxImportState.items, lambda i: rx.el.span(i))
+            ),
+            [
+                'import {Foreach_comp_<hash>} from "$/utils/components/Foreach_comp_<hash>"',
+                REACT_JSX,
+            ],
+            [
+                'import {isTrue} from "$/utils/state"',
+                'import {useStateContext} from "$/utils/context-registry"',
+                REACT_JSX_MEMO,
+            ],
+            id="foreach",
+        ),
+        pytest.param(
+            # An element bound to state moves into a module of its own, and
+            # takes Emotion with it: the page it leaves no longer needs it.
+            lambda: rx.el.div(
+                rx.el.span("a", style={"color": JsxImportState.color}), rx.el.p("p")
+            ),
+            [
+                'import {Span_span_<hash>} from "$/utils/components/Span_span_<hash>"',
+                REACT_JSX,
+            ],
+            [
+                'import {isTrue,mergeSlotProps} from "$/utils/state"',
+                'import {useStateContext} from "$/utils/context-registry"',
+                *EMOTION_JSX_MEMO,
+            ],
+            id="style_bound_to_state",
+        ),
+    ],
+)
+def test_auto_memo_module_imports_emotion_only_for_a_css_prop(
+    page, expected_page: list[str], expected_memo: list[str], compile_page
+):
+    """The rule is applied to each generated module on its own."""
+    ctx = compile_page(page)
+    assert _module_imports(ctx.compiled_pages["/"].output_code) == expected_page
+    ((_, memo_module),) = compiler.compile_memo_components(
+        tuple(ctx.auto_memo_components.values())
+    )[0]
+    assert _module_imports(memo_module) == expected_memo
+
+
+def test_rx_memo_module_imports_emotion_only_for_a_css_prop(
+    compile_page, preserve_memo_registries: None
+):
+    """A memo with a ``css`` prop imports Emotion: the page that calls it does not."""
+
+    @rx.memo
+    def jsx_styled_memo() -> rx.Component:
+        return rx.el.div("m", style=_RED)
+
+    @rx.memo
+    def jsx_plain_memo() -> rx.Component:
+        return rx.el.div("m")
+
+    def memo_imports(name: str) -> list[str]:
+        ((_, code),) = compiler.compile_memo_components((
+            next(memo for memo in MEMOS.values() if memo.python_name == name),
+        ))[0]
+        return _module_imports(code)
+
+    assert memo_imports("jsx_styled_memo") == [
+        'import {isTrue} from "$/utils/state"',
+        *EMOTION_JSX_MEMO,
+    ]
+    assert memo_imports("jsx_plain_memo") == [
+        'import {isTrue} from "$/utils/state"',
+        REACT_JSX_MEMO,
+    ]
+    page = compile_page(lambda: rx.el.div(jsx_styled_memo(), jsx_plain_memo()))
+    assert _module_imports(page.compiled_pages["/"].output_code) == [
+        (
+            "import {JsxPlainMemo_<hash>,JsxStyledMemo_<hash>} "
+            'from "$/app_components/tests/units/compiler/test_compiler"'
+        ),
+        REACT_JSX,
+    ]
+
+
+@pytest.mark.parametrize(
+    "component",
+    [
+        pytest.param(lambda: rx.el.div("x"), id="no_style"),
+        pytest.param(lambda: rx.el.div("x", style=_RED), id="style"),
+    ],
+)
+def test_module_built_from_the_imports_of_a_component_ships_emotion(component):
+    """A plugin that writes a module of its own keeps the ``jsx`` that applies ``css``.
+
+    It collects the imports of the components it renders and adds the common
+    ones. Only a template of the compiler, which sees the code of the module,
+    can tell that Emotion is not needed: imports alone always name it.
+    """
+    imports = component()._get_all_imports()
+    compiler._apply_common_imports(imports)
+    assert utils.compile_imports(imports) == [
+        {"lib": "@emotion/react", "default": "", "rest": ["jsx"]},
+        {"lib": "react", "default": "", "rest": ["Fragment", "useEffect"]},
+    ]

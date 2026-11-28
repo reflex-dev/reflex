@@ -1,0 +1,885 @@
+"""The base class of the rx.ui components."""
+
+from __future__ import annotations
+
+import dataclasses
+import functools
+import json
+import types
+import typing
+from collections.abc import Iterator, Mapping, Sequence
+from typing import Any, ClassVar, Literal
+
+from reflex_base import breakpoints
+from reflex_base.components.component import BaseComponent, Component
+from reflex_base.components.dynamic import is_rendering_dynamic_component
+from reflex_base.components.tags import CommonTag
+from reflex_base.constants.compiler import SPECIAL_ATTRS
+from reflex_base.plugins import get_plugin
+from reflex_base.style import media_query
+from reflex_base.utils import format
+from reflex_base.utils.exceptions import ConfigError
+from reflex_base.utils.imports import ImportDict, ImportVar, ParsedImportDict
+from reflex_base.vars.base import LiteralVar, Var, VarData
+from reflex_base.vars.sequence import LiteralStringVar
+from reflex_components_core.base.fragment import Fragment
+from reflex_components_core.core.cond import Cond
+from reflex_components_core.core.foreach import Foreach
+
+from reflex_components_ui.plugin import UIPlugin
+from reflex_components_ui.props import literal_value
+from reflex_components_ui.style import (
+    LAYOUT_PROPS,
+    ComponentStyles,
+    Merged,
+    StyleError,
+    merge,
+)
+from reflex_components_ui.style.emit import Emitted, emit, inline
+from reflex_components_ui.style.lower import EMPTY, suggest
+from reflex_components_ui.style.merge import over
+from reflex_components_ui.themes import ThemeStyles, color_scheme_styles, radius_styles
+
+MISSING_PLUGIN_ERROR = (
+    "rx.ui components need rx.plugins.UIPlugin() in rxconfig.py plugins."
+)
+
+# What starts a keyword argument that is never a style: an event trigger, or
+# an attribute that is passed to the element as it is.
+_NOT_A_STYLE = ("on_", *SPECIAL_ATTRS)
+
+
+def _consulted(styles: Mapping[str, Any]) -> dict[str, None]:
+    """Find the props a style table reads.
+
+    Args:
+        styles: The style table of a component, or of one of its parts.
+
+    Returns:
+        The names of the props, as the keys of a dict to keep their order.
+    """
+    props: dict[str, None] = dict.fromkeys(styles.get("variants", ()))
+    for compound in styles.get("compound", ()):
+        props.update(dict.fromkeys(compound["props"]))
+    for part in styles.get("parts", {}).values():
+        props.update(_consulted(part))
+    return props
+
+
+def _choices(annotation: Any) -> tuple[str, ...] | None:
+    """Find the values a prop takes when its type is a literal of strings.
+
+    Args:
+        annotation: The type of the prop, such as ``Var[Responsive[Literal[...]]]``.
+
+    Returns:
+        The values, or None when the prop takes anything else too.
+    """
+    origin = typing.get_origin(annotation)
+    args = typing.get_args(annotation)
+    if origin is Literal:
+        return args if all(arg.__class__ is str for arg in args) else None
+    if origin is Var:
+        return _choices(args[0])
+    if origin in (typing.Union, types.UnionType):
+        # A value per breakpoint is a dict of the same values.
+        found = None
+        for arg in args:
+            if typing.get_origin(arg) is breakpoints.Breakpoints:
+                continue
+            choices = _choices(arg)
+            if choices is None:
+                return None
+            found = choices if found is None else (*found, *choices)
+        return found
+    return None
+
+
+def _join_class_names(first: Any, second: Any) -> Any:
+    """Join the class names of two elements that render as one.
+
+    Args:
+        first: The class names of one, or None.
+        second: The class names of the other, or None.
+
+    Returns:
+        Both, separated by a space.
+    """
+    if first is None:
+        return second
+    if second is None:
+        return first
+    first, second = LiteralVar.create(first), LiteralVar.create(second)
+    if isinstance(first, LiteralStringVar) and isinstance(second, LiteralStringVar):
+        return LiteralVar.create(f"{first._var_value} {second._var_value}".strip())
+    return Var(
+        f'({first!s}) + " " + ({second!s})',
+        _var_type=str,
+        _var_data=VarData.merge(first._get_all_var_data(), second._get_all_var_data()),
+    )
+
+
+def _responsive(style: breakpoints.Breakpoints) -> dict[str, Any]:
+    """Read a whole style given per breakpoint as blocks under media queries.
+
+    Args:
+        style: The styles of each breakpoint.
+
+    Returns:
+        One style: what applies everywhere, then a block per breakpoint.
+    """
+    names = breakpoints.breakpoint_names
+    blocks: dict[str, Any] = {}
+    for breakpoint, block in style.items():
+        if breakpoint == "initial":
+            blocks = {**block, **blocks}
+        else:
+            width = (
+                breakpoints.breakpoints_values[names.index(breakpoint)]
+                if breakpoint in names
+                else breakpoint
+            )
+            blocks[media_query(width)] = block
+    return blocks
+
+
+def _combine(styles: list[Mapping[str, Any]]) -> Mapping[str, Any]:
+    """Write the styles of an element over each other, in the order given.
+
+    A key replaces the same key, as it does in the ``style`` of any Reflex
+    component, and moves to the end: what is written last wins over a
+    shorthand or a longhand written before it.
+
+    Args:
+        styles: The styles as written, at least one.
+
+    Returns:
+        One style holding them all.
+    """
+    if len(styles) == 1:
+        return styles[0]
+    combined = dict(styles[0])
+    for style in styles[1:]:
+        for key, value in style.items():
+            combined.pop(key, None)
+            combined[key] = value
+    return combined
+
+
+class UIComponent(Component):
+    """A component that renders a plain element styled through StyleX.
+
+    No library is imported: the element's styles are declared in the module
+    that renders it, where the StyleX compiler folds them into class names.
+
+    A subclass declares its props as fields. A prop its style table reads
+    selects a variant, and a prop named after a layout prop, such as ``gap``,
+    is lowered to styles: neither reaches the element as an attribute. Any
+    other keyword argument is a CSS property.
+
+    A subclass that renders one HTML element lists the element class of
+    ``reflex_components_core.el`` after this one, which gives it the
+    attributes of its tag as props. Two fields change the element itself:
+    ``as_`` names the tag, and ``as_child`` renders the only child in place of
+    the element, with the styles and attributes of both.
+    """
+
+    tag = "div"
+
+    _is_tag_in_global_scope: ClassVar[bool] = True
+
+    # The component's own look.
+    styles: ClassVar[ComponentStyles] = {}
+
+    # The tags the `as_` prop renders. Any other value renders the tag of the
+    # component, as Radix Themes falls back to its default.
+    _as_tags: ClassVar[frozenset[str]] = frozenset()
+
+    # Whether an rx.ui child rendered in place of the element has its styles
+    # merged into the ones of the element. Otherwise each declares its own,
+    # and the child has the class names of both.
+    _merges_slot: ClassVar[bool] = True
+
+    # Whether a `radius` field is the radius of the element itself, applied
+    # as a theme. A theme element has the option for what is inside it.
+    _own_radius: ClassVar[bool] = True
+
+    # How the stubs type the style: the properties and keywords of CSS.
+    _pyi_overwrite_types: ClassVar[dict[str, str]] = {
+        "style": (
+            "Sequence[StyleProps] | StyleProps | Var[Mapping[str, Any]] "
+            "| Breakpoints | None"
+        ),
+    }
+    _pyi_imports: ClassVar[dict[str, list[str]]] = {
+        "reflex_components_ui.style": ["StyleProps"],
+    }
+
+    @classmethod
+    @functools.cache
+    def _display_name(cls) -> str:
+        """Get the name an app refers to the component by.
+
+        Returns:
+            The name, such as ``rx.ui.box``.
+        """
+        return f"rx.ui.{format.to_snake_case(cls.__name__)}"
+
+    @classmethod
+    @functools.cache
+    def _style_props(cls) -> tuple[tuple[str, ...], tuple[str, ...]]:
+        """Get the props that are read as styles rather than rendered.
+
+        Returns:
+            The fields that are layout props, and the props the style table
+            selects variants by.
+        """
+        variants = _consulted(cls.styles)
+        # A prop the style table reads is a variant whatever its name: the
+        # `align` of text is not the `align` of a flex container.
+        layout_props = LAYOUT_PROPS.intersection(cls.get_fields()).difference(variants)
+        return tuple(sorted(layout_props)), tuple(variants)
+
+    @classmethod
+    @functools.cache
+    def _literal_props(cls) -> dict[str, tuple[str, ...]]:
+        """Get the props read as styles, or as the tag, that take listed values.
+
+        Returns:
+            The values of each such prop. The accent color is not one: its
+            error is the one of a theme.
+        """
+        layout_props, variants = cls._style_props()
+        fields = cls.get_fields()
+        literals = {}
+        for prop in (*layout_props, *variants, "as_"):
+            if prop in fields and prop != "color_scheme":
+                choices = _choices(fields[prop].annotated_type)
+                if choices is not None:
+                    literals[prop] = choices
+        return literals
+
+    @classmethod
+    @functools.cache
+    def _layout_defaults(cls) -> dict[str, Any]:
+        """Get the layout props an element has without being given them.
+
+        Returns:
+            The default of each layout prop whose field has one.
+        """
+        layout_props, _ = cls._style_props()
+        fields = cls.get_fields()
+        return {
+            prop: fields[prop].default_value()
+            for prop in layout_props
+            if prop in cls._get_defaulted_props()
+        }
+
+    @classmethod
+    def _given_or_default(cls, prop: str, kwargs: Mapping[str, Any]) -> Any:
+        """Read a prop that is a theme of the element, as given or by default.
+
+        Args:
+            prop: The prop.
+            kwargs: The keyword arguments the component is created with.
+
+        Returns:
+            The value the element is given, else the default of the field,
+            else None: so is the value of a prop the component does not have.
+        """
+        fields = cls.get_fields()
+        if prop not in fields:
+            return None
+        value = kwargs.get(prop)
+        if value is None and prop in cls._get_defaulted_props():
+            return fields[prop].default_value()
+        return value
+
+    def _check_literals(self, kwargs: Mapping[str, Any]) -> None:
+        """Fail on a value a prop does not take, naming the ones it does.
+
+        Args:
+            kwargs: The keyword arguments the component is created with.
+
+        Raises:
+            StyleError: If a prop is given a string it does not take.
+        """
+        for prop, choices in self._literal_props().items():
+            if prop not in kwargs:
+                continue
+            value = literal_value(kwargs[prop])
+            for item in value.values() if isinstance(value, Mapping) else (value,):
+                if item.__class__ is str and item not in choices:
+                    values = ", ".join([f'"{choice}"' for choice in choices])
+                    msg = (
+                        f'{self._display_name()}: unknown {prop} "{item}".'
+                        f"{suggest(item, choices)} The values are {values}."
+                    )
+                    raise StyleError(msg)
+
+    def _post_init(self, *args, **kwargs):
+        """Initialize the component, taking its styles out of its props.
+
+        Args:
+            *args: Args to initialize the component.
+            **kwargs: Kwargs to initialize the component.
+
+        Raises:
+            StyleError: If the style is not a dict of styles, a list of them or
+                a Var, or cannot be compiled, if a prop is given a value it
+                does not take, or if ``as_child`` has no single element to
+                render.
+            ThemeError: If the ``color_scheme`` is not an accent color, or the
+                ``radius`` not one a theme takes.
+        """
+        fields = self.get_fields()
+        triggers = self.get_event_triggers()
+        layout_props, _ = self._style_props()
+        self._check_literals(kwargs)
+        written: list[Mapping[str, Any]] = []
+        inline = None
+        style = kwargs.pop("style", None)
+        if style is not None:
+            for item in style if isinstance(style, (list, tuple)) else (style,):
+                if isinstance(item, Var):
+                    inline = item
+                elif isinstance(item, breakpoints.Breakpoints):
+                    written.append(_responsive(item))
+                elif isinstance(item, Mapping):
+                    written.append(item)
+                else:
+                    msg = (
+                        f"{self._display_name()}: style must be a dict of styles, "
+                        f"a list of them or a Var, not {type(item).__name__}."
+                    )
+                    raise StyleError(msg)
+        # Keyword arguments that are not props are CSS properties.
+        css = [
+            key
+            for key in kwargs
+            if key not in fields
+            and key not in triggers
+            and not key.startswith(_NOT_A_STYLE)
+        ]
+        if css:
+            written.append({key: kwargs.pop(key) for key in css})
+        self._styles: list[Any] = [_combine(written)] if written else []
+        if inline is not None:
+            self._styles.append(inline)
+        self._layout = (
+            {
+                **self._layout_defaults(),
+                **{prop: kwargs.pop(prop) for prop in layout_props if prop in kwargs},
+            }
+            if layout_props
+            else None
+        )
+        # Before the props are checked against their types: the error of an
+        # unknown color lists the accent colors and suggests the closest.
+        color_scheme = self._given_or_default("color_scheme", kwargs)
+        self._accent = (
+            None
+            if color_scheme is None
+            else color_scheme_styles(self._display_name(), color_scheme)
+        )
+        # The same for a radius of its own.
+        radius = self._given_or_default("radius", kwargs) if self._own_radius else None
+        self._radius = (
+            None if radius is None else radius_styles(self._display_name(), radius)
+        )
+        # Whether a parent with `as_child` renders as this element, and
+        # whether this element renders as its only child.
+        self._slotted = False
+        self._as_child = False
+        # The merged styles the emitted source was made from.
+        self._emitted_for: Merged | None = None
+        super()._post_init(*args, **kwargs)
+        self._as: Var | None = None
+        if "as_" in fields:
+            self._set_tag()
+        if "as_child" in fields:
+            self._set_slot()
+        self._merge_styles()
+
+    def _set_tag(self) -> None:
+        """Render the element the ``as_`` prop names."""
+        as_ = literal_value(getattr(self, "as_", None))
+        if isinstance(as_, Var):
+            # The tag is then an expression, evaluated in the browser.
+            self._as = as_
+        elif as_ in self._as_tags:
+            self.tag = as_
+
+    def _set_slot(self) -> None:
+        """Find the child an element with ``as_child`` is rendered as.
+
+        Raises:
+            StyleError: If ``as_child`` is bound to state, or the component
+                does not have exactly one child that renders an element.
+        """
+        as_child = literal_value(getattr(self, "as_child", None))
+        name = self._display_name()
+        if isinstance(as_child, Var):
+            msg = (
+                f"{name}: as_child is bound to state, but the element is "
+                "chosen at compile time. Give it True or False, and choose "
+                "between two components with rx.cond."
+            )
+            raise StyleError(msg)
+        if not as_child:
+            return
+        children = self.children
+        if (
+            len(children) != 1
+            or not isinstance(children[0], Component)
+            or type(children[0]).render not in (Component.render, UIComponent.render)
+        ):
+            msg = (
+                f"{name}: as_child renders the only child in place of the "
+                f"element, so it needs exactly one child that is an element, "
+                f"not {_describe(children)}."
+            )
+            raise StyleError(msg)
+        self._as_child = True
+        # The child has to stay the child: a compile would otherwise move
+        # one that is bound to state into a component of its own.
+        self._memoization_mode = dataclasses.replace(
+            self._memoization_mode, recursive=False
+        )
+        child = children[0]
+        if isinstance(child, UIComponent):
+            # This element declares the styles of both, the child's over its
+            # own: two sets of class names cannot say which one wins.
+            child._slotted = True
+
+    @property
+    def _slot(self) -> Component | None:
+        """The child the element is rendered as.
+
+        Returns:
+            The only child of an element with ``as_child``, as the tree has
+            it now: a compile works on copies.
+        """
+        return self.children[0] if self._as_child else None  # pyright: ignore[reportReturnType]
+
+    def _get_tag_name(self) -> str:
+        """Get the JS expression of the element's tag.
+
+        Returns:
+            The tag, or the expression an ``as_`` bound to state holds.
+        """
+        if self._as is not None:
+            return str(self._as)
+        return super()._get_tag_name()
+
+    def _merge_styles(self) -> None:
+        """Merge the style table with the styles of this element.
+
+        The styles apply in this order: the table, the layout props, the
+        styles of the app for the component, then the element's own.
+        """
+        cls = type(self)
+        name = cls._display_name()
+        _, variants = cls._style_props()
+        styles = self._styles
+        if self.style:
+            styles = [self.style, *styles]
+        props = None
+        if variants:
+            props = {prop: getattr(self, prop, None) for prop in variants}
+            if self._accent is not None and "color_scheme" in props:
+                # A style table reads whether the element has an accent of
+                # its own, not which one: the tokens resolve against it.
+                props["color_scheme"] = "true"
+        merged = self._merged = merge(
+            name, cls.styles, props, styles or None, self._layout
+        )
+        # A compile gives a copy of the component its styles of the app and
+        # of `add_style` by assigning `style`: the merge follows it.
+        self._merged_for = self.style
+        if merged.parts:
+            _bind_parts(self.children, merged.parts, name)
+
+    def _add_style_recursive(self, style: Any, theme: Component | None = None):
+        """Add the styles of the app to the component and its children.
+
+        Args:
+            style: A dict from component to styling.
+            theme: The theme to apply.
+
+        Returns:
+            The component with the additional style.
+        """
+        result = super()._add_style_recursive(style, theme)
+        if self.style is not self._merged_for:
+            self._merge_styles()
+        return result
+
+    def _emit(self) -> Emitted:
+        """Get the StyleX source of the element's styles.
+
+        Returns:
+            What the module that renders the element declares for it.
+        """
+        merged = self._element_styles()
+        if merged is not self._emitted_for:
+            self._emitted_for = merged
+            self._emitted_styles = emit(merged)
+        return self._emitted_styles
+
+    def _element_styles(self) -> Merged:
+        """Get the styles the element declares.
+
+        Returns:
+            The styles of the element, or nothing when a parent with
+            ``as_child`` declares them with its own.
+        """
+        return _NO_STYLES if self._slotted else self._slot_styles()
+
+    def _slot_styles(self) -> Merged:
+        """Get the merged styles of the element and of what it renders as.
+
+        Returns:
+            The style table merged with the styles of this element, under
+            the styles of an rx.ui child that is rendered in its place.
+        """
+        if self.style is not self._merged_for:
+            self._merge_styles()
+        merged = self._merged
+        slot = self._slot
+        if self._merges_slot and isinstance(slot, UIComponent):
+            merged = over(merged, slot._slot_styles())
+        return merged
+
+    @property
+    def _themes(self) -> tuple[ThemeStyles, ...]:
+        """The themes the element carries beside its styles.
+
+        Returns:
+            The themes of its accent color and of its radius, for a
+            component that is given one.
+        """
+        accent, radius = self._accent, self._radius
+        if accent is None:
+            return () if radius is None else (radius,)
+        return (accent,) if radius is None else (accent, radius)
+
+    def _get_vars(
+        self, include_children: bool = False, ignore_ids: set[int] | None = None
+    ) -> Iterator[Var]:
+        """Walk all Vars used in this component, those of its styles included.
+
+        Args:
+            include_children: Whether to include Vars from children.
+            ignore_ids: The ids to ignore.
+
+        Yields:
+            Each var referenced by the component.
+        """
+        yield from super()._get_vars(include_children, ignore_ids)
+        yield from self._emit().vars
+        for theme in self._themes:
+            yield from theme.vars
+
+    def _get_imports(self) -> ParsedImportDict:
+        """Get the imports of the element, for the kind of code it renders in.
+
+        A page imports StyleX and the modules of the tokens, and code that is
+        evaluated in the browser imports neither. A component held in state
+        is asked for both, so what one kind of code imports is not kept for
+        the other.
+
+        Returns:
+            The imports needed by the component.
+        """
+        dynamic = is_rendering_dynamic_component()
+        if self.__dict__.get("_imports_for") is not dynamic:
+            self._imports_cache = None
+            self._imports_for = dynamic
+        return super()._get_imports()
+
+    def add_imports(self) -> ImportDict | list[ImportDict]:
+        """Import StyleX, which the build compiles away, and the CSS of tokens.
+
+        Returns:
+            The imports, or nothing for code that never reaches the build.
+        """
+        if is_rendering_dynamic_component():
+            return {}
+        emitted = self._emit()
+        imports: ImportDict = {}
+        if emitted.declaration is not None:
+            # The plugin installs it as a development dependency.
+            imports["@stylexjs/stylex"] = ImportVar(
+                tag="*", alias="stylex", is_default=True, install=False
+            )
+        if emitted.imports:
+            # Imported for the CSS that defines the custom properties.
+            imports[""] = [
+                ImportVar(tag=module, install=False) for module in emitted.imports
+            ]
+        themes = self._themes
+        if themes:
+            return [imports, *[theme.import_dict() for theme in themes]]
+        return imports
+
+    def add_custom_code(self) -> list[str]:
+        """Declare the element's style in the module that renders it.
+
+        Returns:
+            The ``stylex.create`` declaration, or nothing for code that never
+            reaches the build.
+
+        Raises:
+            ConfigError: If the plugin that compiles the styles is not configured.
+        """
+        if is_rendering_dynamic_component():
+            return []
+        if get_plugin(UIPlugin) is None:
+            raise ConfigError(MISSING_PLUGIN_ERROR)
+        declaration = self._emit().declaration
+        code = [] if declaration is None else [declaration]
+        for theme in self._themes:
+            code.extend(theme.declarations)
+        return code
+
+    def _get_style(self) -> dict:
+        """Get the props that carry the style: none, as ``_render`` adds them.
+
+        Returns:
+            An empty dictionary: an rx.ui component never has a ``css`` prop.
+        """
+        return {}
+
+    def _exclude_props(self) -> list[str]:
+        """Keep the props that are read as styles off the element.
+
+        Returns:
+            The layout props, the props that select a variant, and the accent
+            color and the radius of the component: an attribute of that name
+            is nothing to an element.
+        """
+        layout_props, variants = self._style_props()
+        return [
+            *layout_props,
+            *variants,
+            "color_scheme",
+            "radius",
+            "as",
+            "as_child",
+        ]
+
+    def _render(self, props: dict[str, Any] | None = None) -> CommonTag:
+        """Render the element with its style.
+
+        Args:
+            props: The props to render (if None, then use get_props).
+
+        Returns:
+            The tag, with the class names of its style, or with an inline
+            style in code that never reaches the build.
+
+        Raises:
+            ConfigError: If the plugin that compiles the styles is not configured.
+        """
+        tag = super()._render(props)
+        slot = self._slot
+        if slot is not None:
+            # The child is the element: its props win, its class names and
+            # the ones of this component stand together.
+            child = slot._render()
+            own_props, child_props = tag.props, child.props
+            tag = child.set(
+                props={
+                    **own_props,
+                    **child_props,
+                    "className": _join_class_names(
+                        own_props.get("className"), child_props.get("className")
+                    ),
+                },
+                special_props=[*tag.special_props, *child.special_props],
+            )
+        themes = self._themes
+        if is_rendering_dynamic_component():
+            if themes:
+                prop = "color_scheme" if self._accent is not None else "radius"
+                msg = (
+                    f"{self._display_name()}: {prop} cannot be applied to "
+                    "a component rendered from state: its code is evaluated in "
+                    "the browser and never reaches the StyleX compiler. Render "
+                    "the component in a page and show it with rx.cond."
+                )
+                raise StyleError(msg)
+            style = inline(self._element_styles(), self._display_name())
+            return tag.add_props(style=style) if style else tag
+        if get_plugin(UIPlugin) is None:
+            raise ConfigError(MISSING_PLUGIN_ERROR)
+        emitted = self._emit()
+        if themes:
+            # The themes of an accent and of a radius only set custom
+            # properties, so their class names stand beside the ones of the
+            # styles.
+            emitted = dataclasses.replace(
+                emitted,
+                lookups=(*emitted.lookups, *[theme.classes for theme in themes]),
+            )
+        return add_styles(tag, emitted)
+
+    def render(self) -> dict:
+        """Render the component, or the child that stands in its place.
+
+        Returns:
+            The dictionary for template of the component.
+        """
+        slot = self._slot
+        if slot is None:
+            return super().render()
+        # The child may itself render as its own child.
+        while isinstance(slot, UIComponent) and slot._slot is not None:
+            slot = slot._slot
+        rendered = self._render().render([child.render() for child in slot.children])
+        slot._replace_prop_names(rendered)
+        return rendered
+
+
+def _describe(children: Sequence[BaseComponent]) -> str:
+    """Say what the children of a component are, for an error message.
+
+    Args:
+        children: The children.
+
+    Returns:
+        Their number, or the kind of the only one.
+    """
+    if len(children) == 1:
+        return f"a {type(children[0]).__name__}"
+    return "none" if not children else f"{len(children)} children"
+
+
+# What an element that renders nothing of its own declares.
+_NO_STYLES = Merged(EMPTY)
+
+
+class Part(UIComponent):
+    """An inner element of a component, styled by a part of its style table.
+
+    A component creates it as one of its children, or as a child of another
+    part, and names the part: ``Part.create(part="thumb", tag="span")``.
+    """
+
+    def _post_init(self, *args, **kwargs):
+        """Initialize the part, which takes its styles from its component.
+
+        Args:
+            *args: Args to initialize the component.
+            **kwargs: Kwargs to initialize the component.
+
+        Raises:
+            StyleError: If the part is given styles of its own.
+        """
+        self._part: str = kwargs.pop("part")
+        super()._post_init(*args, **kwargs)
+        if self._styles or self._layout:
+            msg = (
+                f'{self._display_name()}: the part "{self._part}" takes its '
+                "styles from the style table of its component. Style it there."
+            )
+            raise StyleError(msg)
+
+    def _merge_styles(self) -> None:
+        """Wait for the component the part belongs to, which has its styles."""
+        self._merged = getattr(self, "_merged", None)
+        self._merged_for = self.style
+
+    def _element_styles(self) -> Merged:
+        """Get the styles the component of the part has for it.
+
+        Returns:
+            The merged styles of the part.
+
+        Raises:
+            StyleError: If no component has claimed the part.
+        """
+        if self._merged is None:
+            msg = (
+                f'{self._display_name()}: the part "{self._part}" is not in a '
+                "component whose style table has it. Create it as a child of "
+                "its component, or of another part of it."
+            )
+            raise StyleError(msg)
+        return self._merged
+
+
+# What renders no element of its own, between a component and its parts.
+_NO_ELEMENT = (Fragment, Cond, Foreach)
+
+
+def _bind_parts(
+    children: Sequence[BaseComponent], parts: Mapping[str, Merged], name: str
+) -> None:
+    """Give the parts among the children of a component their styles.
+
+    Args:
+        children: The children of the component, or of one of its parts.
+        parts: The merged styles of each part of the component.
+        name: The display name of the component, for error messages.
+
+    Raises:
+        StyleError: If the style table has no such part.
+    """
+    for child in children:
+        if isinstance(child, Part) and child._merged is None:
+            merged = parts.get(child._part)
+            if merged is None:
+                msg = (
+                    f'{name}: its style table has no part "{child._part}".'
+                    f"{suggest(child._part, parts)}"
+                )
+                raise StyleError(msg)
+            child._merged = merged
+            _bind_parts(child.children, parts, name)
+        elif type(child) in _NO_ELEMENT:
+            # A part that is only rendered under a condition, or once for
+            # each item of a list.
+            _bind_parts(child.children, parts, name)
+
+
+def add_styles(tag: CommonTag, emitted: Emitted) -> CommonTag:
+    """Give a tag the class names and custom properties of its styles.
+
+    Args:
+        tag: The rendered element.
+        emitted: The StyleX source of its styles.
+
+    Returns:
+        The tag with one ``className`` expression: the constants of its
+        styles, beside the class names it has of its own.
+    """
+    if emitted.variables:
+        entries = list(emitted.variables)
+        if emitted.inline is not None:
+            entries.append(f"...{emitted.inline!s}")
+        tag = tag.add_props(style=Var(f"({{ {', '.join(entries)} }})"))
+    elif emitted.inline is not None:
+        tag = tag.add_props(style=emitted.inline)
+    if emitted.classes is None and not emitted.lookups:
+        return tag
+    names = []
+    literal = ""
+    var_data = None
+    class_name = tag.props.get("className")
+    if isinstance(class_name, LiteralStringVar):
+        if class_name._var_value:
+            literal = f"{json.dumps(class_name._var_value + ' ')} + "
+    elif class_name is not None:
+        # Parenthesized: the expression may be a conditional.
+        names.append(f"({class_name!s})")
+        var_data = class_name._get_all_var_data()
+    if emitted.classes is not None:
+        names.append(emitted.classes)
+    names.extend(emitted.lookups)
+    return tag.add_props(
+        class_name=Var(
+            literal + ' + " " + '.join(names), _var_type=str, _var_data=var_data
+        )
+    )

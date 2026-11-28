@@ -15,6 +15,7 @@ from reflex_base.vars.base import VarData
 if TYPE_CHECKING:
     from reflex.compiler.utils import _ImportDict
     from reflex_base.components.component import Component
+    from reflex_base.plugins.base import VitePluginEntry
 
 
 _STATE_HOOK = re.compile(
@@ -65,6 +66,63 @@ def _merge_state_hooks(
         )
         first_hooks[first] = f"const {var_name} = useStateContext({args})"
     return {first_hooks.get(hook, hook): data for hook, data in merged.items()}
+
+
+# A ``css`` key of an object, as a prop is written and as code written by
+# hand may spell it.
+_CSS_KEY = re.compile(r"""(?<![\w$-])css["']?\]?\s*:""")
+
+# React's element factory, under the name generated code calls.
+_REACT_JSX = "createElement as jsx"
+
+
+def resolve_jsx(imports: Iterable[_ImportDict], *code: str) -> list[_ImportDict]:
+    """Settle which element factory a module calls ``jsx``.
+
+    The imports of a module name Emotion's, the only one that applies a
+    ``css`` prop. A module whose code has no ``css`` key has no such prop to
+    apply, so it gets React's ``createElement`` under that name instead, and
+    stops depending on Emotion. The code is what decides, since it exists by
+    now: no component is asked, and whatever reached the module is seen.
+
+    Args:
+        imports: The imports of the module.
+        *code: The rest of the module.
+
+    Returns:
+        The imports the module should have.
+    """
+    if any(map(_CSS_KEY.search, code)):
+        return list(imports)
+    resolved: list[_ImportDict] = []
+    react: int | None = None
+    swap = False
+    for module in imports:
+        if module["lib"] == "@emotion/react" and "jsx" in module["rest"]:
+            swap = True
+            rest = [name for name in module["rest"] if name != "jsx"]
+            if not rest and not module["default"]:
+                continue
+            module: _ImportDict = {
+                "lib": "@emotion/react",
+                "default": module["default"],
+                "rest": rest,
+            }
+        elif module["lib"] == "react":
+            react = len(resolved)
+        resolved.append(module)
+    if not swap:
+        return resolved
+    if react is None:
+        resolved.append({"lib": "react", "default": "", "rest": [_REACT_JSX]})
+    else:
+        module = resolved[react]
+        resolved[react] = {
+            "lib": "react",
+            "default": module["default"],
+            "rest": sorted([*module["rest"], _REACT_JSX]),
+        }
+    return resolved
 
 
 class _RenderUtils:
@@ -138,6 +196,21 @@ class _RenderUtils:
             return f'import {{{rest_imports_str}}} from "{module["lib"]}"'
         return f'import "{module["lib"]}"'
 
+    @staticmethod
+    def get_imports(imports: Iterable[_ImportDict], *code: str) -> str:
+        """Render the imports of a module, settling what it calls ``jsx``.
+
+        Args:
+            imports: The imports of the module.
+            *code: The rest of the module.
+
+        Returns:
+            The import statements, one per line.
+        """
+        return "\n".join([
+            _RenderUtils.get_import(module) for module in resolve_jsx(imports, *code)
+        ])
+
 
 def rxconfig_template(app_name: str):
     """Template for the Reflex config file.
@@ -170,12 +243,12 @@ def document_root_template(*, imports: list[_ImportDict], document: dict[str, An
     Returns:
         Rendered document root code as string.
     """
-    imports_rendered = "\n".join([_RenderUtils.get_import(mod) for mod in imports])
-    return f"""{imports_rendered}
+    rendered = _RenderUtils.render(document)
+    return f"""{_RenderUtils.get_imports(imports, rendered)}
 
 export function Layout({{children}}) {{
   return (
-    {_RenderUtils.render(document)}
+    {rendered}
   )
 }}"""
 
@@ -201,12 +274,11 @@ def app_root_template(
         render: The dictionary of render functions.
         dynamic_imports: The set of dynamic imports.
         hydrate_fallback_export: The exported name of the hydrate-fallback memo module to re-export as ``HydrateFallback``, or None for no fallback.
-        lazy_window_libraries: Optional libraries loaded before evaluating a dynamic component.
+        lazy_window_libraries: Optional libraries loaded before evaluating a dynamic component, each from the module `dynamic_library_template` renders for it.
 
     Returns:
         Rendered App root component as string.
     """
-    imports_str = "\n".join([_RenderUtils.get_import(mod) for mod in imports])
     dynamic_imports_str = "\n".join(dynamic_imports)
 
     hydrate_fallback_str = ""
@@ -236,11 +308,15 @@ def app_root_template(
     lazy_imports_setup = ""
     if lazy_window_libraries:
         loaders = "\n".join(
-            f"    {json.dumps(lib_path)}: () => import({json.dumps(lib_path)}),"
-            for _, lib_path in lazy_window_libraries
+            f"    {json.dumps(lib_path)}: () => "
+            f'import("$/{constants.Dirs.DYNAMIC_LIBRARIES_PATH}/{lib_alias}")'
+            ".then((module) => module.default),"
+            for lib_alias, lib_path in lazy_window_libraries
         )
         # Register before child effects run, including an initially mounted
-        # dynamic component. Optional namespaces stay out of the initial graph.
+        # dynamic component. Each namespace is imported through a module of its
+        # own: importing the library here would pull every export into the
+        # chunks pages load, a separate module becomes a chunk fetched on demand.
         window_imports_effect = ""
         lazy_imports_setup = f"""
 if (typeof window !== "undefined") {{
@@ -267,6 +343,12 @@ if (typeof window !== "undefined") {{
 }}
 """
 
+    hooks_str = _render_hooks(hooks)
+    rendered = _RenderUtils.render(render)
+    imports_str = _RenderUtils.get_imports(
+        imports, custom_code_str, hooks_str, rendered
+    )
+
     return f"""
 {imports_str}
 {dynamic_imports_str}
@@ -289,8 +371,8 @@ function ReflexProviders({{children}}) {{
 
 
 function AppWrap({{children}}) {{
-{_render_hooks(hooks)}
-return ({_RenderUtils.render(render)})
+{hooks_str}
+return ({rendered})
 }}
 
 export function Layout({{children}}) {{
@@ -308,6 +390,20 @@ export default function App() {{
   return jsx(Outlet, {{}});
 }}
 {hydrate_fallback_str}
+"""
+
+
+def dynamic_library_template(lib_path: str) -> str:
+    """Template for the module that exposes a library to dynamic components.
+
+    Args:
+        lib_path: The module path of the library.
+
+    Returns:
+        Rendered module code as string.
+    """
+    return f"""import * as library from {json.dumps(lib_path)};
+export default library;
 """
 
 
@@ -429,6 +525,15 @@ export const initialEvents = () => []
 """
     )
 
+    # Only an app with state imports the connection to the backend, so an app
+    # without state bundles neither it nor socket.io and the cookie library.
+    state_imports_str = (
+        'import { applyDelta, ReflexEvent, refs } from "$/utils/state"\n'
+        'import { hydrateClientStorage, useEventLoop } from "$/utils/socket"'
+        if state_name
+        else 'import { applyDelta, useEventLoop, refs } from "$/utils/state"'
+    )
+
     disable_owner_stacks_str = (
         r"""
 // Disable React dev-build owner-stack capture: the per-element Error()
@@ -458,9 +563,8 @@ if (typeof window !== "undefined") {
     )
 
     return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ useContext, useMemo, useState, createElement, useEffect }} from "react"
-import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
+{state_imports_str}
 import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext, registerApp, eventLoop }} from "$/utils/context-registry"
-import {{ jsx }} from "@emotion/react";
 {disable_owner_stacks_str}
 export {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext }};
 export const initialState = {initial_state_json}
@@ -525,7 +629,7 @@ export function ClientSide(component, name) {{
       }}
       load();
     }}, []);
-    return Component ? jsx(Component, props, children) : null;
+    return Component ? createElement(Component, props, children) : null;
   }}
   ClientSideComponent.displayName = name ? `ClientSide(${{name}})` : "ClientSide";
   return ClientSideComponent;
@@ -688,11 +792,14 @@ def page_template(
     Returns:
         Rendered React page component as string.
     """
-    imports_str = "\n".join([_RenderUtils.get_import(imp) for imp in imports])
     custom_code_str = "\n".join(custom_codes)
     dynamic_imports_str = "\n".join(dynamic_imports)
 
     hooks_str = _render_hooks(hooks)
+    rendered = _RenderUtils.render(render)
+    imports_str = _RenderUtils.get_imports(
+        imports, custom_code_str, hooks_str, rendered
+    )
     display_name_str = (
         f"Component.displayName = {json.dumps(f'Component({route})')};\n"
         if route
@@ -713,7 +820,7 @@ function Component() {{
 {hooks_str}
 
   return (
-    {_RenderUtils.render(render)}
+    {rendered}
   )
 }}
 {display_name_str}
@@ -772,6 +879,7 @@ def vite_config_template(
     prod_react: bool = False,
     warmup_routes: bool = False,
     react_compiler: bool = False,
+    vite_plugins: Sequence[VitePluginEntry] = (),
 ):
     """Template for vite.config.js.
 
@@ -788,6 +896,9 @@ def vite_config_template(
         warmup_routes: Pre-transform every route module when the dev server
             starts, so the first visit to a page does not wait on Vite.
         react_compiler: Enable React Compiler for generated components.
+        vite_plugins: Vite plugins contributed by Reflex plugins, placed ahead
+            of ``reactRouter()`` in the order given. An import statement that
+            several entries share is written once.
 
     Returns:
         Rendered vite.config.js content as string.
@@ -890,11 +1001,22 @@ function prodReactPrebundle() {
         else ""
     )
     react_compiler_plugin = "    reactCompiler(),\n" if react_compiler else ""
+    vite_plugin_imports = "".join(
+        f"{statement};\n"
+        for statement in dict.fromkeys(
+            statement.strip().rstrip(";").rstrip()
+            for entry in vite_plugins
+            for statement in entry.imports
+        )
+    )
+    vite_plugin_calls = "".join(
+        f"    {entry.call.strip()},\n" for entry in vite_plugins
+    )
     return rf"""import {{ fileURLToPath, URL }} from "url";
 import {{ reactRouter }} from "@react-router/dev/vite";
 import {{ defineConfig }} from "vite";
 import safariCacheBustPlugin from "./vite-plugin-safari-cachebust.js";
-{react_compiler_import}
+{react_compiler_import}{vite_plugin_imports}
 // Ensure that bun always uses the react-dom/server.node functions.
 function alwaysUseReactDomServerNode() {{
   return {{
@@ -961,7 +1083,7 @@ export default defineConfig((config) => ({{
   base: "{base}",
   plugins: [
     alwaysUseReactDomServerNode(),
-{react_compiler_plugin}    reactRouter(),
+{react_compiler_plugin}{vite_plugin_calls}    reactRouter(),
     patchReactRouterHmrRuntime(),
     safariCacheBustPlugin(),
   ].concat({"[fullReload()]" if force_full_reload else "[]"}),
@@ -1155,7 +1277,6 @@ def memo_components_template(
     Returns:
         Rendered custom component code as string.
     """
-    imports_str = "\n".join([_RenderUtils.get_import(imp) for imp in imports])
     dynamic_imports_str = "\n".join(dynamic_imports)
     custom_code_str = "\n".join(custom_codes)
 
@@ -1166,6 +1287,10 @@ def memo_components_template(
         functions_code += (
             f"\nexport const {function['name']} = {function['function']};\n"
         )
+
+    imports_str = _RenderUtils.get_imports(
+        imports, custom_code_str, functions_code, components_code
+    )
 
     return f"""
 {imports_str}
@@ -1196,11 +1321,11 @@ def memo_single_component_template(
     Returns:
         The rendered standalone memo module code.
     """
-    imports_str = "\n".join([_RenderUtils.get_import(imp) for imp in imports])
     dynamic_imports_str = "\n".join(dynamic_imports)
     custom_code_str = "\n".join(custom_codes)
 
     component_code = _render_memo_component(component)
+    imports_str = _RenderUtils.get_imports(imports, custom_code_str, component_code)
 
     return f"""
 {imports_str}
@@ -1225,11 +1350,11 @@ def memo_single_function_template(
     Returns:
         The rendered standalone function memo module code.
     """
-    imports_str = "\n".join([_RenderUtils.get_import(imp) for imp in imports])
+    function_code = f"export const {function['name']} = {function['function']};"
     return f"""
-{imports_str}
+{_RenderUtils.get_imports(imports, function_code)}
 
-export const {function["name"]} = {function["function"]};
+{function_code}
 """
 
 

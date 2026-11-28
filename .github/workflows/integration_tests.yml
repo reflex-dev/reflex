@@ -349,7 +349,83 @@ jobs:
       - name: Run Playwright integration tests
         env:
           REFLEX_REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
-        run: uv run pytest tests/integration/tests_playwright --reruns 3 -rs -v --maxfail=5 --splits 2 --group ${{ matrix.split_index }}
+        # The rx.ui parity harness has jobs of its own below: it compares
+        # pixels, which a rerun must not paper over.
+        run: uv run pytest tests/integration/tests_playwright --ignore=tests/integration/tests_playwright/test_ui_parity.py --reruns 3 -rs -v --maxfail=5 --splits 2 --group ${{ matrix.split_index }}
+
+  # The look of every rx.ui component against the Radix one it replaces:
+  # pixels, computed styles and accessibility tree, cell by cell.
+  ui-parity:
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
+    timeout-minutes: 30
+    runs-on: ubuntu-22.04
+    env:
+      UI_PARITY_REPORT: ui-parity-report
+      # The build and every matrix together, in seconds: the run fails above.
+      UI_PARITY_BUDGET_SECONDS: "900"
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: "3.14"
+          run-uv-sync: true
+      - name: Install Playwright Chromium
+        run: uv run playwright install chromium --only-shell
+      - name: Compare every matrix with Radix Themes
+        run: uv run pytest tests/integration/tests_playwright/test_ui_parity.py -k "not test_contract" -rs -v
+      - name: Report the run time
+        if: always()
+        run: |
+          if [ -f "$UI_PARITY_REPORT/timings.json" ]; then
+            {
+              echo '### rx.ui parity run time'
+              echo '```json'
+              cat "$UI_PARITY_REPORT/timings.json"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ui-parity-report
+          path: ui-parity-report
+          if-no-files-found: warn
+
+  # The behaviour contract of every rx.ui component, and of the Radix one it
+  # replaces, in each browser engine.
+  ui-contracts:
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, firefox, webkit]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: "3.14"
+          run-uv-sync: true
+      - name: Install Playwright ${{ matrix.engine }}
+        env:
+          ENGINE: ${{ matrix.engine }}
+        run: uv run playwright install --with-deps "$ENGINE"
+      - name: Run every contract in ${{ matrix.engine }}
+        env:
+          ENGINE: ${{ matrix.engine }}
+        run: uv run pytest tests/integration/tests_playwright/test_ui_parity.py --browser "$ENGINE" -k test_contract -rs -v
 
   bun-only-startup:
     needs: changes
@@ -413,6 +489,8 @@ jobs:
         reflex-docs-macos,
         app-harness,
         app-harness-playwright,
+        ui-parity,
+        ui-contracts,
         bun-only-startup,
       ]
     if: always()

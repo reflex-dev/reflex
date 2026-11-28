@@ -154,14 +154,14 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
     bundle_library('constructor')
     print(json.dumps({'root': compile_app_root(rx.el.div('Quality'))[1], 'component': serializers.serialize(Quality.create())}))
 `], {cwd: root, encoding: "utf8"}).trim().split("\n").at(-1));
-  const setup = new Function("window", "React", "emotion_react", "utils_context", "utils_context_registry", "utils_state", "loadFixture", "loadConstructor",
+  const setup = new Function("window", "React", "utils_context", "utils_context_registry", "utils_state", "loadFixture", "loadConstructor",
     generated.root.replace(/^import .*$/gm, "")
       .replace(/^export default function/gm, "function")
       .replace(/^export /gm, "")
-      .replace('import("quality-lazy-fixture")', 'loadFixture()')
-      .replace('import("constructor")', 'loadConstructor()'));
-  // Render the component's jsx call directly, so a component returns the fixture's value.
-  const emotion = {jsx: (type, props) => type(props)};
+      .replace('import("$/utils/dynamic_libraries/quality_lazy_fixture")', 'loadFixture()')
+      .replace('import("$/utils/dynamic_libraries/constructor")', 'loadConstructor()'));
+  // The app root must reach each fixture through the loader it was given, never a real import.
+  assert.deepEqual(setup.toString().match(/import\("[^"]*"\)/g), ['import("$/utils/dynamic_libraries/emotion_react")']);
   const stateSource = await readFile(path.join(root, "packages/reflex-frontend/src/utils/state.js"), "utf8");
   // Parse the complete module so nested statements cannot truncate the export.
   const { parseAst } = await import(resolve("rolldown/parseAst"));
@@ -171,11 +171,12 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
   assert(evaluateExport, "state.js exports evalReactComponent");
   const { evalReactComponent: evaluate } = await import(moduleUrl(stateSource.slice(evaluateExport.start, evaluateExport.end)));
   const previousWindow = globalThis.window;
-  const react = {quality: "same React instance"};
+  // Render the component's jsx call directly, so a component returns the fixture's value.
+  const react = {quality: "same React instance", createElement: (type, props) => type(props)};
   try {
     let calls = 0;
     globalThis.window = {};
-    setup(window, react, emotion, {}, {}, {}, async () => {calls++; return {Quality: () => 42};});
+    setup(window, react, {}, {}, {}, async () => {calls++; return {default: {Quality: () => 42}};});
     assert.equal(calls, 0);
     assert.equal(window.__reflex.react, react);
     assert.equal(window.__reflex["quality-lazy-fixture"], undefined);
@@ -189,9 +190,9 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
 
     let attempts = 0;
     globalThis.window = {};
-    setup(window, react, emotion, {}, {}, {}, async () => {
+    setup(window, react, {}, {}, {}, async () => {
       if (++attempts === 1) throw new Error("Temporary download failure");
-      return {Quality: () => 43};
+      return {default: {Quality: () => 43}};
     });
     const retrySource = source + "\n// retry fixture";
     await assert.rejects(evaluate(retrySource), /Temporary download failure/);
@@ -203,7 +204,7 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
     let constructorCalls = 0;
     globalThis.window = {};
     const constructorModule = {name: "constructor library"};
-    setup(window, react, emotion, {}, {}, {}, async () => ({}), async () => {constructorCalls++; return constructorModule;});
+    setup(window, react, {}, {}, {}, async () => ({default: {}}), async () => {constructorCalls++; return {default: constructorModule};});
     await window.__reflex_load(["constructor"]);
     assert.equal(constructorCalls, 1);
     assert.equal(window.__reflex.constructor, constructorModule);

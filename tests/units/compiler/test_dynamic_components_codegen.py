@@ -22,6 +22,36 @@ from reflex.state import State
 STATE_JS_TEMPLATE = Templates.Dirs.WEB_TEMPLATE / "utils" / "state.js"
 
 
+def app_root_loaders(code: str) -> list[str]:
+    """Get the loaders an app root gives its optional libraries.
+
+    Args:
+        code: The source of the app root.
+
+    Returns:
+        Every entry of its ``loaders`` object, in order.
+    """
+    lines = code.splitlines()
+    start = lines.index("  const loaders = {")
+    return [line.strip() for line in lines[start + 1 : lines.index("  };", start)]]
+
+
+def loader(library: str, alias: str) -> str:
+    """Write the loader an app root gives an optional library.
+
+    Args:
+        library: The library.
+        alias: The name of the module the library is loaded from.
+
+    Returns:
+        The entry of the ``loaders`` object.
+    """
+    return (
+        f'"{library}": () => import("$/utils/dynamic_libraries/{alias}")'
+        ".then((module) => module.default),"
+    )
+
+
 def test_dynamic_component_codegen_rewrites_bundled_library_subpath() -> None:
     """Bundled Lucide subpaths resolve through their own window namespaces."""
     with RegistrationContext():
@@ -41,10 +71,15 @@ def test_dynamic_component_codegen_rewrites_bundled_library_subpath() -> None:
     assert (
         "const {DynamicIcon} = window.__reflex['lucide-react/dynamic.mjs']"
     ) in dynamic_code
-    assert (
-        "import * as lucide_react_dist_esm_icons_apple_mjs "
-        'from "lucide-react/dist/esm/icons/apple.mjs";'
-    ) in app_root_code
+    assert app_root_loaders(app_root_code) == [
+        loader("@emotion/react", "emotion_react"),
+        loader("lucide-react", "lucide_react"),
+        loader(
+            "lucide-react/dist/esm/icons/apple.mjs",
+            "lucide_react_dist_esm_icons_apple_mjs",
+        ),
+        loader("lucide-react/dynamic.mjs", "lucide_react_dynamic_mjs"),
+    ]
 
 
 def test_lazy_dynamic_component_lists_only_its_optional_libraries(mocker) -> None:
@@ -70,7 +105,15 @@ def test_lazy_dynamic_component_lists_only_its_optional_libraries(mocker) -> Non
     )
     assert default_only_code.split("\n", 1)[0] == "//__reflex_evaluate:[]"
     # The app can load the unused library, but the icon does not request it.
-    assert '"unused-library": () => import("unused-library")' in app_root_code
+    assert app_root_loaders(app_root_code) == [
+        loader("@emotion/react", "emotion_react"),
+        loader("unused-library", "unused_library"),
+        loader("lucide-react", "lucide_react"),
+        loader(
+            "lucide-react/dist/esm/icons/apple.mjs",
+            "lucide_react_dist_esm_icons_apple_mjs",
+        ),
+    ]
 
 
 @pytest.mark.parametrize("reactive", [False, True])
@@ -113,8 +156,8 @@ def test_component_registration_bundles_subpaths_before_serialization(
         with context.fork():
             _reset_bundled_libraries_for_compile()
             _, app_root_code = compiler.compile_app_root(rx.el.div())
-            assert f'from "{subpath}";' in app_root_code
-            assert 'from "lucide-react";' not in app_root_code
+            assert f'    "{subpath}": () => ' in app_root_code
+            assert '    "lucide-react": () => ' not in app_root_code
             assert RegistrationContext.get().bundled_libraries.count(subpath) == 1
             code = serializers.serialize(prototype)
         assert isinstance(code, str)
@@ -141,7 +184,7 @@ def test_explicit_subpath_registration_does_not_require_package_root(reactive: b
         _, app_root_code = compiler.compile_app_root(rx.el.div())
         code = serializers.serialize(icon)
         assert "lucide-react" not in context.bundled_libraries
-    assert f'from "{subpath}";' in app_root_code
+    assert f'    "{subpath}": () => ' in app_root_code
     assert isinstance(code, str)
     assert f"window.__reflex['{subpath}']" in code
     assert "cdn.jsdelivr.net/npm/lucide-react" not in code
@@ -212,7 +255,7 @@ def test_initial_state_components_bundle_their_imports(lazy: bool, mocker):
             assert subpath in context.bundled_libraries
             assert f"window.__reflex['{subpath}'].default" in context_code
             assert (
-                f'() => import("{subpath}")' if lazy else f'from "{subpath}";'
+                f'    "{subpath}": () => ' if lazy else f'from "{subpath}";'
             ) in root_code
             assert subpath not in context._explicit_bundled_libraries
             assert any(
@@ -326,8 +369,8 @@ def test_component_registration_uses_import_var_subpath(library: str, is_default
         with context.fork() as forked:
             _reset_bundled_libraries_for_compile()
             _, app_root_code = compiler.compile_app_root(rx.el.div())
-            assert f'from "{root}";' not in app_root_code
-            assert f'from "{subpath}";' in app_root_code
+            assert f'    "{root}": () => ' not in app_root_code
+            assert f'    "{subpath}": () => ' in app_root_code
             assert root not in forked.bundled_libraries
             code = serializers.serialize(component)
             assert root not in forked.bundled_libraries
@@ -463,7 +506,7 @@ def test_dynamic_component_codegen_wires_event_handlers() -> None:
 
     assert isinstance(code, str)
     assert code.startswith("//__reflex_evaluate")
-    assert "const {Fragment,useEffect}" in code
+    assert "const {Fragment,createElement: jsx,useEffect}" in code
     # ``addEvents`` is now a module-level callable in ``$/utils/context``;
     # no more ``useContext(EventLoopContext)`` hoist needed for dispatch.
     assert "const {addEvents} = window.__reflex['$/utils/context']" in code
@@ -531,7 +574,7 @@ def test_dynamic_component_codegen_wires_state_var_counter_events() -> None:
     assert "RadixThemesText" in code
     assert 'justify:"center"' in code
     assert 'gap:"5"' in code
-    assert "const {Fragment,useEffect}" in code
+    assert "const {Fragment,createElement: jsx,useEffect}" in code
     assert "const {addEvents} = window.__reflex['$/utils/context']" in code
     assert (
         "const {ReflexEvent,applyEventActions,pyOr} = window.__reflex['$/utils/state']"

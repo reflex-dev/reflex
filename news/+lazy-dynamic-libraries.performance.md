@@ -1,0 +1,1 @@
+Apps that render no dynamic component (a component held in state) no longer build or ship the libraries registered for them, and apps that do fetch each library on first use instead of on every page. Libraries an app registers itself with `rx.bundle_library` always stay loadable through `window.__reflex_load`.

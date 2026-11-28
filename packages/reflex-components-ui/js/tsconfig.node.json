@@ -1,0 +1,12 @@
+{
+  // Type-checks what runs in node: the build files at the top of `src`, the
+  // generators, the tests and this package's own configuration.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // `vite/client` is for the pages the live tests build, which use
+    // `import.meta.glob`.
+    "types": ["node", "vite/client"]
+  },
+  "include": ["src/*.js", "scripts", "tests", "*.js"],
+  "exclude": []
+}

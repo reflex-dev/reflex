@@ -1,0 +1,1 @@
+The templates of generated modules import React's `createElement` as `jsx` when the code of the module has no `css` prop, and Emotion's `jsx` otherwise. Code that generates a module of its own from `Component._get_all_imports()` is unchanged and keeps importing Emotion.

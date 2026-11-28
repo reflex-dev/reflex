@@ -1,0 +1,1 @@
+The connection indicator (`rx.connection_pulser`), the "Built with Reflex" badge and the default error boundary fallback are styled by class names and a small stylesheet rendered with them instead of `css` props, so they no longer pull Emotion into an app. They look the same; style props passed to `rx.connection_pulser` still override the defaults.

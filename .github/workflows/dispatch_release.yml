@@ -139,6 +139,10 @@ on:
         description: "reflex-components-sonner"
         type: boolean
         default: false
+      reflex_components_ui:
+        description: "reflex-components-ui"
+        type: boolean
+        default: false
       reflex_docgen:
         description: "reflex-docgen"
         type: boolean
@@ -207,6 +211,7 @@ jobs:
             ${{ inputs.reflex_components_react_player && 'reflex-components-react-player' || '' }}
             ${{ inputs.reflex_components_recharts && 'reflex-components-recharts' || '' }}
             ${{ inputs.reflex_components_sonner && 'reflex-components-sonner' || '' }}
+            ${{ inputs.reflex_components_ui && 'reflex-components-ui' || '' }}
             ${{ inputs.reflex_docgen && 'reflex-docgen' || '' }}
             ${{ inputs.reflex_hosting_cli && 'reflex-hosting-cli' || '' }}
             ${{ inputs.reflex_otel && 'reflex-otel' || '' }}

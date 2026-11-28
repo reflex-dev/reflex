@@ -1,0 +1,32 @@
+"""Styles that must not type-check: every assignment below is an error."""
+
+import reflex as rx
+from reflex_components_ui.style import ComponentStyles, CompoundStyle, StyleProps
+
+unknown_property: StyleProps = {"paddng": "1em"}
+
+unknown_keyword: StyleProps = {"display": "flx"}
+
+keyword_as_number: StyleProps = {"position": 1}
+
+unknown_keyword_under_a_condition: StyleProps = {"display": {":hover": "flx"}}
+
+unknown_keyword_at_a_breakpoint: StyleProps = {"display": ["none", "flx"]}
+
+unknown_property_in_a_block: StyleProps = {"_hover": {"colr": "red"}}
+
+unknown_pseudo_class: StyleProps = {"_hovr": {"color": "red"}}
+
+component_as_value: StyleProps = {"color": rx.text("red")}
+
+unknown_table_key: ComponentStyles = {"variant": {"size": {"1": {"height": "1em"}}}}
+
+unknown_property_in_a_variant: ComponentStyles = {
+    "variants": {"size": {"1": {"heght": "1em"}}},
+}
+
+unknown_keyword_in_a_part: ComponentStyles = {
+    "parts": {"thumb": {"base": {"visibility": "invisible"}}},
+}
+
+compound_without_props: CompoundStyle = {"style": {"color": "red"}}

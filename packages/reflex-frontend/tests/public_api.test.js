@@ -61,6 +61,24 @@ const PUBLIC_API = {
     "useRegisteredRef",
     "waitForSession",
   ],
+  // Imported by the compiled context module of an app with state, and by no
+  // other: an app without state leaves it, and what it imports, out.
+  "$/utils/socket": [
+    "connect",
+    "getToken",
+    "hydrateClientStorage",
+    "useEventLoop",
+    "waitForSession",
+  ],
+  // Internal: what utils/state.js and utils/socket.js share.
+  "$/utils/event_loop": [
+    "SYNC_LOCAL_STORAGE",
+    "backend",
+    "event_queue",
+    "locationRef",
+    "normalizeEvents",
+    "useEventRoute",
+  ],
   "$/utils/client_state": [
     "CLIENT_STATE_REF",
     "ClientStateProvider",
@@ -90,6 +108,7 @@ const PUBLIC_API = {
   "$/utils/helpers/debounce": ["default"],
   "$/utils/helpers/json": ["parseJson"],
   "$/utils/helpers/paste": ["default"],
+  "$/utils/helpers/plain_toast": ["default"],
   "$/utils/helpers/range": ["default"],
   "$/utils/helpers/set": [
     "pySetDifference",
@@ -104,6 +123,13 @@ const PUBLIC_API = {
   ],
   "$/utils/helpers/throttle": ["default"],
   "$/utils/helpers/upload": ["uploadFiles"],
+  "$/utils/scripts": [
+    "FIRST_PAINT_TIMEOUT_MS",
+    "HOLD_CLICK_TIMEOUT_MS",
+    "START_AFTER_FIRST_PAINT",
+    "Scripts",
+    "takeEarlyClick",
+  ],
   "$/components/reflex/radix_themes_color_mode_provider": ["default"],
   "$/components/shiki/code": ["Code"],
 };

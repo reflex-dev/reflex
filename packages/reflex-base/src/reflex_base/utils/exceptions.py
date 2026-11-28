@@ -20,6 +20,10 @@ class InvalidPluginConfigError(ConfigError):
     """Raised when ``Config.plugins`` contains a plugin that could not be loaded."""
 
 
+class InvalidVitePluginError(ReflexError, ValueError):
+    """Raised when a plugin's ``get_vite_plugins`` returns a malformed entry."""
+
+
 class InvalidStateManagerModeError(ReflexError, ValueError):
     """Raised when an invalid state manager mode is provided."""
 

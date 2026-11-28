@@ -24,7 +24,7 @@ from reflex_base.components.client_state_context import (
     scoped_memo_wrapper,
 )
 from reflex_base.components.component import BaseComponent, Component, ComponentStyle
-from reflex_base.components.dynamic import _bundle_imports
+from reflex_base.components.dynamic import _bundle_imports, rendering_dynamic_component
 from reflex_base.components.memo import (
     DEFAULT_MEMO_WRAPPER,
     MemoComponentDefinition,
@@ -277,7 +277,9 @@ def _compile_initial_state(
             The serialized value.
         """
         if isinstance(value, Component):
-            value_imports = value._get_all_imports()
+            # The imports of the code the component is serialized to.
+            with rendering_dynamic_component():
+                value_imports = value._get_all_imports()
             _bundle_imports(value_imports)
             if component_imports is not None:
                 for library, fields in value_imports.items():

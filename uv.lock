@@ -25,11 +25,12 @@ exclude-newer-span = "P7D"
 
 [options.exclude-newer-package]
 reflex-components-plotly = false
-reflex-components-react-player = false
+reflex-hosting-cli = false
 reflex-components-moment = false
 reflex-components-sonner = false
 hatch-reflex-pyi = false
 pillow = "2026-10-21T00:00:00Z"
+reflex-components-react-player = false
 reflex-components-gridjs = false
 reflex = false
 reflex-enterprise = false
@@ -45,7 +46,7 @@ certifi = "2026-10-21T00:00:00Z"
 reflex-components-internal = false
 reflex-components-lucide = false
 reflex-components-radix = false
-reflex-hosting-cli = false
+reflex-components-ui = false
 
 [manifest]
 members = [
@@ -67,6 +68,7 @@ members = [
     "reflex-components-react-player",
     "reflex-components-recharts",
     "reflex-components-sonner",
+    "reflex-components-ui",
     "reflex-docgen",
     "reflex-docs-app",
     "reflex-docs-bundle",
@@ -1685,8 +1687,8 @@ name = "httpcore2"
 version = "2.16.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "h11", marker = "sys_platform != 'emscripten'" },
-    { name = "truststore", marker = "sys_platform != 'emscripten'" },
+    { name = "h11" },
+    { name = "truststore" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/c0/61/afa9d6b7452f9eca73f73d45324eb0bb52f098fd5e6049bf6b8263be9b4e/httpcore2-2.16.0.tar.gz", hash = "sha256:c72cd0413563b17e1cd8354677dff887466f8ec2551679759e93126534428643", size = 69886, upload-time = "2026-10-21T07:09:45.31Z" }
 wheels = [
@@ -4086,6 +4088,9 @@ testing = [
     { name = "selenium" },
     { name = "uvicorn" },
 ]
+ui = [
+    { name = "reflex-components-ui" },
+]
 
 [package.dev-dependencies]
 bench = [
@@ -4128,6 +4133,7 @@ dev = [
     { name = "pyyaml" },
     { name = "reflex-bench" },
     { name = "reflex-build-sdk", extra = ["aiohttp", "httpx", "httpx2", "triggers"] },
+    { name = "reflex-components-ui" },
     { name = "reflex-docgen" },
     { name = "reflex-otel" },
     { name = "reflex-release" },
@@ -4174,6 +4180,7 @@ requires-dist = [
     { name = "reflex-components-react-player", editable = "packages/reflex-components-react-player" },
     { name = "reflex-components-recharts", editable = "packages/reflex-components-recharts" },
     { name = "reflex-components-sonner", editable = "packages/reflex-components-sonner" },
+    { name = "reflex-components-ui", marker = "extra == 'ui'", editable = "packages/reflex-components-ui" },
     { name = "reflex-hosting-cli", editable = "packages/reflex-hosting-cli" },
     { name = "rich", specifier = ">=13,<16" },
     { name = "selenium", marker = "extra == 'testing'", specifier = ">=4.0.0,<5.0" },
@@ -4183,7 +4190,7 @@ requires-dist = [
     { name = "uvicorn", marker = "extra == 'testing'", specifier = ">=0.34.0,<1.0" },
     { name = "wrapt", specifier = ">=1.17.0,<2.6" },
 ]
-provides-extras = ["db", "pydantic", "testing"]
+provides-extras = ["db", "pydantic", "testing", "ui"]
 
 [package.metadata.requires-dev]
 bench = [
@@ -4225,6 +4232,7 @@ dev = [
     { name = "pyyaml" },
     { name = "reflex-bench", editable = "packages/reflex-bench" },
     { name = "reflex-build-sdk", extras = ["aiohttp", "httpx", "httpx2", "triggers"], editable = "packages/reflex-build-sdk" },
+    { name = "reflex-components-ui", editable = "packages/reflex-components-ui" },
     { name = "reflex-docgen", editable = "packages/reflex-docgen" },
     { name = "reflex-otel", editable = "packages/reflex-otel" },
     { name = "reflex-release", editable = "packages/reflex-release" },
@@ -4498,6 +4506,22 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "reflex-base", editable = "packages/reflex-base" },
+    { name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" },
+]
+
+[[package]]
+name = "reflex-components-ui"
+source = { editable = "packages/reflex-components-ui" }
+dependencies = [
+    { name = "reflex-base" },
+    { name = "reflex-components-core" },
+    { name = "reflex-components-lucide" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "reflex-base", editable = "packages/reflex-base" },
+    { name = "reflex-components-core", editable = "packages/reflex-components-core" },
     { name = "reflex-components-lucide", editable = "packages/reflex-components-lucide" },
 ]
 

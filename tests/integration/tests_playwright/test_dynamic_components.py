@@ -55,7 +55,7 @@ def DynamicComponents():
                 rx.el.input(
                     custom_attrs={"id": "token"},
                     value=self.router.session.client_token,
-                    is_read_only=True,
+                    read_only=True,
                 ),
                 rx.button(
                     "Update",
@@ -171,13 +171,16 @@ def lazy_bundled_libraries(request: pytest.FixtureRequest) -> bool:
 
 @pytest.fixture(scope="module")
 def dynamic_components(
-    tmp_path_factory, lazy_bundled_libraries: bool
+    tmp_path_factory,
+    lazy_bundled_libraries: bool,
+    app_harness_env: type[AppHarness],
 ) -> Generator[AppHarness, None, None]:
     """Start VarOperations app at tmp_path via AppHarness.
 
     Args:
         tmp_path_factory: pytest tmp_path_factory fixture
         lazy_bundled_libraries: whether optional libraries load on demand
+        app_harness_env: the harness class, for a dev or a production frontend
 
     Yields:
         The running app harness.
@@ -186,7 +189,7 @@ def dynamic_components(
         monkeypatch.setenv(
             "REFLEX_FRONTEND_LAZY_BUNDLED_LIBRARIES", str(lazy_bundled_libraries)
         )
-        with AppHarness.create(
+        with app_harness_env.create(
             root=tmp_path_factory.mktemp("dynamic_components"),
             app_source=DynamicComponents,
         ) as harness:
@@ -211,6 +214,23 @@ def test_dynamic_components(
         lazy_bundled_libraries: whether lazy loading of bundled libraries is enabled.
     """
     banana = "lucide-react/dist/esm/icons/banana.mjs"
+    errors: list[str] = []
+    radix_requests: list[str] = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.on(
+        "console",
+        lambda message: (
+            errors.append(message.text) if message.type == "error" else None
+        ),
+    )
+    page.on(
+        "request",
+        lambda request: (
+            radix_requests.append(request.url)
+            if "/radix_ui_themes" in request.url
+            else None
+        ),
+    )
     assert dynamic_components.frontend_url is not None
     page.goto(dynamic_components.frontend_url)
     expect(page.locator("#token")).not_to_have_value("", timeout=15_000)
@@ -258,3 +278,8 @@ def test_dynamic_components(
     expect(page.locator("#initial-icon")).to_be_attached()
     page.locator("#activate").click()
     expect(page.locator("#delayed-icon")).to_be_attached()
+    # Every dynamic component on the page shares one fetch of the Radix module
+    # (in production, the chunk built from it),
+    # however many mount at once or are evaluated again later.
+    assert len(radix_requests) == (1 if lazy_bundled_libraries else 0)
+    assert errors == []

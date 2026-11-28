@@ -1528,6 +1528,11 @@ class Component(BaseComponent, ABC):
             children: The children of the component.
 
         """
+        # Nothing to validate, and a component without children can then be
+        # created where reflex-components-core is not installed.
+        if not children:
+            return
+
         from reflex_components_core.base.fragment import Fragment
         from reflex_components_core.core.cond import Cond
         from reflex_components_core.core.foreach import Foreach

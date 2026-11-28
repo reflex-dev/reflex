@@ -1,11 +1,18 @@
 """Components that are dynamically generated on the backend."""
 
+import contextlib
+import contextvars
 import dataclasses
 import json
+from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any, Union
 
 from reflex_base import constants
-from reflex_base.registry import RegistrationContext, _default_bundled_libraries
+from reflex_base.registry import (
+    RegistrationContext,
+    _default_bundled_libraries,
+    _eager_bundled_libraries,
+)
 from reflex_base.utils import console, imports
 from reflex_base.utils.exceptions import DynamicComponentMissingLibraryError
 from reflex_base.utils.format import format_library_name
@@ -16,6 +23,41 @@ from reflex_base.vars.base import VarData, transform
 
 if TYPE_CHECKING:
     from reflex_base.components.component import Component
+
+# Set while the code of a dynamic component is generated.
+_RENDERING_DYNAMIC_COMPONENT: contextvars.ContextVar[bool] = contextvars.ContextVar(
+    "rendering_dynamic_component", default=False
+)
+
+
+def is_rendering_dynamic_component() -> bool:
+    """Whether the code being generated is evaluated in the browser at runtime.
+
+    The code of a dynamic component never passes through the frontend build, so
+    a component whose output relies on a build step checks this to render
+    something that works without one.
+
+    Returns:
+        True while a dynamic component is being serialized.
+    """
+    return _RENDERING_DYNAMIC_COMPONENT.get()
+
+
+@contextlib.contextmanager
+def rendering_dynamic_component() -> Iterator[None]:
+    """Generate code that is evaluated in the browser at runtime.
+
+    For what is read from a component on behalf of the code it is serialized
+    to, such as the libraries that code imports.
+
+    Yields:
+        Nothing: ``is_rendering_dynamic_component`` is True inside the block.
+    """
+    token = _RENDERING_DYNAMIC_COMPONENT.set(True)
+    try:
+        yield
+    finally:
+        _RENDERING_DYNAMIC_COMPONENT.reset(token)
 
 
 def __getattr__(name: str) -> Any:
@@ -172,6 +214,18 @@ def load_dynamic_serializer():
         Returns:
             The generated code
         """
+        with rendering_dynamic_component():
+            return generate_component_code(component)
+
+    def generate_component_code(component: Component) -> str:
+        """Generate the module a dynamic component is evaluated from.
+
+        Args:
+            component: The component to generate code for.
+
+        Returns:
+            The generated code
+        """
         # Causes a circular import, so we import here.
         from reflex_components_core.base.bare import Bare
 
@@ -224,7 +278,10 @@ def load_dynamic_serializer():
         module_imports = []
         bundled_declarations = []
         bundled_library_paths = set()
-        for module in utils.compile_imports(imports):
+        # Emotion is only loaded for code with a ``css`` prop to apply.
+        for module in templates.resolve_jsx(
+            utils.compile_imports(imports), *rendered_components
+        ):
             if module["lib"] not in libs_in_window and not module["lib"].startswith((
                 "$/",
                 "/",
@@ -268,9 +325,9 @@ def load_dynamic_serializer():
 
         module_code_lines.insert(0, "const React = window.__reflex.react;")
         # evalReactComponent loads these optional libraries before the import;
-        # the default libraries are always in window.__reflex.
+        # the other default libraries are always in window.__reflex.
         optional_libraries = sorted(
-            bundled_library_paths.difference(_default_bundled_libraries())
+            bundled_library_paths.difference(_eager_bundled_libraries())
         )
 
         function_line = next(

@@ -1,9 +1,11 @@
 """Sonner toast component tests."""
 
 import json
+import subprocess
+import sys
 
 from reflex_base.style import Style
-from reflex_components_sonner.toast import Toaster, ToastProps
+from reflex_components_sonner.toast import Toaster, ToasterRequest, ToastProps, toast
 
 
 def test_toaster_hotkey_accepts_key_list():
@@ -25,3 +27,46 @@ def test_toast_button_styles_use_sonner_prop_names():
     assert serialized["cancelButtonStyle"]["color"] == "white"
     assert "actionButtonStyles" not in serialized
     assert "cancelButtonStyles" not in serialized
+
+
+def test_toast_call_asks_the_app_for_its_toaster():
+    """Every toast event carries the marker wrap the compiler looks for."""
+    for event in (
+        toast("Hello"),
+        toast.error("Failed", description="Try again"),
+        toast.dismiss("some-id"),
+        toast.dismiss(),
+    ):
+        requests = [
+            (priority, type(wrapper), wrapper.render())
+            for _, arg in event.args
+            if (var_data := arg._get_all_var_data()) is not None
+            for priority, wrapper in var_data.app_wraps
+        ]
+        assert requests == [(44, ToasterRequest, ToasterRequest.create().render())]
+
+    # Left in place, the marker renders nothing of its own.
+    assert str(ToasterRequest.create()) == "jsx(Fragment,{},)"
+
+
+def test_toast_module_imports_without_components_core():
+    """Importing the toast module must not need reflex-components-core.
+
+    reflex-components-core depends on this package, so neither an install of
+    this package alone nor its stub-generating build has the core components.
+    """
+    script = (
+        "import sys\n"
+        "sys.modules['reflex_components_core'] = None\n"
+        "from reflex_components_sonner.toast import ToasterRequest, toast_ref\n"
+        "[(priority, wrapper)] = toast_ref._get_all_var_data().app_wraps\n"
+        "print(priority, type(wrapper) is ToasterRequest, wrapper.render())\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script], capture_output=True, text=True, check=False
+    )
+    assert (result.returncode, result.stdout, result.stderr) == (
+        0,
+        f"44 True {ToasterRequest.create().render()}\n",
+        "",
+    )

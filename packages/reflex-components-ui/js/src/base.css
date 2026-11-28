@@ -1,0 +1,312 @@
+/*
+ * The cascade order of an app that uses rx.ui, declared once so that it does
+ * not depend on which stylesheet loads first. Later layers win:
+ *
+ *   __reflex_base, theme, base   resets: Reflex's own, Tailwind's theme and preflight
+ *   reflex-ui                    the components, then the `style` of an element
+ *   components, utilities        Tailwind, so a `class_name` utility overrides a component
+ *
+ * Unlayered CSS (an app's stylesheets, Emotion, Radix Themes) beats every layer.
+ */
+@layer __reflex_base, theme, base, reflex-ui, components, utilities;
+
+/*
+ * Reflex's color mode provider sets one of these classes on the root element.
+ * Without either, as in a page read with JavaScript off, the page is light:
+ * the default has no specificity, so any rule of an app is written over it.
+ */
+:where(html) {
+  color-scheme: light;
+}
+
+html.light {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+/*
+ * `light-dark()` only chooses between colors. A value of another kind that
+ * differs between the appearances, such as a filter or the geometry of a
+ * shadow, is written `var(--rx-if-light, <light>) var(--rx-if-dark, <dark>)`:
+ * the property of the current appearance is invalid, so its fallback is used,
+ * and the other one is empty. The classes are those of the color mode, and of
+ * the element around a theme with an appearance of its own.
+ */
+:where(html),
+.light {
+  --rx-if-light: initial;
+  --rx-if-dark: ;
+}
+
+.dark {
+  --rx-if-light: ;
+  --rx-if-dark: initial;
+}
+
+/*
+ * What Radix Themes styles through a selector that a class on the element
+ * cannot express. A theme element carries the class `reflex-ui-theme`.
+ */
+@layer reflex-ui.base {
+  .reflex-ui-theme ::selection {
+    background-color: var(--focus-a5);
+  }
+
+  /*
+   * A button dims the icons inside it: it hands the opacity down, and
+   * everything else is left as it is.
+   */
+  .reflex-ui-theme svg {
+    opacity: var(--rx-icon-opacity, revert-layer);
+  }
+
+  /*
+   * Everything in a callout but its icon is in the last column, whatever
+   * the element is: the icon places itself, in the column before.
+   */
+  [data-rx-callout] > * {
+    grid-column-start: -1;
+  }
+
+  /*
+   * What a skeleton stands in for keeps its place and is not shown, whatever
+   * the elements inside are.
+   */
+  [data-rx-skeleton] > * {
+    visibility: hidden !important;
+  }
+
+  /*
+   * What a radio card or a checkbox card holds is not dragged out of it, an
+   * image for one, and an icon keeps its size beside a long text.
+   */
+  [data-rx-cards-item] > * {
+    pointer-events: none;
+  }
+  [data-rx-cards-item] > svg {
+    flex-shrink: 0;
+  }
+
+  /*
+   * The line before an item of a segmented control is not shown before the
+   * first item, nor on either side of the chosen one or of the one the
+   * keyboard is on: the item before another is no state of that other.
+   */
+  [data-rx-segmented-item]:first-child,
+  [data-rx-segmented-item]:is(:has(> input:checked), :has(> input:focus-visible)),
+  [data-rx-segmented-item]:is(:has(> input:checked), :has(> input:focus-visible))
+    + [data-rx-segmented-item] {
+    --rx-segmented-separator-opacity: 0;
+    --rx-segmented-separator-easing: ease-in;
+  }
+  [data-rx-segmented-item] svg {
+    flex-shrink: 0;
+  }
+
+  /*
+   * A popup leaves the top layer when it has faded out, not before, and
+   * the label of a group of options keeps its distance from the option
+   * before it.
+   */
+  [data-rx-popup] {
+    transition-behavior: allow-discrete;
+  }
+  [role="option"] + [data-rx-select-label] {
+    margin-top: var(--space-2);
+  }
+
+  /* The thumb of the scrollbar of a text area, under the pointer. */
+  @media (hover: hover) {
+    [data-rx-text-area-input]:not(:disabled)::-webkit-scrollbar-thumb:hover {
+      background-color: var(--gray-a9);
+    }
+  }
+
+  /*
+   * The fields and the icon the browser lays a date or a time out as, in a
+   * text field: a state of one of them is no state of the input, so no
+   * class on the input can say it.
+   */
+  [data-rx-text-field-input]::-webkit-calendar-picker-indicator:hover {
+    background-color: var(--gray-a3);
+  }
+  [data-rx-text-field-input]::-webkit-calendar-picker-indicator:focus-visible {
+    outline: 2px solid var(--text-field-focus-color);
+  }
+  [data-rx-text-field-input]::-webkit-datetime-edit-ampm-field:focus,
+  [data-rx-text-field-input]::-webkit-datetime-edit-day-field:focus,
+  [data-rx-text-field-input]::-webkit-datetime-edit-hour-field:focus,
+  [data-rx-text-field-input]::-webkit-datetime-edit-millisecond-field:focus,
+  [data-rx-text-field-input]::-webkit-datetime-edit-minute-field:focus,
+  [data-rx-text-field-input]::-webkit-datetime-edit-month-field:focus,
+  [data-rx-text-field-input]::-webkit-datetime-edit-second-field:focus,
+  [data-rx-text-field-input]::-webkit-datetime-edit-week-field:focus,
+  [data-rx-text-field-input]::-webkit-datetime-edit-year-field:focus {
+    background-color: var(--text-field-selection-color);
+    color: inherit;
+    outline: none;
+  }
+}
+
+/*
+ * The system fonts Radix Themes adjusts the metrics of, which the font
+ * families of the typography tokens name. Copied from the `tokens.css` of
+ * @radix-ui/themes: `tests/base-css.test.js` fails when they differ.
+ */
+@font-face {
+  font-family: 'Segoe UI (Custom)';
+  font-weight: 300;
+  size-adjust: 103%;
+  descent-override: 35%;
+  ascent-override: 105%;
+  src: local('Segoe UI Semilight'), local('Segoe UI');
+}
+@font-face {
+  font-family: 'Segoe UI (Custom)';
+  font-weight: 300;
+  font-style: italic;
+  size-adjust: 103%;
+  descent-override: 35%;
+  ascent-override: 105%;
+  src: local('Segoe UI Semilight Italic'), local('Segoe UI Italic');
+}
+@font-face {
+  font-family: 'Segoe UI (Custom)';
+  font-weight: 400;
+  size-adjust: 103%;
+  descent-override: 35%;
+  ascent-override: 105%;
+  src: local('Segoe UI');
+}
+@font-face {
+  font-family: 'Segoe UI (Custom)';
+  font-weight: 400;
+  font-style: italic;
+  size-adjust: 103%;
+  descent-override: 35%;
+  ascent-override: 105%;
+  src: local('Segoe UI Italic');
+}
+@font-face {
+  font-family: 'Segoe UI (Custom)';
+  font-weight: 500;
+  size-adjust: 103%;
+  descent-override: 35%;
+  ascent-override: 105%;
+  src: local('Segoe UI Semibold'), local('Segoe UI');
+}
+@font-face {
+  font-family: 'Segoe UI (Custom)';
+  font-weight: 500;
+  font-style: italic;
+  size-adjust: 103%;
+  descent-override: 35%;
+  ascent-override: 105%;
+  src: local('Segoe UI Semibold Italic'), local('Segoe UI Italic');
+}
+@font-face {
+  font-family: 'Segoe UI (Custom)';
+  font-weight: 700;
+  size-adjust: 103%;
+  descent-override: 35%;
+  ascent-override: 105%;
+  src: local('Segoe UI Bold');
+}
+@font-face {
+  font-family: 'Segoe UI (Custom)';
+  font-weight: 700;
+  font-style: italic;
+  size-adjust: 103%;
+  descent-override: 35%;
+  ascent-override: 105%;
+  src: local('Segoe UI Bold Italic');
+}
+@font-face {
+  font-family: 'Open Sans (Custom)';
+  font-weight: 300;
+  descent-override: 35%;
+  src: local('Open Sans Light'), local('Open Sans Regular');
+}
+@font-face {
+  font-family: 'Open Sans (Custom)';
+  font-weight: 300;
+  font-style: italic;
+  descent-override: 35%;
+  src: local('Open Sans Light Italic'), local('Open Sans Italic');
+}
+@font-face {
+  font-family: 'Open Sans (Custom)';
+  font-weight: 400;
+  descent-override: 35%;
+  src: local('Open Sans Regular');
+}
+@font-face {
+  font-family: 'Open Sans (Custom)';
+  font-weight: 400;
+  font-style: italic;
+  descent-override: 35%;
+  src: local('Open Sans Italic');
+}
+@font-face {
+  font-family: 'Open Sans (Custom)';
+  font-weight: 500;
+  descent-override: 35%;
+  src: local('Open Sans Medium'), local('Open Sans Regular');
+}
+@font-face {
+  font-family: 'Open Sans (Custom)';
+  font-weight: 500;
+  font-style: italic;
+  descent-override: 35%;
+  src: local('Open Sans Medium Italic'), local('Open Sans Italic');
+}
+@font-face {
+  font-family: 'Open Sans (Custom)';
+  font-weight: 700;
+  descent-override: 35%;
+  src: local('Open Sans Bold');
+}
+@font-face {
+  font-family: 'Open Sans (Custom)';
+  font-weight: 700;
+  font-style: italic;
+  descent-override: 35%;
+  src: local('Open Sans Bold Italic');
+}
+@font-face {
+  font-family: 'Consolas (Custom)';
+  font-weight: 400;
+  size-adjust: 110%;
+  ascent-override: 85%;
+  descent-override: 22%;
+  src: local('Consolas');
+}
+@font-face {
+  font-family: 'Consolas (Custom)';
+  font-weight: 400;
+  font-style: italic;
+  size-adjust: 110%;
+  ascent-override: 85%;
+  descent-override: 22%;
+  src: local('Consolas Italic');
+}
+@font-face {
+  font-family: 'Consolas (Custom)';
+  font-weight: 700;
+  size-adjust: 110%;
+  ascent-override: 85%;
+  descent-override: 22%;
+  src: local('Consolas Bold');
+}
+@font-face {
+  font-family: 'Consolas (Custom)';
+  font-weight: 700;
+  font-style: italic;
+  size-adjust: 110%;
+  ascent-override: 85%;
+  descent-override: 22%;
+  src: local('Consolas Bold Italic');
+}

@@ -23,6 +23,7 @@ from reflex_base.utils.pyi_generator import (
     _is_literal,
     _is_optional,
     _is_union,
+    _rewrite_component_import,
     _safe_issubclass,
     type_to_ast,
 )
@@ -516,3 +517,24 @@ class CreateComp(Component):
     assert "**props" in result
     # Return type should reference the class.
     assert "CreateComp" in result
+
+
+@pytest.mark.parametrize(
+    ("module", "is_reflex_package", "expected"),
+    [
+        ("components", True, "reflex_components_core"),
+        ("components.radix.themes.base", True, "reflex_components_radix.themes.base"),
+        ("components.datadisplay.code", True, "reflex_components_code.code"),
+        ("components.ui", True, "reflex_components_ui"),
+        (
+            "components.ui.components.button",
+            True,
+            "reflex_components_ui.components.button",
+        ),
+        ("components.component", True, ".components.component"),
+        ("components.ui", False, ".components.ui"),
+        ("event", True, ".event"),
+    ],
+)
+def test_rewrite_component_import(module: str, is_reflex_package: bool, expected: str):
+    assert _rewrite_component_import(module, is_reflex_package) == expected

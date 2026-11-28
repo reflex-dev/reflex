@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 from collections import Counter
-from collections.abc import Generator, Sequence
+from collections.abc import Generator, Mapping, Sequence
 from contextlib import contextmanager
 from http.client import HTTPConnection
 from urllib.parse import urlsplit
 
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page, Response, expect
 
-from reflex.testing import DEFAULT_TIMEOUT
+from reflex.testing import DEFAULT_TIMEOUT, AppHarness
 
 # JavaScript for the client token of a tab. The frontend keeps it in
 # sessionStorage under a key that is scoped to the backend URL.
@@ -219,3 +219,62 @@ def poll_assert_relative_event_order(
     assert_relative_event_order(
         events.all_text_contents(), expected_counts, ordering_rules
     )
+
+
+# Text only the named library puts in a script: the path socket.io connects to,
+# an option of the cookie library, and the attribute the toaster marks toasts with.
+LIBRARY_MARKERS = {
+    "socket.io": "socket.io",
+    "universal-cookie": "doNotParse",
+    "sonner": "data-sonner-toast",
+}
+
+
+def libraries_in_scripts(scripts: Mapping[str, str]) -> dict[str, bool]:
+    """Find which libraries of the state runtime and the toaster scripts hold.
+
+    Args:
+        scripts: The source of each script, by its name or URL.
+
+    Returns:
+        For each library in ``LIBRARY_MARKERS``, whether any script contains it.
+    """
+    return {
+        library: any(marker in body for body in scripts.values())
+        for library, marker in LIBRARY_MARKERS.items()
+    }
+
+
+def record_scripts(page: Page) -> dict[str, str]:
+    """Record the source of every script a page loads from now on.
+
+    Args:
+        page: Playwright page.
+
+    Returns:
+        A dict filled, as the page loads them, with the source of each script
+        by URL.
+    """
+    scripts: dict[str, str] = {}
+
+    def record(response: Response) -> None:
+        if response.request.resource_type == "script" and response.ok:
+            scripts[response.url] = response.text()
+
+    page.on("response", record)
+    return scripts
+
+
+def built_scripts(harness: AppHarness) -> dict[str, str]:
+    """Read every script of an app's production build.
+
+    Args:
+        harness: The harness of an app that was exported.
+
+    Returns:
+        The source of each script of the client build, by file name.
+    """
+    return {
+        script.name: script.read_text()
+        for script in (harness.app_path / ".web" / "build" / "client").rglob("*.js")
+    }

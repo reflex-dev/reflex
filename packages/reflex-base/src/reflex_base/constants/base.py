@@ -40,6 +40,8 @@ class Dirs(SimpleNamespace):
     CONTEXTS_PATH = UTILS + "/context"
     # The name of the client state file.
     CLIENT_STATE_PATH = UTILS + "/client_state"
+    # The directory of the modules that expose a library to dynamic components.
+    DYNAMIC_LIBRARIES_PATH = UTILS + "/dynamic_libraries"
     # The name of the output directory.
     BUILD_DIR = "build"
     # The name of the static files directory.
