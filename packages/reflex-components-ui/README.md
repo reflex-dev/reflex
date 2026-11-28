@@ -535,8 +535,8 @@ reuse: placed by CSS anchor positioning, turned over by
 | `form-validity.js` | 684 B | shows the messages of a form that match the validity the browser computed |
 | `roving-focus.js` | 411 B | the arrow keys of a segmented control |
 | `slider.js` | 660 B | the filled part of the track, the order of several thumbs, a press on the track |
-| `popup.js` | 386 B | says on a trigger that its popover is open, and gives the popups of a loop their own ids |
-| `popup-position.js` | 404 B | places a popover in a browser without anchor positioning; loaded only there |
+| `popup.js` | 762 B | says on a trigger that its popover is open, puts the popover on whole pixels before it is first drawn, and gives the popups of a loop their own ids |
+| `popup-position.js` | 407 B | places a popover in a browser without anchor positioning; loaded only there |
 | `listbox.js` | 1,536 B | the value of a select, the keys of its list, typing to find an option |
 
 What the form controls wave settled:
@@ -556,6 +556,22 @@ What the form controls wave settled:
 - **An input bound to state** is rendered through `DebounceInput`, as the
   inputs of `rx.el` are: `rx.ui.input` and `rx.ui.text_area` keep the caret
   where it is while the state follows.
+- **A popup on whole pixels.** A popover the browser places beside its
+  anchor starts on a fraction of a pixel whenever its width has one, which
+  depends on the font, and Radix rounds where it puts one. The browser
+  keeps the fraction a popover is first drawn at, in the edges of its
+  letters, and a transform resamples it: so `popupBeforeToggle` measures
+  the popover in the frame that first shows it and writes
+  `--rx-popup-snap-x` and `--rx-popup-snap-y`, which `placement()` adds to
+  one margin and takes from the one opposite.
+- **A look that holds in one font is not held.** Run a matrix under
+  `--fonts "DejaVu Sans" "Liberation Mono"` too. A round end that falls on
+  a fraction of a pixel is drawn by where it is on the page, in Radix as
+  here: give such a cell a width of whole pixels rather than a tolerance.
+- **What a system draws with a pseudo-element** is a part too
+  (`("button > span", "input::after")`): the comparison of what is inside
+  a cell found the gray ring a checked surface radio button of Radix keeps,
+  which a tolerance had taken for anti-aliasing.
 - **A matrix of a popup** crops the stage, opens the popup with a state of
   its own (`states={OPEN: State(...)}`), and leaves room in the stage for
   it: a popup that meets the edge of the viewport is moved by Radix and
