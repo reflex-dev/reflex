@@ -207,6 +207,16 @@ _MAPPING: lazy_loader.SubmodAttrsType = {
         "upload_files_chunk",
         "window_alert",
     ],
+    "i18n": [
+        "I18nConfig",
+        "I18nPlugin",
+        "I18nState",
+        "gettext",
+        "ngettext",
+        "pgettext",
+        "set_locale",
+        "t",
+    ],
     "istate.storage": [
         "Cookie",
         "LocalStorage",
@@ -244,11 +254,14 @@ _SUBMODULES: set[str] = {
     "vars",
     "config",
     "compiler",
+    "i18n",
     "plugins",
 }
 _SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = _MAPPING
 _EXTRA_MAPPINGS: dict[str, str] = _COMPONENT_NAME_TO_PATH
-getattr, __dir__, __all__ = lazy_loader.attach(
+
+
+getattr, __dir__, _ALL = lazy_loader.attach(
     __name__,
     submodules=_SUBMODULES,
     submod_attrs=_SUBMOD_ATTRS,
@@ -256,5 +269,29 @@ getattr, __dir__, __all__ = lazy_loader.attach(
 )
 
 
+def _exported_names() -> list[str]:
+    """The names `import *` can resolve.
+
+    Without the optional reflex-i18n its names stay reachable as attributes,
+    which report the missing package, but out of ``__all__``.
+
+    Returns:
+        The names for ``__all__``.
+    """
+    from importlib.util import find_spec
+
+    # Not list(): on Python 3.15 the lazy names are bound in this namespace,
+    # where `list` is rx.list.
+    if find_spec("reflex_i18n") is not None:
+        return _ALL
+    i18n_names = {"i18n", *_MAPPING["i18n"]}
+    return [name for name in _ALL if name not in i18n_names]
+
+
 def __getattr__(name: str):
+    if name == "__all__":
+        # Built on first use: finding out whether reflex-i18n is installed
+        # searches sys.path, which a plain `import reflex` should not pay for.
+        globals()["__all__"] = exported = _exported_names()
+        return exported
     return getattr(name)

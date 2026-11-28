@@ -7220,6 +7220,97 @@ async def test_await_inside_app_modify_state_runs_inline(app_with_processor: App
         EventContext.get()
 
 
+_modify_ambient_lang = contextvars.ContextVar(
+    "test_app_modify_ambient_lang", default="unset"
+)
+
+
+@contextlib.contextmanager
+def _use_modify_ambient_lang(lang: str) -> Generator[None]:
+    """Set the ambient language for the duration of the context.
+
+    Args:
+        lang: The language to set.
+
+    Yields:
+        None.
+    """
+    reset = _modify_ambient_lang.set(lang)
+    try:
+        yield
+    finally:
+        _modify_ambient_lang.reset(reset)
+
+
+async def test_app_modify_state_runs_in_the_event_scope(app_with_processor: App):
+    """``modify_state`` enters the client's event scope, as an event does.
+
+    The block and the handlers it awaits see the scope of the locked state, and
+    the delta is resolved in the scope of the state the block changed.
+
+    Args:
+        app_with_processor: An App with a mock event processor and root context.
+    """
+    from reflex_base.event.processor import scope
+
+    class ModifyScopedState(BaseState):
+        lang: str = "en"
+
+        @rx.var(deps=["lang"])
+        def scoped(self) -> str:
+            """The ambient lang, recomputed when lang changes.
+
+            Returns:
+                The ambient lang.
+            """
+            return _modify_ambient_lang.get()
+
+        @rx.event
+        def ambient(self) -> str:
+            """Read the ambient lang inside the event.
+
+            Returns:
+                The ambient lang.
+            """
+            return _modify_ambient_lang.get()
+
+    async def provider(
+        root_state: BaseState,
+    ) -> contextlib.AbstractContextManager[None]:
+        """Scope the event to the state's lang.
+
+        Args:
+            root_state: The root state of the event.
+
+        Returns:
+            The ambient lang context.
+        """
+        state = await root_state.get_state(ModifyScopedState)
+        return _use_modify_ambient_lang(state.lang)
+
+    app_with_processor._state_manager = StateManagerMemory()
+    namespace = app_with_processor._event_namespace = AsyncMock()
+    scope.register_event_scope_provider(provider)
+    try:
+        async with app_with_processor.modify_state(
+            BaseStateToken(ident="token-scope", cls=ModifyScopedState)
+        ) as state:
+            inside = (_modify_ambient_lang.get(), await ModifyScopedState.ambient())
+            (await state.get_state(ModifyScopedState)).lang = "de"
+    finally:
+        scope._providers.remove(provider)
+
+    assert inside == ("en", "en")
+    (emitted,) = namespace.emit_update.call_args_list
+    scoped = [
+        value
+        for substate_delta in emitted.kwargs["update"].delta.values()
+        for name, value in substate_delta.items()
+        if name.startswith("scoped")
+    ]
+    assert scoped == ["de"]
+
+
 @pytest.mark.parametrize(
     ("prod", "config_kwargs", "expected"),
     [

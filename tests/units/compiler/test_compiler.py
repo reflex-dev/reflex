@@ -985,6 +985,43 @@ def test_add_meta_drops_empty_description():
     assert not any(isinstance(child, Description) for child in page.children)
 
 
+class _LangPlugin(rx.plugins.Plugin):
+    def __init__(self, lang: str | None):
+        """Report a fixed html lang.
+
+        Args:
+            lang: The lang to report, or None to leave it to the app.
+        """
+        self.lang = lang
+
+    def get_html_lang(self, **context) -> str | None:
+        """The fixed html lang.
+
+        Args:
+            **context: The compile context.
+
+        Returns:
+            The lang.
+        """
+        return self.lang
+
+
+@pytest.mark.parametrize(
+    ("html_lang", "plugin_langs", "expected"),
+    [
+        (None, [], None),
+        (None, [None, "de", "fr"], "de"),
+        ("es", ["de"], "es"),
+    ],
+    ids=["none", "first_plugin", "app_wins"],
+)
+def test_document_lang(
+    html_lang: str | None, plugin_langs: list[str | None], expected: str | None
+):
+    plugins = [_LangPlugin(lang) for lang in plugin_langs]
+    assert compiler._document_lang(html_lang, plugins) == expected
+
+
 @pytest.mark.usefixtures("dev_mode")
 def test_create_document_root_with_scripts():
     # Test with components.

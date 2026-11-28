@@ -1,6 +1,7 @@
 """Base class for all plugins."""
 
 from collections.abc import Callable, Mapping, Sequence
+from contextlib import AbstractContextManager
 from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, ParamSpec, Protocol, TypedDict, TypeVar
@@ -22,7 +23,11 @@ if TYPE_CHECKING:
     from reflex.app import App, UnevaluatedPage
     from reflex_base.components.component import BaseComponent, Component
     from reflex_base.event import EventType
-    from reflex_base.plugins.compiler import ComponentAndChildren, PageContext
+    from reflex_base.plugins.compiler import (
+        ComponentAndChildren,
+        PageContext,
+        PageDefinition,
+    )
     from reflex_base.vars.base import Var
 
 
@@ -106,6 +111,12 @@ class RegisterRouteContext(CommonContext):
     has_app_page: Callable[[str], bool]
 
 
+class ExpandRoutesContext(RegisterRouteContext):
+    """Context for ``expand_routes``: adds the app's registered ``pages``."""
+
+    pages: Sequence["UnevaluatedPage"]
+
+
 class PostCompileContext(CommonContext):
     """Context for post-compile hooks."""
 
@@ -178,6 +189,18 @@ class Plugin:
         """
         return []
 
+    def get_html_lang(self, **context: Unpack[CommonContext]) -> str | None:
+        """Get the language of the document when the app sets no ``html_lang``.
+
+        Args:
+            context: The context for the plugin.
+
+        Returns:
+            The language tag for the ``<html>`` element, or None to leave it to
+            other plugins and the default.
+        """
+        return None
+
     def register_route(self, **context: Unpack[RegisterRouteContext]) -> None:
         """Contribute pages before the app's first compilation.
 
@@ -192,6 +215,16 @@ class Plugin:
 
         Args:
             context: The route registration context.
+        """
+
+    def expand_routes(self, **context: Unpack[ExpandRoutesContext]) -> None:
+        """Contribute pages derived from the app's already-registered pages.
+
+        Runs after ``register_route`` with the same staged ``add_page``; the
+        context adds ``pages`` (the app's registered pages) to fan out from.
+
+        Args:
+            context: The route-expansion context.
         """
 
     def pre_compile(self, **context: Unpack[PreCompileContext]) -> None:
@@ -246,6 +279,28 @@ class Plugin:
 
         Returns:
             A mapping of env entries to add or override, or ``None``.
+        """
+        return None
+
+    def eval_page_scope(
+        self,
+        page: "PageDefinition",
+        /,
+        **kwargs: Any,
+    ) -> "AbstractContextManager[PageDefinition | None] | None":
+        """Get a context to evaluate a page in, e.g. one setting its language.
+
+        Every plugin's context is entered around a page's evaluation, whichever
+        ``eval_page`` hook evaluates it, so the page function runs inside it.
+        A context that enters with a page, e.g. a copy with its title
+        translated, has that page evaluated in place of this one.
+
+        Args:
+            page: The page about to be evaluated.
+            kwargs: Additional compiler-specific context.
+
+        Returns:
+            A context manager to enter while the page is evaluated, or ``None``.
         """
         return None
 

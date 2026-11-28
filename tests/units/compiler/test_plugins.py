@@ -1,7 +1,8 @@
 # ruff: noqa: D101, D102
 
+import contextlib
 import dataclasses
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from typing import Any
 
 import pytest
@@ -267,6 +268,144 @@ def test_eval_page_uses_first_non_none_result() -> None:
     assert page_ctx is not None
     assert page_ctx.route == "/demo"
     assert calls == ["no-match", "match"]
+
+
+def _scope_plugin(name: str, calls: list[str]) -> Plugin:
+    """A plugin whose page evaluation scope records entering and leaving it.
+
+    Args:
+        name: The name recorded for the plugin.
+        calls: The list the scope records into.
+
+    Returns:
+        The plugin.
+    """
+
+    class ScopePlugin(StubPlugin):
+        @contextlib.contextmanager
+        def eval_page_scope(
+            self, page: PageDefinition, /, **kwargs: Any
+        ) -> Iterator[None]:
+            calls.append(f"enter {name} {page.route}")
+            yield
+            calls.append(f"leave {name}")
+
+    return ScopePlugin()
+
+
+def test_eval_page_scope_wraps_whichever_plugin_evaluates_the_page() -> None:
+    calls: list[str] = []
+
+    def page_fn() -> Component:
+        calls.append("page")
+        return Fragment.create()
+
+    class EvaluatingPlugin(StubPlugin):
+        def eval_page(
+            self, page_fn: Any, /, *, page: PageDefinition, **kwargs: Any
+        ) -> PageContext:
+            del kwargs
+            return PageContext(name="page", route=page.route, root_component=page_fn())
+
+    ctx = CompileContext(
+        pages=[FakePage(route="demo", component=page_fn)],
+        hooks=CompilerHooks(
+            plugins=(
+                _scope_plugin("a", calls),
+                EvaluatingPlugin(),
+                _scope_plugin("b", calls),
+            )
+        ),
+    )
+    with ctx:
+        ctx.compile()
+
+    assert calls == ["enter a demo", "enter b demo", "page", "leave b", "leave a"]
+
+
+def test_eval_page_scope_wraps_a_page_the_backend_evaluates(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from reflex_base.config import get_config
+
+    calls: list[str] = []
+
+    def page_fn() -> Component:
+        calls.append("page")
+        return Fragment.create()
+
+    monkeypatch.setattr(get_config(), "plugins", [_scope_plugin("a", calls)])
+    compiler.compile_unevaluated_page(
+        "demo", UnevaluatedPage(component=page_fn, route="demo")
+    )
+
+    assert calls == ["enter a demo", "page", "leave a"]
+
+
+class _RetitlingPlugin(StubPlugin):
+    """A plugin whose scope has a copy of the page with another title evaluated."""
+
+    @contextlib.contextmanager
+    def eval_page_scope(
+        self, page: PageDefinition, /, **kwargs: Any
+    ) -> Iterator[PageDefinition]:
+        assert isinstance(page, (FakePage, UnevaluatedPage))
+        yield dataclasses.replace(page, title=f"{page.title} (scoped)")
+
+
+def test_eval_page_scope_can_have_a_copy_of_the_page_evaluated() -> None:
+    seen: list[Any] = []
+
+    class EvaluatingPlugin(StubPlugin):
+        def eval_page(
+            self, page_fn: Any, /, *, page: PageDefinition, **kwargs: Any
+        ) -> PageContext:
+            del kwargs
+            seen.append(getattr(page, "title", None))
+            return PageContext(name="page", route=page.route, root_component=page_fn())
+
+    page = FakePage(route="demo", component=Fragment.create, title="Demo")
+    ctx = CompileContext(
+        pages=[page],
+        hooks=CompilerHooks(plugins=(_RetitlingPlugin(), EvaluatingPlugin())),
+    )
+    with ctx:
+        ctx.compile()
+
+    assert seen == ["Demo (scoped)"]
+    assert page.title == "Demo"
+
+
+def test_eval_page_scope_evaluates_a_falsy_replacement_page() -> None:
+    @dataclasses.dataclass(slots=True)
+    class EmptyPage(FakePage):
+        def __bool__(self) -> bool:
+            return False
+
+    class ReplacingPlugin(StubPlugin):
+        @contextlib.contextmanager
+        def eval_page_scope(
+            self, page: PageDefinition, /, **kwargs: Any
+        ) -> Iterator[Any]:
+            yield EmptyPage(route=page.route, component=Fragment.create)
+
+    with CompilerHooks(plugins=(ReplacingPlugin(),)).eval_page_scope(
+        FakePage(route="demo", component=Fragment.create)
+    ) as page:
+        assert isinstance(page, EmptyPage)
+
+
+def test_eval_page_scope_copy_gives_the_backend_page_its_head(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from reflex_base.config import get_config
+
+    monkeypatch.setattr(get_config(), "plugins", [_RetitlingPlugin()])
+    component = compiler.compile_unevaluated_page(
+        "demo", UnevaluatedPage(component=Fragment.create, route="demo", title="Demo")
+    )
+
+    assert "Demo (scoped)" in str(component.render())
 
 
 def test_compile_page_runs_plugins_in_registration_order() -> None:

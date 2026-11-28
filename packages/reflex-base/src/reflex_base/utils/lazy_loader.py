@@ -20,7 +20,7 @@ from __future__ import annotations
 import importlib
 import os
 import sys
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 
 SubmodAttrsType = Mapping[str, Sequence[str | tuple[str, str]]]
 
@@ -139,10 +139,7 @@ def attach(
         for attr in attrs
     }
 
-    __all__ = sorted([
-        *(submodules | alias_to_module_and_attr.keys()),
-        *(extra_mappings or []),
-    ])
+    __all__ = exported_names(submodules, submod_attrs, extra_mappings)
 
     def __getattr__(name: str):  # noqa: N807
         if name in extra_mappings:
@@ -188,6 +185,27 @@ def attach(
         )
 
     return __getattr__, __dir__, list(__all__)
+
+
+def exported_names(
+    submodules: Iterable[str] | None,
+    submod_attrs: SubmodAttrsType | None,
+    extra_mappings: Iterable[str] | None,
+) -> list[str]:
+    """Get the names ``attach`` lists in a package's ``__all__``.
+
+    Args:
+        submodules: The submodules to attach.
+        submod_attrs: Dictionary of submodule -> list of attributes / functions.
+        extra_mappings: The names of the additional mappings.
+
+    Returns:
+        The sorted names.
+    """
+    aliases = {
+        comp_alias(attr) for attrs in (submod_attrs or {}).values() for attr in attrs
+    }
+    return sorted([*(set(submodules or ()) | aliases), *(extra_mappings or ())])
 
 
 def comp_name(comp: str | tuple[str, str]) -> str:

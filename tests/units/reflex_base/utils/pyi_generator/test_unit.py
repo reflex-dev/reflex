@@ -19,6 +19,7 @@ import pytest
 from reflex_base.components.component import Component, ComponentNamespace
 from reflex_base.utils.pyi_generator import (
     StubGenerator,
+    _get_init_lazy_imports,
     _get_type_hint,
     _is_literal,
     _is_optional,
@@ -516,3 +517,32 @@ class CreateComp(Component):
     assert "**props" in result
     # Return type should reference the class.
     assert "CreateComp" in result
+
+
+def test_lazy_init_stub_exports_every_mapped_name():
+    """A lazy package's stub exports every mapped name, whatever ``__all__`` drops.
+
+    reflex drops the optional reflex-i18n names from ``__all__`` when that package
+    is missing, as in the isolated build that generates the published stubs.
+    """
+    mod = builtin_types.ModuleType("lazy_pkg")
+    mod.__dict__.update(
+        __all__=["kept"],
+        _SUBMODULES={"sub"},
+        _SUBMOD_ATTRS={"optional": ["dropped"], "core": ["kept", ("orig", "alias")]},
+        _EXTRA_MAPPINGS={"extra": "other_pkg.thing"},
+    )
+
+    stub = _get_init_lazy_imports(mod, ast.Module(body=[], type_ignores=[]))
+
+    assert stub == (
+        "\nfrom . import sub\n"
+        "\n"
+        "from .optional import dropped\n"
+        "from .core import kept\n"
+        "from .core import orig as alias\n"
+        "\n"
+        "from other_pkg import thing as extra\n"
+        "\n\n"
+        "__all__ = ['alias', 'dropped', 'extra', 'kept', 'sub']\n"
+    )

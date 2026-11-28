@@ -53,6 +53,7 @@ from reflex_base.event import (
 )
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
+from reflex_base.event.processor.scope import event_scope
 from reflex_base.registry import RegistrationContext
 from reflex_base.session import SessionToken, SessionTokenManager, authorize
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
@@ -1890,6 +1891,27 @@ class App(MiddlewareMixin, LifespanMixin):
                 has_app_page=has_app_page,
             )
 
+        # Second pass: let plugins derive pages from the app's registered pages
+        # (e.g. one localized route per locale). Shares the same staged
+        # registrar; the ``pages`` snapshot is app pages only (register_route
+        # contributions are staged, not yet in _unevaluated_pages), so plugins
+        # never fan out each other's contributions.
+        expand_pages = tuple(self._unevaluated_pages.values())
+        for index, (plugin, class_name) in enumerate(
+            zip(plugins, class_names, strict=True)
+        ):
+            plugin_name = (
+                f"{class_name} (plugins[{index}])"
+                if class_name in duplicated
+                else class_name
+            )
+            plugin.expand_routes(
+                app_type=type(self),
+                add_page=make_add_page(plugin_name),
+                has_app_page=has_app_page,
+                pages=expand_pages,
+            )
+
         # This state assignment is only required for tests using the
         # deprecated state kwarg for App.
         state = self._state or State
@@ -2478,18 +2500,28 @@ class App(MiddlewareMixin, LifespanMixin):
             async with self.state_manager.modify_state_with_links(
                 token, previous_dirty_vars=previous_dirty_vars, **context
             ) as state:
+                root_state = state._get_root_state()
                 # No other event handler can modify the state while in this context.
+                # Like an event, the block runs in the client's event scope (e.g.
+                # its i18n locale), also for the handlers it awaits.
                 if forked_context is None:
-                    yield state
+                    async with event_scope(root_state):
+                        yield state
                 else:
                     # An awaited handler runs inline on the locked tree. A plain
                     # try/finally: this is also the shared-state fan-out path.
-                    forked_context.set_locked_root(state._get_root_state())
+                    forked_context.set_locked_root(root_state)
                     try:
-                        yield state
+                        async with event_scope(root_state):
+                            yield state
                     finally:
                         await forked_context.release_lock()
-                delta = await state._get_resolved_delta()
+                # Re-derived from the state the block changed, as computed vars
+                # are recomputed during delta resolution. A provider suppressing
+                # a resolution error leaves nothing to send.
+                delta = {}
+                async with event_scope(root_state):
+                    delta = await state._get_resolved_delta()
                 state._clean()
                 if delta:
                     # When the frontend vars are modified emit the delta to the frontend.

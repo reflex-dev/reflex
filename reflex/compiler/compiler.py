@@ -1036,8 +1036,12 @@ def compile_unevaluated_page(
         Exception: If an error occurs while evaluating the page.
     """
     try:
-        # Generate the component if it is a callable.
-        component = into_component(page.component)
+        # Generate the component if it is a callable, in the context the
+        # plugins evaluate pages in.
+        with CompilerHooks(plugins=tuple(get_config().plugins)).eval_page_scope(
+            page
+        ) as scoped_page:
+            component = into_component(scoped_page.component)
 
         component._add_style_recursive(style or {}, theme)
 
@@ -1047,16 +1051,16 @@ def compile_unevaluated_page(
 
         meta_args = {
             "title": (
-                page.title
-                if page.title is not None
+                scoped_page.title
+                if scoped_page.title is not None
                 else make_default_page_title(get_config().app_name, route)
             ),
-            "image": page.image,
-            "meta": page.meta,
+            "image": scoped_page.image,
+            "meta": scoped_page.meta,
         }
 
-        if page.description is not None:
-            meta_args["description"] = page.description
+        if scoped_page.description is not None:
+            meta_args["description"] = scoped_page.description
 
         # Add meta information to the component.
         utils.add_meta(
@@ -1285,6 +1289,21 @@ def _read_stateful_pages_marker() -> list[str] | None:
         raise
 
 
+def _document_lang(html_lang: str | None, plugins: Sequence[Plugin]) -> str | None:
+    """The language of the document root.
+
+    Args:
+        html_lang: The app's ``html_lang``, which takes precedence.
+        plugins: The configured plugins, asked in order.
+
+    Returns:
+        The app's language, else the first one a plugin names, else None.
+    """
+    if html_lang:
+        return html_lang
+    return next((lang for plugin in plugins if (lang := plugin.get_html_lang())), None)
+
+
 def compile_app(
     app: App,
     *,
@@ -1509,7 +1528,7 @@ def compile_app(
     compile_results.append(
         compile_document_root(
             app.head_components,
-            html_lang=app.html_lang,
+            html_lang=_document_lang(app.html_lang, config.plugins),
             html_custom_attrs=(
                 {"suppressHydrationWarning": True, **app.html_custom_attrs}
                 if app.html_custom_attrs
