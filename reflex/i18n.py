@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any
 try:
     from reflex_i18n import (
         LOCALE_COOKIE_NAME,
+        PAGE_PATHS_KEY,
         I18nConfig,
         I18nPlugin,
         PathPrefixRouting,
@@ -82,6 +83,7 @@ N_ = gettext_noop
 __all__ = [
     "LOCALE_COOKIE_NAME",
     "N_",
+    "PAGE_PATHS_KEY",
     "I18nConfig",
     "I18nPlugin",
     "I18nState",

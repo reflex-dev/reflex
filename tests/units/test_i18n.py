@@ -79,3 +79,9 @@ def test_reflex_i18n_exposes_server_side_helpers():
     )
     assert reflex.i18n.pgettext_noop is reflex_i18n.runtime.pgettext_noop
     assert reflex.i18n.translate is reflex_i18n.runtime.translate
+
+
+def test_reflex_i18n_exposes_the_page_paths_key():
+    import reflex.i18n
+
+    assert reflex.i18n.PAGE_PATHS_KEY == "i18n_paths"

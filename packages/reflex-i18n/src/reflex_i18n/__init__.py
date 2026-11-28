@@ -31,7 +31,7 @@ from .nav import (
     localized_url,
     path_redirects,
 )
-from .plugin import I18nPlugin
+from .plugin import PAGE_PATHS_KEY, I18nPlugin
 from .routing import PathPrefixRouting
 from .runtime import (
     fallback_chain,
@@ -78,6 +78,7 @@ N_ = gettext_noop
 __all__ = [
     "LOCALE_COOKIE_NAME",
     "N_",
+    "PAGE_PATHS_KEY",
     "I18nConfig",
     "I18nPlugin",
     "I18nState",

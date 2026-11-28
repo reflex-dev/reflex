@@ -427,14 +427,15 @@ rx.link(_("Pricing"), href=rx.i18n.localized_url("/pricing"))
 ### Translated paths
 
 A page can have a path of its own in another locale, e.g. a blog post whose
-slug is translated. Give the paths in the page's context; its route stays the
-default locale's path:
+slug is translated. Give the paths in the page's context under
+`rx.i18n.PAGE_PATHS_KEY`; its route stays the default locale's path:
 
 ```python
 app.add_page(
     news,
     route="/news",
-    context={"i18n_paths": {"de": "/neuigkeiten"}},  # served at /de/neuigkeiten
+    # served at /de/neuigkeiten
+    context={rx.i18n.PAGE_PATHS_KEY: {"de": "/neuigkeiten"}},
 )
 ```
 
