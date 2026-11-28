@@ -1,6 +1,7 @@
 """Tests for development-time event-loop blocking detection."""
 
 import asyncio
+import gc
 import importlib
 import logging
 import os
@@ -101,12 +102,18 @@ async def _run_monitored(
     monitor = EventLoopBlockingMonitor(
         asyncio.get_running_loop(), threshold=0.04, event_handlers=event_handlers or {}
     )
-    monitor.start()
+    # The monitor leaves collections out of the total, so an automatic one during a
+    # block would shorten it below the blocked time the tests check.
+    collecting = gc.isenabled()
     try:
+        gc.disable()
+        monitor.start()
         await asyncio.create_task(fn(), name=task_name)
         await asyncio.sleep(0)
     finally:
         monitor.stop()
+        if collecting:
+            gc.enable()
 
 
 def _blocking(
@@ -518,6 +525,91 @@ async def test_awaiting_event_is_not_reported(
     assert "the event loop" not in caplog_blocking.text
 
 
+async def test_garbage_collection_is_not_reported(
+    caplog_blocking: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """Do not blame the task that a slow garbage collection interrupts."""
+    probe_pending = _track_pending_probe(asyncio.get_running_loop(), monkeypatch)
+
+    class _SlowGarbage:
+        """A reference cycle whose finalizer holds up the collection."""
+
+        def __init__(self) -> None:
+            self.cycle = self
+
+        def __del__(self) -> None:
+            time.sleep(_BLOCK_SECONDS)
+
+    async def collecting_handler():  # noqa: RUF029
+        """Hold the loop in a garbage collection once a probe waits for it."""
+        _SlowGarbage()
+        assert probe_pending.wait(timeout=1)
+        gc.collect()
+
+    await _run_monitored(
+        collecting_handler, f"{EVENT_TASK_PREFIX}state.collecting|token|txid"
+    )
+
+    assert caplog_blocking.messages == []
+
+
+async def test_blocking_during_another_threads_collection_is_reported(
+    caplog_blocking: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """Report a block while a collection on another thread waits in a finalizer."""
+    probe_pending = _track_pending_probe(asyncio.get_running_loop(), monkeypatch)
+    finalizing = threading.Event()
+    unblocked = threading.Event()
+
+    class _WaitingGarbage:
+        """A reference cycle whose finalizer waits without holding the interpreter."""
+
+        def __init__(self) -> None:
+            self.cycle = self
+
+        def __del__(self) -> None:
+            finalizing.set()
+            unblocked.wait(timeout=5)
+
+    def collect() -> None:
+        """Collect a waiting reference cycle."""
+        _WaitingGarbage()
+        gc.collect()
+
+    collector = threading.Thread(target=collect)
+
+    async def blocking_handler():  # noqa: RUF029
+        """Block the loop while the other thread's collection runs a finalizer."""
+        try:
+            collector.start()
+            assert finalizing.wait(timeout=5)
+            assert probe_pending.wait(timeout=1)
+            time.sleep(_BLOCK_SECONDS)  # noqa: ASYNC251
+        finally:
+            unblocked.set()
+
+    try:
+        await _run_monitored(blocking_handler, "blocking_task")
+    finally:
+        collector.join(timeout=5)
+
+    location = f"{Path(__file__).relative_to(Path.cwd())}:N in blocking_handler"
+    assert [
+        re.sub(r"(?<=:)\d+(?= in )|(?<=line )\d+|(?<=for )\d+\.\d+(?=s)", "N", message)
+        for message in caplog_blocking.messages
+    ] == [
+        (
+            f"Task 'blocking_task' is blocking the event loop at {location} "
+            "(threshold: 0.040s). Move blocking I/O to a thread pool or use a "
+            "non-blocking async API.\n"
+            "Stack when the threshold was reached (most recent call last):\n"
+            f'  File "{__file__}", line N, in blocking_handler\n'
+            "    time.sleep(_BLOCK_SECONDS)  # noqa: ASYNC251"
+        ),
+        "Task 'blocking_task' blocked the event loop for Ns in total.",
+    ]
+
+
 async def test_hung_event_is_reported_while_still_blocked(
     caplog_blocking: pytest.LogCaptureFixture, warned: threading.Event
 ):
@@ -572,7 +664,11 @@ async def test_stop_as_the_loop_responds_still_reports_the_total(
     monkeypatch.setattr(
         blocking,
         "threading",
-        SimpleNamespace(Event=_OvertakenEvent, Thread=threading.Thread),
+        SimpleNamespace(
+            Event=_OvertakenEvent,
+            Thread=threading.Thread,
+            get_ident=threading.get_ident,
+        ),
     )
 
     async def hung_handler():  # noqa: RUF029
