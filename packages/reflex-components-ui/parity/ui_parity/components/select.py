@@ -201,18 +201,13 @@ MATRIX = Matrix(
         "trigger => trigger.hasAttribute('data-placeholder')"
         " || trigger.textContent !== '')"
     ),
-    # Not held to zero. At a threshold of zero 162 of the 193 cells are
-    # equal pixel for pixel, and the others differ by where they are on the
-    # page: the gradients of the classic trigger are dithered by a step of a
-    # channel, as the trigger of Radix is against itself at another place.
-    # At the default threshold 4 cells differ, by at most 213 pixels of
-    # 92400: a list that ends at the end of its trigger, or is centered on
-    # it, starts at a fraction of a pixel when its width has one, where
-    # Radix rounds where it puts a list, so the edges of its letters are
-    # anti-aliased otherwise. The tolerance also takes in the 69 pixels of
-    # the icon of a responsive size, which the allowlist explains by its
-    # computed size.
-    tolerance=0.003,
+    # Not held to zero. At a threshold of zero most cells are equal pixel
+    # for pixel, and the others differ by where they are on the page: the
+    # gradients of the classic trigger are dithered by a step of a channel,
+    # as the trigger of Radix is against itself at another place. At the
+    # default threshold 2 cells differ, by at most 2 pixels of 92400, on the
+    # icon of a trigger whose long text puts it on a fraction of a pixel.
+    tolerance=0.0001,
 )
 
 

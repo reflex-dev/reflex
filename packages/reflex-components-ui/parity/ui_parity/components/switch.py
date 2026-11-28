@@ -64,6 +64,12 @@ MATRIX = Matrix(
         },
     ],
     stage=(120, 64),
+    # The thumb is drawn by the switch itself here, where Radix has an
+    # element for it.
+    parts={
+        "track": ("button::before", "input::before"),
+        "thumb": ("button > span", "input::after"),
+    },
     # Not held to zero. At a threshold of zero 132 of the 164 cells are equal
     # pixel for pixel, the base cell among them, and the others differ by
     # where they are on the page: the gradient of the track is dithered and

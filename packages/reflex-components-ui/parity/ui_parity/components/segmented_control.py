@@ -19,6 +19,8 @@ STATES = ["rest", HOVER, FOCUS_VISIBLE, ACTIVE]
 # The second item: a button of Radix, a label around a radio button here.
 TARGET = ("button:nth-child(2)", "label:nth-child(2)")
 MANY = [str(number) for number in range(1, 13)]
+# Three items of a whole number of pixels each.
+WIDTH = "240px"
 
 
 def _control(namespace: Any, props: Mapping[str, Any]) -> Any:
@@ -57,7 +59,6 @@ MATRIX = Matrix(
     base={"default_value": "1"},
     cross={"variant": VARIANTS, "size": SIZES, "default_value": ["1", "2", "3"]},
     sweep={
-        "radius": RADII,
         "color_scheme": ["ruby", "gray"],
         "holds": ["many", "icons"],
         "default_value": {"none": None},
@@ -73,7 +74,12 @@ MATRIX = Matrix(
             "state": STATES,
             "appearance": [LIGHT, DARK],
         },
-        {"radius": RADII, "size": SIZES, "variant": VARIANTS},
+        # A control as wide as its words has items a fraction of a pixel
+        # wide, and the browser draws a round end that is on a fraction by
+        # where it is on the page: Radix differs from itself there. The
+        # cells of the radius have items of 80 pixels, in any font.
+        {"radius": RADII, "width": [WIDTH]},
+        {"radius": RADII, "size": SIZES, "variant": VARIANTS, "width": [WIDTH]},
         {"holds": ["many"], "default_value": ["1", "11", "12"], "size": ["1"]},
         {
             "size": {"responsive": rx.breakpoints(initial="1", sm="3", lg="2")},
@@ -83,19 +89,38 @@ MATRIX = Matrix(
     stage=(420, 80),
     crop="stage",
     target=TARGET,
+    # What is inside an item, which has a radio button before it here.
     parts={
         "root": "[role=radiogroup]",
         "indicator": "[role=radiogroup] > div",
+        "pill": "[role=radiogroup] > div::before",
+        "separator": (
+            f"{TARGET[0]} > span:nth-of-type(1)",
+            f"{TARGET[1]} > span:nth-of-type(1)",
+        ),
+        "label": (
+            f"{TARGET[0]} > span:nth-of-type(2)",
+            f"{TARGET[1]} > span:nth-of-type(2)",
+        ),
+        "active": (
+            f"{TARGET[0]} > span > span:nth-of-type(1)",
+            f"{TARGET[1]} > span > span:nth-of-type(1)",
+        ),
+        "inactive": (
+            f"{TARGET[0]} > span > span:nth-of-type(2)",
+            f"{TARGET[1]} > span > span:nth-of-type(2)",
+        ),
     },
     # The focus is on the item of Radix and on the radio button in the item
     # here.
     states={FOCUS_VISIBLE: FOCUS_WITHIN},
-    # Not held to zero. At a threshold of zero 87 of the 103 cells are equal
-    # pixel for pixel, and the others differ by where they are on the page:
-    # the translucent fills of the control and of what marks the chosen item
-    # are dithered by a step of a channel. At the default threshold 3 cells
-    # differ, by at most 3 pixels of 33600 on a rounded corner.
-    tolerance=0.0001,
+    # Not held to zero. At a threshold of zero most cells are equal pixel
+    # for pixel, and the others differ by where they are on the page: the
+    # translucent fills of the control and of what marks the chosen item
+    # are dithered by a step of a channel. At the default threshold no cell
+    # differs in the fonts of the theme, and one does by one pixel of 33600
+    # in another font.
+    tolerance=0.00005,
 )
 
 

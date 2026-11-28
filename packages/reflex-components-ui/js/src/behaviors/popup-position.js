@@ -34,10 +34,9 @@ export function place(popup, anchor, open) {
     style.inset = "auto";
     style.minWidth = `${box.width}px`;
     style.maxHeight = `${Math.max(over ? above : below, 0)}px`;
-    style.left = `${Math.max(Math.min(box.left, innerWidth - popup.offsetWidth - EDGE), EDGE)}px`;
-    style.top = over
-      ? `${box.top - Math.min(height, above) - gap * 2}px`
-      : `${box.bottom}px`;
+    // On whole pixels, as Radix puts the popups it places.
+    style.left = `${Math.round(Math.max(Math.min(box.left, innerWidth - popup.offsetWidth - EDGE), EDGE))}px`;
+    style.top = `${Math.round(over ? box.top - Math.min(height, above) - gap * 2 : box.bottom)}px`;
   };
   update();
   addEventListener("scroll", update, true);

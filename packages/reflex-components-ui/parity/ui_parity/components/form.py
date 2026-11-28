@@ -58,7 +58,9 @@ MATRIX = Matrix(
     parts={
         "field": "form > div",
         "label": "label",
+        "control": "form > div > :is(input, textarea)",
         "message": "form > div > span",
+        "forced": "form > div > span:nth-of-type(2)",
         "submit": "form > button",
     },
     # A field the server finds invalid gives its control the focus, which

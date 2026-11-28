@@ -347,6 +347,77 @@ def test_read_reaches_the_elements_inside_the_compared_one(page: Page):
     assert page.evaluate(SETTLED_SCRIPT, 50) is True
 
 
+DRAWN = """
+<html class="light">
+  <head>
+    <style>
+      input { appearance: none; display: block; width: 20px; height: 20px }
+      input::before { content: ""; display: block; width: 8px }
+      input:checked::after { content: ""; display: inline-block; width: 4px }
+    </style>
+  </head>
+  <body style="margin: 0">
+    <div data-parity-stage="drawn" data-parity-system="reference">
+      <button style="display: block; width: 20px">
+        <i style="display: block; width: 8px"></i>
+      </button>
+    </div>
+    <div data-parity-stage="drawn" data-parity-system="candidate">
+      <input type="checkbox" />
+    </div>
+  </body>
+</html>
+"""
+
+
+def test_read_takes_a_pseudo_element_for_a_part(page: Page):
+    """One system's element is paired with what the other draws with a pseudo-element."""
+    page.set_content(DRAWN)
+    request = {
+        "properties": ["display", "width"],
+        "targets": {"reference": None, "candidate": None},
+        "parts": {
+            "box": {"reference": "button > i", "candidate": "input::before"},
+            # Drawn by neither: no mark in the button, and nothing checked.
+            "mark": {"reference": "button > b", "candidate": "input::after"},
+        },
+        "only": None,
+        "matches": None,
+        "first": ":scope > :not(style):not(script):not(link):not(template)",
+        "notRendered": "style,script,link,template",
+        "shapeKey": "(shape)",
+    }
+    frames = page.evaluate(READ_SCRIPT, request)
+    assert [
+        (frame["system"], frame["styles"], frame["missing"]) for frame in frames
+    ] == [
+        (
+            "reference",
+            {
+                "box": {"display": "block", "width": "8px"},
+                "": {"display": "block", "width": "20px"},
+                "(shape)": {"": "1 button", "> 1": "0 i"},
+            },
+            ["mark"],
+        ),
+        (
+            "candidate",
+            {
+                "box": {"display": "block", "width": "8px"},
+                "": {"display": "block", "width": "20px"},
+                "(shape)": {"": "0 input"},
+            },
+            ["mark"],
+        ),
+    ]
+    page.locator("input").check()
+    [_, candidate] = page.evaluate(READ_SCRIPT, request)
+    assert (candidate["styles"]["mark"], candidate["missing"]) == (
+        {"display": "inline-block", "width": "4px"},
+        [],
+    )
+
+
 CONTRACT_STEPS = [
     pytest.param(component, system, step, id=f"{component}-{system.name}-{step.name}")
     for component, contract in CONTRACTS.items()

@@ -39,19 +39,21 @@ from reflex_components_ui.styles.select import (
 from reflex_components_ui.themes import LiteralAccentColor
 
 _SCRIPT = f"$/{WEB_DIR}/behaviors/listbox.js"
+_POPUP_SCRIPT = f"$/{WEB_DIR}/behaviors/popup.js"
 
 
 @functools.cache
-def _script(name: str) -> Var:
-    """Name a function of the script of a select.
+def _script(name: str, module: str = _SCRIPT) -> Var:
+    """Name a function of the script of a select, or of a popup.
 
     Args:
         name: The name the script exports it under.
+        module: The script.
 
     Returns:
         The function, with its import.
     """
-    return Var(name, _var_data=VarData(imports={_SCRIPT: [ImportVar(tag=name)]}))
+    return Var(name, _var_data=VarData(imports={module: [ImportVar(tag=name)]}))
 
 
 # The events of the popup as they are rendered, by the name the script
@@ -731,6 +733,7 @@ class SelectContent(UIComponent):
         """
         yield from super()._get_vars(include_children, ignore_ids)
         yield _script("selectToggle")
+        yield _script("popupBeforeToggle", _POPUP_SCRIPT)
 
     def _exclude_props(self) -> list[str]:
         """Keep the props that say where the popup goes off the element.
@@ -777,6 +780,8 @@ class SelectContent(UIComponent):
             "role": "listbox",
             "tabIndex": -1,
             "data-rx-popup": "",
+            # Before it is first drawn, the popup is put on whole pixels.
+            "onBeforeToggle": _script("popupBeforeToggle", _POPUP_SCRIPT),
             "onToggle": toggle,
         })
 

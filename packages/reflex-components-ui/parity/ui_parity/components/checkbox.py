@@ -72,6 +72,14 @@ MATRIX = Matrix(
     stage=(160, 64),
     crop="stage",
     target=TARGET,
+    # The box and the check are drawn by the checkbox itself here, where
+    # Radix has an element for the check.
+    parts={
+        "box": ("button::before", "input::before"),
+        "check": ("button > svg", "input::after"),
+        "label": "label",
+        "row": "label > div",
+    },
     # Not held to zero, for the check alone: Radix Themes draws it as an svg
     # element and an input has no children, so here it is the same path as a
     # mask, whose edge the browser rasterizes by a step of a channel

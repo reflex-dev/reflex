@@ -121,6 +121,18 @@ reason = "The items of rx.radio_group are buttons that JavaScript turns into rad
 
 [[contract]]
 component = "radio_group"
+step = "Shift+Tab into a group with nothing checked stops on its first item"
+engines = ["webkit"]
+reason = "The items of rx.ui.radio_group are native radio buttons, and the browser decides where the focus enters a group in which none is checked. Safari enters it at the button nearest to where the focus comes from: the last one for Shift+Tab, where the other browsers and rx.radio_group enter at the first. The group is one stop either way, and the arrow keys reach every item."
+
+[[contract]]
+component = "radio_group"
+step = "the arrow keys go round at the ends of a group"
+engines = ["webkit"]
+reason = "The items of rx.ui.radio_group are native radio buttons, which the arrow keys move through as the browser does it. Safari stops at the first and at the last button of a group, where the other browsers and rx.radio_group go round to the other end. Every item is reached with the arrow keys in both."
+
+[[contract]]
+component = "radio_group"
 step = "Enter on a radio button does not submit its form"
 reason = "The items of rx.ui.radio_group are native inputs, and the browser submits a form when Enter is pressed in one of its inputs, a radio button included. rx.radio_group swallows the key. Space and the arrow keys check an item in both."
 
@@ -166,6 +178,12 @@ component = "radio_cards"
 step = "checks one card of a group with JavaScript disabled"
 system = "rx"
 reason = "The cards of rx.radio_cards are buttons that JavaScript turns into radio buttons: until it has run, a click does nothing. A card of rx.ui.radio_cards is a label around a native radio button, which the browser checks with or without JavaScript."
+
+[[contract]]
+component = "radio_cards"
+step = "the arrow keys go round at the ends of a group"
+engines = ["webkit"]
+reason = "The cards of rx.ui.radio_cards hold native radio buttons, which the arrow keys move through as the browser does it. Safari stops at the first and at the last card of a group, where the other browsers and rx.radio_cards go round to the other end. Every card is reached with the arrow keys in both."
 
 [[contract]]
 component = "radio_cards"
@@ -262,6 +280,12 @@ cells = "size-responsive*"
 properties = ["width", "height"]
 reason = "When the size of rx.select goes from \"3\" at one breakpoint to a smaller one at the next, Radix Themes keeps the larger icon size \"3\" has. The icon of rx.ui.select has the size of the select at each breakpoint, so the trigger is two pixels narrower there."
 
+[[look]]
+component = "select"
+check = "pixels"
+cells = "size-responsive"
+reason = "When the size of rx.select goes from \"3\" at one breakpoint to a smaller one at the next, Radix Themes keeps the larger icon size \"3\" has. The icon of rx.ui.select has the size of the select at each breakpoint, so the trigger is two pixels narrower there."
+
 [[contract]]
 component = "select"
 step = "shows the chosen option in the server render"
@@ -279,3 +303,21 @@ component = "select"
 step = "the page behind an open list takes no click"
 system = "rx.ui"
 reason = "While its list is open rx.select takes the pointer off the rest of the page: a click outside closes the list and does nothing else. The list of rx.ui.select is a native popover: a click outside closes it and also reaches what is under the pointer, as with a native select, and the page behind it scrolls."
+
+[[look]]
+component = "checkbox"
+check = "style"
+properties = ["background-color", "vertical-align", "overflow-x", "overflow-y"]
+reason = "The check of rx.checkbox is an icon, an svg element drawn in its color. The check of rx.ui.checkbox is drawn by the checkbox itself: a box of the size and the color of the icon, cut to its shape by a mask. It paints the same."
+
+[[look]]
+component = "checkbox_group"
+check = "style"
+properties = ["background-color", "vertical-align", "overflow-x", "overflow-y"]
+reason = "The check of rx.checkbox_group is an icon, an svg element drawn in its color. The check of rx.ui.checkbox_group is drawn by the checkbox itself: a box of the size and the color of the icon, cut to its shape by a mask. It paints the same."
+
+[[look]]
+component = "checkbox_cards"
+check = "style"
+properties = ["background-color", "vertical-align", "overflow-x", "overflow-y"]
+reason = "The check of rx.checkbox_cards is an icon, an svg element drawn in its color. The check of rx.ui.checkbox_cards is drawn by the checkbox itself: a box of the size and the color of the icon, cut to its shape by a mask. It paints the same."

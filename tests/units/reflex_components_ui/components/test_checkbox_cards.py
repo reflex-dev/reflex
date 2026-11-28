@@ -53,7 +53,7 @@ def test_checkbox_cards(
                     {
                         "name": '"input"',
                         "props": [
-                            "className:sx_e9aee32af5_c",
+                            "className:sx_6eb5dc6fb4_c",
                             "defaultChecked:true",
                             'id:"one"',
                             'name:"pick"',
@@ -73,7 +73,7 @@ def test_checkbox_cards(
                     {
                         "name": '"input"',
                         "props": [
-                            "className:sx_e9aee32af5_c",
+                            "className:sx_6eb5dc6fb4_c",
                             "disabled:true",
                             'name:"pick"',
                             'type:"checkbox"',
@@ -216,14 +216,17 @@ def test_checkbox_cards(
                     ":is(:checked, :indeterminate):not(:disabled)": "var(--accent-indicator)",
                     ":disabled": "transparent",
                 },
+                "::after": "currentcolor",
+            },
+            "backgroundImage": "none",
+            "boxSizing": "border-box",
+            "color": {
+                "default": "inherit",
                 "::after": {
                     "default": "var(--accent-contrast)",
                     ":disabled": "var(--gray-a8)",
                 },
             },
-            "backgroundImage": "none",
-            "boxSizing": "border-box",
-            "color": "inherit",
             "fontSize": "inherit",
             "lineHeight": "inherit",
             "letterSpacing": "inherit",
@@ -385,14 +388,17 @@ def test_checkbox_cards(
                     ":is(:checked, :indeterminate):not(:disabled)": "var(--accent-indicator)",
                     ":disabled": "transparent",
                 },
+                "::after": "currentcolor",
+            },
+            "backgroundImage": "none",
+            "boxSizing": "border-box",
+            "color": {
+                "default": "inherit",
                 "::after": {
                     "default": "var(--accent-contrast)",
                     ":disabled": "var(--gray-a8)",
                 },
             },
-            "backgroundImage": "none",
-            "boxSizing": "border-box",
-            "color": "inherit",
             "fontSize": "inherit",
             "lineHeight": "inherit",
             "letterSpacing": "inherit",
@@ -482,7 +488,7 @@ def test_checkbox_cards_classic(
                     {
                         "name": '"input"',
                         "props": [
-                            "className:sx_0d82b24940_c",
+                            "className:sx_4f13f0900c_c",
                             'name:"pick"',
                             'type:"checkbox"',
                             'value:"1"',
@@ -657,14 +663,17 @@ def test_checkbox_cards_classic(
                     ":is(:checked, :indeterminate):not(:disabled)": "var(--accent-12)",
                     ":disabled": "transparent",
                 },
+                "::after": "currentcolor",
+            },
+            "backgroundImage": "none",
+            "boxSizing": "border-box",
+            "color": {
+                "default": "inherit",
                 "::after": {
                     "default": "var(--accent-1)",
                     ":disabled": "var(--gray-a8)",
                 },
             },
-            "backgroundImage": "none",
-            "boxSizing": "border-box",
-            "color": "inherit",
             "fontSize": "inherit",
             "lineHeight": "inherit",
             "letterSpacing": "inherit",
@@ -765,7 +774,7 @@ def test_checkbox_cards_bound_to_state(
                         "name": '"input"',
                         "props": [
                             'checked:(reflex___state____state__tests___units___reflex_components_ui___components___test_checkbox_cards____cards_state.picked_rx_state_.includes("a"))',
-                            "className:sx_e9aee32af5_c",
+                            "className:sx_6eb5dc6fb4_c",
                             'name:"pick"',
                             "readOnly:true",
                             "required:true",

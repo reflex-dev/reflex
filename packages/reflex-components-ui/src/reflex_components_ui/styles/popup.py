@@ -34,6 +34,10 @@ _AREAS = {
 OFFSET = "--rx-popup-offset"
 SHIFT = "--rx-popup-shift"
 _FROM = "--rx-popup-from"
+# What the script of a popup sets on it once it is open: how far it is from
+# whole pixels, across and down. Radix puts what it places on whole pixels.
+_SNAP_X = "var(--rx-popup-snap-x, 0px)"
+_SNAP_Y = "var(--rx-popup-snap-y, 0px)"
 
 _MOTION = "@media (prefers-reduced-motion: no-preference)"
 
@@ -90,13 +94,35 @@ def placement(side: str, align: str, default_offset: str = "0px") -> dict[str, A
         viewport leaves on that side.
     """
     vertical = side in ("top", "bottom")
-    before, after = ("top", "bottom") if vertical else ("left", "right")
-    start, end = ("left", "right") if vertical else ("top", "bottom")
     offset = f"var({OFFSET}, {default_offset})"
+    shift = f"var({SHIFT}, 0px)"
+    # The room between the popup and each side: the offset on the two
+    # sides that face the anchor or lie opposite it, and the shift on the
+    # side the popup is aligned to. A margin and the one opposite it move
+    # the popup together, by what its script found it off whole pixels.
+    across = {
+        "start": (f"calc({shift} + {_SNAP_X})", f"calc(0px - {_SNAP_X})"),
+        "center": (_SNAP_X, f"calc(0px - {_SNAP_X})"),
+        "end": (_SNAP_X, f"calc({shift} - {_SNAP_X})"),
+    }
+    down = {
+        "start": (f"calc({shift} + {_SNAP_Y})", f"calc(0px - {_SNAP_Y})"),
+        "center": (_SNAP_Y, f"calc(0px - {_SNAP_Y})"),
+        "end": (_SNAP_Y, f"calc({shift} - {_SNAP_Y})"),
+    }
+    if vertical:
+        left, right = across[align]
+        top, bottom = f"calc({offset} + {_SNAP_Y})", f"calc({offset} - {_SNAP_Y})"
+    else:
+        top, bottom = down[align]
+        left, right = f"calc({offset} + {_SNAP_X})", f"calc({offset} - {_SNAP_X})"
+    start, end = ("left", "right") if vertical else ("top", "bottom")
     style: dict[str, Any] = {
         "position_area": _AREAS[side, align],
-        f"margin_{before}": offset,
-        f"margin_{after}": offset,
+        "margin_top": top,
+        "margin_right": right,
+        "margin_bottom": bottom,
+        "margin_left": left,
         ("max_height" if vertical else "max_width"): (
             f"calc(100% - {offset} - {_EDGE})"
         ),
@@ -108,8 +134,6 @@ def placement(side: str, align: str, default_offset: str = "0px") -> dict[str, A
     }
     if align == "center":
         style["justify_self" if vertical else "align_self"] = "anchor-center"
-    else:
-        style[f"margin_{start if align == 'start' else end}"] = f"var({SHIFT}, 0px)"
     return style
 
 

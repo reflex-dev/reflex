@@ -43,7 +43,7 @@ def test_checkbox_with_its_label(
                     {
                         "name": '"input"',
                         "props": [
-                            "className:sx_eda6ae65a6_c",
+                            "className:sx_b87bd44530_c",
                             'id:"agree"',
                             'name:"agree"',
                             "ref:ref_agree",
@@ -105,14 +105,17 @@ def test_checkbox_with_its_label(
                     ":is(:checked, :indeterminate):not(:disabled)": "var(--accent-indicator)",
                     ":disabled": "var(--gray-a3)",
                 },
+                "::after": "currentcolor",
+            },
+            "backgroundImage": "none",
+            "boxSizing": "border-box",
+            "color": {
+                "default": "inherit",
                 "::after": {
                     "default": "var(--accent-contrast)",
                     ":disabled": "var(--gray-a8)",
                 },
             },
-            "backgroundImage": "none",
-            "boxSizing": "border-box",
-            "color": "inherit",
             "fontSize": "inherit",
             "lineHeight": "inherit",
             "letterSpacing": "inherit",
@@ -203,7 +206,7 @@ def test_checkbox_alone(
         "name": '"input"',
         "props": [
             "checked:true",
-            'className:sx_cf89508fbc_c + " " + reflexUIClasses_e201574881',
+            'className:sx_6ac964b510_c + " " + reflexUIClasses_e201574881',
             "disabled:true",
             "readOnly:true",
             "required:true",
@@ -237,14 +240,17 @@ def test_checkbox_alone(
                     "default": "var(--accent-a5)",
                     ":disabled": "var(--gray-a3)",
                 },
+                "::after": "currentcolor",
+            },
+            "backgroundImage": "none",
+            "boxSizing": "border-box",
+            "color": {
+                "default": "inherit",
                 "::after": {
                     "default": "var(--accent-12)",
                     ":disabled": "var(--gray-a8)",
                 },
             },
-            "backgroundImage": "none",
-            "boxSizing": "border-box",
-            "color": "inherit",
             "fontSize": "inherit",
             "lineHeight": "inherit",
             "letterSpacing": "inherit",
@@ -349,10 +355,7 @@ def test_checkbox_classic(
                     ":is(:checked, :indeterminate):not(:disabled)": "var(--accent-indicator)",
                     ":disabled": "var(--gray-a3)",
                 },
-                "::after": {
-                    "default": "var(--accent-contrast)",
-                    ":disabled": "var(--gray-a8)",
-                },
+                "::after": "currentcolor",
             },
             "backgroundImage": {
                 "default": "none",
@@ -362,7 +365,13 @@ def test_checkbox_classic(
                 },
             },
             "boxSizing": "border-box",
-            "color": "inherit",
+            "color": {
+                "default": "inherit",
+                "::after": {
+                    "default": "var(--accent-contrast)",
+                    ":disabled": "var(--gray-a8)",
+                },
+            },
             "fontSize": "inherit",
             "lineHeight": "inherit",
             "letterSpacing": "inherit",
@@ -448,7 +457,7 @@ def test_checkbox_spacing_and_gap(
                 "children": [
                     {
                         "name": '"input"',
-                        "props": ["className:sx_216a3adbf2_c", 'type:"checkbox"'],
+                        "props": ["className:sx_846aafb601_c", 'type:"checkbox"'],
                         "children": [],
                     },
                     {"contents": '"Agree"'},

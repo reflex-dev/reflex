@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
+
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 import reflex as rx
 
@@ -86,3 +89,34 @@ def wait_for_text(page: Any, element: str, text: str) -> None:
         "([id, text]) => document.getElementById(id).textContent === text",
         arg=[element, text],
     )
+
+
+def wait_for_value(
+    page: Any, expression: str, expected: Any, timeout: float = 5000
+) -> None:
+    """Wait until a JavaScript expression of a page has a value.
+
+    A step that waits says what it found when the wait ends without it,
+    where a timeout alone says nothing of what the component did.
+
+    Args:
+        page: The page.
+        expression: The expression: what it evaluates to is compared as JSON.
+        expected: Its value.
+        timeout: How long to wait, in milliseconds.
+
+    Raises:
+        AssertionError: If the expression does not come to have the value,
+            with the value it has.
+    """
+    try:
+        page.wait_for_function(
+            f"expected => JSON.stringify({expression}) === expected",
+            arg=json.dumps(expected, separators=(",", ":"), ensure_ascii=False),
+            timeout=timeout,
+        )
+    except PlaywrightTimeoutError:
+        actual = page.evaluate(expression)
+        if actual != expected:
+            msg = f"{expression} is {actual!r}, not {expected!r}"
+            raise AssertionError(msg) from None

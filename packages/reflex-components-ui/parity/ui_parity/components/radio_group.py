@@ -9,7 +9,7 @@ from typing import Any
 import reflex as rx
 from ui_parity.contract import NO_JAVASCRIPT, SERVER, Contract, Run
 from ui_parity.matrix import ACTIVE, DARK, FOCUS_VISIBLE, HOVER, LIGHT, Matrix
-from ui_parity.samples import ACCENTS, focused, wait_for_text
+from ui_parity.samples import ACCENTS, focused, wait_for_text, wait_for_value
 
 VARIANTS = ["classic", "surface", "soft"]
 SIZES = ["1", "2", "3"]
@@ -63,12 +63,16 @@ MATRIX = Matrix(
     stage=(220, 110),
     crop="stage",
     target=TARGET,
-    # Not held to zero. A circle is anti-aliased by where it is on the page:
-    # with the two frames of a cell swapped, each system is equal pixel for
-    # pixel to the other one in the same place, and differs from itself in
-    # the other place by the same pixels. At the default threshold 26 of the
-    # 117 cells differ, by at most 88 pixels of 24200.
-    tolerance=0.004,
+    parts={
+        "root": "[role=radiogroup]",
+        "box": ("button::before", "input::before"),
+        "dot": ("button::after", "input::after"),
+    },
+    # Not held to zero. At a threshold of zero the cells that differ do so
+    # by where they are on the page: the circle of a radio button and its
+    # focus ring are anti-aliased by it. At the default threshold the worst
+    # cell differs by 17 pixels.
+    tolerance=0.001,
 )
 
 
@@ -167,8 +171,10 @@ CHECKED = (
 )
 # How long a key is held, in milliseconds.
 HELD = 60
-# The text of the item that has the focus.
-FOCUSED_ITEM = "document.activeElement.closest('label')?.textContent"
+# The text of the item that has the focus, or nothing when no item has it.
+FOCUSED_ITEM = "(document.activeElement.closest('label')?.textContent ?? null)"
+# Whether the focus is in the group with nothing checked.
+IN_PICK = "document.activeElement.closest('#pick') !== null"
 
 
 def _wait_for_checked(run: Run, group: str, items: list[str]) -> None:
@@ -179,10 +185,17 @@ def _wait_for_checked(run: Run, group: str, items: list[str]) -> None:
         group: The id of the frame of the group.
         items: The text of each item that is to be checked.
     """
-    run.page.wait_for_function(
-        f"([id, items]) => JSON.stringify(({CHECKED})(id)) === items",
-        arg=[group, json.dumps(items)],
-    )
+    wait_for_value(run.page, f"({CHECKED})({json.dumps(group)})", items)
+
+
+def _wait_for_focus(run: Run, item: str) -> None:
+    """Wait until an item has the focus.
+
+    Args:
+        run: The run, on a page.
+        item: The text of the item.
+    """
+    wait_for_value(run.page, FOCUSED_ITEM, item)
 
 
 @CONTRACT.step("its items are in the server render", on=SERVER)
@@ -227,35 +240,67 @@ def _tab(run: Run) -> None:
     _wait_for_checked(run, "pick", [])
 
 
+@CONTRACT.step("Shift+Tab stops once in a group with nothing checked")
+def _shift_tab_once(run: Run) -> None:
+    page = run.page
+    page.keyboard.press("Tab")
+    page.keyboard.press("Tab")
+    _wait_for_focus(run, "Red")
+    inside = []
+    for _ in range(2):
+        page.keyboard.press("Shift+Tab")
+        inside.append(page.evaluate(IN_PICK))
+    assert inside == [True, False]
+    _wait_for_checked(run, "pick", [])
+
+
 @CONTRACT.step("Shift+Tab into a group with nothing checked stops on its first item")
 def _shift_tab(run: Run) -> None:
     page = run.page
     page.keyboard.press("Tab")
     page.keyboard.press("Tab")
-    assert page.evaluate(FOCUSED_ITEM) == "Red"
+    _wait_for_focus(run, "Red")
     page.keyboard.press("Shift+Tab")
-    assert page.evaluate(FOCUSED_ITEM) == "One"
+    _wait_for_focus(run, "One")
 
 
 @CONTRACT.step("the arrow keys move through a group and check, past a disabled item")
 def _arrows(run: Run) -> None:
     page = run.page
     page.keyboard.press("Tab")
-    visited = []
-    for key in ("ArrowDown", "ArrowRight", "ArrowDown", "ArrowUp", "ArrowLeft"):
+    for key, item in (
+        ("ArrowDown", "Two"),
+        ("ArrowRight", "Three"),
+        ("ArrowUp", "Two"),
+        ("ArrowLeft", "One"),
+    ):
         # Held as long as a finger holds it: Radix checks the item the focus
         # moves to only while the key is still down.
         page.keyboard.press(key, delay=HELD)
-        visited.append(page.evaluate(FOCUSED_ITEM))
-        _wait_for_checked(run, "pick", [visited[-1]])
-    assert visited == ["Two", "Three", "One", "Three", "Two"]
-    wait_for_text(page, "seen", '["Two","Three","One","Three","Two"]')
+        _wait_for_focus(run, item)
+        _wait_for_checked(run, "pick", [item])
+    wait_for_text(page, "seen", '["Two","Three","Two","One"]')
     page.keyboard.press("Tab")
+    _wait_for_focus(run, "Red")
     page.keyboard.press("ArrowDown", delay=HELD)
-    assert page.evaluate(FOCUSED_ITEM) == "Blue"
+    _wait_for_focus(run, "Blue")
     _wait_for_checked(run, "colors", ["Blue"])
-    page.keyboard.press("ArrowDown", delay=HELD)
+    page.keyboard.press("ArrowUp", delay=HELD)
+    _wait_for_focus(run, "Red")
     _wait_for_checked(run, "colors", ["Red"])
+
+
+@CONTRACT.step("the arrow keys go round at the ends of a group")
+def _arrows_round(run: Run) -> None:
+    page = run.page
+    page.keyboard.press("Tab")
+    _wait_for_focus(run, "One")
+    page.keyboard.press("ArrowUp", delay=HELD)
+    _wait_for_focus(run, "Three")
+    _wait_for_checked(run, "pick", ["Three"])
+    page.keyboard.press("ArrowDown", delay=HELD)
+    _wait_for_focus(run, "One")
+    _wait_for_checked(run, "pick", ["One"])
 
 
 @CONTRACT.step("Space and a click on a label check an item, and say so")

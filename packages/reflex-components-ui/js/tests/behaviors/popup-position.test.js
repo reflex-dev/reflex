@@ -92,6 +92,13 @@ test("it follows its anchor while it is open, and no longer", () => {
   expect(placed()).toEqual(["80px", "112px", "140px", "474px"]);
 });
 
+test("it is put on whole pixels", () => {
+  box = { left: 40.4, top: 100.2, bottom: 132.6, width: 120.5 };
+  place(popup, anchor, true);
+
+  expect(placed()).toEqual(["40px", "133px", "120.5px", "453.4px"]);
+});
+
 test("a popup without a margin has no gap", () => {
   popup.style.marginTop = "";
   place(popup, anchor, true);

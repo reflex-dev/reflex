@@ -84,7 +84,16 @@ MATRIX = Matrix(
     stage=(420, 150),
     crop="stage",
     target=TARGET,
-    parts={"checkbox": CHECKBOX},
+    # The box and the check are drawn by the checkbox itself here, where
+    # Radix has an element for the check.
+    parts={
+        "root": "[role=group]",
+        "surface": "label::before",
+        "outline": "label::after",
+        "checkbox": CHECKBOX,
+        "box": ("label > button::before", "label > input::before"),
+        "check": ("label > button > svg", "label > input::after"),
+    },
     # The focus is on the checkbox inside the card.
     states={FOCUS_VISIBLE: FOCUS_WITHIN},
     # Not held to zero, as the matrix of the radio cards is not: a card is

@@ -140,7 +140,7 @@
   "packages/reflex-components-ui/src/reflex_components_ui/components/radio_group.pyi": "e7f9c6ffd5f3d882ebe2fa4c06c0bcd0",
   "packages/reflex-components-ui/src/reflex_components_ui/components/scroll_area.pyi": "0b9bb867b1ef68c0fd9b10d52867d2b8",
   "packages/reflex-components-ui/src/reflex_components_ui/components/segmented_control.pyi": "6c4bcbd1e1d2ee3effda901ad208fe56",
-  "packages/reflex-components-ui/src/reflex_components_ui/components/select.pyi": "d8bbfe6dcba937973f9d6f86f2ae619b",
+  "packages/reflex-components-ui/src/reflex_components_ui/components/select.pyi": "7c9b56d6cbf55e8bed5ef1d262b115d0",
   "packages/reflex-components-ui/src/reflex_components_ui/components/separator.pyi": "bd32f08f7c0ff2cb6733f964ea843440",
   "packages/reflex-components-ui/src/reflex_components_ui/components/skeleton.pyi": "4bedd989efb5b095b943a04830bbd140",
   "packages/reflex-components-ui/src/reflex_components_ui/components/slider.pyi": "b5702134bebf0337effc41e3ddeffda8",

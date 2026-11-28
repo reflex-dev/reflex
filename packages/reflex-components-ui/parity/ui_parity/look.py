@@ -121,8 +121,8 @@ SHAPE = "(shape)"
 # Reads the geometry and the computed style of the frames: all of them, or the
 # one of a system and props id.
 READ_SCRIPT = """({properties, targets, parts, only, matches, first, notRendered, shapeKey}) => {
-    const read = (element) => {
-        const style = getComputedStyle(element);
+    const read = (element, pseudo) => {
+        const style = getComputedStyle(element, pseudo);
         return Object.fromEntries(
             properties.map((name) => [name, style.getPropertyValue(name)]),
         );
@@ -146,12 +146,19 @@ READ_SCRIPT = """({properties, targets, parts, only, matches, first, notRendered
         const missing = [];
         const named = new Set();
         for (const [name, selectors] of Object.entries(parts)) {
-            const part = stage.querySelector(selectors[system]);
-            if (part === null) {
+            // A part may be a pseudo-element, "input::after": one system
+            // draws with one what the other has an element for. It is
+            // there when it has content.
+            const [query, pseudo] = selectors[system].split(/(?=::)/);
+            const part = stage.querySelector(query);
+            const drawn = part !== null && (
+                !pseudo || getComputedStyle(part, pseudo).content !== "none"
+            );
+            if (!drawn) {
                 missing.push(name);
             } else {
-                styles[name] = read(part);
-                named.add(part);
+                styles[name] = read(part, pseudo);
+                if (!pseudo) named.add(part);
             }
         }
         // The elements inside the target, by the path of their places among

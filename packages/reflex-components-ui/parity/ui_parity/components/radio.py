@@ -47,8 +47,14 @@ MATRIX = Matrix(
     stage=(160, 110),
     crop="stage",
     target=TARGET,
-    # Not held to zero, as the matrix of the radio group is not: a circle
-    # is anti-aliased by where it is on the page. At the default threshold 7
-    # of the 19 cells differ, by at most 49 pixels of 17600.
-    tolerance=0.003,
+    parts={
+        "root": "[role=radiogroup]",
+        "box": ("button::before", "input::before"),
+        "dot": ("button::after", "input::after"),
+    },
+    # Not held to zero. At a threshold of zero the cells that differ do so
+    # by where they are on the page: the circle of a radio button and its
+    # focus ring are anti-aliased by it. At the default threshold the worst
+    # cell differs by 2 pixels.
+    tolerance=0.0002,
 )
