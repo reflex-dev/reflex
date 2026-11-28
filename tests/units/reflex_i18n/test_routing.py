@@ -848,6 +848,35 @@ def test_sitemap_names_alternates_of_a_configured_loc(
     assert alternates.count('hreflang="en" href="https://example.com/en/angebote"') == 2
 
 
+def test_sitemap_alternates_keep_a_configured_locs_query(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    from reflex_base.config import get_config
+    from reflex_base.plugins.sitemap import generate_xml
+
+    from reflex.app import UnevaluatedPage
+
+    plugin = I18nPlugin(
+        locales=["de", "en"], default_locale="de", routing=PathPrefixRouting()
+    )
+    ctx = _fake_context([
+        UnevaluatedPage(
+            component=lambda: rx.text("Offers"),
+            route="pricing",
+            context={"sitemap": {"loc": "/angebote?seite=2"}},
+        ),
+    ])
+    plugin.expand_routes(add_page=ctx["add_page"], pages=ctx["pages"])  # pyright: ignore[reportCallIssue]
+    monkeypatch.setattr(get_config(), "frontend_path", "")
+    sitemap = generate_xml([{"loc": "https://example.com/angebote?seite=2"}])
+
+    alternates = plugin._add_sitemap_alternates(sitemap)
+    assert 'hreflang="en" href="https://example.com/en/angebote?seite=2"' in alternates
+    assert [kwargs["context"]["sitemap"] for _, kwargs in ctx["calls"]] == [
+        {"loc": "/en/angebote?seite=2"}
+    ]
+
+
 @pytest.mark.parametrize(
     ("routing", "sitemap", "expected"),
     [

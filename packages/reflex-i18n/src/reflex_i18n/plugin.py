@@ -653,11 +653,12 @@ class I18nPlugin(Plugin):
                     "xhtml:link",
                     rel="alternate",
                     hreflang=locale,
+                    # a configured loc's query names the page as much as its path
                     href=urlunsplit((
                         loc.scheme,
                         loc.netloc,
                         prefix + alternate,
-                        "",
+                        loc.query,
                         "",
                     )),
                 )
